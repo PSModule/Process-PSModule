@@ -21,7 +21,7 @@ jobs:
           Write-Verbose "srcPath=$srcPath" -Verbose
           Get-ChildItem -Directory | Select-Object -ExpandProperty FullName
           $moduleFolders = @()
-          $moduleFolders += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty FullName
+          $moduleFolders += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty Name
           $moduleFolders = $moduleFolders | ConvertTo-Json -AsArray -Compress
           Write-Verbose "PSModules=$moduleFolders" -Verbose
           Write-Output "PSModules=$moduleFolders" >> $env:GITHUB_OUTPUT
