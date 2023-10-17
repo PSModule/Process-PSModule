@@ -1,0 +1,24 @@
+name: 'Get powershell module source folders'
+description: 'Gets a list of modules in the .\src folder of the repository'
+
+outputs:
+  PSModules:
+    description: 'The module test files to use for template evaluation'
+    value: ${{ steps.Get-PSModule.outputs.PSModules }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Get parameter file paths'
+      id: Get-PSModule
+      shell: pwsh
+      run: |
+        # Get-PSModule
+        Write-Output "##[group]Get-PSModule"
+        $srcPath = (Join-Path $env:GITHUB_WORKSPACE 'src')
+        $moduleFolders = @()
+        $moduleFolders += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty FullName
+        $moduleFolders = $moduleFolders | ConvertTo-Json -AsArray -Compress
+        Write-Verbose "PSModules=$moduleFolders" -Verbose
+        Write-Output "PSModules=$moduleFolders" >> $env:GITHUB_OUTPUT
+        Write-Output "##[endgroup]"

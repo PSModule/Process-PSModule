@@ -1,0 +1,46 @@
+name: Process-PSModule [${{ github.event.repository.name }}]
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        required: true
+
+jobs:
+  Get-PSModule:
+    name: Get-PSModule
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: ./.github/actions/Get-PSModule
+
+  Process-PSModule:
+    name: Process-PSModule
+    runs-on: ubuntu-latest
+    needs:
+      - Get-PSModule
+    strategy:
+      fail-fast: false
+      matrix:
+        PSModule: ${{ fromJson(needs.Get-PSModule.outputs.PSModules) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # - name: Initialize-PSModule
+      #   uses: PSModule/Initialize-PSModule@main
+      #   with:
+      #     Version: $null
+
+      # - name: Build-PSModule
+      #   uses: PSModule/Build-PSModule@main
+
+      # - name: Test-PSModule
+      #   uses: PSModule/Test-PSModule@main
+
+      # - name: Release-PSModule
+      #   uses: PSModule/Release-PSModule@main
+      #   with:
+      #     APIKey: ${{ secrets.APIKEY }}
+      #   env:
+      #     GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
