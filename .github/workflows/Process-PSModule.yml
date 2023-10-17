@@ -8,8 +8,21 @@ jobs:
     name: Get-PSModule
     runs-on: ubuntu-latest
     steps:
-      - name: Get-PSModule
-        uses: PSModule/Actions/.github/actions/Get-PSModule
+      - name: 'Get parameter file paths'
+        id: Get-PSModule
+        shell: pwsh
+        run: |
+          # Get-PSModule
+          Write-Output "##[group]Get-PSModule"
+          $srcPath = (Join-Path $env:GITHUB_WORKSPACE 'src')
+          $moduleFolders = @()
+          $moduleFolders += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty FullName
+          $moduleFolders = $moduleFolders | ConvertTo-Json -AsArray -Compress
+          Write-Verbose "PSModules=$moduleFolders" -Verbose
+          Write-Output "PSModules=$moduleFolders" >> $env:GITHUB_OUTPUT
+          Write-Output "##[endgroup]"
+    outputs:
+      PSModules: ${{ steps.Get-PSModule.outputs.PSModules }}
 
   Process-PSModule:
     name: Process-PSModule
