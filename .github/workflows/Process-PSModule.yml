@@ -2,60 +2,64 @@ name: Process-PSModule
 
 on:
   workflow_call:
+    secrets:
+      APIKey:
+        required: true
 
 jobs:
-  Get-PSModule:
-    name: Get-PSModule
+  Get-PSModuleNames:
+    name: Get-PSModuleNames
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Get parameter file paths'
-        id: Get-PSModule
+      - name: 'Get-PSModuleNames'
+        id: Get-PSModuleNames
         shell: pwsh
         run: |
-          # Get-PSModule
-          Write-Output "##[group]Get-PSModule"
+          # Get-PSModuleNames
+          Write-Output "##[group]Get-PSModuleNames"
           $srcPath = (Join-Path $env:GITHUB_WORKSPACE 'src')
-          Write-Verbose "srcPath=$srcPath" -Verbose
-          Get-ChildItem -Directory | Select-Object -ExpandProperty FullName
-          $moduleFolders = @()
-          $moduleFolders += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty Name
-          $moduleFolders = $moduleFolders | ConvertTo-Json -AsArray -Compress
-          Write-Verbose "PSModules=$moduleFolders" -Verbose
-          Write-Output "PSModules=$moduleFolders" >> $env:GITHUB_OUTPUT
+          $moduleNames = @()
+          $moduleNames += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty Name
+          $moduleNames = $moduleNames | ConvertTo-Json -AsArray -Compress
+          Write-Verbose "ModuleNames=$moduleNames" -Verbose
+          Write-Output "ModuleNames=$moduleNames" >> $env:GITHUB_OUTPUT
           Write-Output "##[endgroup]"
     outputs:
-      PSModules: ${{ steps.Get-PSModule.outputs.PSModules }}
+      ModuleNames: ${{ steps.Get-PSModule.outputs.ModuleNames }}
 
   Process-PSModule:
     name: Process-PSModule
     runs-on: ubuntu-latest
     needs:
-      - Get-PSModule
+      - Get-PSModuleNames
     strategy:
       fail-fast: false
       matrix:
-        PSModule: ${{ fromJson(needs.Get-PSModule.outputs.PSModules) }}
+        ModuleName: ${{ fromJson(needs.Get-PSModuleNames.outputs.ModuleNames) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # - name: Initialize-PSModule
-      #   uses: PSModule/Initialize-PSModule@main
-      #   with:
-      #     Version: $null
+      - name: Initialize-PSModule
+        uses: PSModule/Initialize-PSModule@main
 
-      # - name: Build-PSModule
-      #   uses: PSModule/Build-PSModule@main
+      - name: Build-PSModule
+        uses: PSModule/Build-PSModule@main
+          with:
+            Name: ${{ matrix.ModuleName }}
 
-      # - name: Test-PSModule
-      #   uses: PSModule/Test-PSModule@main
+      - name: Test-PSModule
+        uses: PSModule/Test-PSModule@main
+          with:
+            Name: ${{ matrix.ModuleName }}
 
-      # - name: Release-PSModule
-      #   uses: PSModule/Release-PSModule@main
-      #   with:
-      #     APIKey: ${{ secrets.APIKEY }}
-      #   env:
-      #     GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
+      - name: Release-PSModule
+        uses: PSModule/Release-PSModule@main
+        with:
+          APIKey: ${{ secrets.APIKEY }}
+          Name: ${{ matrix.ModuleName }}
+        env:
+          GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
