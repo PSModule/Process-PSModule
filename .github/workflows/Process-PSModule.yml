@@ -8,6 +8,9 @@ jobs:
     name: Get-PSModule
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: 'Get parameter file paths'
         id: Get-PSModule
         shell: pwsh
@@ -15,6 +18,8 @@ jobs:
           # Get-PSModule
           Write-Output "##[group]Get-PSModule"
           $srcPath = (Join-Path $env:GITHUB_WORKSPACE 'src')
+          Write-Verbose "srcPath=$srcPath" -Verbose
+          Get-ChildItem -Directory | Select-Object -ExpandProperty FullName
           $moduleFolders = @()
           $moduleFolders += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty FullName
           $moduleFolders = $moduleFolders | ConvertTo-Json -AsArray -Compress
