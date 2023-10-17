@@ -28,7 +28,7 @@ jobs:
           Write-Output "ModuleNames=$moduleNames" >> $env:GITHUB_OUTPUT
           Write-Output "##[endgroup]"
     outputs:
-      ModuleNames: ${{ steps.Get-PSModule.outputs.ModuleNames }}
+      ModuleNames: ${{ steps.Get-PSModuleNames.outputs.ModuleNames }}
 
   Process-PSModule:
     name: Process-PSModule
