@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get-PSModule
         uses: ./.github/actions/Get-PSModule
 
   Process-PSModule:
