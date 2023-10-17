@@ -48,13 +48,13 @@ jobs:
 
       - name: Build-PSModule
         uses: PSModule/Build-PSModule@main
-          with:
-            Name: ${{ matrix.ModuleName }}
+        with:
+          Name: ${{ matrix.ModuleName }}
 
       - name: Test-PSModule
         uses: PSModule/Test-PSModule@main
-          with:
-            Name: ${{ matrix.ModuleName }}
+        with:
+          Name: ${{ matrix.ModuleName }}
 
       - name: Release-PSModule
         uses: PSModule/Release-PSModule@main
