@@ -56,8 +56,8 @@ jobs:
         with:
           Name: ${{ matrix.ModuleName }}
 
-      - name: Release-PSModule
-        uses: PSModule/Release-PSModule@main
+      - name: Publish-PSModule
+        uses: PSModule/Publish-PSModule@main
         with:
           APIKey: ${{ secrets.APIKEY }}
           Name: ${{ matrix.ModuleName }}
