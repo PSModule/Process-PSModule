@@ -2,9 +2,6 @@ name: Process-PSModule
 
 on:
   workflow_call:
-    secrets:
-      token:
-        required: true
 
 jobs:
   Get-PSModule:
