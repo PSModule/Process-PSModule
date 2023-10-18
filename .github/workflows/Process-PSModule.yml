@@ -5,6 +5,12 @@ on:
     secrets:
       APIKey:
         required: true
+    inputs:
+      SkipTests:
+        type: boolean
+        description: 'Skip Tests'
+        required: false
+        default: false
 
 jobs:
   Get-PSModuleNames:
@@ -53,6 +59,7 @@ jobs:
 
       - name: Test-PSModule
         uses: PSModule/Test-PSModule@main
+        if: ${{ inputs.SkipTests == false }}
         with:
           Name: ${{ matrix.ModuleName }}
 
