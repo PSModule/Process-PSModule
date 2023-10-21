@@ -52,7 +52,7 @@ jobs:
       - name: Initialize-PSModule
         uses: PSModule/Initialize-PSModule@main
 
-      - name: Test-PSModule
+      - name: Test-PSModule-src
         uses: PSModule/Test-PSModule@main
         with:
           Name: ${{ matrix.ModuleName }}
