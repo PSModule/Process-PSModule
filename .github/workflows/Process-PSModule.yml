@@ -52,7 +52,7 @@ jobs:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@main
 
-      - name: Run tests on source code
+      - name: Test source code
         uses: PSModule/Test-PSModule@main
         with:
           Name: ${{ matrix.ModuleName }}
@@ -64,7 +64,7 @@ jobs:
         with:
           Name: ${{ matrix.ModuleName }}
 
-      - name: Run tests on built module
+      - name: Test built module
         uses: PSModule/Test-PSModule@main
         with:
           Name: ${{ matrix.ModuleName }}
