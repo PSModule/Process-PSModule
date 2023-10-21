@@ -6,11 +6,11 @@ on:
       APIKey:
         required: true
     inputs:
-      SkipTests:
-        type: boolean
-        description: 'Skip Tests'
+      TestsErrorAction:
+        type: string
+        description: 'The ErrorActionPreference to use when running tests'
         required: false
-        default: false
+        default: 'Stop'
 
 jobs:
   Get-PSModuleNames:
@@ -62,6 +62,7 @@ jobs:
         if: ${{ inputs.SkipTests == false }}
         with:
           Name: ${{ matrix.ModuleName }}
+          ErrorAction: ${{ inputs.TestsErrorAction }}
 
       - name: Publish-PSModule
         uses: PSModule/Publish-PSModule@main
