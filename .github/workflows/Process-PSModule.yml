@@ -6,11 +6,21 @@ on:
       APIKey:
         required: true
     inputs:
+      TestModuleSkip:
+        type: boolean
+        description: 'Skip testing built module'
+        required: false
+        default: false
       TestModuleErrorAction:
         type: string
         description: 'The ErrorActionPreference to use when running tests on built module'
         required: false
         default: 'Stop'
+      TestSrcSkip:
+        type: boolean
+        description: 'Skip testing source code'
+        required: false
+        default: false
       TestSrcErrorAction:
         type: string
         description: 'The ErrorActionPreference to use when running tests on source code'
@@ -59,6 +69,7 @@ jobs:
 
       - name: Test source code
         uses: PSModule/Test-PSModule@main
+        if: ${{ inputs.TestSrcSkip == false }}
         with:
           Name: ${{ matrix.ModuleName }}
           Path: 'src'
@@ -71,6 +82,7 @@ jobs:
 
       - name: Test built module
         uses: PSModule/Test-PSModule@main
+        if: ${{ inputs.TestModuleSkip == false }}
         with:
           Name: ${{ matrix.ModuleName }}
           Path: 'outputs'
