@@ -52,6 +52,13 @@ jobs:
       - name: Initialize-PSModule
         uses: PSModule/Initialize-PSModule@main
 
+      - name: Test-PSModule
+        uses: PSModule/Test-PSModule@main
+        with:
+          Name: ${{ matrix.ModuleName }}
+          Path: 'src'
+          ErrorAction: ${{ inputs.TestsErrorAction }}
+
       - name: Build-PSModule
         uses: PSModule/Build-PSModule@main
         with:
@@ -59,9 +66,9 @@ jobs:
 
       - name: Test-PSModule
         uses: PSModule/Test-PSModule@main
-        if: ${{ inputs.SkipTests == false }}
         with:
           Name: ${{ matrix.ModuleName }}
+          Path: 'outputs'
           ErrorAction: ${{ inputs.TestsErrorAction }}
 
       - name: Publish-PSModule
