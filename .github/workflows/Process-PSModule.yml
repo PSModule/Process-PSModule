@@ -6,9 +6,14 @@ on:
       APIKey:
         required: true
     inputs:
-      TestsErrorAction:
+      TestModuleErrorAction:
         type: string
-        description: 'The ErrorActionPreference to use when running tests'
+        description: 'The ErrorActionPreference to use when running tests on built module'
+        required: false
+        default: 'Stop'
+      TestSrcErrorAction:
+        type: string
+        description: 'The ErrorActionPreference to use when running tests on source code'
         required: false
         default: 'Stop'
 
@@ -57,7 +62,7 @@ jobs:
         with:
           Name: ${{ matrix.ModuleName }}
           Path: 'src'
-          ErrorAction: ${{ inputs.TestsErrorAction }}
+          ErrorAction: ${{ inputs.TestSrcErrorAction }}
 
       - name: Build module
         uses: PSModule/Build-PSModule@main
@@ -69,7 +74,7 @@ jobs:
         with:
           Name: ${{ matrix.ModuleName }}
           Path: 'outputs'
-          ErrorAction: ${{ inputs.TestsErrorAction }}
+          ErrorAction: ${{ inputs.TestModuleErrorAction }}
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@main
