@@ -1,4 +1,4 @@
-name: Process-PSModule
+name: Process modules in repo [${{ github.repository }}]
 
 on:
   workflow_call:
@@ -29,7 +29,7 @@ on:
 
 jobs:
   Get-PSModuleNames:
-    name: Get-PSModuleNames
+    name: Get modules to process in repo
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
