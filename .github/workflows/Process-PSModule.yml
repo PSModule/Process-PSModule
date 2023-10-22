@@ -1,4 +1,4 @@
-name: Process modules in repo [${{ github.repository }}]
+name: Process modules in repo
 
 on:
   workflow_call:
