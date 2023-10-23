@@ -87,6 +87,7 @@ jobs:
           Name: ${{ matrix.ModuleName }}
           Path: 'outputs'
           ErrorAction: ${{ inputs.TestModuleErrorAction }}
+          CustomTestsPath: 'tests'
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@main
