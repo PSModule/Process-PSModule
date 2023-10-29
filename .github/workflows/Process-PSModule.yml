@@ -26,6 +26,10 @@ on:
         description: 'The ErrorActionPreference to use when running tests on source code'
         required: false
         default: 'Stop'
+      Version:
+        type: string
+        description: 'The version of the module to process'
+        required: false
 
 jobs:
   Get-PSModuleNames:
@@ -66,6 +70,8 @@ jobs:
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@main
+        with:
+          Version: ${{ inputs.Version }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@main
