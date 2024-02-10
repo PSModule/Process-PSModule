@@ -1,0 +1,19 @@
+name: Linter
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  Lint:
+    name: Lint code base
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Lint code base
+        uses: github/super-linter@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
