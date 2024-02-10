@@ -5,12 +5,11 @@ on:
   push:
     paths:
       - workflow.yml
-      - .github/workflows/Action-Test.yml
-      - scripts/**
+      - .github/workflows/Workflow-Test.yml
 
 jobs:
   DefaultTest:
-    name: Test Action - [Default]
+    name: Test Workflow - [Default]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
