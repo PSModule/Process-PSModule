@@ -9,4 +9,4 @@ on:
 
 jobs:
   DefaultTest:
-    uses: ./workflow.yml
+    uses: workflow.yml
