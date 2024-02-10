@@ -9,4 +9,6 @@ on:
 
 jobs:
   DefaultTest:
-    uses: workflow.yml
+    uses: ./.github/workflows/workflow.yml
+    with:
+      APIKey: ${{ secrets.APIKey }}
