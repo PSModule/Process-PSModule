@@ -9,14 +9,4 @@ on:
 
 jobs:
   DefaultTest:
-    name: Test Workflow - [Default]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@main
-
-      - name: Test local workflow
-        uses: ./.github/workflows/workflow.yml
+    uses: ./workflow.yml
