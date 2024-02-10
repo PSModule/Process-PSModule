@@ -1,0 +1,22 @@
+name: Auto-Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  merged:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Auto-Release
+        uses: PSModule/Auto-Release@main
+        with:
+          eventData: ${{ toJson(github.event.pull_request) }}
+        env:
+          GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
