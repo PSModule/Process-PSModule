@@ -10,5 +10,4 @@ on:
 jobs:
   DefaultTest:
     uses: ./.github/workflows/workflow.yml
-    with:
-      APIKey: ${{ secrets.APIKey }}
+    secrets: inherit
