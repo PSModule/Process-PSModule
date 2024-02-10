@@ -1,38 +1,38 @@
-name: Process modules in repo
+name: Process-PSModule
 
 on:
   workflow_call:
     secrets:
       APIKey:
-        description: 'The API key to use when publishing modules'
+        description: The API key to use when publishing modules
         required: true
       GH_TOKEN:
-        description: 'The GitHub token to use when testing and modules'
+        description: The GitHub token to use when testing and modules
         required: false
     inputs:
       TestModuleSkip:
         type: boolean
-        description: 'Skip testing built module'
+        description: Skip testing built module
         required: false
         default: false
       TestModuleErrorAction:
         type: string
-        description: 'The ErrorActionPreference to use when running tests on built module'
+        description: The ErrorActionPreference to use when running tests on built module
         required: false
-        default: 'Stop'
+        default: Stop
       TestSrcSkip:
         type: boolean
-        description: 'Skip testing source code'
+        description: Skip testing source code
         required: false
         default: false
       TestSrcErrorAction:
         type: string
-        description: 'The ErrorActionPreference to use when running tests on source code'
+        description: The ErrorActionPreference to use when running tests on source code
         required: false
-        default: 'Stop'
+        default: Stop
       Version:
         type: string
-        description: 'The version of the module to process'
+        description: The version of the PSModule.FX to use
         required: false
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Get-PSModuleNames'
+      - name: Get-PSModuleNames
         id: Get-PSModuleNames
         shell: pwsh
         run: |
@@ -60,7 +60,7 @@ jobs:
       ModuleNames: ${{ steps.Get-PSModuleNames.outputs.ModuleNames }}
 
   Process-PSModule:
-    name: 'Process module'
+    name: Process module
     runs-on: ubuntu-latest
     needs:
       - Get-PSModuleNames
@@ -82,7 +82,7 @@ jobs:
         if: ${{ inputs.TestSrcSkip == false }}
         with:
           Name: ${{ matrix.ModuleName }}
-          Path: 'src'
+          Path: src
           ErrorAction: ${{ inputs.TestSrcErrorAction }}
 
       - name: Build module
@@ -95,9 +95,9 @@ jobs:
         if: ${{ inputs.TestModuleSkip == false }}
         with:
           Name: ${{ matrix.ModuleName }}
-          Path: 'outputs'
+          Path: outputs
           ErrorAction: ${{ inputs.TestModuleErrorAction }}
-          CustomTestsPath: 'tests'
+          CustomTestsPath: tests
         env:
           GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
