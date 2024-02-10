@@ -1,0 +1,23 @@
+name: Verify Workflow
+
+on:
+  workflow_call:
+  push:
+    paths:
+      - workflow.yml
+      - .github/workflows/Action-Test.yml
+      - scripts/**
+
+jobs:
+  DefaultTest:
+    name: Test Action - [Default]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@main
+
+      - name: Test local workflow
+        uses: ./workflow.yml
