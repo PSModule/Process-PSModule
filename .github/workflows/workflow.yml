@@ -73,12 +73,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@main
+        uses: PSModule/Initialize-PSModule@v0
         with:
           Version: ${{ inputs.Version }}
 
       - name: Test source code
-        uses: PSModule/Test-PSModule@main
+        uses: PSModule/Test-PSModule@v0
         if: ${{ inputs.TestSrcSkip == false }}
         with:
           Name: ${{ matrix.ModuleName }}
@@ -86,12 +86,12 @@ jobs:
           ErrorAction: ${{ inputs.TestSrcErrorAction }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@main
+        uses: PSModule/Build-PSModule@v0
         with:
           Name: ${{ matrix.ModuleName }}
 
       - name: Test built module
-        uses: PSModule/Test-PSModule@main
+        uses: PSModule/Test-PSModule@v0
         if: ${{ inputs.TestModuleSkip == false }}
         with:
           Name: ${{ matrix.ModuleName }}
@@ -102,7 +102,7 @@ jobs:
           GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@main
+        uses: PSModule/Publish-PSModule@v0
         with:
           APIKey: ${{ secrets.APIKEY }}
           Name: ${{ matrix.ModuleName }}
