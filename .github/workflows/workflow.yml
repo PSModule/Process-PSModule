@@ -1,0 +1,110 @@
+name: Process-PSModule
+
+on:
+  workflow_call:
+    secrets:
+      APIKey:
+        description: The API key to use when publishing modules
+        required: true
+      GH_TOKEN:
+        description: The GitHub token to use when testing and modules
+        required: false
+    inputs:
+      TestModuleSkip:
+        type: boolean
+        description: Skip testing built module
+        required: false
+        default: false
+      TestModuleErrorAction:
+        type: string
+        description: The ErrorActionPreference to use when running tests on built module
+        required: false
+        default: Stop
+      TestSrcSkip:
+        type: boolean
+        description: Skip testing source code
+        required: false
+        default: false
+      TestSrcErrorAction:
+        type: string
+        description: The ErrorActionPreference to use when running tests on source code
+        required: false
+        default: Stop
+      Version:
+        type: string
+        description: The version of the PSModule.FX to use
+        required: false
+
+jobs:
+  Get-PSModuleNames:
+    name: Get modules to process in repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get-PSModuleNames
+        id: Get-PSModuleNames
+        shell: pwsh
+        run: |
+          # Get-PSModuleNames
+          Write-Output "##[group]Get-PSModuleNames"
+          $srcPath = (Join-Path $env:GITHUB_WORKSPACE 'src')
+          $moduleNames = @()
+          $moduleNames += Get-ChildItem -Path $srcPath -Directory | Select-Object -ExpandProperty Name
+          $moduleNames = $moduleNames | ConvertTo-Json -AsArray -Compress
+          Write-Verbose "ModuleNames=$moduleNames" -Verbose
+          Write-Output "ModuleNames=$moduleNames" >> $env:GITHUB_OUTPUT
+          Write-Output "##[endgroup]"
+    outputs:
+      ModuleNames: ${{ steps.Get-PSModuleNames.outputs.ModuleNames }}
+
+  Process-PSModule:
+    name: Process module
+    runs-on: ubuntu-latest
+    needs:
+      - Get-PSModuleNames
+    strategy:
+      fail-fast: false
+      matrix:
+        ModuleName: ${{ fromJson(needs.Get-PSModuleNames.outputs.ModuleNames) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@main
+        with:
+          Version: ${{ inputs.Version }}
+
+      - name: Test source code
+        uses: PSModule/Test-PSModule@main
+        if: ${{ inputs.TestSrcSkip == false }}
+        with:
+          Name: ${{ matrix.ModuleName }}
+          Path: src
+          ErrorAction: ${{ inputs.TestSrcErrorAction }}
+
+      - name: Build module
+        uses: PSModule/Build-PSModule@main
+        with:
+          Name: ${{ matrix.ModuleName }}
+
+      - name: Test built module
+        uses: PSModule/Test-PSModule@main
+        if: ${{ inputs.TestModuleSkip == false }}
+        with:
+          Name: ${{ matrix.ModuleName }}
+          Path: outputs
+          ErrorAction: ${{ inputs.TestModuleErrorAction }}
+          CustomTestsPath: tests
+        env:
+          GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
+
+      - name: Publish module
+        uses: PSModule/Publish-PSModule@main
+        with:
+          APIKey: ${{ secrets.APIKEY }}
+          Name: ${{ matrix.ModuleName }}
+        env:
+          GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication

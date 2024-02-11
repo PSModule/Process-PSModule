@@ -1,0 +1,27 @@
+name: Auto-Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  Auto-Release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Auto-Release
+        uses: PSModule/Auto-Release@v1
+        env:
+          GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication

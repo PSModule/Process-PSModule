@@ -1,0 +1,13 @@
+name: Verify Workflow
+
+on:
+  workflow_call:
+  push:
+    paths:
+      - workflow.yml
+      - .github/workflows/Workflow-Test.yml
+
+jobs:
+  DefaultTest:
+    uses: ./.github/workflows/workflow.yml
+    secrets: inherit
