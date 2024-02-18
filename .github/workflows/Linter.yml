@@ -1,7 +1,11 @@
 name: Linter
 
+run-name: "Linter - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
 on:
-  pull_request:
+  pull_request_target:
+    branches:
+      - main
 
 jobs:
   Lint:

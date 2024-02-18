@@ -1,7 +1,9 @@
 name: Auto-Release
 
+run-name: "Auto-Release - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
     types:
@@ -14,6 +16,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   Auto-Release:
     runs-on: ubuntu-latest
@@ -25,3 +31,5 @@ jobs:
         uses: PSModule/Auto-Release@v1
         env:
           GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
+        with:
+          IncrementalPrerelease: false

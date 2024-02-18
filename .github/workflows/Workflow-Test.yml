@@ -1,13 +1,21 @@
-name: Verify Workflow
+name: Workflow-Test
 
 on:
-  workflow_call:
   push:
+    branches:
+      - main
     paths:
-      - workflow.yml
+      - .github/workflows/workflow.yml
       - .github/workflows/Workflow-Test.yml
+  pull_request_target:
+    branches:
+      - main
+    paths:
+      - action.yml
+      - .github/workflows/Action-Test.yml
+      - scripts/**
 
 jobs:
-  DefaultTest:
+  WorkflowTestDefault:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
