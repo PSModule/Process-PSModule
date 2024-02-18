@@ -6,9 +6,6 @@ on:
       APIKey:
         description: The API key to use when publishing modules
         required: true
-      # GITHUB_TOKEN:
-      #   description: The GitHub token to use when testing and modules
-      #   required: false
     inputs:
       TestModuleSkip:
         type: boolean
@@ -44,22 +41,22 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v0
+        uses: PSModule/Initialize-PSModule@main
         with:
           Version: ${{ inputs.Version }}
 
       - name: Test source code
-        uses: PSModule/Test-PSModule@v0
+        uses: PSModule/Test-PSModule@main
         if: ${{ inputs.TestSrcSkip == false }}
         with:
           Path: src
           ErrorAction: ${{ inputs.TestSrcErrorAction }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@v0
+        uses: PSModule/Build-PSModule@main
 
       - name: Test built module
-        uses: PSModule/Test-PSModule@v0
+        uses: PSModule/Test-PSModule@main
         if: ${{ inputs.TestModuleSkip == false }}
         with:
           Path: outputs
@@ -69,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@v0
+        uses: PSModule/Publish-PSModule@main
         with:
           APIKey: ${{ secrets.APIKEY }}
         env:
