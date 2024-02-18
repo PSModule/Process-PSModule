@@ -6,9 +6,9 @@ on:
       APIKey:
         description: The API key to use when publishing modules
         required: true
-      GITHUB_TOKEN:
-        description: The GitHub token to use when testing and modules
-        required: false
+      # GITHUB_TOKEN:
+      #   description: The GitHub token to use when testing and modules
+      #   required: false
     inputs:
       TestModuleSkip:
         type: boolean
