@@ -11,26 +11,6 @@ on:
         type: string
         description: The name of the module to process
         required: false
-      TestModuleSkip:
-        type: boolean
-        description: Skip testing built module
-        required: false
-        default: false
-      TestModuleErrorAction:
-        type: string
-        description: The ErrorActionPreference to use when running tests on built module
-        required: false
-        default: Stop
-      TestSrcSkip:
-        type: boolean
-        description: Skip testing source code
-        required: false
-        default: false
-      TestSrcErrorAction:
-        type: string
-        description: The ErrorActionPreference to use when running tests on source code
-        required: false
-        default: Stop
       Version:
         type: string
         description: The version of the PSModule.FX to use
@@ -55,11 +35,9 @@ jobs:
 
       - name: Test source code
         uses: PSModule/Test-PSModule@main
-        if: ${{ inputs.TestSrcSkip == false }}
         with:
           Name: ${{ inputs.Name }}
           Path: src
-          ErrorAction: ${{ inputs.TestSrcErrorAction }}
 
       - name: Build module
         uses: PSModule/Build-PSModule@main
@@ -70,11 +48,9 @@ jobs:
 
       - name: Test built module
         uses: PSModule/Test-PSModule@main
-        if: ${{ inputs.TestModuleSkip == false }}
         with:
           Name: ${{ inputs.Name }}
           Path: outputs/modules
-          ErrorAction: ${{ inputs.TestModuleErrorAction }}
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@main
