@@ -11,7 +11,6 @@ on:
         type: string
         description: The name of the module to process
         required: false
-        default: '*'
       TestModuleSkip:
         type: boolean
         description: Skip testing built module
@@ -67,15 +66,14 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: src
-          OutputPath: outputs
+          OutputPath: outputs/modules
 
       - name: Test built module
         uses: PSModule/Test-PSModule@main
         if: ${{ inputs.TestModuleSkip == false }}
         with:
           Name: ${{ inputs.Name }}
-          Path: outputs
-          CustomTestsPath: tests
+          Path: outputs/modules
           ErrorAction: ${{ inputs.TestModuleErrorAction }}
 
       - name: Publish module
