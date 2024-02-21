@@ -12,3 +12,5 @@ jobs:
   WorkflowTestDefault:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
+    with:
+      Name: 'PSModuleTestWF'
