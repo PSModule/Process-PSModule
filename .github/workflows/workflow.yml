@@ -44,19 +44,19 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: src
-          ModulesOutputPath: outputs/module
+          ModulesOutputPath: outputs/modules
           DocsOutputPath: outputs/docs
 
       - name: Test built module
         uses: PSModule/Test-PSModule@main
         with:
           Name: ${{ inputs.Name }}
-          Path: outputs/module
+          Path: outputs/modules
 
-      # - name: Publish module
-      #   uses: PSModule/Publish-PSModule@main
-      #   with:
-      #     Name: ${{ inputs.Name }}
-      #     ModulePath: outputs/module
-      #     DocsPath: outputs/docs
-      #     APIKey: ${{ secrets.APIKEY }}
+      - name: Publish module
+        uses: PSModule/Publish-PSModule@main
+        with:
+          Name: ${{ inputs.Name }}
+          ModulePath: outputs/modules
+          DocsPath: outputs/docs
+          APIKey: ${{ secrets.APIKEY }}
