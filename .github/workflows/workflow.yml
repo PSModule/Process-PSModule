@@ -47,11 +47,11 @@ jobs:
           ModulesOutputPath: outputs/module
           DocsOutputPath: outputs/docs
 
-      # - name: Test built module
-      #   uses: PSModule/Test-PSModule@main
-      #   with:
-      #     Name: ${{ inputs.Name }}
-      #     Path: outputs/module
+      - name: Test built module
+        uses: PSModule/Test-PSModule@main
+        with:
+          Name: ${{ inputs.Name }}
+          Path: outputs/module
 
       # - name: Publish module
       #   uses: PSModule/Publish-PSModule@main
