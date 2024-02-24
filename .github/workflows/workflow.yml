@@ -30,8 +30,6 @@ jobs:
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@main
-        with:
-          Version: ${{ inputs.Version }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@main
