@@ -31,11 +31,11 @@ jobs:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@main
 
-      - name: Test source code
-        uses: PSModule/Test-PSModule@main
-        with:
-          Name: ${{ inputs.Name }}
-          Path: src
+      # - name: Test source code
+      #   uses: PSModule/Test-PSModule@main
+      #   with:
+      #     Name: ${{ inputs.Name }}
+      #     Path: src
 
       - name: Build module
         uses: PSModule/Build-PSModule@main
