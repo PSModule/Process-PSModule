@@ -1,13 +1,10 @@
 name: Workflow-Test
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
-  pull_request_target:
-    branches:
-      - main
+  pull_request:
 
 permissions:
   contents: write
