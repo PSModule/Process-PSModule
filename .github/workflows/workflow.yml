@@ -9,18 +9,18 @@ on:
     inputs:
       Name:
         type: string
-        description: The name of the module to process
+        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
       Version:
         type: string
-        description: The version of the PSModule.FX to use
+        description: The version of the PSModule.FX to use. Defaults to the latest version.
         required: false
         default: '*'
-      TestingEnabled:
+      TestProcess:
         type: boolean
-        description: Whether to run tests
+        description: Whether to test the process.
         required: false
-        default: true
+        default: false
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
@@ -35,10 +35,11 @@ jobs:
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@main
+        with:
+          Version: ${{ inputs.Version }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@main
-        if: ${{ inputs.TestingEnabled }}
         with:
           Name: ${{ inputs.Name }}
           Path: src
@@ -53,7 +54,6 @@ jobs:
 
       - name: Test built module
         uses: PSModule/Test-PSModule@main
-        if: ${{ inputs.TestingEnabled }}
         with:
           Name: ${{ inputs.Name }}
           Path: outputs/modules
@@ -65,3 +65,4 @@ jobs:
           ModulePath: outputs/modules
           DocsPath: outputs/docs
           APIKey: ${{ secrets.APIKEY }}
+          WhatIf: ${{ inputs.TestProcess }}
