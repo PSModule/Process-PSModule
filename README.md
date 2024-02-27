@@ -76,7 +76,7 @@ The following secrets are required for the workflow to run
 | Name | Location | Description | Default |
 | ---- | -------- | ----------- | ------- |
 | `GITHUB_TOKEN` | `github` context | The token used to authenticate with GitHub. | ${{ secrets.GITHUB_TOKEN }} |
-| `APIKey` | github secrets | The API key for the PowerShell Gallery. | N/A |
+| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
 
 ## In detail
 
