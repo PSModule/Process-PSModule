@@ -1,8 +1,8 @@
-﻿Describe 'PSModule.Process.Tests.ps1' {
+﻿Describe 'PSModule.Tests.ps1' {
     It "Should be able to import the module" {
-        Import-Module -Name 'PSModule.Process'
-        Get-Module -Name 'PSModule.Process' | Should -Not -BeNullOrEmpty
-        Write-Verbose (Get-Module -Name 'PSModule.Process' | Out-String) -Verbose
+        Import-Module -Name 'PSModule'
+        Get-Module -Name 'PSModule' | Should -Not -BeNullOrEmpty
+        Write-Verbose (Get-Module -Name 'PSModule' | Out-String) -Verbose
     }
     It "Should be able to call the function" {
         Test-PSModuleTestWF -Name 'World' | Should -Be "Hello, World!"
