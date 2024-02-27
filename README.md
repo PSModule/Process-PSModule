@@ -63,10 +63,10 @@ jobs:
 ## Usage
 
 ### Inputs
+
 | Name | Type | Description | Required | Default |
 | ---- | ---- | ----------- | -------- | ------- |
 | `Name` | `string` | The name of the module to process. Scripts default to the repository name if nothing is specified. | false | N/A |
-| `Version` | `string` | The version of the PSModule.FX to use. Defaults to the latest version. | false | `*` |
 | `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
 
 ### Secrets

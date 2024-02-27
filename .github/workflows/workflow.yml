@@ -11,11 +11,6 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      Version:
-        type: string
-        description: The version of the PSModule.FX to use. Defaults to the latest version.
-        required: false
-        default: '*'
       TestProcess:
         type: boolean
         description: Whether to test the process.
@@ -35,8 +30,6 @@ jobs:
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@main
-        with:
-          Version: ${{ inputs.Version }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@main
