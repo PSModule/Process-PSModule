@@ -1,11 +1,103 @@
 # Process-PSModule
 
-Repository for the PSModule Process-PSModule workflow template.
-It stiches together the Initialize, Build, Test, and Publish workflows to create a complete CI/CD pipeline for PowerShell modules.
+A workflow for the PSModule process, stitching together the `Initialize`, `Build`, `Test`, and `Publish` actions to create a complete
+CI/CD pipeline for PowerShell modules. The workflow is used by all PowerShell modules in the PSModule organization.
+
+## Specifications and practices
+
+Process-PSModule follows:
+
+- [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
+- [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
+- [SemVer 2.0.0 specifications](https://semver.org)
+- [Continiuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
+
+## How it works
+
+The workflow is designed to be trigger on pull requests to the repository's default branch.
+When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
+Depending on the labels in the pull requests, the workflow will result in different outcomes. For more information see the
+[Publish-PSModule](https://github.com/PSModule/Publish-PSModule) action documentation.
+
+The workflow will run the following actions:
+
+- `Initialize-PSModule` - To prepare the runner for all requirements of the framework.
+- `Test` - Testing the source code.
+- `Build` - To compile the repository into an efficient PowerShell module.
+- `Test` - Testing the compiled module.
+- `Publish` - Publish the module to the PowerShell Gallery, publish docs to GitHub Pages, and create a release on the GitHub repository.
+
+To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
+<details>
+<summary>Workflow suggestion</summary>
+
+```yaml
+name: Process-PSModule
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+
+concurrency:
+  group: ${{ github.workflow }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v1
+    secrets: inherit
+
+```
+</details>
 
 ## Usage
 
-To be added.
+### Inputs
+
+| Name | Type | Description | Required | Default |
+| ---- | ---- | ----------- | -------- | ------- |
+| `Name` | `string` | The name of the module to process. Scripts default to the repository name if nothing is specified. | false | N/A |
+| `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
+
+### Secrets
+
+The following secrets are required for the workflow to run
+
+| Name | Location | Description | Default |
+| ---- | -------- | ----------- | ------- |
+| `GITHUB_TOKEN` | `github` context | The token used to authenticate with GitHub. | ${{ secrets.GITHUB_TOKEN }} |
+| `APIKey` | github secrets | The API key for the PowerShell Gallery. | N/A |
+
+## In detail
+
+The following steps will be run when the workflow triggers:
+
+- Checkout Code [actions/checkout](https://github.com/actions/checkout/)
+  - Checks out the code of the repository to the runner.
+- Initialize environment [PSModule/Initialize-PSModule](https://github.com/PSModule/Initialize-PSModule/)
+- Test source code [PSModule/Test-PSModule](https://github.com/PSModule/Test-PSModule/)
+  - Looks for the module in the `src` directory and runs the PSModule testing suite and module specific tests from the `tests` directory on the code.
+- Build module [PSModule/Build-PSModule](https://github.com/PSModule/Build-PSModule/)
+  - Compiles the `src` directory into a PowerShell module and docs.
+  - The compiled module is output to the `outputs/modules` directory.
+  - The compiled docs are output to the `outputs/docs` directory.
+- Test built module [PSModule/Test-PSModule](https://github.com/PSModule/Test-PSModule/)
+  - Looks for the module in the `outputs/modules` directory and runs the PSModule testing suite and module specific tests from the `tests` directory on the code.
+- Publish module [PSModule/Publish-PSModule](https://github.com/PSModule/Publish-PSModule/)
+  - Calculates the next version of the module based on the latest release and labels on the PR.
+  - Publishes the module to the PowerShell Gallery using the API key stored in as a secret named `APIKey`.
+  - Publishes the docs to GitHub Pages from the `outputs/docs` directory.
+    - Creates a release on the GitHub repository with the source code.
 
 ## More information about workflow templates
 

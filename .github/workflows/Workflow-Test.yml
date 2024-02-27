@@ -15,4 +15,5 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
-      Name: PSModuleTestWF
+      Name: PSModule.Process
+      TestProcess: true
