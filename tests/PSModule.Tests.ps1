@@ -5,7 +5,7 @@
         Write-Verbose (Get-Module -Name 'PSModule' | Out-String) -Verbose
     }
     It "Should be able to call the function" {
-        Test-PSModuleTestWF -Name 'World' | Should -Be "Hello, World!"
-        Write-Verbose (Test-PSModuleTestWF -Name 'World' | Out-String) -Verbose
+        Test-PSModule -Name 'World' | Should -Be "Hello, World!"
+        Write-Verbose (Test-PSModule -Name 'World' | Out-String) -Verbose
     }
 }
