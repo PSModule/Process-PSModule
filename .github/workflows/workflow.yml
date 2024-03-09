@@ -50,13 +50,13 @@ jobs:
 
       - name: Checkout tests -> PSModuleTest
         uses: actions/checkout@v4
-        if: ${{ inputs.TestProcess != true }}
+        if: ${{ inputs.TestProcess == true }}
         with:
           repository: PSModule/PSModuleTest
           path: tests
 
       - name: Delete outputs
-        if: ${{ inputs.TestProcess != true }}
+        if: ${{ inputs.TestProcess == true }}
         shell: pwsh
         run: |
           Remove-Item -Path tests/outputs -Recurse -Force -Verbose
