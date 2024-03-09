@@ -10,4 +10,7 @@ jobs:
     secrets: inherit
     with:
       Name: PSModule
+      Path: tests/src
+      ModulesOutputPath: tests/outputs/modules
+      DocsOutputPath: tests/outputs/docs
       TestProcess: true
