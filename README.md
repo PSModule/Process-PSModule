@@ -18,11 +18,11 @@ The workflow is designed to be trigger on pull requests to the repository's defa
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
 Depending on the labels in the pull requests, the workflow will result in different outcomes.
 
-- [Initialize-PSModule](https://github.com/PSModule/Initialize-PSModule/) - To prepare the runner for all requirements of the framework.
-- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Testing the source code using only PSScriptAnalyzer and the PSModule test suites.
-- [Build-PSModule](https://github.com/PSModule/Build-PSModule/) - To compile the repository into an efficient PowerShell module.
-- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Testing the compiled module using PSScriptAnalyzer, PSModule test suites and custom module tests.
-- [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publish the module to the PowerShell Gallery, publish docs to GitHub Pages, and create a release on the GitHub repository.
+- [Initialize-PSModule](https://github.com/PSModule/Initialize-PSModule/) - Prepares the runner with all the framework requirements.
+- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the source code using only PSScriptAnalyzer and the PSModule test suites.
+- [Build-PSModule](https://github.com/PSModule/Build-PSModule/) - Compiles the repository into an efficient PowerShell module.
+- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module using PSScriptAnalyzer, PSModule and module tests suites from the module repository.
+- [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publishes the module to the PowerShell Gallery, docs to GitHub Pages, and creates a release on the GitHub repository.
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
 <details>
@@ -64,6 +64,9 @@ jobs:
 | Name | Type | Description | Required | Default |
 | ---- | ---- | ----------- | -------- | ------- |
 | `Name` | `string` | The name of the module to process. This defaults to the repository name if nothing is specified. | `false` | N/A |
+| `Path` | `string` | The path to the source code of the module. | `false` | `src` |
+| `ModulesOutputPath` | `string` | The path to the output directory for the modules. | `false` | `outputs/modules` |
+| `DocsOutputPath` | `string` | The path to the output directory for the documentation. | `false` | `outputs/docs` |
 | `SkipTests` | `boolean` | Whether to skip the tests. | false | `false` |
 | `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
 

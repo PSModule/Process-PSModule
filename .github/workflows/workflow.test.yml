@@ -48,6 +48,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Checkout tests -> PSModuleTest
+        uses: actions/checkout@v4
+        if: ${{ inputs.TestProcess == true }}
+        with:
+          repository: PSModule/PSModuleTest
+          path: tests
+
+      - name: Delete outputs
+        if: ${{ inputs.TestProcess == true }}
+        shell: pwsh
+        run: |
+          Remove-Item -Path tests/outputs -Recurse -Force -Verbose
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
 
