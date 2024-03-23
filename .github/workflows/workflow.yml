@@ -128,8 +128,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        shell: pwsh
         include:
+        - shell: pwsh
         - os: windows-latest
           shell: powershell
     runs-on: ${{ matrix.os }}
