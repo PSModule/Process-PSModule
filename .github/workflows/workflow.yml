@@ -159,7 +159,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.Name }}-docs
-          path: ${{ github.workspace }}
+          path: ${{ inputs.DocsOutputPath }}
 
       - name: git add
         run: |
