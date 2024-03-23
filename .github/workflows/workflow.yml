@@ -161,7 +161,6 @@ jobs:
         uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_ALL_CODEBASE: false
           VALIDATE_NATURAL_LANGUAGE: true
           VALIDATE_MARKDOWN: true
 
