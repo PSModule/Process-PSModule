@@ -36,6 +36,15 @@ on:
         description: Whether to test the process.
         required: false
         default: false
+      Version:
+        type: string
+        description: The version of the 'Utilities' module to process.
+        required: false
+      Prerelease:
+        type: boolean
+        description: Whether the version is a prerelease.
+        required: false
+        default: false
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
@@ -50,6 +59,9 @@ jobs:
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@v1
