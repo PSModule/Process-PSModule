@@ -55,12 +55,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        - os: ubuntu-latest
-          shell: pwsh
-        - os: macos-latest
-          shell: pwsh
-        - os: windows-latest
-          shell: pwsh
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        shell: pwsh
+        include:
         - os: windows-latest
           shell: powershell
     runs-on: ${{ matrix.os }}
@@ -133,12 +130,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        - os: ubuntu-latest
-          shell: pwsh
-        - os: macos-latest
-          shell: pwsh
-        - os: windows-latest
-          shell: pwsh
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        shell: pwsh
+        include:
         - os: windows-latest
           shell: powershell
     runs-on: ${{ matrix.os }}
