@@ -64,8 +64,9 @@ jobs:
         - os: windows-latest
           shell: powershell
     runs-on: ${{ matrix.os }}
-    default:
-      shell: ${{ matrix.shell }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -141,8 +142,9 @@ jobs:
         - os: windows-latest
           shell: powershell
     runs-on: ${{ matrix.os }}
-    default:
-      shell: ${{ matrix.shell }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
