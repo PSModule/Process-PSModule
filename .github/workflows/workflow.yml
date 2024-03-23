@@ -60,6 +60,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -82,6 +84,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -171,6 +175,11 @@ jobs:
       - LintDocs
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
