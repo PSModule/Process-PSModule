@@ -46,6 +46,10 @@ on:
         required: false
         default: false
 
+defaults:
+  run:
+    shell: pwsh
+
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
