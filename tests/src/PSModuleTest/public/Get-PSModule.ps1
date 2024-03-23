@@ -4,7 +4,7 @@
 function Get-PSModule {
     <#
         .SYNOPSIS
-        Performs tests on a module.
+        Performs tests on a module, repo url.
 
         .EXAMPLE
         Test-PSModule -Name 'World'

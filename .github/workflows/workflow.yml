@@ -113,30 +113,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  LintDocs:
-    name: Lint documentation
-    needs: BuildModule
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download docs artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.Name }}-docs
-          path: ${{ inputs.DocsOutputPath }}
-
-      - name: Lint code base
-        uses: super-linter/super-linter/slim@latest
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_NATURAL_LANGUAGE: true
-          VALIDATE_MARKDOWN: true
-
   TestBuildModule:
     name: Test built module
     needs: BuildModule
@@ -164,6 +140,30 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
+
+  LintDocs:
+    name: Lint documentation
+    needs: BuildModule
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
+
+      - name: Lint code base
+        uses: super-linter/super-linter/slim@latest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_NATURAL_LANGUAGE: true
+          VALIDATE_MARKDOWN: true
 
   PublishModule:
     name: Publish module
