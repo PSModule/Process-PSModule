@@ -55,8 +55,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        OS: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.OS }}
+        - os: ubuntu-latest
+          shell: pwsh
+        - os: macos-latest
+          shell: pwsh
+        - os: windows-latest
+          shell: pwsh
+        - os: windows-latest
+          shell: powershell
+    runs-on: ${{ matrix.os }}
+    default:
+      shell: ${{ matrix.shell }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -123,8 +132,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        OS: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.OS }}
+        - os: ubuntu-latest
+          shell: pwsh
+        - os: macos-latest
+          shell: pwsh
+        - os: windows-latest
+          shell: pwsh
+        - os: windows-latest
+          shell: powershell
+    runs-on: ${{ matrix.os }}
+    default:
+      shell: ${{ matrix.shell }}
     steps:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -168,7 +186,7 @@ jobs:
           git add .
           git commit -m "Update documentation"
 
-      - name: Lint code base
+      - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
