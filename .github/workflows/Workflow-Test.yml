@@ -6,7 +6,7 @@ on: [pull_request]
 
 jobs:
   WorkflowTestDefault:
-    uses: ./.github/workflows/workflow.test.yml
+    uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
       Name: PSModuleTest
