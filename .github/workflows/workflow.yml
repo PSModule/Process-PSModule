@@ -60,6 +60,9 @@ jobs:
         - shell: pwsh
         - os: windows-latest
           shell: powershell
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
@@ -133,6 +136,9 @@ jobs:
         - os: windows-latest
           shell: powershell
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
