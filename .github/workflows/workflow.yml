@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        shell: pwsh
+        shell: [pwsh]
         include:
         - os: windows-latest
           shell: powershell
