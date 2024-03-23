@@ -50,9 +50,13 @@ env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
 jobs:
-  Process-PSModule:
-    name: Process module
-    runs-on: ubuntu-latest
+  TestSourceCode:
+    name: Test source code
+    strategy:
+      fail-fast: false
+      matrix:
+        OS: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.OS }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -71,6 +75,20 @@ jobs:
           Path: ${{ inputs.Path }}
           RunModuleTests: false
 
+  BuildModule:
+    name: Build module
+    needs: TestSourceCode
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
       - name: Build module
         uses: PSModule/Build-PSModule@v1
         with:
@@ -79,12 +97,47 @@ jobs:
           ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
           DocsOutputPath: ${{ inputs.DocsOutputPath }}
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.Name }}
+          path: ${{ inputs.ModulesOutputPath }}
+
+  TestBuildModule:
+    name: Test built module
+    needs: BuildModule
+    strategy:
+      fail-fast: false
+      matrix:
+        OS: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.OS }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
       - name: Test built module
         uses: PSModule/Test-PSModule@v1
         if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
+
+  PublishModule:
+    name: Publish module
+    needs: TestBuildModule
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ inputs.Name }}
+          path: ${{ inputs.ModulesOutputPath }}
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v1
