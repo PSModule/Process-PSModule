@@ -118,11 +118,8 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Version: ${{ inputs.Version }}
-          Prerelease: ${{ inputs.Prerelease }}
+      - name: Initialize empty git repo
+        run: git init
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
