@@ -161,6 +161,9 @@ jobs:
           name: ${{ inputs.Name }}-docs
           path: ${{ inputs.DocsOutputPath }}
 
+      - name: git add
+        run: git add .
+
       - name: Lint code base
         uses: super-linter/super-linter@latest
         env:
