@@ -100,7 +100,7 @@ jobs:
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.Name }}
+          name: ${{ inputs.Name }}-module
           path: ${{ inputs.ModulesOutputPath }}
           if-no-files-found: error
           retention-days: 1
@@ -108,10 +108,32 @@ jobs:
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.Name }}
+          name: ${{ inputs.Name }}-docs
           path: ${{ inputs.DocsOutputPath }}
           if-no-files-found: error
           retention-days: 1
+
+  LintDocs:
+    name: Lint documentation
+    needs: BuildModule
+    runs-on: ubuntu-latest
+    steps:
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
+
+      - name: Lint code base
+        uses: github/super-linter@latest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   TestBuildModule:
     name: Test built module
@@ -128,10 +150,10 @@ jobs:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
 
-      - name: Download artifact
+      - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.Name }}
+          name: ${{ inputs.Name }}-module
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Test built module
