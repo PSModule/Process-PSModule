@@ -161,7 +161,7 @@ jobs:
           name: ${{ inputs.Name }}-docs
           path: ${{ inputs.DocsOutputPath }}
 
-      - name: git add
+      - name: Git add - For linting
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
@@ -169,7 +169,7 @@ jobs:
           git commit -m "Update documentation"
 
       - name: Lint code base
-        uses: super-linter/super-linter@latest
+        uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_NATURAL_LANGUAGE: true
