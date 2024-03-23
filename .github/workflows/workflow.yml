@@ -128,10 +128,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.Name }}-docs
-          path: ${{ inputs.DocsOutputPath }}
 
       - name: Lint code base
-        uses: github/super-linter@latest
+        uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -165,7 +164,9 @@ jobs:
 
   PublishModule:
     name: Publish module
-    needs: TestBuildModule
+    needs:
+      - TestBuildModule
+      - LintDocs
     runs-on: ubuntu-latest
     steps:
       - name: Initialize environment
@@ -174,11 +175,17 @@ jobs:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
 
-      - name: Download artifact
+      - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.Name }}
+          name: ${{ inputs.Name }}-module
           path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v1
