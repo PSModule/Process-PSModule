@@ -159,7 +159,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.Name }}-docs
-          path: ${{ inputs.DocsOutputPath }}
+          path: ${{ github.workspace }}
 
       - name: git add
         run: |
@@ -172,7 +172,6 @@ jobs:
         uses: github/super-linter@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_ALL_CODEBASE: false
           VALIDATE_NATURAL_LANGUAGE: true
           VALIDATE_MARKDOWN: true
 
