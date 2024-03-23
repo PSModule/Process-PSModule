@@ -150,19 +150,13 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Git init
+        run: git init
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.Name }}-docs
-          path: ${{ inputs.DocsOutputPath }}
-
-      - name: git add
-        run: git add .
 
       - name: Lint code base
         uses: super-linter/super-linter@latest
