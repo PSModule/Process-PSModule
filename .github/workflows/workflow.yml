@@ -46,10 +46,6 @@ on:
         required: false
         default: false
 
-defaults:
-  run:
-    shell: pwsh
-
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
@@ -122,13 +118,14 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Initialize empty git repo
-        run: git init
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
 
       - name: Lint code base
         uses: super-linter/super-linter/slim@latest
