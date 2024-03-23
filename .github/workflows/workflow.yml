@@ -112,14 +112,17 @@ jobs:
         OS: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.OS }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ inputs.Name }}
+          path: ${{ inputs.ModulesOutputPath }}
 
       - name: Test built module
         uses: PSModule/Test-PSModule@v1
@@ -133,6 +136,12 @@ jobs:
     needs: TestBuildModule
     runs-on: ubuntu-latest
     steps:
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
