@@ -1,4 +1,3 @@
-#checkov:skip=CKV2_GHA_1: Ensure top-level permissions are not set to write-all : This is not a workflow, but a template.
 name: Process-PSModule
 
 on:
@@ -49,6 +48,10 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   TestSourceCode:
