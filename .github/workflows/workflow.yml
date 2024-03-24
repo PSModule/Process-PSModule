@@ -89,7 +89,6 @@ jobs:
 
   BuildModule:
     name: Build module
-    needs: TestSourceCode
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -194,6 +193,7 @@ jobs:
   PublishModule:
     name: Publish module
     needs:
+      - TestSourceCode
       - TestBuildModule
       - LintDocs
     runs-on: ubuntu-latest
