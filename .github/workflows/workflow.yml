@@ -55,14 +55,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        shell: [pwsh]
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
-        - shell: pwsh
-        - os: windows-latest
-          shell: powershell
-    defaults:
-      run:
-        shell: ${{ matrix.shell }}
+          - shell: powershell
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
@@ -75,6 +72,7 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
+          Shell: ${{ matrix.shell }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@v1
@@ -82,6 +80,7 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
+          Shell: ${{ matrix.shell }}
           RunModuleTests: false
 
   BuildModule:
@@ -130,21 +129,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        shell: [pwsh]
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
-        - shell: pwsh
-        - os: windows-latest
-          shell: powershell
+          - shell: powershell
+            os: windows-latest
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: ${{ matrix.shell }}
     steps:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
+          Shell: ${{ matrix.shell }}
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
@@ -158,6 +155,7 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
+          Shell: ${{ matrix.shell }}
 
   LintDocs:
     name: Lint documentation
