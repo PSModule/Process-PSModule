@@ -154,7 +154,6 @@ jobs:
   PublishModule:
     name: Publish module
     needs:
-      - TestSourceCode
       - TestBuildModule
       - LintDocs
     runs-on: ubuntu-latest
