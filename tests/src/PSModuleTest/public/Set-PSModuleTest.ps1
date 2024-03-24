@@ -1,16 +1,17 @@
-﻿#Requires -Version 7.4
-#Requires -Modules Utilities
-
-function Get-PSModule {
+﻿function Set-PSModuleTest {
     <#
         .SYNOPSIS
-        Performs tests on a module, repo url.
+        Performs tests on a module.
 
         .EXAMPLE
         Test-PSModule -Name 'World'
 
         "Hello, World!"
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+        'PSUseShouldProcessForStateChangingFunctions', '', Scope = 'Function',
+        Justification = 'Reason for suppressing'
+    )]
     [CmdletBinding()]
     param (
         # Name of the person to greet.

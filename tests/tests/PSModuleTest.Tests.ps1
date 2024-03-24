@@ -1,6 +1,6 @@
 ﻿Describe 'PSModuleTest.Tests.ps1' {
     It 'Should be able to import the module' {
-        Import-Module -Name 'PSModuleTest'
+        Import-Module -Name 'PSModuleTest' -Verbose
         Get-Module -Name 'PSModuleTest' | Should -Not -BeNullOrEmpty
         Write-Verbose (Get-Module -Name 'PSModuleTest' | Out-String) -Verbose
     }

@@ -1,5 +1,4 @@
-﻿#Requires -PSEdition Core
-function Set-PSModule {
+﻿function Test-PSModuleTest {
     <#
         .SYNOPSIS
         Performs tests on a module.
@@ -9,10 +8,6 @@ function Set-PSModule {
 
         "Hello, World!"
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-        'PSUseShouldProcessForStateChangingFunctions', '', Scope = 'Function',
-        Justification = 'Reason for suppressing'
-    )]
     [CmdletBinding()]
     param (
         # Name of the person to greet.
