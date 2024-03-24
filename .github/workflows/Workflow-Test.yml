@@ -4,14 +4,17 @@ run-name: "Workflow-Test - [${{ github.event.pull_request.title }} #${{ github.e
 
 on: [pull_request]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   WorkflowTestDefault:
-    uses: ./.github/workflows/workflow.test.yml
+    uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
-      Name: PSModule
+      Name: PSModuleTest
       Path: tests/src
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
       TestProcess: true
-      PreRelease: true

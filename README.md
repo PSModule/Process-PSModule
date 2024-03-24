@@ -112,3 +112,14 @@ permissions:
   contents: write # Required to create releases
   pull-requests: write # Required to create comments on the PRs
 ```
+
+## Compatibility
+
+The action is compatible with the following configurations:
+
+| OS | Shell |
+| --- | --- |
+| windows-latest | pwsh |
+| windows-latest | powershell |
+| macos-latest | pwsh |
+| ubuntu-latest | pwsh |

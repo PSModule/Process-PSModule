@@ -49,19 +49,34 @@ on:
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  Process-PSModule:
-    name: Process module
-    runs-on: ubuntu-latest
+  TestSourceCode:
+    name: Test source code
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - shell: powershell
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
+          Shell: ${{ matrix.shell }}
 
       - name: Test source code
         uses: PSModule/Test-PSModule@v1
@@ -69,7 +84,23 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
+          Shell: ${{ matrix.shell }}
           RunModuleTests: false
+
+  BuildModule:
+    name: Build module
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
 
       - name: Build module
         uses: PSModule/Build-PSModule@v1
@@ -79,12 +110,116 @@ jobs:
           ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
           DocsOutputPath: ${{ inputs.DocsOutputPath }}
 
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-module
+          path: ${{ inputs.ModulesOutputPath }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
+          if-no-files-found: error
+          retention-days: 1
+
+  TestBuildModule:
+    name: Test built module
+    needs: BuildModule
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - shell: powershell
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: ${{ matrix.shell }}
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-module
+          path: ${{ inputs.ModulesOutputPath }}
+
       - name: Test built module
         uses: PSModule/Test-PSModule@v1
         if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
+          Shell: ${{ matrix.shell }}
+
+  LintDocs:
+    name: Lint documentation
+    needs: BuildModule
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
+
+      - name: Git add - For linting
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add .
+          git commit -m "Update documentation"
+
+      - name: Lint documentation
+        uses: super-linter/super-linter/slim@latest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VALIDATE_NATURAL_LANGUAGE: true
+          VALIDATE_MARKDOWN: true
+
+  PublishModule:
+    name: Publish module
+    needs:
+      - TestSourceCode
+      - TestBuildModule
+      - LintDocs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.Name }}-docs
+          path: ${{ inputs.DocsOutputPath }}
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v1
