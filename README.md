@@ -113,7 +113,13 @@ permissions:
   pull-requests: write # Required to create comments on the PRs
 ```
 
-## Links
+## Compatibility
 
-- [Storing workflow data as artifacts | GitHub Docs](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts)
-- [Building and testing PowerShell | GitHub Docs](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-powershell)
+The action is compatible with the following configurations:
+
+| OS | Shell |
+| --- | --- |
+| windows-latest | pwsh |
+| windows-latest | powershell |
+| macos-latest | pwsh |
+| ubuntu-latest | pwsh |
