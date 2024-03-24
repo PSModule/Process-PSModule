@@ -77,7 +77,7 @@ jobs:
           Shell: ${{ matrix.shell }}
 
       - name: Test source code
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@test
         if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
@@ -152,7 +152,7 @@ jobs:
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Test built module
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@test
         if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
