@@ -68,8 +68,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -93,8 +91,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -139,6 +135,9 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -180,8 +179,8 @@ jobs:
         uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_NATURAL_LANGUAGE: true
-          VALIDATE_MARKDOWN: true
+          # VALIDATE_NATURAL_LANGUAGE: true
+          # VALIDATE_MARKDOWN: true
 
   PublishModule:
     name: Publish module
@@ -193,8 +192,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
