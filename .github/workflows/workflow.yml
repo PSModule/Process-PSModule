@@ -142,9 +142,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
+          path: ${{ inputs.DocsOutputPath }}
 
-      - name: Commit docs
+      - name: Commit docs for linting
         run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "Update documentation"
 
