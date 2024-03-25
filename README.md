@@ -20,8 +20,8 @@ Depending on the labels in the pull requests, the workflow will result in differ
 
 - [Build-PSModule](https://github.com/PSModule/Build-PSModule/) - Compiles the repository into an efficient PowerShell module.
 - [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module using PSScriptAnalyzer, PSModule and module tests suites from the module repository. This runs on 4 different environments to check compatibility.
-  - PowerShell 7.x on Windows, Ubuntu and MacOS
-  - Windows PowerShell 5.1 on Windows
+  - PowerShell 7.x on Windows, Ubuntu and macOS.
+  - Windows PowerShell 5.1 on Windows.
 - [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publishes the module to the PowerShell Gallery, docs to GitHub Pages, and creates a release on the GitHub repository.
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
