@@ -52,49 +52,15 @@ env:
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
 
 jobs:
-  TestSourceCode:
-    name: Test source code
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [pwsh]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - shell: powershell
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Version: ${{ inputs.Version }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Shell: ${{ matrix.shell }}
-
-      - name: Test source code
-        uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.Path }}
-          Shell: ${{ matrix.shell }}
-          RunModuleTests: false
-
   BuildModule:
     name: Build module
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -113,7 +79,7 @@ jobs:
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.Name }}-module
+          name: module
           path: ${{ inputs.ModulesOutputPath }}
           if-no-files-found: error
           retention-days: 1
@@ -121,13 +87,13 @@ jobs:
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.Name }}-docs
+          name: docs
           path: ${{ inputs.DocsOutputPath }}
           if-no-files-found: error
           retention-days: 1
 
-  TestBuildModule:
-    name: Test built module
+  TestModule:
+    name: Test module
     needs: BuildModule
     strategy:
       fail-fast: false
@@ -139,6 +105,9 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -149,7 +118,7 @@ jobs:
       - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.Name }}-module
+          name: module
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Test built module
@@ -173,13 +142,12 @@ jobs:
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.Name }}-docs
-          path: ${{ inputs.DocsOutputPath }}
+          name: docs
 
-      - name: Git add - For linting
+      - name: Commit docs for linting
         run: |
+          git config --global user.name "Github Actions"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
           git add .
           git commit -m "Update documentation"
 
@@ -187,21 +155,16 @@ jobs:
         uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_NATURAL_LANGUAGE: true
-          VALIDATE_MARKDOWN: true
 
   PublishModule:
     name: Publish module
     needs:
-      - TestSourceCode
-      - TestBuildModule
+      - TestModule
       - LintDocs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -212,13 +175,13 @@ jobs:
       - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.Name }}-module
+          name: module
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.Name }}-docs
+          name: docs
           path: ${{ inputs.DocsOutputPath }}
 
       - name: Publish module
