@@ -89,6 +89,7 @@ If running the action in a restrictive mode, the following permissions needs to 
 permissions:
   contents: write # Required to create releases
   pull-requests: write # Required to create comments on the PRs
+  statuses: write # Required to update the status of the PRs from the linter
 ```
 
 ## Compatibility
