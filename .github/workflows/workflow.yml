@@ -133,11 +133,10 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Init temp repo
-        run: |
-          git init
-          git config user.name "GitHub Actions"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
