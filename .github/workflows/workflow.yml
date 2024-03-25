@@ -133,14 +133,21 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Init temp repo
+        run: |
+          git init
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: ${{ inputs.DocsOutputPath }}
+
+      - name: Commit docs
+        run: |
+          git add .
+          git commit -m "Update documentation"
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
