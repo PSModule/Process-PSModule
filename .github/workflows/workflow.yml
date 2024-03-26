@@ -156,6 +156,8 @@ jobs:
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
+          DEFAULT_BRANCH: main
+          DEFAULT_WORKSPACE: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
           RUN_LOCAL: true
 
