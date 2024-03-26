@@ -145,6 +145,7 @@ jobs:
           name: docs
 
       - name: Commit docs for linting
+        id: commit-docs
         shell: pwsh
         run: |
           git config --global user.name "Github Actions"
@@ -153,13 +154,20 @@ jobs:
           git commit -m "Update documentation"
           $sha = git rev-parse HEAD
           Write-Verbose "SHA: $sha"
-          $env:GITHUB_SHA = $sha
+          "DOCSHA=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Commit docs for linting
+        shell: pwsh
+        run: |
+          Write-Verbose "SHA: $env:GITHUB_SHA"
+        env:
+          GITHUB_SHA: ${{ steps.commit-docs.outputs.DOCSHA }}
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_SHA: $sha
+          GITHUB_SHA: ${{ steps.commit-docs.outputs.DOCSHA }}
 
   PublishModule:
     name: Publish module
