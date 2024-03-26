@@ -144,14 +144,14 @@ jobs:
         with:
           name: docs
 
-      - name: Commit docs for linting
-        id: commit-docs
-        shell: pwsh
-        run: |
-          git config --global user.name "Github Actions"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Update documentation"
+      # - name: Commit docs for linting
+      #   id: commit-docs
+      #   shell: pwsh
+      #   run: |
+      #     git config --global user.name "Github Actions"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add .
+      #     git commit -m "Update documentation"
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
@@ -159,7 +159,7 @@ jobs:
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-          RUN_LOCAL: true # Running "locally" to avoid issues with the GitHub Actions environment.
+          RUN_LOCAL: true # Running "locally" to avoid issues with GITHUB_SHA issue of a squash merge.
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
 
   PublishModule:
