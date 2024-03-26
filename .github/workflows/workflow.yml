@@ -153,13 +153,13 @@ jobs:
           git add .
           git commit -m "Update documentation"
           $sha = git rev-parse HEAD
-          Write-Verbose "SHA: $sha"
+          Write-Verbose "SHA: $sha" -Verbose
           "DOCSHA=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Commit docs for linting
         shell: pwsh
         run: |
-          Write-Verbose "SHA: $env:GITHUB_SHA"
+          Write-Verbose "SHA: $env:GITHUB_SHA" -Verbose
         env:
           GITHUB_SHA: ${{ steps.commit-docs.outputs.DOCSHA }}
 
