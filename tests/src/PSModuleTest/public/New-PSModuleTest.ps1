@@ -3,7 +3,7 @@
 function New-PSModuleTest {
     <#
         .SYNOPSIS
-        Performs tests on a module. Repo.
+        Performs tests on a module.
 
         .EXAMPLE
         Test-PSModule -Name 'World'
