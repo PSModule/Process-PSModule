@@ -160,6 +160,7 @@ jobs:
           DEFAULT_WORKSPACE: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
           RUN_LOCAL: true
+          ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
 
   PublishModule:
     name: Publish module
