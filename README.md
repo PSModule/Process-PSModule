@@ -18,8 +18,11 @@ The workflow is designed to be trigger on pull requests to the repository's defa
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
 Depending on the labels in the pull requests, the workflow will result in different outcomes.
 
+- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the source code using PSScriptAnalyzer, PSModule source code tests suites. This runs on 4 different environments to check compatibility.
+  - PowerShell 7.x on Windows, Ubuntu and macOS.
+  - Windows PowerShell 5.1 on Windows.
 - [Build-PSModule](https://github.com/PSModule/Build-PSModule/) - Compiles the repository into an efficient PowerShell module.
-- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module using PSScriptAnalyzer, PSModule and module tests suites from the module repository. This runs on 4 different environments to check compatibility.
+- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module using PSScriptAnalyzer, PSModule module tests and custom module tests from the module repository. This runs on 4 different environments to check compatibility.
   - PowerShell 7.x on Windows, Ubuntu and macOS.
   - Windows PowerShell 5.1 on Windows.
 - [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publishes the module to the PowerShell Gallery, docs to GitHub Pages, and creates a release on the GitHub repository.

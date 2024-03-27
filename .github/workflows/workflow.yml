@@ -55,8 +55,40 @@ permissions:
   statuses: write
 
 jobs:
+  TestSourceCode:
+    name: Test source code
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - shell: powershell
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: ${{ matrix.shell }}
+
+      - name: Test built module
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: ${{ matrix.shell }}
+          TestType: 'SourceCode'
+
   BuildModule:
     name: Build module
+    needs: TestSourceCode
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -128,6 +160,7 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: ${{ matrix.shell }}
+          TestType: 'Module'
 
   LintDocs:
     name: Lint documentation
