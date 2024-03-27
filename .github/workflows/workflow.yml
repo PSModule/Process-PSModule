@@ -56,7 +56,7 @@ permissions:
 
 jobs:
   TestSourceCode:
-    name: Test source code
+    name: Test code
     strategy:
       fail-fast: false
       matrix:
@@ -126,7 +126,7 @@ jobs:
 
   #This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
-    name: Test module (pwsh@ubuntu-latest)
+    name: Test module (pwsh, ubuntu-latest)
     needs: BuildModule
     runs-on: ubuntu-latest
     outputs:
@@ -160,7 +160,7 @@ jobs:
           TestType: Module
 
   TestModule-pwsh-macos-latest:
-    name: Test module (pwsh@macos-latest)
+    name: Test module (pwsh, macos-latest)
     needs: BuildModule
     runs-on: macos-latest
     outputs:
@@ -194,7 +194,7 @@ jobs:
           TestType: 'Module'
 
   TestModule-pwsh-windows-latest:
-    name: Test module (pwsh@windows-latest)
+    name: Test module (pwsh, windows-latest)
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -228,7 +228,7 @@ jobs:
           TestType: 'Module'
 
   TestModule-powershell-windows-latest:
-    name: Test module (powershell@windows-latest)
+    name: Test module (powershell, windows-latest)
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -273,6 +273,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
       - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
@@ -299,13 +305,15 @@ jobs:
           Write-Verbose "Status:" -Verbose
           Write-Verbose ($Status | Out-String) -Verbose
 
-      # - name: Upload module artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: module
-      #     path: ${{ inputs.ModulesOutputPath }}
-      #     if-no-files-found: error
-      #     retention-days: 1
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object FullName | Sort-Object
+
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+          if-no-files-found: error
+          retention-days: 1
 
   LintDocs:
     name: Lint documentation
