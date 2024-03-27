@@ -82,7 +82,7 @@ jobs:
         if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
-          Path: ${{ inputs.ModulesOutputPath }}
+          Path: ${{ inputs.Path }}
           Shell: ${{ matrix.shell }}
           TestType: 'SourceCode'
 
