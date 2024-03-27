@@ -56,7 +56,7 @@ permissions:
 
 jobs:
   TestSourceCode:
-    name: Test module
+    name: Test source code
     strategy:
       fail-fast: false
       matrix:
