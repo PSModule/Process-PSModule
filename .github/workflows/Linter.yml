@@ -4,6 +4,10 @@ run-name: "Linter - [${{ github.event.pull_request.title }} #${{ github.event.pu
 
 on: [pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: read

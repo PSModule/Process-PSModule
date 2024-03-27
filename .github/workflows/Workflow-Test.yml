@@ -4,6 +4,10 @@ run-name: "Workflow-Test - [${{ github.event.pull_request.title }} #${{ github.e
 
 on: [pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   pull-requests: write

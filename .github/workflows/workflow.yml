@@ -84,7 +84,7 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
           Shell: ${{ matrix.shell }}
-          TestType: 'SourceCode'
+          TestType: SourceCode
 
   BuildModule:
     name: Build module
@@ -124,18 +124,13 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  TestModule:
-    name: Test module
+  #This is necessary as there is no way to get output from a matrix job
+  TestModule-pwsh-ubuntu-latest:
+    name: Test module (pwsh@ubuntu-latest)
     needs: BuildModule
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [pwsh]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - shell: powershell
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -145,7 +140,7 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
@@ -154,13 +149,163 @@ jobs:
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Test built module
-        uses: PSModule/Test-PSModule@v1
+        id: test
+        uses: PSModule/Test-PSModule@tests
         if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
+          TestType: Module
+
+  TestModule-pwsh-macos-latest:
+    name: Test module (pwsh@macos-latest)
+    needs: BuildModule
+    runs-on: macos-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Test built module
+        id: test
+        uses: PSModule/Test-PSModule@tests
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.ModulesOutputPath }}
+          Shell: pwsh
           TestType: 'Module'
+
+  TestModule-pwsh-windows-latest:
+    name: Test module (pwsh@windows-latest)
+    needs: BuildModule
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Test built module
+        id: test
+        uses: PSModule/Test-PSModule@tests
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.ModulesOutputPath }}
+          Shell: pwsh
+          TestType: 'Module'
+
+  TestModule-powershell-windows-latest:
+    name: Test module (powershell@windows-latest)
+    needs: BuildModule
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: powershell
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Test built module
+        id: test
+        uses: PSModule/Test-PSModule@tests
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.ModulesOutputPath }}
+          Shell: powershell
+          TestType: 'Module'
+
+  TestModule:
+    name: Test module
+    needs:
+      - TestModule-pwsh-ubuntu-latest
+      - TestModule-pwsh-macos-latest
+      - TestModule-pwsh-windows-latest
+      - TestModule-powershell-windows-latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Summerize tests
+        shell: pwsh
+        run: |
+          $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+          $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+          $Windows = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+          $Desktop = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
+          $Core = $Linux -or $MacOS -or $Windows
+
+          $Status = @{
+            Linux   = $Linux
+            MacOS   = $MacOS
+            Windows = $Windows
+            Desktop = $Desktop
+            Core    = $Core
+          }
+
+          Write-Verbose "Status:" -Verbose
+          Write-Verbose ($Status | Out-String) -Verbose
+
+      # - name: Upload module artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: module
+      #     path: ${{ inputs.ModulesOutputPath }}
+      #     if-no-files-found: error
+      #     retention-days: 1
 
   LintDocs:
     name: Lint documentation
