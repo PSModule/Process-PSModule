@@ -403,6 +403,7 @@ jobs:
 
   Test:
     name: Test
+    if: success() || failure()
     needs:
       - TestModuleStatus
       - LintDocs
