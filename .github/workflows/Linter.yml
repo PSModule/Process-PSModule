@@ -5,13 +5,13 @@ run-name: "Linter - [${{ github.event.pull_request.title }} #${{ github.event.pu
 on: [pull_request]
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
   packages: read
-  statuses: write # To report GitHub Actions status checks
+  statuses: write
 
 jobs:
   Lint:
