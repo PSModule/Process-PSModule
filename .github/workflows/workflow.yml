@@ -151,8 +151,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -185,8 +185,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -219,8 +219,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -253,8 +253,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -262,7 +262,7 @@ jobs:
           TestType: 'Module'
 
   TestModuleStatus:
-    name: Test module
+    name: Test module status
     needs:
       - TestModule-pwsh-ubuntu-latest
       - TestModule-pwsh-macos-latest
