@@ -261,7 +261,7 @@ jobs:
           Shell: powershell
           TestType: 'Module'
 
-  TestModule:
+  TestModuleStatus:
     name: Test module
     needs:
       - TestModule-pwsh-ubuntu-latest
@@ -289,6 +289,10 @@ jobs:
       - name: Summerize tests
         shell: pwsh
         run: |
+          $test = '${{ toJson(needs) }}' | ConvertFrom-Json
+
+          $test
+
           Start-LogGroup -Name 'Status'
           $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
           $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
@@ -399,9 +403,9 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModule.result == 'success' && needs.LintDocs.result == 'success' }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' }}
     needs:
-      - TestModule
+      - TestModuleStatus
       - LintDocs
     runs-on: ubuntu-latest
     steps:
