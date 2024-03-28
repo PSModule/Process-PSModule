@@ -302,10 +302,39 @@ jobs:
             Core    = $Core
           }
 
-          Write-Verbose "Status:" -Verbose
-          Write-Verbose ($Status | Out-String) -Verbose
+          Write-Host "Status"
+          Write-Host ($Status | Out-String)
 
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object FullName | Sort-Object
+          if (-not ($Core -or $Desktop)) {
+            Write-Host "::[error]::No tests passed"
+            exit 1
+          }
+
+          $moduleName = ('${{ inputs.Name }}' | IsNullOrEmpty) ? $env:GITHUB_REPOSITORY_NAME : $env:GITHUB_ACTION_INPUT_Name
+          $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
+          $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
+
+          if ($Desktop) {
+              Add-ModuleManifest -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
+              Add-ModuleManifest -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
+          }
+
+          if ($Core) {
+              Add-ModuleManifest -Path $moduleManifestPath -CompatiblePSEditions 'Core'
+              Add-ModuleManifest -Path $moduleManifestPath -Tags 'PSEdition_Core'
+          }
+
+          if ($Linux) {
+            Add-ModuleManifest -Path $moduleManifestPath -Tags 'Linux'
+          }
+
+          if ($MacOS) {
+            Add-ModuleManifest -Path $moduleManifestPath -Tags 'MacOS'
+          }
+
+          if ($Windows) {
+            Add-ModuleManifest -Path $moduleManifestPath -Tags 'Windows'
+          }
 
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
@@ -314,6 +343,7 @@ jobs:
           path: ${{ inputs.ModulesOutputPath }}
           if-no-files-found: error
           retention-days: 1
+          overwrite: true
 
   LintDocs:
     name: Lint documentation
