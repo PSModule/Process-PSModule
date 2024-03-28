@@ -399,7 +399,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: success()
+    if: ${{ jobs.TestModule.result == 'success' && jobs.LintDocs.result == 'success' }}
     needs:
       - TestModule
       - LintDocs
