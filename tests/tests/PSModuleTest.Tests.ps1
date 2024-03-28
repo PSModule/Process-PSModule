@@ -1,4 +1,13 @@
-﻿Describe 'PSModuleTest.Tests.ps1' {
+﻿[CmdletBinding()]
+Param(
+    # Path to the module to test.
+    [Parameter()]
+    [string] $Path
+)
+
+Write-Verbose "Path to the module: [$Path]" -Verbose
+
+Describe 'PSModuleTest.Tests.ps1' {
     It 'Should be able to import the module' {
         Import-Module -Name 'PSModuleTest' -Verbose
         Get-Module -Name 'PSModuleTest' | Should -Not -BeNullOrEmpty

@@ -56,7 +56,7 @@ permissions:
 
 jobs:
   TestSourceCode:
-    name: Test source code
+    name: Test code
     strategy:
       fail-fast: false
       matrix:
@@ -84,7 +84,7 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
           Shell: ${{ matrix.shell }}
-          TestType: 'SourceCode'
+          TestType: SourceCode
 
   BuildModule:
     name: Build module
@@ -124,18 +124,13 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  TestModule:
-    name: Test module
+  #This is necessary as there is no way to get output from a matrix job
+  TestModule-pwsh-ubuntu-latest:
+    name: Test module (pwsh, ubuntu-latest)
     needs: BuildModule
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [pwsh]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - shell: powershell
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -145,7 +140,7 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
@@ -154,13 +149,239 @@ jobs:
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Test built module
+        id: test
         uses: PSModule/Test-PSModule@v1
         if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
-          Shell: ${{ matrix.shell }}
-          TestType: 'Module'
+          Shell: pwsh
+          TestType: Module
+
+      - name: Set status
+        if: steps.test.outcome != 'success'
+        shell: pwsh
+        run: Write-Host "Complete successfully"
+
+  TestModule-pwsh-macos-latest:
+    name: Test module (pwsh, macos-latest)
+    needs: BuildModule
+    runs-on: macos-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Test built module
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.ModulesOutputPath }}
+          Shell: pwsh
+          TestType: Module
+
+      - name: Set status
+        if: steps.test.outcome != 'success'
+        shell: pwsh
+        run: Write-Host "Complete successfully"
+
+  TestModule-pwsh-windows-latest:
+    name: Test module (pwsh, windows-latest)
+    needs: BuildModule
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Test built module
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.ModulesOutputPath }}
+          Shell: pwsh
+          TestType: Module
+
+      - name: Set status
+        if: steps.test.outcome != 'success'
+        shell: pwsh
+        run: Write-Host "Complete successfully"
+
+  TestModule-powershell-windows-latest:
+    name: Test module (powershell, windows-latest)
+    needs: BuildModule
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: powershell
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Test built module
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        continue-on-error: true
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.ModulesOutputPath }}
+          Shell: powershell
+          TestType: Module
+
+      - name: Set status
+        if: steps.test.outcome != 'success'
+        shell: pwsh
+        run: Write-Host "Complete successfully"
+
+  TestModuleStatus:
+    name: Test module status
+    needs:
+      - TestModule-pwsh-ubuntu-latest
+      - TestModule-pwsh-macos-latest
+      - TestModule-pwsh-windows-latest
+      - TestModule-powershell-windows-latest
+    runs-on: ubuntu-latest
+    if: success() || failure()
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Summerize tests
+        shell: pwsh
+        run: |
+          Start-LogGroup -Name 'Status'
+          $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+          $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+          $Windows = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+          $Desktop = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
+          $Core = $Linux -or $MacOS -or $Windows
+
+          $Status = [pscustomobject]@{
+              Linux   = $Linux
+              MacOS   = $MacOS
+              Windows = $Windows
+              Desktop = $Desktop
+              Core    = $Core
+          }
+
+          Write-Host ($Status | Format-Table |  Out-String)
+
+          if (-not ($Core -or $Desktop)) {
+              Write-Host "::[error]::No tests passed"
+              exit 1
+          }
+          Stop-LogGroup
+
+          Start-LogGroup -Name 'Data'
+          $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+          $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
+          $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
+
+          $data = [pscustomobject]@{
+            ModuleName         = $moduleName
+            Path               = $path
+            ModuleManifestPath = $moduleManifestPath
+          }
+          Write-Host ($data | Format-Table | Out-String)
+
+          if ($Desktop) {
+              Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
+              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
+          }
+
+          if ($Core) {
+              Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
+              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
+              Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
+          } else {
+              Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+          }
+
+          if ($Linux) {
+              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
+          }
+
+          if ($MacOS) {
+              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
+          }
+
+          if ($Windows) {
+              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
+          }
+          Stop-LogGroup
+
+          Start-LogGroup -Name 'Module Manifest'
+          Show-FileContent -Path $moduleManifestPath
+          Stop-LogGroup
+
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
 
   LintDocs:
     name: Lint documentation
@@ -197,8 +418,9 @@ jobs:
 
   PublishModule:
     name: Publish module
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && (success() || failure()) }}
     needs:
-      - TestModule
+      - TestModuleStatus
       - LintDocs
     runs-on: ubuntu-latest
     steps:
