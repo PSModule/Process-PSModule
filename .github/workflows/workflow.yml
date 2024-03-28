@@ -344,17 +344,18 @@ jobs:
           }
           Write-Host ($data | Format-Table | Out-String)
 
+          Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+
           if ($Desktop) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
+          } else {
+              Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
           }
 
           if ($Core) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
-              Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
-          } else {
-              Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
           }
 
           if ($Linux) {
