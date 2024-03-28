@@ -2,7 +2,7 @@
 Param(
     # Path to the module to test.
     [Parameter()]
-    [hashtable] $Path
+    [string] $Path
 )
 
 Write-Verbose "Path to the module: [$Path]" -Verbose
