@@ -196,7 +196,7 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: pwsh
-          TestType: 'Module'
+          TestType: Module
 
       - name: Set status
         if: steps.test.outcome != 'success'
@@ -235,7 +235,7 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: pwsh
-          TestType: 'Module'
+          TestType: Module
 
       - name: Set status
         if: steps.test.outcome != 'success'
@@ -274,7 +274,7 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: powershell
-          TestType: 'Module'
+          TestType: Module
 
       - name: Set status
         if: steps.test.outcome != 'success'
