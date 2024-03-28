@@ -79,7 +79,7 @@ jobs:
 
       - name: Test built module
         uses: PSModule/Test-PSModule@v1
-        # if: ${{ inputs.SkipTests != true }}
+        if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -150,8 +150,8 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -189,8 +189,8 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -228,8 +228,8 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -267,8 +267,8 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@tests
-        # if: ${{ inputs.SkipTests != true }}
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
