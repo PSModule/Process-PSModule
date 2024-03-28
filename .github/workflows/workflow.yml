@@ -310,7 +310,7 @@ jobs:
               exit 1
           }
 
-          $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : $env:GITHUB_ACTION_INPUT_Name
+          $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
           $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
           $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
@@ -343,6 +343,8 @@ jobs:
           if ($Windows) {
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
           }
+
+          Show-FileContent -Path $moduleManifestPath
 
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
