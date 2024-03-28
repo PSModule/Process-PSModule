@@ -295,24 +295,32 @@ jobs:
           $Core = $Linux -or $MacOS -or $Windows
 
           $Status = @{
-            Linux   = $Linux
-            MacOS   = $MacOS
-            Windows = $Windows
-            Desktop = $Desktop
-            Core    = $Core
+              Linux   = $Linux
+              MacOS   = $MacOS
+              Windows = $Windows
+              Desktop = $Desktop
+              Core    = $Core
           }
 
           Write-Host "Status"
           Write-Host ($Status | Out-String)
 
           if (-not ($Core -or $Desktop)) {
-            Write-Host "::[error]::No tests passed"
-            exit 1
+              Write-Host "::[error]::No tests passed"
+              exit 1
           }
 
           $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : $env:GITHUB_ACTION_INPUT_Name
           $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
           $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
+
+          $data = @{
+            ModuleName         = $moduleName
+            Path               = $path
+            ModuleManifestPath = $moduleManifestPath
+          }
+          Write-Host "Data"
+          Write-Host ($data | Out-String)
 
           if ($Desktop) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
