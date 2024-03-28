@@ -79,7 +79,7 @@ jobs:
 
       - name: Test built module
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
+        # if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -151,8 +151,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -185,8 +185,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -219,8 +219,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -253,8 +253,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -269,6 +269,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
+    if: always()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -288,6 +289,7 @@ jobs:
       - name: Summerize tests
         shell: pwsh
         run: |
+          Start-LogGroup -Name 'Status'
           $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
           $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
           $Windows = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
@@ -309,7 +311,9 @@ jobs:
               Write-Host "::[error]::No tests passed"
               exit 1
           }
+          Stop-LogGroup
 
+          Start-LogGroup -Name 'Data'
           $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
           $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
           $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
@@ -319,7 +323,6 @@ jobs:
             Path               = $path
             ModuleManifestPath = $moduleManifestPath
           }
-          Write-Host "Data"
           Write-Host ($data | Out-String)
 
           if ($Desktop) {
@@ -346,8 +349,11 @@ jobs:
           if ($Windows) {
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
           }
+          Stop-LogGroup
 
+          Start-LogGroup -Name 'Module Manifest'
           Show-FileContent -Path $moduleManifestPath
+          Stop-LogGroup
 
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
