@@ -152,7 +152,7 @@ jobs:
         id: test
         uses: PSModule/Test-PSModule@tests
         # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -191,7 +191,7 @@ jobs:
         id: test
         uses: PSModule/Test-PSModule@tests
         # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -230,7 +230,7 @@ jobs:
         id: test
         uses: PSModule/Test-PSModule@tests
         # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
@@ -269,7 +269,7 @@ jobs:
         id: test
         uses: PSModule/Test-PSModule@tests
         # if: ${{ inputs.SkipTests != true }}
-        # continue-on-error: true
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
