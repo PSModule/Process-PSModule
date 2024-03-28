@@ -269,7 +269,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: always()
+    if: success() || failure()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
