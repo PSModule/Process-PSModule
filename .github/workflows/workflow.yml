@@ -269,7 +269,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: !cancelled()
+    if: success() || failure()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -289,10 +289,6 @@ jobs:
       - name: Summerize tests
         shell: pwsh
         run: |
-          $test = '${{ toJson(needs) }}' | ConvertFrom-Json
-
-          Write-Host ($test | Out-String)
-
           Start-LogGroup -Name 'Status'
           $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
           $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
@@ -300,7 +296,7 @@ jobs:
           $Desktop = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
           $Core = $Linux -or $MacOS -or $Windows
 
-          $Status = @{
+          $Status = [pscustomobject]@{
               Linux   = $Linux
               MacOS   = $MacOS
               Windows = $Windows
@@ -308,8 +304,7 @@ jobs:
               Core    = $Core
           }
 
-          Write-Host "Status"
-          Write-Host ($Status | Out-String)
+          Write-Host ($Status | Format-Table |  Out-String)
 
           if (-not ($Core -or $Desktop)) {
               Write-Host "::[error]::No tests passed"
@@ -322,12 +317,12 @@ jobs:
           $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
           $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
-          $data = @{
+          $data = [pscustomobject]@{
             ModuleName         = $moduleName
             Path               = $path
             ModuleManifestPath = $moduleManifestPath
           }
-          Write-Host ($data | Out-String)
+          Write-Host ($data | Format-Table | Out-String)
 
           if ($Desktop) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
@@ -403,7 +398,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && (success() || failure()) }}
     needs:
       - TestModuleStatus
       - LintDocs
