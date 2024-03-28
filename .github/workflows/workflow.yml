@@ -160,7 +160,7 @@ jobs:
           TestType: Module
 
       - name: Set status
-        if: steps.test.conclusion != 'success'  
+        if: steps.test.conclusion != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
