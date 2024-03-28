@@ -199,7 +199,7 @@ jobs:
           TestType: 'Module'
 
       - name: Set status
-        if: job.steps.test.status == failure()
+        if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
@@ -238,7 +238,7 @@ jobs:
           TestType: 'Module'
 
       - name: Set status
-        if: job.steps.test.status == failure()
+        if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
@@ -277,7 +277,7 @@ jobs:
           TestType: 'Module'
 
       - name: Set status
-        if: job.steps.test.status == failure()
+        if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
