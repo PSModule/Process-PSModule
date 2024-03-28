@@ -291,7 +291,7 @@ jobs:
         run: |
           $test = '${{ toJson(needs) }}' | ConvertFrom-Json
 
-          $test
+          Write-Host ($test | Out-String)
 
           Start-LogGroup -Name 'Status'
           $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
@@ -400,6 +400,20 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_LOCAL: true # Running "locally" to avoid issues with GITHUB_SHA issue of a squash merge.
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
+
+  Test:
+    name: Test
+    needs:
+      - TestModuleStatus
+      - LintDocs
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        shell: pwsh
+        run: |
+          Write-Host "TestModuleStatus: ${{ needs.TestModuleStatus.result == 'success' }}"
+          Write-Host "LintDocs:         ${{ needs.LintDocs.result == 'success' }}"
+          Write-Host "Total:            ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' }}"
 
   PublishModule:
     name: Publish module
