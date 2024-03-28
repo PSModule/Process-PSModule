@@ -399,6 +399,7 @@ jobs:
 
   PublishModule:
     name: Publish module
+    if: success()
     needs:
       - TestModule
       - LintDocs
