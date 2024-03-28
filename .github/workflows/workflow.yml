@@ -269,7 +269,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: success() || failure()
+    if: !cancelled()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -401,24 +401,9 @@ jobs:
           RUN_LOCAL: true # Running "locally" to avoid issues with GITHUB_SHA issue of a squash merge.
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
 
-  Test:
-    name: Test
-    if: success() || failure()
-    needs:
-      - TestModuleStatus
-      - LintDocs
-    runs-on: ubuntu-latest
-    steps:
-      - name: test
-        shell: pwsh
-        run: |
-          Write-Host "TestModuleStatus: ${{ needs.TestModuleStatus.result == 'success' }}"
-          Write-Host "LintDocs:         ${{ needs.LintDocs.result == 'success' }}"
-          Write-Host "Total:            ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' }}"
-
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() }}
     needs:
       - TestModuleStatus
       - LintDocs
