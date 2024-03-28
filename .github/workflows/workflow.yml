@@ -151,13 +151,18 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: pwsh
           TestType: Module
+
+      - name: Set status
+        if: job.steps.test.status == failure()
+        shell: pwsh
+        run: Write-Host "Complete successfully"
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
@@ -185,13 +190,18 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: pwsh
           TestType: 'Module'
+
+      - name: Set status
+        if: job.steps.test.status == failure()
+        shell: pwsh
+        run: Write-Host "Complete successfully"
 
   TestModule-pwsh-windows-latest:
     name: Test module (pwsh, windows-latest)
@@ -219,13 +229,18 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: pwsh
           TestType: 'Module'
+
+      - name: Set status
+        if: job.steps.test.status == failure()
+        shell: pwsh
+        run: Write-Host "Complete successfully"
 
   TestModule-powershell-windows-latest:
     name: Test module (powershell, windows-latest)
@@ -253,13 +268,18 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@tests
-        if: ${{ inputs.SkipTests != true }}
-        continue-on-error: true
+        # if: ${{ inputs.SkipTests != true }}
+        # continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           Shell: powershell
           TestType: 'Module'
+
+      - name: Set status
+        if: job.steps.test.status == failure()
+        shell: pwsh
+        run: Write-Host "Complete successfully"
 
   TestModuleStatus:
     name: Test module status
