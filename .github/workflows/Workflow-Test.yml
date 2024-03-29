@@ -23,3 +23,13 @@ jobs:
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
       TestProcess: true
+
+  WorkflowTestNoNameFolders:
+    uses: ./.github/workflows/workflow.yml
+    secrets: inherit
+    with:
+      Name: PSModuleTest
+      Path: tests/srcNo
+      ModulesOutputPath: tests/outputs/modules
+      DocsOutputPath: tests/outputs/docs
+      TestProcess: true
