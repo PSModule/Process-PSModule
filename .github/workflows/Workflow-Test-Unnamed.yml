@@ -1,6 +1,6 @@
 name: Workflow-Test
 
-run-name: "Workflow-Test - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "Workflow-Test [UnnamedFolder] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on: [pull_request]
 
@@ -14,17 +14,7 @@ permissions:
   statuses: write
 
 jobs:
-  WorkflowTestDefault:
-    uses: ./.github/workflows/workflow.yml
-    secrets: inherit
-    with:
-      Name: PSModuleTest
-      Path: tests/src
-      ModulesOutputPath: tests/outputs/modules
-      DocsOutputPath: tests/outputs/docs
-      TestProcess: true
-
-  WorkflowTestNoNameFolders:
+  WorkflowTestUnnamedFolder:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
