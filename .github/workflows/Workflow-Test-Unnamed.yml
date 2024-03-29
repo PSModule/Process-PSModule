@@ -1,6 +1,6 @@
-name: Workflow-Test
+name: Workflow-Test [UnnamedFolder]
 
-run-name: "Workflow-Test [UnnamedFolder] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "[${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on: [pull_request]
 
