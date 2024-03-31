@@ -385,28 +385,46 @@ jobs:
       - name: Summerize tests
         shell: pwsh
         run: |
-          Start-LogGroup -Name 'Status'
-          $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-          $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-          $Windows = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-          $Desktop = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
-          $Core = $Linux -or $MacOS -or $Windows
+          Start-LogGroup -Name 'Passed tests'
 
-          $Status = [pscustomobject]@{
-              Linux   = $Linux
-              MacOS   = $MacOS
-              Windows = $Windows
-              Desktop = $Desktop
-              Core    = $Core
+          $Status = @{
+              Linux = [pscustomobject]@{
+                  Name    = 'Linux'
+                  Passed  = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+                  Skipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+              }
+              MacOS = [pscustomobject]@{
+                  Name    = 'MacOS'
+                  Passed  = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+                  Skipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+              }
+              Windows = [pscustomobject]@{
+                  Name    = 'Windows'
+                  Passed  = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+                  Skipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+              }
+              Desktop = [pscustomobject]@{
+                  Name    = 'Desktop'
+                  Passed  = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
+                  Skipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
+              }
+              Core = [pscustomobject]@{
+                  Name    = 'Core'
+                  Passed  = $Status['Linux'].Passed -and $Status['MacOS'].Passed -and $Status['Windows'].Passed
+                  Skipped = $Status['Linux'].Skipped -and $Status['MacOS'].Skipped -and $Status['Windows'].Skipped
+              }
           }
 
           Write-Host ($Status | Format-Table |  Out-String)
 
-          if (-not ($Core -or $Desktop)) {
+          $passedAll = $Status['Core'].Passed -and $Status['Desktop'].Passed
+          $skippedAll = $Status['Core'].Skipped -and $Status['Desktop'].Skipped
+          Stop-LogGroup
+
+          if (-not $passedAll -and -not $skippedAll) {
               Write-Host "::[error]::No tests passed"
               exit 1
           }
-          Stop-LogGroup
 
           Start-LogGroup -Name 'Data'
           $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
@@ -421,6 +439,8 @@ jobs:
           Write-Host ($data | Format-Table | Out-String)
 
           Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+
+          #TODO: DONT OVERRIDE MANIFEST
 
           if ($Desktop) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
