@@ -28,7 +28,7 @@ on:
         default: outputs/docs
       SkipTests:
         type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'MacOS', 'Windows', 'Linux', 'Desktop', 'Core'.
+        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'.
         required: false
         default: None
       TestProcess:
@@ -81,7 +81,7 @@ jobs:
 
   TestSourceCode-pwsh-macos-latest:
     name: Test source code (pwsh, macos-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'MacOS') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) }}
     runs-on: macos-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -241,7 +241,7 @@ jobs:
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'MacOS') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) }}
     needs: BuildModule
     runs-on: macos-latest
     outputs:
