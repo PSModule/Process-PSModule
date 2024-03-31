@@ -437,7 +437,7 @@ jobs:
           Write-Host ($Status | New-MDTable)
           Stop-LogGroup
 
-          if (-not $passed -and -not $skipped) {
+          if (-not $anyPassed -and -not $allSkipped) {
               Write-Host "::[error]::No tests passed"
               exit 1
           }
