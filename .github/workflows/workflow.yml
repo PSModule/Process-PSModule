@@ -502,10 +502,10 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Init empty repository
-        shell: pwsh
-        run: |
-          git init --initial-branch=main
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
@@ -524,6 +524,7 @@ jobs:
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
+          VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
