@@ -433,7 +433,8 @@ jobs:
               }
           )
 
-          Write-Host ($Status | Format-List |  Out-String)
+          Write-Host ($Status | Format-Table | Out-String)
+          Write-Host ($Status | New-MDTable)
           Stop-LogGroup
 
           if (-not $passed -and -not $skipped) {
