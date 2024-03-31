@@ -502,27 +502,13 @@ jobs:
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
-      - name: Init empty repository
-        shell: pwsh
-        run: |
-          git init --initial-branch=main
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
           name: docs
-
-      - name: Download linter settings
-        shell: pwsh
-        run: |
-          $ref = if ($env:GITHUB_REF -like "refs/pull/*/merge") {
-              $env:GITHUB_HEAD_REF
-          } else {
-              $env:GITHUB_REF_NAME
-          }
-          Write-Verbose "Ref: $ref" -Verbose
-          $null = New-Item -Path '.github/linters' -ItemType Directory -Force
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${{ github.repository }}/$ref/.github/linters/.textlintrc" -OutFile '.github/linters/.textlintrc' -Verbose
 
       - name: Commit docs for linting
         id: commit-docs
