@@ -505,22 +505,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
           name: docs
+          path: ${{ inputs.DocsOutputPath }}
 
-      - name: Commit docs for linting
-        id: commit-docs
+      - name: Get event
         shell: pwsh
         run: |
-          git config --global user.name "Github Actions"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Update documentation"
+          Get-Content -Path $env:GITHUB_EVENT_PATH
+
+      # - name: Commit docs for linting
+      #   id: commit-docs
+      #   shell: pwsh
+      #   run: |
+      #     git config --global user.name "Github Actions"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add .
+      #     git commit -m "Update documentation"
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
