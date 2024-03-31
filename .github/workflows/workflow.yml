@@ -433,7 +433,7 @@ jobs:
               }
           )
 
-          Write-Host ($Status | Format-Table |  Out-String)
+          Write-Host ($Status | Format-List |  Out-String)
           Stop-LogGroup
 
           if (-not $passed -and -not $skipped) {
