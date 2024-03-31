@@ -403,27 +403,33 @@ jobs:
           $Status = @(
               [pscustomobject]@{
                   Name    = 'Linux'
-                  Status  = $linuxSkipped ? '⚠️ (Skipped)' : $linuxPassed ? '✅ (Passed)' : '❌ (Failed)'
+                  Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
+                  Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
               }
               [pscustomobject]@{
                   Name    = 'MacOS'
-                  Status  = $macOSSkipped ? '⚠️ (Skipped)' : $macOSPassed ? '✅ (Passed)' : '❌ (Failed)'
+                  Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
+                  Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
               }
               [pscustomobject]@{
                   Name    = 'Windows'
-                  Status  = $windowsSkipped ? '⚠️ (Skipped)' : $windowsPassed ? '✅ (Passed)' : '❌ (Failed)'
+                  Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
+                  Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
               }
               [pscustomobject]@{
                   Name    = 'Desktop'
-                  Status  = $desktopSkipped ? '⚠️ (Skipped)' : $desktopPassed ? '✅ (Passed)' : '❌ (Failed)'
+                  Status  = $desktopSkipped ? 'Skipped' : $desktopPassed ? 'Passed' : 'Failed'
+                  Icon    = $desktopSkipped ? '⚠️' : $desktopPassed ? '✅' : '❌'
               }
               [pscustomobject]@{
                   Name    = 'Core'
-                  Status  = $coreSkipped ? '⚠️ (Skipped)' : $corePassed ? '✅ (Passed)' : '❌ (Failed)'
+                  Status  = $coreSkipped ? 'Skipped' : $corePassed ? 'Passed' : 'Failed'
+                  Icon    = $coreSkipped ? '⚠️' : $corePassed ? '✅' : '❌'
               }
               [pscustomobject]@{
                   Name    = 'All'
-                  Status  = $allSkipped ? '⚠️ (Skipped)' : $allPassed ? '✅ (Passed)' : '❌ (Failed)'
+                  Status  = $allSkipped ? 'Skipped' : $allPassed ? 'Passed' : 'Failed'
+                  Icon    = $allSkipped ? '⚠️' : $allPassed ? '✅' : '❌'
               }
           )
 
