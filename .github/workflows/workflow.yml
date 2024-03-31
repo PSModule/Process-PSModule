@@ -159,6 +159,7 @@ jobs:
 
   BuildModule:
     name: Build module
+    if: ${{ contains(fromJson('["success","skipped"]'), needs.TestSourceCode-pwsh-ubuntu-latest.result) && contains(fromJson('["success","skipped"]'), needs.TestSourceCode-pwsh-macos-latest.result) && contains(fromJson('["success","skipped"]'), needs.TestSourceCode-pwsh-windows-latest.result) && contains(fromJson('["success","skipped"]'), needs.TestSourceCode-powershell-windows-latest.result) }}
     needs:
       - TestSourceCode-pwsh-ubuntu-latest
       - TestSourceCode-pwsh-macos-latest
@@ -364,7 +365,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() }}
+    if: success() || failure()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -494,7 +495,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && (success() || failure()) }}
     needs:
       - TestModuleStatus
       - LintDocs
