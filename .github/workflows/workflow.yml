@@ -511,7 +511,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: ${{ inputs.DocsOutputPath }}
 
       - name: Get event
         shell: pwsh
