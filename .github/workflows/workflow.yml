@@ -515,12 +515,12 @@ jobs:
       - name: Download linter settings
         shell: pwsh
         run: |
-          $ref = if ($env:GITHUB_REF_NAME -match "refs/pull/(\d+)/merge") {
+          $ref = if ($env:GITHUB_REF -like "refs/pull/*/merge") {
               $env:GITHUB_HEAD_REF
           } else {
               $env:GITHUB_REF_NAME
           }
-          Write-Verbose "Ref: $ref"
+          Write-Verbose "Ref: $ref" -Verbose
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${{ github.repository }}/$ref/.github/linters/.textlintrc" -OutFile '.github/linters/.textlintrc' -Verbose
 
       - name: Commit docs for linting
