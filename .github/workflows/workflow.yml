@@ -397,8 +397,8 @@ jobs:
           $desktopSkipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
           $corePassed = $linuxPassed -or $macOSPassed -or $windowsPassed
           $coreSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
-          $passed = $corePassed -and $desktopPassed
-          $skipped = $coreSkipped -and $desktopSkipped
+          $anyPassed = $corePassed -or $desktopPassed
+          $allSkipped = $coreSkipped -and $desktopSkipped
 
           $Status = @(
               [pscustomobject]@{
@@ -428,8 +428,8 @@ jobs:
               }
               [pscustomobject]@{
                   Name    = 'Result'
-                  Icon    = $skipped ? '⚠️' : $passed ? '✅' : '❌'
-                  Status  = $skipped ? 'Skipped' : $passed ? 'Passed' : 'Failed'
+                  Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
+                  Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
               }
           )
 
