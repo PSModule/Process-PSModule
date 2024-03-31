@@ -434,7 +434,7 @@ jobs:
           )
 
           Write-Host ($Status | Format-Table | Out-String)
-          Write-Host ($Status | New-MDTable)
+          ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           Stop-LogGroup
 
           if (-not $anyPassed -and -not $allSkipped) {
