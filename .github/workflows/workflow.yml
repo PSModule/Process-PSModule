@@ -27,10 +27,10 @@ on:
         required: false
         default: outputs/docs
       SkipTests:
-        type: boolean
-        description: Whether to skip tests.
+        type: string
+        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'.
         required: false
-        default: false
+        default: None
       TestProcess:
         type: boolean
         description: Whether to test the process.
@@ -55,17 +55,10 @@ permissions:
   statuses: write
 
 jobs:
-  TestSourceCode:
-    name: Test code
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [pwsh]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - shell: powershell
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+  TestSourceCode-pwsh-ubuntu-latest:
+    name: Test source code (pwsh, ubuntu-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -75,20 +68,103 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
 
-      - name: Test built module
+      - name: Test source code
+        id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
+          TestType: SourceCode
+
+  TestSourceCode-pwsh-macos-latest:
+    name: Test source code (pwsh, macos-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) }}
+    runs-on: macos-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Test source code
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: pwsh
+          TestType: SourceCode
+
+  TestSourceCode-pwsh-windows-latest:
+    name: Test source code (pwsh, windows-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) }}
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Test source code
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: pwsh
+          TestType: SourceCode
+
+  TestSourceCode-powershell-windows-latest:
+    name: Test source code (powershell, windows-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) }}
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: powershell
+
+      - name: Test source code
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: powershell
           TestType: SourceCode
 
   BuildModule:
     name: Build module
-    needs: TestSourceCode
+    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-windows-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-powershell-windows-latest.result) && !cancelled() }}
+    needs:
+      - TestSourceCode-pwsh-ubuntu-latest
+      - TestSourceCode-pwsh-macos-latest
+      - TestSourceCode-pwsh-windows-latest
+      - TestSourceCode-powershell-windows-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -127,6 +203,7 @@ jobs:
   #This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
     name: Test module (pwsh, ubuntu-latest)
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
     needs: BuildModule
     runs-on: ubuntu-latest
     outputs:
@@ -151,7 +228,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -166,6 +242,7 @@ jobs:
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
     needs: BuildModule
     runs-on: macos-latest
     outputs:
@@ -190,7 +267,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -205,6 +281,7 @@ jobs:
 
   TestModule-pwsh-windows-latest:
     name: Test module (pwsh, windows-latest)
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -229,7 +306,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -244,6 +320,7 @@ jobs:
 
   TestModule-powershell-windows-latest:
     name: Test module (powershell, windows-latest)
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) && !cancelled() }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -268,7 +345,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -283,13 +359,13 @@ jobs:
 
   TestModuleStatus:
     name: Test module status
+    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-powershell-windows-latest.result) && !cancelled() }}
     needs:
       - TestModule-pwsh-ubuntu-latest
       - TestModule-pwsh-macos-latest
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: success() || failure()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -309,28 +385,62 @@ jobs:
       - name: Summerize tests
         shell: pwsh
         run: |
-          Start-LogGroup -Name 'Status'
-          $Linux = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-          $MacOS = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-          $Windows = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-          $Desktop = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
-          $Core = $Linux -or $MacOS -or $Windows
+          Start-LogGroup -Name 'Passed tests'
 
-          $Status = [pscustomobject]@{
-              Linux   = $Linux
-              MacOS   = $MacOS
-              Windows = $Windows
-              Desktop = $Desktop
-              Core    = $Core
-          }
+          $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+          $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+          $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+          $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+          $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+          $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+          $desktopPassed = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
+          $desktopSkipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
+          $corePassed = $linuxPassed -or $macOSPassed -or $windowsPassed
+          $coreSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
+          $anyPassed = $corePassed -or $desktopPassed
+          $allSkipped = $coreSkipped -and $desktopSkipped
 
-          Write-Host ($Status | Format-Table |  Out-String)
+          $Status = @(
+              [pscustomobject]@{
+                  Name    = 'Linux'
+                  Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
+                  Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
+              }
+              [pscustomobject]@{
+                  Name    = 'MacOS'
+                  Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
+                  Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
+              }
+              [pscustomobject]@{
+                  Name    = 'Windows'
+                  Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
+                  Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
+              }
+              [pscustomobject]@{
+                  Name    = 'Desktop'
+                  Icon    = $desktopSkipped ? '⚠️' : $desktopPassed ? '✅' : '❌'
+                  Status  = $desktopSkipped ? 'Skipped' : $desktopPassed ? 'Passed' : 'Failed'
+              }
+              [pscustomobject]@{
+                  Name    = 'Core'
+                  Icon    = $coreSkipped ? '⚠️' : $corePassed ? '✅' : '❌'
+                  Status  = $coreSkipped ? 'Skipped' : $corePassed ? 'Passed' : 'Failed'
+              }
+              [pscustomobject]@{
+                  Name    = 'Result'
+                  Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
+                  Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
+              }
+          )
 
-          if (-not ($Core -or $Desktop)) {
+          Write-Host ($Status | Format-Table | Out-String)
+          ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          Stop-LogGroup
+
+          if (-not $anyPassed -and -not $allSkipped) {
               Write-Host "::[error]::No tests passed"
               exit 1
           }
-          Stop-LogGroup
 
           Start-LogGroup -Name 'Data'
           $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
@@ -345,6 +455,8 @@ jobs:
           Write-Host ($data | Format-Table | Out-String)
 
           Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+
+          #TODO: DONT OVERRIDE MANIFEST
 
           if ($Desktop) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
@@ -386,6 +498,7 @@ jobs:
 
   LintDocs:
     name: Lint documentation
+    if: ${{ needs.BuildModule.result == 'success' && !cancelled() }}
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
@@ -419,7 +532,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && (success() || failure()) }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() }}
     needs:
       - TestModuleStatus
       - LintDocs
