@@ -515,7 +515,13 @@ jobs:
       - name: Download linter settings
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/.github/linters/.textlintrc' -OutFile '.github/linters/.textlintrc' -Verbose
+          $ref = if ($env:GITHUB_REF_NAME -match "refs/pull/(\d+)/merge") {
+              $env:GITHUB_HEAD_REF
+          } else {
+              $env:GITHUB_REF_NAME
+          }
+          Write-Verbose "Ref: $ref"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${{ github.repository }}/$ref/.github/linters/.textlintrc" -OutFile '.github/linters/.textlintrc' -Verbose
 
       - name: Commit docs for linting
         id: commit-docs
