@@ -521,6 +521,7 @@ jobs:
               $env:GITHUB_REF_NAME
           }
           Write-Verbose "Ref: $ref" -Verbose
+          $null = New-Item -Path '.github/linters' -ItemType Directory -Force
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${{ github.repository }}/$ref/.github/linters/.textlintrc" -OutFile '.github/linters/.textlintrc' -Verbose
 
       - name: Commit docs for linting
