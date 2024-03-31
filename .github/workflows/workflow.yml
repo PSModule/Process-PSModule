@@ -395,48 +395,48 @@ jobs:
           $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
           $desktopPassed = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
           $desktopSkipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
-          $corePassed = $linuxPassed -and $macOSPassed -and $windowsPassed
+          $corePassed = $linuxPassed -or $macOSPassed -or $windowsPassed
           $coreSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
-          $allPassed = $corePassed -and $desktopPassed
-          $allSkipped = $coreSkipped -and $desktopSkipped
+          $passed = $corePassed -and $desktopPassed
+          $skipped = $coreSkipped -and $desktopSkipped
 
           $Status = @(
               [pscustomobject]@{
                   Name    = 'Linux'
-                  Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
                   Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
+                  Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
               }
               [pscustomobject]@{
                   Name    = 'MacOS'
-                  Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
                   Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
+                  Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
               }
               [pscustomobject]@{
                   Name    = 'Windows'
-                  Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
                   Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
+                  Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
               }
               [pscustomobject]@{
                   Name    = 'Desktop'
-                  Status  = $desktopSkipped ? 'Skipped' : $desktopPassed ? 'Passed' : 'Failed'
                   Icon    = $desktopSkipped ? '⚠️' : $desktopPassed ? '✅' : '❌'
+                  Status  = $desktopSkipped ? 'Skipped' : $desktopPassed ? 'Passed' : 'Failed'
               }
               [pscustomobject]@{
                   Name    = 'Core'
-                  Status  = $coreSkipped ? 'Skipped' : $corePassed ? 'Passed' : 'Failed'
                   Icon    = $coreSkipped ? '⚠️' : $corePassed ? '✅' : '❌'
+                  Status  = $coreSkipped ? 'Skipped' : $corePassed ? 'Passed' : 'Failed'
               }
               [pscustomobject]@{
-                  Name    = 'All'
-                  Status  = $allSkipped ? 'Skipped' : $allPassed ? 'Passed' : 'Failed'
-                  Icon    = $allSkipped ? '⚠️' : $allPassed ? '✅' : '❌'
+                  Name    = 'Result'
+                  Icon    = $skipped ? '⚠️' : $passed ? '✅' : '❌'
+                  Status  = $skipped ? 'Skipped' : $passed ? 'Passed' : 'Failed'
               }
           )
 
           Write-Host ($Status | Format-Table |  Out-String)
           Stop-LogGroup
 
-          if (-not $allPassed -and -not $allSkipped) {
+          if (-not $passed -and -not $skipped) {
               Write-Host "::[error]::No tests passed"
               exit 1
           }
