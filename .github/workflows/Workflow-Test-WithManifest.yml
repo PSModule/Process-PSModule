@@ -14,7 +14,7 @@ permissions:
   statuses: write
 
 jobs:
-  WorkflowTestUnnamedFolder:
+  WorkflowTestWithManifest:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
