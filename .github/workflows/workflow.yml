@@ -532,6 +532,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_ALL_CODEBASE: false
+          LOG_LEVEL: DEBUG
 
   PublishModule:
     name: Publish module
