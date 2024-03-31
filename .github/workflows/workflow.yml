@@ -364,7 +364,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: !cancelled()
+    if: ${{ !cancelled() }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
