@@ -364,7 +364,7 @@ jobs:
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: success() || failure()
+    if: !cancelled()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -494,7 +494,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && (success() || failure()) }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() }}
     needs:
       - TestModuleStatus
       - LintDocs
