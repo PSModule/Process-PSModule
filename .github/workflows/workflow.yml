@@ -55,17 +55,9 @@ permissions:
   statuses: write
 
 jobs:
-  TestSourceCode:
-    name: Test code
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [pwsh]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - shell: powershell
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+  TestSourceCode-pwsh-ubuntu-latest:
+    name: Test source code (pwsh, ubuntu-latest)
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -75,20 +67,103 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
 
-      - name: Test built module
+      - name: Test source code
+        id: test
         uses: PSModule/Test-PSModule@v1
         if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          Shell: ${{ matrix.shell }}
+          Shell: pwsh
+          TestType: SourceCode
+
+  TestSourceCode-pwsh-macos-latest:
+    name: Test source code (pwsh, macos-latest)
+    runs-on: macos-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Test source code
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: pwsh
+          TestType: SourceCode
+
+  TestSourceCode-pwsh-windows-latest:
+    name: Test source code (pwsh, windows-latest)
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: pwsh
+
+      - name: Test source code
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: pwsh
+          TestType: SourceCode
+
+  TestSourceCode-powershell-windows-latest:
+    name: Test source code (powershell, windows-latest)
+    runs-on: windows-latest
+    outputs:
+      passed: ${{ steps.test.outputs.passed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Shell: powershell
+
+      - name: Test source code
+        id: test
+        uses: PSModule/Test-PSModule@v1
+        if: ${{ inputs.SkipTests != true }}
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          Shell: powershell
           TestType: SourceCode
 
   BuildModule:
     name: Build module
-    needs: TestSourceCode
+    needs:
+      - TestSourceCode-pwsh-ubuntu-latest
+      - TestSourceCode-pwsh-macos-latest
+      - TestSourceCode-pwsh-windows-latest
+      - TestSourceCode-powershell-windows-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
