@@ -203,7 +203,7 @@ jobs:
   #This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
     name: Test module (pwsh, ubuntu-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
     needs: BuildModule
     runs-on: ubuntu-latest
     outputs:
@@ -242,7 +242,7 @@ jobs:
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
     needs: BuildModule
     runs-on: macos-latest
     outputs:
@@ -281,7 +281,7 @@ jobs:
 
   TestModule-pwsh-windows-latest:
     name: Test module (pwsh, windows-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -320,7 +320,7 @@ jobs:
 
   TestModule-powershell-windows-latest:
     name: Test module (powershell, windows-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) && !cancelled() }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -359,13 +359,13 @@ jobs:
 
   TestModuleStatus:
     name: Test module status
+    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-powershell-windows-latest.result) && !cancelled() }}
     needs:
       - TestModule-pwsh-ubuntu-latest
       - TestModule-pwsh-macos-latest
       - TestModule-pwsh-windows-latest
       - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
-    if: success() || failure()
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -462,6 +462,7 @@ jobs:
 
   LintDocs:
     name: Lint documentation
+    if: ${{ needs.BuildModule.result == 'success' && !cancelled() }}
     needs: BuildModule
     runs-on: ubuntu-latest
     steps:
@@ -495,7 +496,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && (success() || failure()) }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() }}
     needs:
       - TestModuleStatus
       - LintDocs
