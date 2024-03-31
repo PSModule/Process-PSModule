@@ -1,6 +1,6 @@
-name: Workflow-Test [UnnamedFolder]
+name: Workflow-Test [WithManifest]
 
-run-name: "${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }} by @${{ github.actor }}"
+run-name: "Workflow-Test [WithManifest] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on: [pull_request]
 
@@ -19,7 +19,7 @@ jobs:
     secrets: inherit
     with:
       Name: PSModuleTest
-      Path: tests/srcNo
+      Path: tests/srcWithManifest
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
       TestProcess: true
