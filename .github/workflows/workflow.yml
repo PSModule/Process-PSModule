@@ -504,16 +504,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
           name: docs
-
-      - name: Info
-        shell: pwsh
-        run: |
-          Get-Content $env:GITHUB_EVENT_PATH
 
       - name: Commit docs for linting
         id: commit-docs
