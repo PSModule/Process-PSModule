@@ -27,10 +27,10 @@ on:
         required: false
         default: outputs/docs
       SkipTests:
-        type: boolean
-        description: Whether to skip tests.
+        type: string
+        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'MacOS', 'Windows', 'Linux', 'Desktop', 'Core'.
         required: false
-        default: false
+        default: None
       TestProcess:
         type: boolean
         description: Whether to test the process.
@@ -57,6 +57,7 @@ permissions:
 jobs:
   TestSourceCode-pwsh-ubuntu-latest:
     name: Test source code (pwsh, ubuntu-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -72,7 +73,6 @@ jobs:
       - name: Test source code
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -81,6 +81,7 @@ jobs:
 
   TestSourceCode-pwsh-macos-latest:
     name: Test source code (pwsh, macos-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'MacOS') || contains(inputs.SkipTests, 'Core')) }}
     runs-on: macos-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -98,7 +99,6 @@ jobs:
       - name: Test source code
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -107,6 +107,7 @@ jobs:
 
   TestSourceCode-pwsh-windows-latest:
     name: Test source code (pwsh, windows-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) }}
     runs-on: windows-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -124,7 +125,6 @@ jobs:
       - name: Test source code
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -133,6 +133,7 @@ jobs:
 
   TestSourceCode-powershell-windows-latest:
     name: Test source code (powershell, windows-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) }}
     runs-on: windows-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -150,7 +151,6 @@ jobs:
       - name: Test source code
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -202,6 +202,7 @@ jobs:
   #This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
     name: Test module (pwsh, ubuntu-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) }}
     needs: BuildModule
     runs-on: ubuntu-latest
     outputs:
@@ -226,7 +227,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -241,6 +241,7 @@ jobs:
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'MacOS') || contains(inputs.SkipTests, 'Core')) }}
     needs: BuildModule
     runs-on: macos-latest
     outputs:
@@ -265,7 +266,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -280,6 +280,7 @@ jobs:
 
   TestModule-pwsh-windows-latest:
     name: Test module (pwsh, windows-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -304,7 +305,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -319,6 +319,7 @@ jobs:
 
   TestModule-powershell-windows-latest:
     name: Test module (powershell, windows-latest)
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -343,7 +344,6 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v1
-        if: ${{ inputs.SkipTests != true }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
