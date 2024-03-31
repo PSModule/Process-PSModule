@@ -400,38 +400,32 @@ jobs:
           $allPassed = $corePassed -and $desktopPassed
           $allSkipped = $coreSkipped -and $desktopSkipped
 
-          $Status = @{
-              Linux = [pscustomobject]@{
+          $Status = @(
+              [pscustomobject]@{
                   Name    = 'Linux'
-                  Passed  = $linuxPassed ? '✅' : '❌'
-                  Skipped = $linuxSkipped ? '✅' : '❌'
+                  Status  = $linuxSkipped ? '⚠️ (Skipped)' : $linuxPassed ? '✅ (Passed)' : '❌ (Failed)'
               }
-              MacOS = [pscustomobject]@{
+              [pscustomobject]@{
                   Name    = 'MacOS'
-                  Passed  = $macOSPassed ? '✅' : '❌'
-                  Skipped = $macOSSkipped ? '✅' : '❌'
+                  Status  = $macOSSkipped ? '⚠️ (Skipped)' : $macOSPassed ? '✅ (Passed)' : '❌ (Failed)'
               }
-              Windows = [pscustomobject]@{
+              [pscustomobject]@{
                   Name    = 'Windows'
-                  Passed  = $windowsPassed ? '✅' : '❌'
-                  Skipped = $windowsSkipped ? '✅' : '❌'
+                  Status  = $windowsSkipped ? '⚠️ (Skipped)' : $windowsPassed ? '✅ (Passed)' : '❌ (Failed)'
               }
-              Desktop = [pscustomobject]@{
+              [pscustomobject]@{
                   Name    = 'Desktop'
-                  Passed  = $desktopPassed ? '✅' : '❌'
-                  Skipped = $desktopSkipped ? '✅' : '❌'
+                  Status  = $desktopSkipped ? '⚠️ (Skipped)' : $desktopPassed ? '✅ (Passed)' : '❌ (Failed)'
               }
-              Core = [pscustomobject]@{
+              [pscustomobject]@{
                   Name    = 'Core'
-                  Passed  = $corePassed ? '✅' : '❌'
-                  Skipped = $coreSkipped ? '✅' : '❌'
+                  Status  = $coreSkipped ? '⚠️ (Skipped)' : $corePassed ? '✅ (Passed)' : '❌ (Failed)'
               }
-              All = [pscustomobject]@{
+              [pscustomobject]@{
                   Name    = 'All'
-                  Passed  = $allPassed ? '✅' : '❌'
-                  Skipped = $allSkipped ? '✅' : '❌'
+                  Status  = $allSkipped ? '⚠️ (Skipped)' : $allPassed ? '✅ (Passed)' : '❌ (Failed)'
               }
-          }
+          )
 
           Write-Host ($Status | Format-Table |  Out-String)
           Stop-LogGroup
