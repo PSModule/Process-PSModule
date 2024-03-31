@@ -518,14 +518,14 @@ jobs:
         run: |
           Get-Content -Path $env:GITHUB_EVENT_PATH
 
-      # - name: Commit docs for linting
-      #   id: commit-docs
-      #   shell: pwsh
-      #   run: |
-      #     git config --global user.name "Github Actions"
-      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      #     git add .
-      #     git commit -m "Update documentation"
+      - name: Commit docs for linting
+        id: commit-docs
+        shell: pwsh
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update documentation"
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
