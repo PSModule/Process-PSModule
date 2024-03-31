@@ -510,7 +510,7 @@ jobs:
         with:
           name: docs
 
-      - name: Commit docs for linting
+      - name: Info
         shell: pwsh
         run: |
           Get-Content $env:GITHUB_EVENT_PATH
