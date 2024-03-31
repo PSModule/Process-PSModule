@@ -526,6 +526,7 @@ jobs:
         uses: super-linter/super-linter/slim@latest
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          VALIDATE_ALL_CODEBASE: false
 
   PublishModule:
     name: Publish module
