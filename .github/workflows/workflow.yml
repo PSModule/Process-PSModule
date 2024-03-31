@@ -387,41 +387,56 @@ jobs:
         run: |
           Start-LogGroup -Name 'Passed tests'
 
+          $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+          $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+          $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+          $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+          $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+          $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+          $desktopPassed = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
+          $desktopSkipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
+          $corePassed = $linuxPassed -and $macOSPassed -and $windowsPassed
+          $coreSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
+          $allPassed = $corePassed -and $desktopPassed
+          $allSkipped = $coreSkipped -and $desktopSkipped
+
           $Status = @{
               Linux = [pscustomobject]@{
                   Name    = 'Linux'
-                  Passed  = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-                  Skipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+                  Passed  = $linuxPassed ? '✅' : '❌'
+                  Skipped = $linuxSkipped ? '✅' : '❌'
               }
               MacOS = [pscustomobject]@{
                   Name    = 'MacOS'
-                  Passed  = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-                  Skipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+                  Passed  = $macOSPassed ? '✅' : '❌'
+                  Skipped = $macOSSkipped ? '✅' : '❌'
               }
               Windows = [pscustomobject]@{
                   Name    = 'Windows'
-                  Passed  = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-                  Skipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+                  Passed  = $windowsPassed ? '✅' : '❌'
+                  Skipped = $windowsSkipped ? '✅' : '❌'
               }
               Desktop = [pscustomobject]@{
                   Name    = 'Desktop'
-                  Passed  = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
-                  Skipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
+                  Passed  = $desktopPassed ? '✅' : '❌'
+                  Skipped = $desktopSkipped ? '✅' : '❌'
               }
               Core = [pscustomobject]@{
                   Name    = 'Core'
-                  Passed  = $Status['Linux'].Passed -and $Status['MacOS'].Passed -and $Status['Windows'].Passed
-                  Skipped = $Status['Linux'].Skipped -and $Status['MacOS'].Skipped -and $Status['Windows'].Skipped
+                  Passed  = $corePassed ? '✅' : '❌'
+                  Skipped = $coreSkipped ? '✅' : '❌'
+              }
+              All = [pscustomobject]@{
+                  Name    = 'All'
+                  Passed  = $allPassed ? '✅' : '❌'
+                  Skipped = $allSkipped ? '✅' : '❌'
               }
           }
 
           Write-Host ($Status | Format-Table |  Out-String)
-
-          $passedAll = $Status['Core'].Passed -and $Status['Desktop'].Passed
-          $skippedAll = $Status['Core'].Skipped -and $Status['Desktop'].Skipped
           Stop-LogGroup
 
-          if (-not $passedAll -and -not $skippedAll) {
+          if (-not $allPassed -and -not $allSkipped) {
               Write-Host "::[error]::No tests passed"
               exit 1
           }
