@@ -520,20 +520,20 @@ jobs:
         run: |
           Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
-      # - name: Commit docs for linting
-      #   id: commit-docs
-      #   shell: pwsh
-      #   run: |
-      #     git config --global user.name "Github Actions"
-      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      #     git add .
-      #     git commit -m "Update documentation"
+      - name: Commit docs for linting
+        id: commit-docs
+        shell: pwsh
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update documentation"
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
           DEFAULT_BRANCH: ${{ github.head_ref }}
-          # DEFAULT_WORKSPACE: ${{ github.workspace }}
+          DEFAULT_WORKSPACE: ${{ github.workspace }}
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
           RUN_LOCAL: true
