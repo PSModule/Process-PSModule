@@ -517,7 +517,7 @@ jobs:
       - name: get content
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+          Get-ChildItem -Recurse -Force | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Commit docs for linting
         shell: pwsh
