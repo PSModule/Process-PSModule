@@ -514,7 +514,7 @@ jobs:
           name: docs
           path: ${{ github.workspace }}
 
-      - name: Commit docs for linting
+      - name: get content
         shell: pwsh
         run: |
           Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
