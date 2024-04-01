@@ -514,11 +514,6 @@ jobs:
           name: docs
           path: ${{ github.workspace }}
 
-      - name: get content
-        shell: pwsh
-        run: |
-          Get-ChildItem -Recurse -Force | Select-Object -ExpandProperty FullName | Sort-Object
-
       - name: Commit docs for linting
         shell: pwsh
         run: |
