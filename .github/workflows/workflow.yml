@@ -515,13 +515,11 @@ jobs:
           path: ${{ github.workspace }}
 
       - name: Commit docs for linting
-        id: commit-docs
         shell: pwsh
         run: |
           Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Commit docs for linting
-        id: commit-docs
         shell: pwsh
         run: |
           git config --global user.name "Github Actions"
