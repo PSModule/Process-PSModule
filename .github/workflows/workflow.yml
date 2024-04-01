@@ -452,33 +452,31 @@ jobs:
             Path               = $path
             ModuleManifestPath = $moduleManifestPath
           }
-          Write-Host ($data | Format-Table | Out-String)
+          Write-Verbose ($data | Format-List | Out-String) -Verbose
 
           Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
 
-          #TODO: DONT OVERRIDE MANIFEST
-
-          if ($Desktop) {
+          if ($desktopPassed) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
           } else {
               Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
           }
 
-          if ($Core) {
+          if ($corePassed) {
               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
           }
 
-          if ($Linux) {
+          if ($linuxPassed) {
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
           }
 
-          if ($MacOS) {
+          if ($macOSPassed) {
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
           }
 
-          if ($Windows) {
+          if ($windowsPassed) {
               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
           }
           Stop-LogGroup
