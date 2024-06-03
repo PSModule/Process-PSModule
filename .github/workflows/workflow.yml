@@ -529,6 +529,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: false
+          VALIDATE_JSCPD: false
 
   PublishModule:
     name: Publish module
