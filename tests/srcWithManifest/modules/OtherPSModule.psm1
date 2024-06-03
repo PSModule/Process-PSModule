@@ -1,4 +1,4 @@
-﻿Function Get-OtherPSModule {
+﻿function Get-OtherPSModule {
     <#
         .SYNOPSIS
         Performs tests on a module.

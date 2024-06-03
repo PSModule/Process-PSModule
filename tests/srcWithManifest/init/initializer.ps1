@@ -1,3 +1,3 @@
-﻿Write-Verbose '-------------------------------' -Verbose
-Write-Verbose '---  THIS IS AN INITIALIZER ---' -Verbose
-Write-Verbose '-------------------------------' -Verbose
+﻿Write-Verbose '-------------------------------'
+Write-Verbose '---  THIS IS AN INITIALIZER ---'
+Write-Verbose '-------------------------------'
