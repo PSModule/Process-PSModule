@@ -533,7 +533,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() && github.event_name != 'schedule' }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
       - TestModuleStatus
       - LintDocs
