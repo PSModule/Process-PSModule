@@ -21,6 +21,6 @@ jobs:
       Name: PSModuleTest
       Path: tests/src
       ModulesOutputPath: tests/outputs/modules
-      DocsOutputPath: tests/outputs/docs
+      DocsOutputPath: tests/outputs/site
       TestProcess: true
       SkipTests: Module
