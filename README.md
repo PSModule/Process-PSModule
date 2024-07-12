@@ -18,7 +18,7 @@ The workflow is designed to be trigger on pull requests to the repository's defa
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
 Depending on the labels in the pull requests, the workflow will result in different outcomes.
 
-![Process diagram](./assets/Process-PSModule.png)
+![Process diagram](./media/Process-PSModule.png)
 
 - [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the source code using PSScriptAnalyzer, PSModule source code tests suites. This runs on 4 different environments to check compatibility.
   - PowerShell 7.x on Windows, Ubuntu and macOS.
