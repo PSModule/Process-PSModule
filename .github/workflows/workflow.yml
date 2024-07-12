@@ -25,7 +25,7 @@ on:
         type: string
         description: The path to the output directory for the documentation.
         required: false
-        default: outputs/docs
+        default: outputs/site
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'.
@@ -524,7 +524,7 @@ jobs:
           path: ${{ inputs.DocsOutputPath }}
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@v1
+        uses: PSModule/Publish-PSModule@mkdocs
         with:
           Name: ${{ inputs.Name }}
           ModulePath: ${{ inputs.ModulesOutputPath }}
