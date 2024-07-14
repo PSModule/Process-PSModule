@@ -609,7 +609,7 @@ jobs:
       - name: Run Script
         shell: pwsh
         run: |
-          . .\scripts\Build-Docs.ps1
+          Import-Module .\scripts\Build-Docs.ps1
 
           Build-PSModuleDocumentation -Name '${{ inputs.Name }}' -ModuleSourceFolder '${{ inputs.Path }}' -DocsOutputFolder '${{ inputs.DocsOutputPath }}'
 
