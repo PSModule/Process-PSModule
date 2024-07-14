@@ -25,7 +25,7 @@ on:
         type: string
         description: The path to the output directory for the documentation.
         required: false
-        default: outputs/site
+        default: outputs/docs
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'.
@@ -179,7 +179,7 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@mkdocs
+        uses: PSModule/Build-PSModule@v1
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -496,37 +496,6 @@ jobs:
           retention-days: 1
           overwrite: true
 
-  PublishModule:
-    name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
-    needs:
-      - TestModuleStatus
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Version: ${{ inputs.Version }}
-          Prerelease: ${{ inputs.Prerelease }}
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Publish module
-        uses: PSModule/Publish-PSModule@mkdocs
-        with:
-          Name: ${{ inputs.Name }}
-          ModulePath: ${{ inputs.ModulesOutputPath }}
-          DocsPath: ${{ inputs.DocsOutputPath }}
-          APIKey: ${{ secrets.APIKEY }}
-          WhatIf: ${{ inputs.TestProcess }}
-
   LintDocs:
     name: Lint documentation
     if: ${{ needs.BuildModule.result == 'success' && !cancelled() }}
@@ -564,7 +533,38 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_JSCPD: false
 
-  PrepareDocs:
+  PublishModule:
+    name: Publish module
+    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    needs:
+      - TestModuleStatus
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Publish module
+        uses: PSModule/Publish-PSModule@mkdocs
+        with:
+          Name: ${{ inputs.Name }}
+          ModulePath: ${{ inputs.ModulesOutputPath }}
+          DocsPath: ${{ inputs.DocsOutputPath }}
+          APIKey: ${{ secrets.APIKEY }}
+          WhatIf: ${{ inputs.TestProcess }}
+
+  BuildSite:
     name: Prepare documentation
     if: ${{ needs.LintDocs.result == 'success' && !cancelled() }}
     needs: LintDocs
@@ -582,15 +582,37 @@ jobs:
           name: docs
           path: ${{ github.workspace }}
 
-  PublishDocs:
-    name: Publish documentation
-    if: ${{ needs.PrepareDocs.result == 'success' && !cancelled() }}
-    needs: PrepareDocs
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Debug
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Format-Table
+          Write-Host "------------------------"
+          Get-ChildItem env: | Format-Table
+
+      - uses: actions/configure-pages@v5
+
+      - name: Install mkdoks-material
+        run: |
+          pip install mkdocs-material
+          pip install mkdocs-git-authors-plugin
+          pip install mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-git-committers-plugin-2
+
+      - name: Build mkdocs-material project
+        run: |
+          mkdocs build --config-file ./scripts/mkdocs.yml --strict --site-dir _site/
+
+      - uses: actions/upload-pages-artifact@v3
+
+  # PublishSite:
+  #   name: Publish documentation
+  #   if: ${{ needs.PrepareDocs.result == 'success' && !cancelled() }}
+  #   needs: PrepareDocs
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4
