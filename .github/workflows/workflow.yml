@@ -560,7 +560,6 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           ModulePath: ${{ inputs.ModulesOutputPath }}
-          DocsPath: ${{ inputs.DocsOutputPath }}
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ inputs.TestProcess }}
 
@@ -580,13 +579,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/_site/Functions
 
-      - name: Debug
+      - name: Debug File system
         shell: pwsh
         run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Format-Table
-          Write-Host "------------------------"
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -Property FullName | Sort-Object
+
+      - name: Debug Env vars
+        shell: pwsh
+        run: |
           Get-ChildItem env: | Format-Table
 
       - uses: actions/configure-pages@v5
