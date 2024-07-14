@@ -50,9 +50,11 @@ env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
 permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
+  contents: write      # to checkout the repo and create releases on the repo
+  pull-requests: write # to write comments to PRs
+  statuses: write      # to update the status of the workflow from linter
+  pages: write         # to deploy to module docs to GitHub Pages
+  id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
   TestSourceCode-pwsh-ubuntu-latest:
@@ -499,7 +501,6 @@ jobs:
     if: ${{ needs.TestModuleStatus.result == 'success' && needs.LintDocs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
       - TestModuleStatus
-      - LintDocs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -516,12 +517,6 @@ jobs:
         with:
           name: module
           path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Download docs artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docs
-          path: ${{ inputs.DocsOutputPath }}
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@mkdocs
@@ -569,8 +564,8 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_JSCPD: false
 
-  PublishDocs:
-    name: Publish documentation
+  PrepareDocs:
+    name: Prepare documentation
     if: ${{ needs.LintDocs.result == 'success' && !cancelled() }}
     needs: LintDocs
     runs-on: ubuntu-latest
@@ -586,3 +581,16 @@ jobs:
         with:
           name: docs
           path: ${{ github.workspace }}
+
+  PublishDocs:
+    name: Publish documentation
+    if: ${{ needs.PrepareDocs.result == 'success' && !cancelled() }}
+    needs: PrepareDocs
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
