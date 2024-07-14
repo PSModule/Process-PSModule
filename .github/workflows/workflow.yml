@@ -584,7 +584,7 @@ jobs:
       - name: Debug File system
         shell: pwsh
         run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -Property FullName | Sort-Object
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Debug Env vars
         shell: pwsh
