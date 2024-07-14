@@ -1,4 +1,4 @@
-﻿﻿#Requires -Modules platyPS, Utilities
+﻿﻿﻿﻿#Requires -Modules platyPS, Utilities
 
 function Build-PSModuleDocumentation {
     <#
@@ -27,38 +27,13 @@ function Build-PSModuleDocumentation {
         [System.IO.DirectoryInfo] $DocsOutputFolder
     )
 
-    Start-LogGroup 'Build docs - Generate markdown help'
+    if (-not $ModuleName) {
+        $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
+    }
+    Write-Verbose "Module name: $ModuleName"
+
     $functionDocsFolderPath = Join-Path -Path $DocsOutputFolder -ChildPath 'Functions'
     $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
-    $null = New-MarkdownHelp -Module $ModuleName -OutputFolder $functionDocsFolder -Force -Verbose
-    Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-        $content = Get-Content -Path $_.FullName
-        $fixedOpening = $false
-        $newContent = @()
-        foreach ($line in $content) {
-            if ($line -match '^```$' -and -not $fixedOpening) {
-                $line = $line -replace '^```$', '```powershell'
-                $fixedOpening = $true
-            } elseif ($line -match '^```.+$') {
-                $fixedOpening = $true
-            } elseif ($line -match '^```$') {
-                $fixedOpening = $false
-            }
-            $newContent += $line
-        }
-        $newContent | Set-Content -Path $_.FullName
-    }
-    Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-        $content = Get-Content -Path $_.FullName -Raw
-        $content = $content -replace '\\`', '`'
-        $content = $content -replace '\\\[', '['
-        $content = $content -replace '\\\]', ']'
-        $content = $content -replace '\\\<', '<'
-        $content = $content -replace '\\\>', '>'
-        $content = $content -replace '\\\\', '\'
-        $content | Set-Content -Path $_.FullName
-    }
-    Stop-LogGroup
 
     Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
         $fileName = $_.Name

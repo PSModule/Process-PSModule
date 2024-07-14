@@ -579,7 +579,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: ${{ github.workspace }}/_site/Functions
+          path: ${{ inputs.DocsOutputPath }}
 
       - name: Debug File system
         shell: pwsh
@@ -599,6 +599,14 @@ jobs:
           pip install mkdocs-git-authors-plugin
           pip install mkdocs-git-revision-date-localized-plugin
           pip install mkdocs-git-committers-plugin-2
+
+      - name: Run Script
+        shell: pwsh
+        run: |
+          . .\scripts\Build-Docs.ps1
+
+          Build-PSModuleDocumentation -Name  -ModuleOutputFolder 'C:\MyModule\src\MyModule' -DocsOutputFolder 'C:\MyModule\build\'
+
 
       - name: Build mkdocs-material project
         run: |
