@@ -1,6 +1,4 @@
-﻿﻿
-[CmdletBinding()]
-param(
+﻿﻿param(
     # Name of the module.
     [Parameter(Mandatory)]
     [string] $ModuleName,

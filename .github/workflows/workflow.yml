@@ -564,7 +564,7 @@ jobs:
           WhatIf: ${{ inputs.TestProcess }}
 
   BuildSite:
-    name: Prepare documentation
+    name: Build Site
     if: ${{ needs.LintDocs.result == 'success' && !cancelled() }}
     needs: LintDocs
     runs-on: ubuntu-latest
@@ -600,6 +600,7 @@ jobs:
       - uses: actions/configure-pages@v5
 
       - name: Install mkdoks-material
+        shell: pwsh
         run: |
           pip install mkdocs-material
           pip install mkdocs-git-authors-plugin
