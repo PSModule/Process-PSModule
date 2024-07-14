@@ -1,6 +1,4 @@
-﻿﻿#REQUIRES -Modules platyPS, Utilities
-
-function Build-PSModuleDocumentation {
+﻿﻿function Build-PSModuleDocumentation {
     <#
         .SYNOPSIS
         Compiles the module documentation.
