@@ -609,9 +609,7 @@ jobs:
       - name: Run Script
         shell: pwsh
         run: |
-          Import-Module .\scripts\Build-Docs.psm1
-
-          Build-PSModuleDocumentation -Name '${{ inputs.Name }}' -ModuleSourceFolder '${{ inputs.Path }}' -DocsOutputFolder '${{ inputs.DocsOutputPath }}'
+          Build-Docs.ps1 -Name '${{ inputs.Name }}' -ModuleSourceFolder '${{ inputs.Path }}' -DocsOutputFolder '${{ inputs.DocsOutputPath }}'
 
 
       - name: Build mkdocs-material project
