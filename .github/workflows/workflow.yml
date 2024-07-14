@@ -611,7 +611,6 @@ jobs:
         run: |
           Build-Docs.ps1 -Name '${{ inputs.Name }}' -ModuleSourceFolder '${{ inputs.Path }}' -DocsOutputFolder '${{ inputs.DocsOutputPath }}'
 
-
       - name: Build mkdocs-material project
         run: |
           mkdocs build --config-file ./scripts/mkdocs.yml --strict --site-dir _site/
