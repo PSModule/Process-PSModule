@@ -575,6 +575,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
@@ -605,7 +611,7 @@ jobs:
         run: |
           . .\scripts\Build-Docs.ps1
 
-          Build-PSModuleDocumentation -Name  -ModuleOutputFolder 'C:\MyModule\src\MyModule' -DocsOutputFolder 'C:\MyModule\build\'
+          Build-PSModuleDocumentation -Name '${{ inputs.Name }}' -ModuleSourceFolder '${{ inputs.Path }}' -DocsOutputFolder '${{ inputs.DocsOutputPath }}'
 
 
       - name: Build mkdocs-material project
