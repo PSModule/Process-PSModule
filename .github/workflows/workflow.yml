@@ -660,7 +660,8 @@ jobs:
 
           Start-LogGroup 'Build docs - Copy mkdocs.yml'
           $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          $mkdocsPath = Join-Path -Path $rootPath -ChildPath 'scripts/mkdocs.yml'
+          # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
+          $mkdocsPath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
           Copy-Item -Path $mkdocsPath -Destination $SiteOutputPath -Force -Verbose
           Stop-LogGroup
 
