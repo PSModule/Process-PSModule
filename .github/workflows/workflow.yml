@@ -671,6 +671,11 @@ jobs:
           $mkdocsContent | Set-Content -Path $mkdocsPath
           Stop-LogGroup
 
+      - name: Debug File system
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+
       - name: Build mkdocs-material project
         working-directory: ${{ inputs.SiteOutputPath }}
         run: |
