@@ -628,7 +628,7 @@ jobs:
 
           $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'Functions'
           $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
-          Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
+          Get-ChildItem -Path $DocsOutputPath -Recurse -Force -Include '*.md' | Copy-Item -Destination $functionDocsFolder -Recurse -Force
           Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
               $fileName = $_.Name
               $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
@@ -646,7 +646,7 @@ jobs:
           Stop-LogGroup
 
           Start-LogGroup 'Build docs - Copy icon to assets'
-          $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'assets'
+          $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'Assets'
           $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
           $rootPath = Split-Path -Path $ModuleSourcePath -Parent
           $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
