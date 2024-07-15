@@ -26,6 +26,11 @@ on:
         description: The path to the output directory for the documentation.
         required: false
         default: outputs/docs
+      SiteOutputPath:
+        type: string
+        description: The path to the output directory for the documentation.
+        required: false
+        default: outputs/site
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'.
@@ -611,17 +616,19 @@ jobs:
         shell: pwsh
         run: |
           $ModuleName = '${{ inputs.Name }}'
-          $ModuleSourceFolder = '${{ inputs.Path }}'
-          $DocsOutputFolder = '${{ inputs.DocsOutputPath }}'
 
           if (-not $ModuleName) {
               $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
           }
           Write-Verbose "Module name: $ModuleName"
 
-          $functionDocsFolderPath = Join-Path -Path $DocsOutputFolder -ChildPath 'Functions'
-          $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
+          $ModuleSourcePath = '${{ inputs.Path }}'
+          $DocsOutputPath = Join-Path -Path '${{ inputs.DocsOutputPath }}' -ChildPath $ModuleName
+          $SiteOutputPath = '${{ inputs.SiteOutputPath }}'
 
+          $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'Functions'
+          $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
+          Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
           Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
               $fileName = $_.Name
               $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
@@ -631,29 +638,30 @@ jobs:
           }
 
           Start-LogGroup 'Build docs - Process about topics'
-          $aboutDocsFolderPath = Join-Path -Path $DocsOutputFolder -ChildPath 'About'
+          $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'About'
           $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
-          $aboutSourceFolder = Get-ChildItem -Path $ModuleSourceFolder -Directory | Where-Object { $_.Name -eq 'en-US' }
+          $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
           Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
               Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
           Stop-LogGroup
 
           Start-LogGroup 'Build docs - Copy icon to assets'
-          $assetsFolderPath = Join-Path -Path $DocsOutputFolder -ChildPath 'assets'
+          $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'assets'
           $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
-          $rootPath = Split-Path -Path $ModuleSourceFolder -Parent
+          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
           $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
           Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
 
           Start-LogGroup 'Build docs - Copy readme.md'
-          $rootPath = Split-Path -Path $ModuleSourceFolder -Parent
+          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
           $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
-          Copy-Item -Path $readmePath -Destination $DocsOutputFolder -Force -Verbose
+          Copy-Item -Path $readmePath -Destination $SiteOutputPath -Force -Verbose
           Stop-LogGroup
 
           Start-LogGroup 'Build docs - Copy mkdocs.yml'
-          $mkdocsPath = Join-Path -Path $DocsOutputFolder -ChildPath 'mkdocs.yml'
-          Copy-Item -Path (Join-Path -Path $PSScriptRoot -ChildPath 'mkdocs.yml') -Destination $mkdocsPath -Force -Verbose
+          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+          $mkdocsPath = Join-Path -Path $rootPath -ChildPath 'scripts/mkdocs.yml'
+          Copy-Item -Path $mkdocsPath -Destination $SiteOutputPath -Force -Verbose
           Stop-LogGroup
 
           Start-LogGroup 'Build docs - Token replacement on mkdocs.yml'
@@ -662,22 +670,23 @@ jobs:
           $mkdocsContent | Set-Content -Path $mkdocsPath
           Stop-LogGroup
 
-
       - name: Build mkdocs-material project
+        working-directory: ${{ inputs.SiteOutputPath }}
         run: |
-          mkdocs build --config-file ./scripts/mkdocs.yml --strict --site-dir _site/
+
+          mkdocs build --config-file mkdocs.yml --strict --site-dir _site
 
       - uses: actions/upload-pages-artifact@v3
 
-  # PublishSite:
-  #   name: Publish documentation
-  #   if: ${{ needs.PrepareDocs.result == 'success' && !cancelled() }}
-  #   needs: PrepareDocs
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4
+  PublishSite:
+    name: Publish documentation
+    if: ${{ needs.BuildSite.result == 'success' && !cancelled() }}
+    needs: BuildSite
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
