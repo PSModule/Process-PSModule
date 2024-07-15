@@ -1,5 +1,5 @@
 site_name: ${{ REPO_NAME }}
-docs_dir: site
+docs_dir: '.'
 theme:
   name: material
   language: en
