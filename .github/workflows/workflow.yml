@@ -670,7 +670,7 @@ jobs:
           $mkdocsContent = $mkdocsContent.Replace('\$\{\{ REPO_NAME \}\}', $ModuleName)
           $mkdocsContent = $mkdocsContent.Replace('\$\{\{ DOCS_DIR \}\}', $SiteOutputPath)
           $mkdocsContent | Set-Content -Path $mkdocsPath
-          Show-FileContent -Path $mkdocsContent
+          Show-FileContent -Path $mkdocsPath
           Stop-LogGroup
 
       - name: Debug File system
