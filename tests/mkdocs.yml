@@ -44,8 +44,8 @@ theme:
     - search.suggest
     - search.highlight
 
-repo_name: ${{ ORG_NAME }}/${{ REPO_NAME }}
-repo_url: https://github.com/${{ ORG_NAME }}/${{ REPO_NAME }}
+repo_name: ${{ REPO_OWNER }}/${{ REPO_NAME }}
+repo_url: https://github.com/${{ REPO_OWNER }}/${{ REPO_NAME }}
 
 plugins:
   - search
@@ -66,10 +66,10 @@ extra:
   social:
     - icon: fontawesome/brands/discord
       link: https://discord.gg/jedJWCPAhD
-      name: ${{ ORG_NAME }} on Discord
+      name: ${{ REPO_OWNER }} on Discord
     - icon: fontawesome/brands/github
-      link: https://github.com/${{ ORG_NAME }}/
-      name: ${{ ORG_NAME }} on GitHub
+      link: https://github.com/${{ REPO_OWNER }}/
+      name: ${{ REPO_OWNER }} on GitHub
   consent:
     title: Cookie consent
     description: >-
