@@ -690,7 +690,8 @@ jobs:
 
   PublishSite:
     name: Publish documentation
-    if: ${{ needs.BuildSite.result == 'success' && !cancelled() }}
+    # Only run if the build was successful and the deployment is not cancelled and we are on closed PR that is merged
+    if: ${{ needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs: BuildSite
     environment:
       name: github-pages
