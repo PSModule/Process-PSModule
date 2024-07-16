@@ -622,9 +622,9 @@ jobs:
           }
           Write-Verbose "Module name: $ModuleName"
 
-          $ModuleSourcePath = '${{ inputs.Path }}'
-          $DocsOutputPath = Join-Path -Path '${{ inputs.DocsOutputPath }}' -ChildPath $ModuleName
-          $SiteOutputPath = '${{ inputs.SiteOutputPath }}'
+          $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
+          $DocsOutputPath = Join-Path (Get-Location) -ChildPath "${{ inputs.DocsOutputPath }}/$ModuleName"
+          $SiteOutputPath = Join-Path (Get-Location) -ChildPath '${{ inputs.SiteOutputPath }}'
 
           $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
           $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
