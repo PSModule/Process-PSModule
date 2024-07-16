@@ -670,7 +670,7 @@ jobs:
           $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
           $mkdocsContent = $mkdocsContent.Replace('-{{ DOCS_DIR }}-', $SiteOutputPath)
           $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-          $mkdocsContent | Set-Content -Path $mkdocsPath
+          $mkdocsContent | Set-Content -Path $mkdocsPath -Force
           Show-FileContent -Path $mkdocsPath
           Stop-LogGroup
 
