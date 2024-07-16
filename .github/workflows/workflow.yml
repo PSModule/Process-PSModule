@@ -681,7 +681,7 @@ jobs:
         env:
           MKDOCS_PATH: ${{ inputs.SiteOutputPath }}/mkdocs.yml
         run: |
-          mkdocs build --config-file $MKDOCS_PATH --strict --site-dir _site
+          mkdocs build --config-file "$MKDOCS_PATH" --strict --site-dir _site
 
       - uses: actions/upload-pages-artifact@v3
 
