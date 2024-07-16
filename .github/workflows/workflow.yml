@@ -682,8 +682,14 @@ jobs:
       - name: Build mkdocs-material project
         env:
           MKDOCS_PATH: ${{ inputs.SiteOutputPath }}/mkdocs.yml
+        shell: pwsh
         run: |
-          mkdocs build --config-file "$MKDOCS_PATH" --strict --site-dir _site
+          Start-LogGroup 'Build docs - mkdocs build - content'
+          Show-FileContent -Path $env:MKDOCS_PATH
+          Stop-LogGroup
+          Start-LogGroup 'Build docs - mkdocs build'
+          mkdocs build --config-file $env:MKDOCS_PATH --strict --site-dir _site
+          Stop-LogGroup
 
       - uses: actions/upload-pages-artifact@v3
 
