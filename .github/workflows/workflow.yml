@@ -658,20 +658,16 @@ jobs:
           Copy-Item -Path $readmePath -Destination $SiteOutputPath -Force -Verbose
           Stop-LogGroup
 
-          Start-LogGroup 'Build docs - Copy mkdocs.yml'
+          Start-LogGroup 'Build docs - Create mkdocs.yml'
           $rootPath = Split-Path -Path $ModuleSourcePath -Parent
           # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
-          $mkdocsPath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
-          Copy-Item -Path $mkdocsPath -Destination $SiteOutputPath -Force -Verbose
-          Stop-LogGroup
-
-          Start-LogGroup 'Build docs - Token replacement on mkdocs.yml'
-          $mkdocsContent = Get-Content -Path $mkdocsPath -Raw
+          $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
+          $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+          $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
           $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-          $mkdocsContent = $mkdocsContent.Replace('-{{ DOCS_DIR }}-', $SiteOutputPath)
           $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-          $mkdocsContent | Set-Content -Path $mkdocsPath -Force
-          Show-FileContent -Path $mkdocsPath
+          $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
+          Show-FileContent -Path $mkdocsTargetPath
           Stop-LogGroup
 
       - name: Debug File system
@@ -680,15 +676,14 @@ jobs:
           Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Build mkdocs-material project
-        env:
-          MKDOCS_PATH: ${{ inputs.SiteOutputPath }}/mkdocs.yml
+        working-directory: ${{ inputs.SiteOutputPath }}
         shell: pwsh
         run: |
           Start-LogGroup 'Build docs - mkdocs build - content'
-          Show-FileContent -Path $env:MKDOCS_PATH
+          Show-FileContent -Path mkdocs.yml
           Stop-LogGroup
           Start-LogGroup 'Build docs - mkdocs build'
-          mkdocs build --config-file $env:MKDOCS_PATH --strict --site-dir _site
+          mkdocs build --config-file mkdocs.yml --strict --site-dir ${{ github.workspace }}/_site
           Stop-LogGroup
 
       - uses: actions/upload-pages-artifact@v3
