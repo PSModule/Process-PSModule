@@ -666,7 +666,7 @@ jobs:
           Stop-LogGroup
 
           Start-LogGroup 'Build docs - Token replacement on mkdocs.yml'
-          $mkdocsContent = Get-Content -Path $mkdocsPath
+          $mkdocsContent = Get-Content -Path $mkdocsPath -Raw
           $mkdocsContent = $mkdocsContent.Replace('\$\{\{ REPO_NAME \}\}', $ModuleName)
           $mkdocsContent = $mkdocsContent.Replace('\$\{\{ DOCS_DIR \}\}', $SiteOutputPath)
           $mkdocsContent | Set-Content -Path $mkdocsPath
