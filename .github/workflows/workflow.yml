@@ -665,7 +665,6 @@ jobs:
           $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
           $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
           $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-          $mkdocsContent = $mkdocsContent.Replace('-{{ DOCS_DIR }}-', ${{ inputs.SiteOutputPath }})
           $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
           $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
           Show-FileContent -Path $mkdocsTargetPath
