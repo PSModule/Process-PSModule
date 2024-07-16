@@ -1,4 +1,5 @@
 site_name: -{{ REPO_NAME }}-
+docs_dir: -{{ DOCS_DIR }}-
 theme:
   name: material
   language: en
