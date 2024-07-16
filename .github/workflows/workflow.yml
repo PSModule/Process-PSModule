@@ -668,6 +668,7 @@ jobs:
           Start-LogGroup 'Build docs - Token replacement on mkdocs.yml'
           $mkdocsContent = Get-Content -Path $mkdocsPath
           $mkdocsContent = $mkdocsContent.Replace('\$\{\{ REPO_NAME \}\}', $ModuleName)
+          $mkdocsContent = $mkdocsContent.Replace('\$\{\{ DOCS_DIR \}\}', $SiteOutputPath)
           $mkdocsContent | Set-Content -Path $mkdocsPath
           Stop-LogGroup
 
@@ -677,7 +678,8 @@ jobs:
           Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Build mkdocs-material project
-        working-directory: ${{ inputs.SiteOutputPath }}
+        env:
+          MKDOCS_PATH: ${{ inputs.SiteOutputPath }}
         run: |
           mkdocs build --config-file mkdocs.yml --strict --site-dir _site
 
