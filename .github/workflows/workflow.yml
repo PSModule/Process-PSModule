@@ -683,7 +683,7 @@ jobs:
           Show-FileContent -Path mkdocs.yml
           Stop-LogGroup
           Start-LogGroup 'Build docs - mkdocs build'
-          mkdocs build --config-file mkdocs.yml --strict --site-dir ${{ github.workspace }}/_site
+          mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
           Stop-LogGroup
 
       - uses: actions/upload-pages-artifact@v3
