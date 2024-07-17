@@ -655,7 +655,8 @@ jobs:
           Start-LogGroup 'Build docs - Copy readme.md'
           $rootPath = Split-Path -Path $ModuleSourcePath -Parent
           $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
-          Copy-Item -Path $readmePath -Destination $SiteOutputPath -Force -Verbose
+          $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
+          Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
           Stop-LogGroup
 
           Start-LogGroup 'Build docs - Create mkdocs.yml'
