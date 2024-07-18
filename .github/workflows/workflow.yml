@@ -63,8 +63,6 @@ permissions:
   contents: write      # to checkout the repo and create releases on the repo
   pull-requests: write # to write comments to PRs
   statuses: write      # to update the status of the workflow from linter
-  pages: write         # to deploy to module docs to GitHub Pages
-  id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
   TestSourceCode-pwsh-ubuntu-latest:
@@ -696,9 +694,11 @@ jobs:
 
   PublishSite:
     name: Publish documentation
-    # Only run if the build was successful and the deployment is not cancelled and we are on closed PR that is merged
     if: ${{ inputs.PublishDocs && needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs: BuildSite
+    permissions:
+      pages: write    # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

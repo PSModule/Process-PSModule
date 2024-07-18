@@ -93,10 +93,22 @@ If running the action in a restrictive mode, the following permissions needs to 
 
 ```yaml
 permissions:
-  contents: write # Required to create releases
+  contents: write      # Required to create releases
   pull-requests: write # Required to create comments on the PRs
-  statuses: write # Required to update the status of the PRs from the linter
+  statuses: write      # Required to update the status of the PRs from the linter
 ```
+
+### Publishing to GitHub Pages
+
+To publish the documentation to GitHub Pages, the action requires the following permissions:
+
+```yaml
+permissions:
+  pages: write      # to deploy to Pages
+  id-token: write   # to verify the deployment originates from an appropriate source
+```
+
+For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
 
 ## Compatibility
 
