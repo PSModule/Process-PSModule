@@ -28,7 +28,7 @@ on:
         default: outputs/docs
       SiteOutputPath:
         type: string
-        description: The path to the output directory for the documentation.
+        description: The path to the output directory for the site.
         required: false
         default: outputs/site
       SkipTests:

@@ -73,6 +73,8 @@ jobs:
 | `Path` | `string` | The path to the source code of the module. | `false` | `src` |
 | `ModulesOutputPath` | `string` | The path to the output directory for the modules. | `false` | `outputs/modules` |
 | `DocsOutputPath` | `string` | The path to the output directory for the documentation. | `false` | `outputs/docs` |
+| `PublishDocs` | `boolean` | Whether to publish the documentation using MkDocs and GitHub Pages. | `false` | `true` |
+| `SiteOutputPath` | `string` | The path to the output directory for the site. | `false` | `outputs/site` |
 | `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'. | false | `None` |
 | `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
 
