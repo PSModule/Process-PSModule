@@ -73,6 +73,8 @@ jobs:
 | `Path` | `string` | The path to the source code of the module. | `false` | `src` |
 | `ModulesOutputPath` | `string` | The path to the output directory for the modules. | `false` | `outputs/modules` |
 | `DocsOutputPath` | `string` | The path to the output directory for the documentation. | `false` | `outputs/docs` |
+| `PublishDocs` | `boolean` | Whether to publish the documentation using MkDocs and GitHub Pages. | `false` | `true` |
+| `SiteOutputPath` | `string` | The path to the output directory for the site. | `false` | `outputs/site` |
 | `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'. | false | `None` |
 | `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
 
@@ -93,10 +95,22 @@ If running the action in a restrictive mode, the following permissions needs to 
 
 ```yaml
 permissions:
-  contents: write # Required to create releases
-  pull-requests: write # Required to create comments on the PRs
-  statuses: write # Required to update the status of the PRs from the linter
+  contents: write      # Create releases
+  pull-requests: write # Create comments on the PRs
+  statuses: write      # Update the status of the PRs from the linter
 ```
+
+### Publishing to GitHub Pages
+
+To publish the documentation to GitHub Pages, the action requires the following permissions:
+
+```yaml
+permissions:
+  pages: write    # Deploy to Pages
+  id-token: write # Verify the deployment originates from an appropriate source
+```
+
+For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
 
 ## Compatibility
 
