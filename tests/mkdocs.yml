@@ -5,8 +5,8 @@ theme:
   font:
     text: Roboto
     code: Sono
-  logo: assets/icon.png
-  favicon: assets/icon.png
+  logo: Assets/icon.png
+  favicon: Assets/icon.png
   palette:
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
@@ -31,15 +31,13 @@ theme:
         name: Switch to system preference
   icon:
     repo: material/github
-    edit: material/pencil
-    view: material/eye
   features:
     - navigation.instant
     - navigation.instant.progress
-    - navigation.tabs
     - navigation.indexes
     - navigation.top
     - navigation.tracking
+    - navigation.expand
     - search.suggest
     - search.highlight
 
@@ -48,10 +46,6 @@ repo_url: https://github.com/-{{ REPO_OWNER }}-/-{{ REPO_NAME }}-
 
 plugins:
   - search
-  - git-authors
-  - git-revision-date-localized:
-      enable_creation_date: true
-      type: timeago
 
 markdown_extensions:
   - toc:
