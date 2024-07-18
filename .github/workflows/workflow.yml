@@ -50,6 +50,11 @@ on:
         description: Whether the version is a prerelease.
         required: false
         default: false
+      PublishDocs:
+        type: boolean
+        description: Whether to publish the documentation using MkDocs and GitHub Pages.
+        required: false
+        default: true
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
@@ -570,7 +575,7 @@ jobs:
 
   BuildSite:
     name: Build Site
-    if: ${{ needs.LintDocs.result == 'success' && !cancelled() }}
+    if: ${{ inputs.PublishDocs && needs.LintDocs.result == 'success' && !cancelled() }}
     needs: LintDocs
     runs-on: ubuntu-latest
     steps:
@@ -692,7 +697,7 @@ jobs:
   PublishSite:
     name: Publish documentation
     # Only run if the build was successful and the deployment is not cancelled and we are on closed PR that is merged
-    if: ${{ needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: ${{ inputs.PublishDocs && needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs: BuildSite
     environment:
       name: github-pages
