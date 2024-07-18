@@ -566,7 +566,7 @@ jobs:
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@mkdocs
+        uses: PSModule/Publish-PSModule@v1
         with:
           Name: ${{ inputs.Name }}
           ModulePath: ${{ inputs.ModulesOutputPath }}
