@@ -543,7 +543,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true}}
     needs:
       - TestModuleStatus
     runs-on: ubuntu-latest
