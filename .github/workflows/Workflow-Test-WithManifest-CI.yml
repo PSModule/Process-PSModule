@@ -15,12 +15,11 @@ permissions:
 
 jobs:
   WorkflowTestCIWithManifest:
-    uses: ./.github/workflows/workflow.yml
+    uses: ./.github/workflows/CI.yml
     secrets: inherit
     with:
       Name: PSModuleTest
       Path: tests/srcWithManifest
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
-      TestProcess: true
       SkipTests: Desktop, Linux

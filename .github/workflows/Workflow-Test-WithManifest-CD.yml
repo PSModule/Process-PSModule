@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   WorkflowTestCDWithManifest:
-    uses: ./.github/workflows/workflow.yml
+    uses: ./.github/workflows/CD.yml
     secrets: inherit
     with:
       Name: PSModuleTest
