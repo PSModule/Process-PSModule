@@ -1,6 +1,6 @@
-name: Workflow-Test [Default]
+name: Workflow-Test CD [WithManifest]
 
-run-name: "Workflow-Test [Default] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "Workflow-Test CD [WithManifest] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on: [pull_request]
 
@@ -16,13 +16,13 @@ permissions:
   id-token: write
 
 jobs:
-  WorkflowTestDefault:
+  WorkflowTestCDWithManifest:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
       Name: PSModuleTest
-      Path: tests/src
+      Path: tests/srcWithManifest
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
       TestProcess: true
-      SkipTests: Module
+      SkipTests: Desktop, Linux

@@ -1,0 +1,28 @@
+name: Workflow-Test CI [WithManifest]
+
+run-name: "Workflow-Test CI [WithManifest] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
+on: [pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+  pages: write
+  id-token: write
+
+jobs:
+  WorkflowTestCIWithManifest:
+    uses: ./.github/workflows/workflow.yml
+    secrets: inherit
+    with:
+      Name: PSModuleTest
+      Path: tests/srcWithManifest
+      ModulesOutputPath: tests/outputs/modules
+      DocsOutputPath: tests/outputs/docs
+      TestProcess: true
+      SkipTests: Desktop, Linux
