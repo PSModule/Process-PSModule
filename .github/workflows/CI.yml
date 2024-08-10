@@ -51,9 +51,7 @@ env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
 permissions:
-  contents: write      # to checkout the repo and create releases on the repo
-  pull-requests: write # to write comments to PRs
-  statuses: write      # to update the status of the workflow from linter
+  contents: read # to check out the repo contents
 
 jobs:
   TestSourceCode-pwsh-ubuntu-latest:
