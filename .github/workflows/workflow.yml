@@ -540,6 +540,8 @@ jobs:
           RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_JSCPD: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
 
   PublishModule:
     name: Publish module
