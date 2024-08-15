@@ -29,3 +29,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_JSCPD: false
           VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
