@@ -1,4 +1,4 @@
-﻿function Set-InternalPSModule {
+﻿Function Get-InternalPSModule {
     <#
         .SYNOPSIS
         Performs tests on a module.
@@ -8,10 +8,6 @@
 
         "Hello, World!"
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-        'PSUseShouldProcessForStateChangingFunctions', '', Scope = 'Function',
-        Justification = 'Reason for suppressing'
-    )]
     [CmdletBinding()]
     param (
         # Name of the person to greet.

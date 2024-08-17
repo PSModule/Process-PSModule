@@ -130,3 +130,18 @@ class BookList {
         }
     }
 }
+
+enum Binding {
+    Hardcover
+    Paperback
+    EBook
+}
+
+enum Genre {
+    Mystery
+    Thriller
+    Romance
+    ScienceFiction
+    Fantasy
+    Horror
+}

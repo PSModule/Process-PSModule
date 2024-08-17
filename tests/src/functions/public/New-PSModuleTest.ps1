@@ -19,6 +19,8 @@ function New-PSModuleTest {
         'PSUseShouldProcessForStateChangingFunctions', '', Scope = 'Function',
         Justification = 'Reason for suppressing'
     )]
+    [Alias('New-PSModuleTestAlias1')]
+    [Alias('New-PSModuleTestAlias2')]
     [CmdletBinding()]
     param (
         # Name of the person to greet.
@@ -27,3 +29,9 @@ function New-PSModuleTest {
     )
     Write-Output "Hello, $Name!"
 }
+
+New-Alias New-PSModuleTestAlias3 New-PSModuleTest
+New-Alias -Name New-PSModuleTestAlias4 -Value New-PSModuleTest
+
+
+Set-Alias New-PSModuleTestAlias5 New-PSModuleTest
