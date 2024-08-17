@@ -71,7 +71,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -97,7 +97,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -123,7 +123,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -149,7 +149,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -226,7 +226,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -265,7 +265,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -304,7 +304,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -343,7 +343,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v1
+        uses: PSModule/Test-PSModule@VariablesToExport
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
