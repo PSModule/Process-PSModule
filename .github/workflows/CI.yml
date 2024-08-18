@@ -29,16 +29,16 @@ on:
         default: outputs/site
       SkipTests:
         type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'.
+        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
         required: false
         default: None
       Version:
         type: string
-        description: The version of the 'Utilities' module to process.
+        description: The version of the 'GitHub' module to use. Defaults to latest version.
         required: false
       Prerelease:
         type: boolean
-        description: Whether the version is a prerelease.
+        description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
       PublishDocs:
@@ -51,12 +51,14 @@ env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
 
 permissions:
-  contents: read # to check out the repo contents
+  contents: read       # to checkout the repository
+  pull-requests: write # to write comments to PRs
+  statuses: write      # to update the status of the workflow from linter
 
 jobs:
   TestSourceCode-pwsh-ubuntu-latest:
     name: Test source code (pwsh, ubuntu-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, 'Linux')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -67,20 +69,18 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: pwsh
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          Shell: pwsh
           TestType: SourceCode
 
   TestSourceCode-pwsh-macos-latest:
     name: Test source code (pwsh, macos-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS')) }}
     runs-on: macos-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -93,20 +93,18 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: pwsh
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          Shell: pwsh
           TestType: SourceCode
 
   TestSourceCode-pwsh-windows-latest:
     name: Test source code (pwsh, windows-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) }}
+    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows')) }}
     runs-on: windows-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -119,51 +117,22 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: pwsh
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          Shell: pwsh
-          TestType: SourceCode
-
-  TestSourceCode-powershell-windows-latest:
-    name: Test source code (powershell, windows-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) }}
-    runs-on: windows-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Version: ${{ inputs.Version }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Shell: powershell
-
-      - name: Test source code
-        id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.Path }}
-          Shell: powershell
           TestType: SourceCode
 
   BuildModule:
     name: Build module
-    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-windows-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-powershell-windows-latest.result) && !cancelled() }}
+    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-windows-latest.result) && !cancelled() }}
     needs:
       - TestSourceCode-pwsh-ubuntu-latest
       - TestSourceCode-pwsh-macos-latest
       - TestSourceCode-pwsh-windows-latest
-      - TestSourceCode-powershell-windows-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -176,7 +145,7 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@VariablesToExport
+        uses: PSModule/Build-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -199,10 +168,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  #This is necessary as there is no way to get output from a matrix job
+  # This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
     name: Test module (pwsh, ubuntu-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux')) && !cancelled() }}
     needs: BuildModule
     runs-on: ubuntu-latest
     outputs:
@@ -216,7 +185,6 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: pwsh
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
@@ -226,22 +194,21 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
-          Shell: pwsh
           TestType: Module
 
-      - name: Set status
+      - name: Failed test
         if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS')) && !cancelled() }}
     needs: BuildModule
     runs-on: macos-latest
     outputs:
@@ -255,7 +222,6 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: pwsh
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
@@ -265,22 +231,21 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
-          Shell: pwsh
           TestType: Module
 
-      - name: Set status
+      - name: Failed test
         if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
   TestModule-pwsh-windows-latest:
     name: Test module (pwsh, windows-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Core')) && !cancelled() }}
+    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows')) && !cancelled() }}
     needs: BuildModule
     runs-on: windows-latest
     outputs:
@@ -294,7 +259,6 @@ jobs:
         with:
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
-          Shell: pwsh
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
@@ -304,66 +268,25 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
-          Shell: pwsh
           TestType: Module
 
-      - name: Set status
-        if: steps.test.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"
-
-  TestModule-powershell-windows-latest:
-    name: Test module (powershell, windows-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows') || contains(inputs.SkipTests, 'Desktop')) && !cancelled() }}
-    needs: BuildModule
-    runs-on: windows-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Version: ${{ inputs.Version }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Shell: powershell
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Test built module
-        id: test
-        uses: PSModule/Test-PSModule@VariablesToExport
-        continue-on-error: true
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.ModulesOutputPath }}
-          Shell: powershell
-          TestType: Module
-
-      - name: Set status
+      - name: Failed test
         if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
 
   TestModuleStatus:
     name: Test module status
-    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-powershell-windows-latest.result) && !cancelled() }}
+    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && !cancelled() }}
     needs:
       - TestModule-pwsh-ubuntu-latest
       - TestModule-pwsh-macos-latest
       - TestModule-pwsh-windows-latest
-      - TestModule-powershell-windows-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -382,107 +305,93 @@ jobs:
           path: ${{ inputs.ModulesOutputPath }}
 
       - name: Summerize tests
-        shell: pwsh
-        run: |
-          Start-LogGroup -Name 'Passed tests'
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Script: |
+            LogGroup 'Passed tests' {
+              $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+              $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+              $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+              $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+              $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+              $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+              $anyPassed = $linuxPassed -or $macOSPassed -or $windowsPassed
+              $allSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
 
-          $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-          $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
-          $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-          $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
-          $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-          $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
-          $desktopPassed = '${{ needs.TestModule-powershell-windows-latest.outputs.passed }}' -eq 'true'
-          $desktopSkipped = '${{ needs.TestModule-powershell-windows-latest.result }}' -eq 'skipped'
-          $corePassed = $linuxPassed -or $macOSPassed -or $windowsPassed
-          $coreSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
-          $anyPassed = $corePassed -or $desktopPassed
-          $allSkipped = $coreSkipped -and $desktopSkipped
+              $Status = @(
+                  [pscustomobject]@{
+                      Name    = 'Linux'
+                      Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
+                      Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
+                  }
+                  [pscustomobject]@{
+                      Name    = 'MacOS'
+                      Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
+                      Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
+                  }
+                  [pscustomobject]@{
+                      Name    = 'Windows'
+                      Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
+                      Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
+                  }
+                  [pscustomobject]@{
+                      Name    = 'Result'
+                      Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
+                      Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
+                  }
+              )
 
-          $Status = @(
-              [pscustomobject]@{
-                  Name    = 'Linux'
-                  Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
-                  Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
-              }
-              [pscustomobject]@{
-                  Name    = 'MacOS'
-                  Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
-                  Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
-              }
-              [pscustomobject]@{
-                  Name    = 'Windows'
-                  Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
-                  Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
-              }
-              [pscustomobject]@{
-                  Name    = 'Desktop'
-                  Icon    = $desktopSkipped ? '⚠️' : $desktopPassed ? '✅' : '❌'
-                  Status  = $desktopSkipped ? 'Skipped' : $desktopPassed ? 'Passed' : 'Failed'
-              }
-              [pscustomobject]@{
-                  Name    = 'Core'
-                  Icon    = $coreSkipped ? '⚠️' : $corePassed ? '✅' : '❌'
-                  Status  = $coreSkipped ? 'Skipped' : $corePassed ? 'Passed' : 'Failed'
-              }
-              [pscustomobject]@{
-                  Name    = 'Result'
-                  Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
-                  Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
-              }
-          )
+              Write-Host ($Status | Format-Table | Out-String)
+              ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            }
 
-          Write-Host ($Status | Format-Table | Out-String)
-          ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          Stop-LogGroup
+            if (-not $anyPassed -and -not $allSkipped) {
+                Write-Host "::[error]::No tests passed"
+                exit 1
+            }
 
-          if (-not $anyPassed -and -not $allSkipped) {
-              Write-Host "::[error]::No tests passed"
-              exit 1
-          }
+            LogGroup 'Data' {
+                $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+                $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
+                $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
-          Start-LogGroup -Name 'Data'
-          $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-          $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
-          $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
+                $data = [pscustomobject]@{
+                    ModuleName         = $moduleName
+                    Path               = $path
+                    ModuleManifestPath = $moduleManifestPath
+                }
+                Write-Verbose ($data | Format-List | Out-String) -Verbose
 
-          $data = [pscustomobject]@{
-            ModuleName         = $moduleName
-            Path               = $path
-            ModuleManifestPath = $moduleManifestPath
-          }
-          Write-Verbose ($data | Format-List | Out-String) -Verbose
+                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
 
-          Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+                if ($desktopPassed) {
+                    Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
+                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
+                } else {
+                    Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
+                }
 
-          if ($desktopPassed) {
-              Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
-              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
-          } else {
-              Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
-          }
+                if ($corePassed) {
+                    Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
+                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
+                }
 
-          if ($corePassed) {
-              Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
-              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
-          }
+                if ($linuxPassed) {
+                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
+                }
 
-          if ($linuxPassed) {
-              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
-          }
+                if ($macOSPassed) {
+                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
+                }
 
-          if ($macOSPassed) {
-              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
-          }
+                if ($windowsPassed) {
+                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
+                }
+            }
 
-          if ($windowsPassed) {
-              Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
-          }
-          Stop-LogGroup
-
-          Start-LogGroup -Name 'Module Manifest'
-          Show-FileContent -Path $moduleManifestPath
-          Stop-LogGroup
+            LogGroup 'Module Manifest' {
+                Show-FileContent -Path $moduleManifestPath
+            }
 
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
@@ -556,15 +465,8 @@ jobs:
           name: docs
           path: ${{ inputs.DocsOutputPath }}
 
-      - name: Debug File system
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
-
-      - name: Debug Env vars
-        shell: pwsh
-        run: |
-          Get-ChildItem env: | Format-Table
+      - name: Debug
+        uses: PSModule/Debug@v0
 
       - uses: actions/configure-pages@v5
 
@@ -576,79 +478,81 @@ jobs:
           pip install mkdocs-git-revision-date-localized-plugin
           pip install mkdocs-git-committers-plugin-2
 
-      - name: Run Script
-        shell: pwsh
-        run: |
-          $ModuleName = '${{ inputs.Name }}'
+      - name: Structure site
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Script: |
+            $ModuleName = '${{ inputs.Name }}'
 
-          if (-not $ModuleName) {
-              $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
-          }
-          Write-Verbose "Module name: $ModuleName"
+            if (-not $ModuleName) {
+                $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
+            }
+            Write-Verbose "Module name: $ModuleName"
 
-          $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
-          $DocsOutputPath = Join-Path (Get-Location) -ChildPath "${{ inputs.DocsOutputPath }}/$ModuleName"
-          $SiteOutputPath = Join-Path (Get-Location) -ChildPath '${{ inputs.SiteOutputPath }}'
+            $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
+            $DocsOutputPath = Join-Path (Get-Location) -ChildPath "${{ inputs.DocsOutputPath }}/$ModuleName"
+            $SiteOutputPath = Join-Path (Get-Location) -ChildPath '${{ inputs.SiteOutputPath }}'
 
-          $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
-          $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
-          Get-ChildItem -Path $DocsOutputPath -Recurse -Force -Include '*.md' | Copy-Item -Destination $functionDocsFolder -Recurse -Force
-          Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-              $fileName = $_.Name
-              $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
-              Start-LogGroup " - [$fileName] - [$hash]"
-              Show-FileContent -Path $_
-              Stop-LogGroup
-          }
+            $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
+            $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
+            Get-ChildItem -Path $DocsOutputPath -Recurse -Force -Include '*.md' | Copy-Item -Destination $functionDocsFolder -Recurse -Force
+            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
+                $fileName = $_.Name
+                $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
+                LogGroup " - [$fileName] - [$hash]" {
+                    Show-FileContent -Path $_
+                }
+            }
 
-          Start-LogGroup 'Build docs - Process about topics'
-          $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
-          $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
-          $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
-          Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
-              Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
-          Stop-LogGroup
+            LogGroup 'Build docs - Process about topics' {
+                $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
+                $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
+                $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
+                Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
+                    Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
+            }
 
-          Start-LogGroup 'Build docs - Copy icon to assets'
-          $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
-          $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
-          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
-          Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+            LogGroup 'Build docs - Copy icon to assets' {
+                $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
+                $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
+                Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+            }
 
-          Start-LogGroup 'Build docs - Copy readme.md'
-          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
-          $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
-          Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
-          Stop-LogGroup
+            LogGroup 'Build docs - Copy readme.md' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
+                $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
+                Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
+            }
 
-          Start-LogGroup 'Build docs - Create mkdocs.yml'
-          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
-          $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
-          $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
-          $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
-          $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-          $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-          $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
-          Show-FileContent -Path $mkdocsTargetPath
-          Stop-LogGroup
+            LogGroup 'Build docs - Create mkdocs.yml' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
+                $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
+                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
+                Show-FileContent -Path $mkdocsTargetPath
+            }
 
-      - name: Debug File system
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+      - name: Debug
+        uses: PSModule/Debug@v0
 
       - name: Build mkdocs-material project
-        working-directory: ${{ inputs.SiteOutputPath }}
-        shell: pwsh
-        run: |
-          Start-LogGroup 'Build docs - mkdocs build - content'
-          Show-FileContent -Path mkdocs.yml
-          Stop-LogGroup
-          Start-LogGroup 'Build docs - mkdocs build'
-          mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
-          Stop-LogGroup
+        uses: PSModule/GitHub-Script@v1
+        with:
+          WorkingDirectory: ${{ inputs.SiteOutputPath }}
+          Script: |
+            LogGroup 'Build docs - mkdocs build - content' {
+                Show-FileContent -Path mkdocs.yml
+            }
+
+            LogGroup 'Build docs - mkdocs build' {
+                mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
+            }
 
       - uses: actions/upload-pages-artifact@v3

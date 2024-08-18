@@ -1,4 +1,4 @@
-﻿$Moons = @(
+﻿$script:Moons = @(
     @{
         Planet = 'Earth'
         Name   = 'Moon'

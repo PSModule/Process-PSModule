@@ -22,4 +22,4 @@ jobs:
       Path: tests/srcWithManifest
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
-      SkipTests: Desktop, Linux
+      SkipTests: Linux
