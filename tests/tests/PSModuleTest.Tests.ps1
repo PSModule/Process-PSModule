@@ -8,14 +8,25 @@ Param(
 Write-Verbose "Path to the module: [$Path]" -Verbose
 
 Describe 'PSModuleTest.Tests.ps1' {
-    It 'Should be able to import the module' {
-        Import-Module -name 'PSModuleTest' -Verbose
-        Get-Module -name 'PSModuleTest' | Should -Not -BeNullOrEmpty
-        Write-Verbose (Get-Module -name 'PSModuleTest' | Out-String) -Verbose
+    Context 'Function: Test-PSModuleTest' {
+        It 'Should be able to call the function' {
+            Write-Verbose (Test-PSModuleTest | Out-String) -Verbose
+            Test-PSModuleTest | Should -Be 'Hello, World!'
+        }
     }
-    It 'Should be able to call the function' {
-        Test-PSModuleTest -name 'World' | Should -Be 'Hello, World!'
-        Write-Verbose (Test-PSModuleTest -name 'World' | Out-String) -Verbose
+
+    Context 'Function: Get-PSModuleTest' {
+        It 'Should be able to call the function' {
+            Write-Verbose (Get-PSModuleTest | Out-String) -Verbose
+            Get-PSModuleTest | Should -Be 'Hello, World!'
+        }
+    }
+
+    Context 'Function: New-PSModuleTest' {
+        It 'Should be able to call the function' {
+            Write-Verbose (New-PSModuleTest | Out-String) -Verbose
+            New-PSModuleTest | Should -Be 'Hello, World!'
+        }
     }
 
     Context 'Variables' {
