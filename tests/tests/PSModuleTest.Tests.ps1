@@ -29,6 +29,13 @@ Describe 'PSModuleTest.Tests.ps1' {
         }
     }
 
+    Context 'Function: Set-PSModuleTest' {
+        It 'Should be able to call the function' {
+            Write-Verbose (Set-PSModuleTest | Out-String) -Verbose
+            Set-PSModuleTest | Should -Be 'Hello, World!'
+        }
+    }
+
     Context 'Variables' {
         It "Exports a variable for SolarSystems that contains 'Solar System'" {
             Write-Verbose ($SolarSystems | Out-String) -Verbose
