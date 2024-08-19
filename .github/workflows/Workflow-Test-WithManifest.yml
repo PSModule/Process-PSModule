@@ -25,4 +25,4 @@ jobs:
       ModulesOutputPath: tests/outputs/modules
       DocsOutputPath: tests/outputs/docs
       TestProcess: true
-      SkipTests: Desktop, Linux
+      SkipTests: Linux

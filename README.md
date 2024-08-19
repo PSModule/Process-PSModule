@@ -57,7 +57,7 @@ permissions:
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v1
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v2
     secrets: inherit
 
 ```
@@ -75,8 +75,10 @@ jobs:
 | `DocsOutputPath` | `string` | The path to the output directory for the documentation. | `false` | `outputs/docs` |
 | `PublishDocs` | `boolean` | Whether to publish the documentation using MkDocs and GitHub Pages. | `false` | `true` |
 | `SiteOutputPath` | `string` | The path to the output directory for the site. | `false` | `outputs/site` |
-| `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux', 'Desktop', 'Core'. | false | `None` |
+| `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'. | false | `None` |
 | `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
+| `Version` | `string` | The version of the 'GitHub' module to use. Defaults to latest version. | false | N/A |
+| `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | false | `false` |
 
 ### Secrets
 
@@ -119,6 +121,5 @@ The action is compatible with the following configurations:
 | OS | Shell |
 | --- | --- |
 | windows-latest | pwsh |
-| windows-latest | powershell |
 | macos-latest | pwsh |
 | ubuntu-latest | pwsh |
