@@ -141,6 +141,7 @@ jobs:
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
+          Verbose: true
           Version: ${{ inputs.Version }}
           Prerelease: ${{ inputs.Prerelease }}
 
