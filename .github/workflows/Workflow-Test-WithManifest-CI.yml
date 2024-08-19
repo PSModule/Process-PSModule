@@ -14,7 +14,7 @@ permissions:
   statuses: write
 
 env:
-  GITHUB_TOKEN: ${{ github.token }}
+  GH_TOKEN: ${{ github.token }}
 
 jobs:
   WorkflowTestCIWithManifest:
