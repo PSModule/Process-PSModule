@@ -213,6 +213,11 @@ jobs:
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
 
+      - name: Status
+        shell: pwsh
+        run: |
+          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
+
       - name: Failed test
         if: steps.test.outcome != 'success'
         shell: pwsh
@@ -249,6 +254,11 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
+
+      - name: Status
+        shell: pwsh
+        run: |
+          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
 
       - name: Failed test
         if: steps.test.outcome != 'success'
@@ -287,6 +297,11 @@ jobs:
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
 
+      - name: Status
+        shell: pwsh
+        run: |
+          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
+
       - name: Failed test
         if: steps.test.outcome != 'success'
         shell: pwsh
@@ -320,7 +335,7 @@ jobs:
         uses: PSModule/GitHub-Script@v1
         with:
           Script: |
-            LogGroup -Name 'Passed tests' {
+            LogGroup -Name 'Test analysis' {
 
                 $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
                 $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
