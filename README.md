@@ -77,6 +77,8 @@ jobs:
 | `SiteOutputPath` | `string` | The path to the output directory for the site. | `false` | `outputs/site` |
 | `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'. | false | `None` |
 | `TestProcess` | `boolean` | Whether to test the process. | false | `false` |
+| `Version` | `string` | The version of the 'GitHub' module to use. Defaults to latest version. | false | N/A |
+| `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | false | `false` |
 
 ### Secrets
 
