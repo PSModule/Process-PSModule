@@ -13,9 +13,6 @@ permissions:
   pull-requests: write
   statuses: write
 
-env:
-  GH_TOKEN: ${{ github.token }}
-
 jobs:
   WorkflowTestCIWithManifest:
     uses: ./.github/workflows/CI.yml
