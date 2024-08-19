@@ -10,29 +10,29 @@ Write-Verbose "Path to the module: [$Path]" -Verbose
 Describe 'PSModuleTest.Tests.ps1' {
     Context 'Function: Test-PSModuleTest' {
         It 'Should be able to call the function' {
-            Write-Verbose (Test-PSModuleTest | Out-String) -Verbose
-            Test-PSModuleTest | Should -Be 'Hello, World!'
+            Write-Verbose (Test-PSModuleTest -Name 'World' | Out-String) -Verbose
+            Test-PSModuleTest -Name 'World' | Should -Be 'Hello, World!'
         }
     }
 
     Context 'Function: Get-PSModuleTest' {
         It 'Should be able to call the function' {
-            Write-Verbose (Get-PSModuleTest | Out-String) -Verbose
-            Get-PSModuleTest | Should -Be 'Hello, World!'
+            Write-Verbose (Get-PSModuleTest -Name 'World' | Out-String) -Verbose
+            Get-PSModuleTest -Name 'World' | Should -Be 'Hello, World!'
         }
     }
 
     Context 'Function: New-PSModuleTest' {
         It 'Should be able to call the function' {
-            Write-Verbose (New-PSModuleTest | Out-String) -Verbose
-            New-PSModuleTest | Should -Be 'Hello, World!'
+            Write-Verbose (New-PSModuleTest -Name 'World' | Out-String) -Verbose
+            New-PSModuleTest -Name 'World' | Should -Be 'Hello, World!'
         }
     }
 
     Context 'Function: Set-PSModuleTest' {
         It 'Should be able to call the function' {
-            Write-Verbose (Set-PSModuleTest | Out-String) -Verbose
-            Set-PSModuleTest | Should -Be 'Hello, World!'
+            Write-Verbose (Set-PSModuleTest -Name 'World' | Out-String) -Verbose
+            Set-PSModuleTest -Name 'World' | Should -Be 'Hello, World!'
         }
     }
 
