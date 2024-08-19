@@ -83,7 +83,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -107,7 +107,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -131,7 +131,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -206,7 +206,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -248,7 +248,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -290,17 +290,12 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
 
       - name: Failed test
         if: steps.test.outcome != 'success'
@@ -390,19 +385,10 @@ jobs:
                 }
                 Write-Verbose ($data | Format-List | Out-String) -Verbose
 
-                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.4'
 
-                if ($desktopPassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
-                } else {
-                    Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
-                }
-
-                if ($corePassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
-                }
+                Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
+                Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
 
                 if ($linuxPassed) {
                     Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'

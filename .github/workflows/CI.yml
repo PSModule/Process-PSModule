@@ -72,7 +72,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -96,7 +96,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -195,7 +195,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -237,7 +237,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -279,17 +279,12 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@test
+        uses: PSModule/Test-PSModule@v2
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
 
       - name: Failed test
         if: steps.test.outcome != 'success'
@@ -324,46 +319,47 @@ jobs:
         uses: PSModule/GitHub-Script@v1
         with:
           Script: |
-            LogGroup 'Test analysis' {
-              $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-              $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
-              $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-              $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
-              $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-              $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
-              $anyPassed = $linuxPassed -or $macOSPassed -or $windowsPassed
-              $allSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
+            LogGroup -Name 'Test analysis' {
 
-              $Status = @(
-                  [pscustomobject]@{
-                      Name    = 'Linux'
-                      Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
-                      Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
-                  }
-                  [pscustomobject]@{
-                      Name    = 'MacOS'
-                      Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
-                      Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
-                  }
-                  [pscustomobject]@{
-                      Name    = 'Windows'
-                      Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
-                      Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
-                  }
-                  [pscustomobject]@{
-                      Name    = 'Result'
-                      Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
-                      Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
-                  }
-              )
+                $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+                $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+                $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+                $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+                $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+                $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+                $anyPassed = $linuxPassed -or $macOSPassed -or $windowsPassed
+                $allSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
 
-              Write-Host ($Status | Format-Table | Out-String)
-              ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            }
+                $Status = @(
+                    [pscustomobject]@{
+                        Name    = 'Linux'
+                        Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
+                        Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
+                    }
+                    [pscustomobject]@{
+                        Name    = 'MacOS'
+                        Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
+                        Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
+                    }
+                    [pscustomobject]@{
+                        Name    = 'Windows'
+                        Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
+                        Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
+                    }
+                    [pscustomobject]@{
+                        Name    = 'Result'
+                        Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
+                        Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
+                    }
+                )
 
-            if (-not $anyPassed -and -not $allSkipped) {
-                Write-Host "::[error]::No tests passed"
-                exit 1
+                Write-Host ($Status | Format-Table | Out-String)
+                ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+                if (-not $anyPassed -and -not $allSkipped) {
+                    Write-Host "::[error]::No tests passed"
+                    exit 1
+                }
             }
 
             LogGroup 'Data' {
@@ -372,25 +368,16 @@ jobs:
                 $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
                 $data = [pscustomobject]@{
-                    ModuleName         = $moduleName
-                    Path               = $path
-                    ModuleManifestPath = $moduleManifestPath
+                  ModuleName         = $moduleName
+                  Path               = $path
+                  ModuleManifestPath = $moduleManifestPath
                 }
                 Write-Verbose ($data | Format-List | Out-String) -Verbose
 
-                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '5.1'
+                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.4'
 
-                if ($desktopPassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Desktop'
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Desktop'
-                } else {
-                    Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.0'
-                }
-
-                if ($corePassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
-                }
+                Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
+                Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
 
                 if ($linuxPassed) {
                     Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
