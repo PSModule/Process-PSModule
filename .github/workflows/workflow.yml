@@ -57,7 +57,7 @@ on:
         default: true
 
 env:
-  GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Used for GitHub CLI authentication
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
