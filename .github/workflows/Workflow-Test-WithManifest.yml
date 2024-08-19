@@ -15,6 +15,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
 jobs:
   WorkflowTestWithManifest:
     uses: ./.github/workflows/workflow.yml
