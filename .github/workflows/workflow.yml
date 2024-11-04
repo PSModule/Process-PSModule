@@ -456,36 +456,6 @@ jobs:
           VALIDATE_YAML_PRETTIER: false
           VALIDATE_GITLEAKS: false
 
-  PublishModule:
-    name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true}}
-    needs:
-      - TestModuleStatus
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Version: ${{ inputs.Version }}
-          Prerelease: ${{ inputs.Prerelease }}
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Publish module
-        uses: PSModule/Publish-PSModule@v1
-        with:
-          Name: ${{ inputs.Name }}
-          ModulePath: ${{ inputs.ModulesOutputPath }}
-          APIKey: ${{ secrets.APIKEY }}
-          WhatIf: ${{ inputs.TestProcess }}
-
   BuildSite:
     name: Build Site
     if: ${{ inputs.PublishDocs && needs.LintDocs.result == 'success' && !cancelled() }}
@@ -607,10 +577,43 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
 
+  PublishModule:
+    name: Publish module
+    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true}}
+    needs:
+      - TestModuleStatus
+      - BuildSite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Version: ${{ inputs.Version }}
+          Prerelease: ${{ inputs.Prerelease }}
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
+
+      - name: Publish module
+        uses: PSModule/Publish-PSModule@v1
+        with:
+          Name: ${{ inputs.Name }}
+          ModulePath: ${{ inputs.ModulesOutputPath }}
+          APIKey: ${{ secrets.APIKEY }}
+          WhatIf: ${{ inputs.TestProcess }}
+
   PublishSite:
     name: Publish documentation
     if: ${{ inputs.PublishDocs && needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-    needs: BuildSite
+    needs:
+      - TestModuleStatus
+      - BuildSite
     permissions:
       pages: write    # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
