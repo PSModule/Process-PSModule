@@ -378,6 +378,13 @@ jobs:
                 $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
                 $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
+                # Obay module manifest overrides
+                $sourcePath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.Path }}"
+                $sourceModuleManifestPath = Join-Path -Path $sourcePath -ChildPath "manifest.psd1"
+                if (Test-Path -Path $sourceModuleManifestPath) {
+                  $sourceManifest = Import-PowerShellDataFile -Path $sourceModuleManifestPath
+                }
+
                 $data = [pscustomobject]@{
                   ModuleName         = $moduleName
                   Path               = $path
@@ -385,7 +392,9 @@ jobs:
                 }
                 Write-Verbose ($data | Format-List | Out-String) -Verbose
 
-                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.4'
+                # If the source module manifest has a PowerShellVersion, use that, otherwise use the latest version.
+                $powerShellVersion = $sourceManifest.PowerShellVersion ?? '7.4'
+                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion $powerShellVersion
 
                 Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
                 Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
@@ -401,6 +410,10 @@ jobs:
                 if ($windowsPassed) {
                     Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
                 }
+            }
+
+            LogGroup 'Module Manifest - Source' {
+                Show-FileContent -Path $moduleManifestPath
             }
 
             LogGroup 'Module Manifest' {
