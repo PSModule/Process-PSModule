@@ -297,6 +297,11 @@ jobs:
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
 
+      - name: Status
+        shell: pwsh
+        run: |
+          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
+
       - name: Failed test
         if: steps.test.outcome != 'success'
         shell: pwsh
