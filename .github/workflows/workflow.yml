@@ -597,7 +597,7 @@ jobs:
 
   PublishModule:
     name: Publish module
-    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true}}
+    if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
       - TestModuleStatus
       - BuildSite
