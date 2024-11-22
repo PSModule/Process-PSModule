@@ -82,12 +82,17 @@ jobs:
 
 ### Secrets
 
-The following secrets are **required** for the workflow to run:
+The following secrets are used by the workflow. They can be automatically provided (if available) by setting the `secrets: inherit`
+in the workflow file.
 
 | Name | Location | Description | Default |
 | ---- | -------- | ----------- | ------- |
 | `GITHUB_TOKEN` | `github` context | The token used to authenticate with GitHub. | `${{ secrets.GITHUB_TOKEN }}` |
 | `APIKey` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
+| `TEST_APP_CLIENT_ID` | GitHub secrets | The client ID for running tests. | N/A |
+| `TEST_APP_PRIVATE_KEY` | GitHub secrets | The private key for running tests. | N/A |
+| `TEST_FG_PAT` | GitHub secrets | The fine-grained personal access token for running tests. | N/A |
+| `TEST_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
 
 ## Permissions
 

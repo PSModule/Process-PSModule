@@ -2,6 +2,22 @@ name: Process-PSModule - CI
 
 on:
   workflow_call:
+    secrets:
+      APIKey:
+        description: The API key to use when publishing modules
+        required: true
+      TEST_APP_CLIENT_ID:
+        description: The client ID for the test application
+        required: false
+      TEST_APP_PRIVATE_KEY:
+        description: The private key for the test application
+        required: false
+      TEST_FG_PAT:
+        description: The personal access token for the test application
+        required: false
+      TEST_PAT:
+        description: The personal access token for the test application
+        required: false
     inputs:
       Name:
         type: string
@@ -49,6 +65,10 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
+  TEST_APP_CLIENT_ID: ${{ secrets.TEST_APP_CLIENT_ID }}
+  TEST_APP_PRIVATE_KEY: ${{ secrets.TEST_APP_PRIVATE_KEY }}
+  TEST_FG_PAT: ${{ secrets.TEST_FG_PAT }}
+  TEST_PAT: ${{ secrets.TEST_PAT }}
 
 permissions:
   contents: read       # to checkout the repository
