@@ -528,11 +528,7 @@ jobs:
         uses: PSModule/GitHub-Script@v1
         with:
           Script: |
-            $ModuleName = '${{ inputs.Name }}'
-
-            if (-not $ModuleName) {
-                $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
-            }
+            $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             Write-Verbose "Module name: $ModuleName"
 
             $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
