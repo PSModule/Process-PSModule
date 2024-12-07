@@ -476,7 +476,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: ${{ inputs.DocsOutputPath }}
+          path: '${{ inputs.SiteOutputPath }}/docs/Functions'
 
       - name: Debug
         uses: PSModule/Debug@v0
@@ -496,6 +496,7 @@ jobs:
         with:
           Script: |
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
 
             $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item

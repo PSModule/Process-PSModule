@@ -504,15 +504,8 @@ jobs:
           name: docs
           path: '${{ inputs.SiteOutputPath }}/docs/Functions'
 
-      - name: Debug File system
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
-
-      - name: Debug Env vars
-        shell: pwsh
-        run: |
-          Get-ChildItem env: | Format-Table
+      - name: Debug
+        uses: PSModule/Debug@v0
 
       - uses: actions/configure-pages@v5
 
@@ -529,6 +522,7 @@ jobs:
         with:
           Script: |
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
 
             $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
