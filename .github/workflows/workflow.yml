@@ -67,6 +67,16 @@ on:
         description: Whether to publish the documentation using MkDocs and GitHub Pages.
         required: false
         default: true
+      VerbosePreference:
+        type: string
+        description: "The preference for verbose output. Allowed values: 'SilentlyContinue', 'Stop', 'Continue', 'Inquire', 'Break', 'Ignore','Suspend'."
+        required: false
+        default: 'SilentlyContinue'
+      DebugPreference:
+        type: string
+        description: "The preference for debug output. Allowed values: 'SilentlyContinue', 'Stop', 'Continue', 'Inquire', 'Break', 'Ignore','Suspend'."
+        required: false
+        default: 'SilentlyContinue'
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
@@ -104,6 +114,8 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
           TestType: SourceCode
+          VerbosePreference: ${{ inputs.VerbosePreference }}
+          DebugPreference: ${{ inputs.DebugPreference }}
 
   TestSourceCode-pwsh-macos-latest:
     name: Test source code (pwsh, macos-latest)
@@ -128,6 +140,8 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
           TestType: SourceCode
+          VerbosePreference: ${{ inputs.VerbosePreference }}
+          DebugPreference: ${{ inputs.DebugPreference }}
 
   TestSourceCode-pwsh-windows-latest:
     name: Test source code (pwsh, windows-latest)
@@ -152,6 +166,8 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
           TestType: SourceCode
+          VerbosePreference: ${{ inputs.VerbosePreference }}
+          DebugPreference: ${{ inputs.DebugPreference }}
 
   BuildModule:
     name: Build module
@@ -212,6 +228,8 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
+          VerbosePreference: ${{ inputs.VerbosePreference }}
+          DebugPreference: ${{ inputs.DebugPreference }}
 
       - name: Status
         shell: pwsh
@@ -254,6 +272,8 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
+          VerbosePreference: ${{ inputs.VerbosePreference }}
+          DebugPreference: ${{ inputs.DebugPreference }}
 
       - name: Status
         shell: pwsh
@@ -296,6 +316,8 @@ jobs:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.ModulesOutputPath }}
           TestType: Module
+          VerbosePreference: ${{ inputs.VerbosePreference }}
+          DebugPreference: ${{ inputs.DebugPreference }}
 
       - name: Status
         shell: pwsh
