@@ -524,64 +524,66 @@ jobs:
           pip install mkdocs-git-revision-date-localized-plugin
           pip install mkdocs-git-committers-plugin-2
 
-      - name: Run Script
-        shell: pwsh
-        run: |
-          $ModuleName = '${{ inputs.Name }}'
+      - name: Structure site
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Script: |
+            $ModuleName = '${{ inputs.Name }}'
 
-          if (-not $ModuleName) {
-              $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
-          }
-          Write-Verbose "Module name: $ModuleName"
+            if (-not $ModuleName) {
+                $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
+            }
+            Write-Verbose "Module name: $ModuleName"
 
-          $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
-          $DocsOutputPath = Join-Path (Get-Location) -ChildPath "${{ inputs.DocsOutputPath }}/$ModuleName"
-          $SiteOutputPath = Join-Path (Get-Location) -ChildPath '${{ inputs.SiteOutputPath }}'
+            $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
+            $DocsOutputPath = Join-Path (Get-Location) -ChildPath "${{ inputs.DocsOutputPath }}/$ModuleName"
+            $SiteOutputPath = Join-Path (Get-Location) -ChildPath '${{ inputs.SiteOutputPath }}'
 
-          $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
-          $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
-          Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
-          Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-              $fileName = $_.Name
-              $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
-              Start-LogGroup " - [$fileName] - [$hash]"
-              Show-FileContent -Path $_
-              Stop-LogGroup
-          }
+            $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
+            $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
+            Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
+            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
+                $fileName = $_.Name
+                $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
+                LogGroup " - [$fileName] - [$hash]" {
+                    Show-FileContent -Path $_
+                }
+            }
 
-          Start-LogGroup 'Build docs - Process about topics'
-          $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
-          $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
-          $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
-          Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
-              Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
-          Stop-LogGroup
+            LogGroup 'Build docs - Process about topics' {
+                $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
+                $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
+                $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
+                Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
+                    Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
+            }
 
-          Start-LogGroup 'Build docs - Copy icon to assets'
-          $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
-          $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
-          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
-          Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+            LogGroup 'Build docs - Copy icon to assets' {
+                $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
+                $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
+                Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+            }
 
-          Start-LogGroup 'Build docs - Copy readme.md'
-          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
-          $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
-          Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
-          Stop-LogGroup
+            LogGroup 'Build docs - Copy readme.md' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
+                $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
+                Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
+            }
 
-          Start-LogGroup 'Build docs - Create mkdocs.yml'
-          $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-          # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
-          $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
-          $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
-          $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
-          $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-          $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-          $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
-          Show-FileContent -Path $mkdocsTargetPath
-          Stop-LogGroup
+            LogGroup 'Build docs - Create mkdocs.yml' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
+                $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
+                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
+                Show-FileContent -Path $mkdocsTargetPath
+            }
 
       - name: Debug File system
         shell: pwsh
