@@ -495,11 +495,7 @@ jobs:
         uses: PSModule/GitHub-Script@v1
         with:
           Script: |
-            $ModuleName = '${{ inputs.Name }}'
-
-            if (-not $ModuleName) {
-                $ModuleName = $env:GITHUB_REPOSITORY -replace '.+/'
-            }
+            $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             Write-Verbose "Module name: $ModuleName"
 
             $ModuleSourcePath = Join-Path (Get-Location) -ChildPath '${{ inputs.Path }}'
@@ -508,7 +504,7 @@ jobs:
 
             $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
             $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
-            Get-ChildItem -Path $DocsOutputPath -Recurse -Force -Include '*.md' | Copy-Item -Destination $functionDocsFolder -Recurse -Force
+            Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
             Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
                 $fileName = $_.Name
                 $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
