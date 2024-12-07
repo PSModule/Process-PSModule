@@ -535,6 +535,10 @@ jobs:
             $DocsOutputPath = Join-Path $PWD -ChildPath "${{ inputs.DocsOutputPath }}"
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
 
+            Write-Verbose "Module source path: $ModuleSourcePath" -Verbose
+            Write-Verbose "Docs output path:   $DocsOutputPath" -Verbose
+            Write-Verbose "Site output path:   $SiteOutputPath" -Verbose
+
             $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
             $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
             Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
