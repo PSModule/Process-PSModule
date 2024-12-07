@@ -502,7 +502,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: ${{ inputs.DocsOutputPath }}
+          path: '${{ inputs.SiteOutputPath }}/docs/Functions'
 
       - name: Debug File system
         shell: pwsh
@@ -529,19 +529,9 @@ jobs:
         with:
           Script: |
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-            Write-Verbose "Module name: $ModuleName" -Verbose
-
-            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
-            $DocsOutputPath = Join-Path $PWD -ChildPath "${{ inputs.DocsOutputPath }}"
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
 
-            Write-Verbose "Module source path: $ModuleSourcePath" -Verbose
-            Write-Verbose "Docs output path:   $DocsOutputPath" -Verbose
-            Write-Verbose "Site output path:   $SiteOutputPath" -Verbose
-
-            $functionDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions'
-            $functionDocsFolder = New-Item -Path $functionDocsFolderPath -ItemType Directory -Force
-            Copy-Item -Path $DocsOutputPath -Destination $functionDocsFolder -Recurse -Force
+            $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
             Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
                 $fileName = $_.Name
                 $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
