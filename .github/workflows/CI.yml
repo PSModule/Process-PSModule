@@ -118,8 +118,6 @@ jobs:
     name: Test source code (pwsh, macos-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS')) }}
     runs-on: macos-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -148,8 +146,6 @@ jobs:
     name: Test source code (pwsh, windows-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows')) }}
     runs-on: windows-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
