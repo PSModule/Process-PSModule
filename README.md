@@ -77,10 +77,10 @@ jobs:
 | `SiteOutputPath` | `string` | The path to the output directory for the site. | `false` | `outputs/site` |
 | `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'. | `false` | `None` |
 | `TestProcess` | `boolean` | Whether to test the process. | `false` | `false` |
-| `Version` | `string` | The version of the 'GitHub' module to use. Defaults to latest version. | `false` | N/A |
+| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | N/A |
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
-| `VerbosePreference` | `string` | The preference for verbose output. Allowed values: 'SilentlyContinue', 'Stop', 'Continue', 'Inquire', 'Break', 'Ignore','Suspend'. | `false` | `SilentlyContinue` |
-| `DebugPreference` | `string` | The preference for debug output. Allowed values: 'SilentlyContinue', 'Stop', 'Continue', 'Inquire', 'Break', 'Ignore','Suspend'. | `false` | `SilentlyContinue` |
+| `Debug` | `boolean` | Whether to enable debug output. | `false` | `false` |
+| `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
 
 ### Secrets
 
