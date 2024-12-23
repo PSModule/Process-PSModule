@@ -6,19 +6,25 @@ on:
       APIKey:
         description: The API key for the PowerShell Gallery.
         required: true
-      TEST_APP_CLIENT_ID:
-        description: The client ID of an app for running tests.
+      TEST_APP_ENT_CLIENT_ID:
+        description: The client ID of an Enterprise GitHub App for running tests.
         required: false
-      TEST_APP_PRIVATE_KEY:
-        description: The private key of an app for running tests.
+      TEST_APP_ENT_PRIVATE_KEY:
+        description: The private key of an Enterprise GitHub App for running tests.
         required: false
-      TEST_FG_ORG_PAT:
+      TEST_APP_ORG_CLIENT_ID:
+        description: The client ID of an Organization GitHub App for running tests.
+        required: false
+      TEST_APP_ORG_PRIVATE_KEY:
+        description: The private key of an Organization GitHub App for running tests.
+        required: false
+      TEST_USER_ORG_FG_PAT:
         description: The fine-grained personal access token with org access for running tests.
         required: false
-      TEST_FG_USER_PAT:
+      TEST_USER_USER_FG_PAT:
         description: The fine-grained personal access token with user account access for running tests.
         required: false
-      TEST_PAT:
+      TEST_USER_PAT:
         description: The classic personal access token for running tests.
         required: false
     inputs:
@@ -83,11 +89,13 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
-  TEST_APP_CLIENT_ID: ${{ secrets.TEST_APP_CLIENT_ID }}
-  TEST_APP_PRIVATE_KEY: ${{ secrets.TEST_APP_PRIVATE_KEY }}
-  TEST_FG_ORG_PAT: ${{ secrets.TEST_FG_ORG_PAT }}
-  TEST_FG_USER_PAT: ${{ secrets.TEST_FG_USER_PAT }}
-  TEST_PAT: ${{ secrets.TEST_PAT }}
+  TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+  TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+  TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+  TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+  TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+  TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+  TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
