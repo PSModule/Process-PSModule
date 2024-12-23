@@ -4,22 +4,22 @@ on:
   workflow_call:
     secrets:
       APIKey:
-        description: The API key to use when publishing modules
+        description: The API key for the PowerShell Gallery.
         required: true
       TEST_APP_CLIENT_ID:
-        description: The client ID for the test application
+        description: The client ID of an app for running tests.
         required: false
       TEST_APP_PRIVATE_KEY:
-        description: The private key for the test application
+        description: The private key of an app for running tests.
         required: false
       TEST_FG_ORG_PAT:
-        description: The personal access token with access to the test organization
+        description: The fine-grained personal access token with org access for running tests.
         required: false
       TEST_FG_USER_PAT:
-        description: The personal access token with access to the user account
+        description: The fine-grained personal access token with user account access for running tests.
         required: false
       TEST_PAT:
-        description: The personal access token for the test account
+        description: The classic personal access token for running tests.
         required: false
     inputs:
       Name:
