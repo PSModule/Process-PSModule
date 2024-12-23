@@ -12,11 +12,14 @@ on:
       TEST_APP_PRIVATE_KEY:
         description: The private key for the test application
         required: false
-      TEST_FG_PAT:
-        description: The personal access token for the test application
+      TEST_FG_ORG_PAT:
+        description: The personal access token with access to the test organization
+        required: false
+      TEST_FG_USER_PAT:
+        description: The personal access token with access to the user account
         required: false
       TEST_PAT:
-        description: The personal access token for the test application
+        description: The personal access token for the test account
         required: false
     inputs:
       Name:
@@ -77,7 +80,8 @@ env:
   GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
   TEST_APP_CLIENT_ID: ${{ secrets.TEST_APP_CLIENT_ID }}
   TEST_APP_PRIVATE_KEY: ${{ secrets.TEST_APP_PRIVATE_KEY }}
-  TEST_FG_PAT: ${{ secrets.TEST_FG_PAT }}
+  TEST_FG_ORG_PAT: ${{ secrets.TEST_FG_ORG_PAT }}
+  TEST_FG_USER_PAT: ${{ secrets.TEST_FG_USER_PAT }}
   TEST_PAT: ${{ secrets.TEST_PAT }}
 
 permissions:
