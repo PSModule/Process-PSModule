@@ -6,9 +6,16 @@ Param(
 )
 
 Write-Verbose "Path to the module: [$Path]" -Verbose
-
 Describe 'Environment Variables are available' {
-    It 'Should be available [<_>]' -ForEach @('TEST_APP_CLIENT_ID', 'TEST_APP_PRIVATE_KEY', 'TEST_FG_ORG_PAT', 'TEST_FG_USER_PAT', 'TEST_PAT') {
+    It 'Should be available [<_>]' -ForEach @(
+        'TEST_APP_ENT_CLIENT_ID',
+        'TEST_APP_ENT_PRIVATE_KEY',
+        'TEST_APP_ORG_CLIENT_ID',
+        'TEST_APP_ORG_PRIVATE_KEY',
+        'TEST_USER_ORG_FG_PAT',
+        'TEST_USER_USER_FG_PAT',
+        'TEST_USER_PAT'
+    ) {
         $name = $_
         Write-Verbose "Environment variable: [$name]" -Verbose
         Get-ChildItem env: | Where-Object { $_.Name -eq $name } | Should -Not -BeNullOrEmpty
