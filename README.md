@@ -91,11 +91,13 @@ in the workflow file.
 | ---- | -------- | ----------- | ------- |
 | `GITHUB_TOKEN` | `github` context | The token used to authenticate with GitHub. | `${{ secrets.GITHUB_TOKEN }}` |
 | `APIKey` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
-| `TEST_APP_CLIENT_ID` | GitHub secrets | The client ID of an app for running tests. | N/A |
-| `TEST_APP_PRIVATE_KEY` | GitHub secrets | The private key of an app for running tests. | N/A |
-| `TEST_FG_ORG_PAT` | GitHub secrets | The fine-grained personal access token with org access for running tests. | N/A |
-| `TEST_FG_USER_PAT` | GitHub secrets | The fine-grained personal access token with user account access for running tests. | N/A |
-| `TEST_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
+| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests. | N/A |
+| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests. | N/A |
+| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests. | N/A |
+| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests. | N/A |
+| `TEST_USER_ORG_FG_PAT` | GitHub secrets | The fine-grained personal access token with org access for running tests. | N/A |
+| `TEST_USER_USER_FG_PAT` | GitHub secrets | The fine-grained personal access token with user account access for running tests. | N/A |
+| `TEST_USER_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
 
 ## Permissions
 
