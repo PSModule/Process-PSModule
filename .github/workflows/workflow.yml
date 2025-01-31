@@ -545,6 +545,7 @@ jobs:
           VALIDATE_JSCPD: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          VALIDATE_JSON_PRETTIER: false
           VALIDATE_GITLEAKS: false
 
   BuildSite:
