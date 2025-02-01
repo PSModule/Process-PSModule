@@ -79,7 +79,7 @@ jobs:
 | `TestProcess` | `boolean` | Whether to test the process. | `false` | `false` |
 | `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | N/A |
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
-| `Debug` | `boolean` | Whether to enable debug output. | `false` | `false` |
+| `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
 | `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
 
 ### Secrets
