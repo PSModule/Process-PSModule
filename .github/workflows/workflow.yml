@@ -323,7 +323,7 @@ jobs:
         id: test
         uses: PSModule/Test-PSModule@v2
         env:
-          DYLD_PRINT_LIBRARIES: 1
+          DYLD_PRINT_LIBRARIES: ${{ inputs.Debug }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
