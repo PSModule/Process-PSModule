@@ -298,6 +298,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v2
+        env:
+          DYLD_PRINT_LIBRARIES: 1
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
