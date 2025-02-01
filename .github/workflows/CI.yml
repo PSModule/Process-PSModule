@@ -106,6 +106,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -134,6 +138,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -161,6 +169,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -194,6 +206,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -225,6 +241,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -274,6 +294,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
+
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -291,6 +315,8 @@ jobs:
       - name: Test built module
         id: test
         uses: PSModule/Test-PSModule@v2
+        env:
+          DYLD_PRINT_LIBRARIES: ${{ inputs.Debug }}
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -321,6 +347,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -370,6 +400,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -491,6 +525,10 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
+
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
@@ -530,6 +568,10 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
