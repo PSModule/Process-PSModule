@@ -616,9 +616,6 @@ jobs:
           name: docs
           path: '${{ inputs.SiteOutputPath }}/docs/Functions'
 
-      - name: Debug
-        uses: PSModule/Debug@v0
-
       - uses: actions/configure-pages@v5
 
       - name: Install mkdoks-material
