@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@main
+        uses: ./.github/actions/Initialize
 
       - name: Test-PSModule
         uses: PSModule/Test-PSModule@main
@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@main
+        uses: ./.github/actions/Initialize
 
       - name: Test-PSModule
         uses: PSModule/Test-PSModule@main

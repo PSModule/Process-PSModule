@@ -96,7 +96,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@main
+        uses: ./.github/actions/Initialize
 
       - name: Publish-PSModule
         uses: PSModule/Publish-PSModule@main

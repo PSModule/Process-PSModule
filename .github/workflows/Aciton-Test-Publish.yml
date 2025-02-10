@@ -1,6 +1,6 @@
-name: Action-Test
+name: Aciton-Test-Publish
 
-run-name: "Action-Test - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "Aciton-Test-Publish - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -18,17 +18,17 @@ permissions:
 
 jobs:
   ActionTestDefault:
-    name: Action-Test - [Default]
+    name: Aciton-Test-Publish - [Default]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@main
+        uses: ./.github/actions/Initialize
 
-      - name: Action-Test
-        uses: ./
+      - name: Aciton-Test-Publish
+        uses: ./.github/actions/Publish
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

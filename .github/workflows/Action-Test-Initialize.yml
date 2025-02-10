@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Action-Test
-        uses: ./
+        uses: ./.github/actions/Initialize
 
       - name: Run GitHub-script
         uses: PSModule/GitHub-script@v1
