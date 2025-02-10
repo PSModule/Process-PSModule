@@ -1,4 +1,3 @@
 @{
-    Author            = 'Author'
-    PowerShellVersion = '5.1'
+    Author = 'Author'
 }
