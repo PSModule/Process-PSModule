@@ -1,6 +1,6 @@
-name: Action-Test
+name: Action-Test-Build
 
-run-name: "Action-Test - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "Action-Test-Build - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ permissions: {}
 
 jobs:
   ActionTestDefault:
-    name: Action-Test - [Default]
+    name: Action-Test-Build - [Default]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -28,7 +28,7 @@ jobs:
       - name: Initialize environment
         uses: ./.github/actions/Initialize
 
-      - name: Action-Test
+      - name: Action-Test-Build
         uses: ./.github/actions/Build
         with:
           Name: PSModuleTest
@@ -37,7 +37,7 @@ jobs:
           DocsOutputPath: tests/outputs/docs
 
   ActionTestWithManifest:
-    name: Action-Test - [DefaultWithManifest]
+    name: Action-Test-Build - [DefaultWithManifest]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repo
@@ -46,7 +46,7 @@ jobs:
       - name: Initialize environment
         uses: ./.github/actions/Initialize
 
-      - name: Action-Test
+      - name: Action-Test-Build
         uses: ./.github/actions/Build
         with:
           Name: PSModuleTest

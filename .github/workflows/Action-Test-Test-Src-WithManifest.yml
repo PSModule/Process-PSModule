@@ -31,7 +31,7 @@ jobs:
 
       - name: Action-Test
         uses: ./.github/actions/Test
-        id: action-test
+        id: test
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -42,7 +42,7 @@ jobs:
       - name: Status
         shell: pwsh
         env:
-          PASSED: ${{ steps.action-test.outputs.passed }}
+          PASSED: ${{ steps.test.outputs.passed }}
         run: |
           Write-Host "Passed: [$env:PASSED]"
           if ($env:PASSED -ne 'true') {

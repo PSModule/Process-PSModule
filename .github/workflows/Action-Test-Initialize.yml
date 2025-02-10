@@ -1,6 +1,6 @@
-name: Action-Test
+name: Action-Test-Initialize
 
-run-name: "Action-Test - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "Action-Test-Initialize - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -20,13 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    name: Action-Test - [Basic] - [${{ matrix.os }}]
+    name: Action-Test-Initialize - [Basic] - [${{ matrix.os }}]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Action-Test
+      - name: Action-Test-Initialize
         uses: ./.github/actions/Initialize
 
       - name: Run GitHub-script
