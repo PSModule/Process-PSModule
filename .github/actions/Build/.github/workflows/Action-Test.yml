@@ -1,0 +1,57 @@
+name: Action-Test
+
+run-name: "Action-Test - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  ActionTestDefault:
+    name: Action-Test - [Default]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@main
+
+      - name: Action-Test
+        uses: ./
+        with:
+          Name: PSModuleTest
+          Path: tests/src
+          ModulesOutputPath: tests/outputs/modules
+          DocsOutputPath: tests/outputs/docs
+
+  ActionTestWithManifest:
+    name: Action-Test - [DefaultWithManifest]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@main
+
+      - name: Action-Test
+        uses: ./
+        with:
+          Name: PSModuleTest
+          Path: tests/srcWithManifest
+          ModulesOutputPath: tests/outputs/modules
+          DocsOutputPath: tests/outputs/docs
+          ModuleArtifactName: moduleWithManifest
+          DocsArtifactName: docsWithManifest

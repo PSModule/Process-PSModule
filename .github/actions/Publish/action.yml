@@ -1,0 +1,106 @@
+name: Publish-PSModule (by PSModule)
+description: Publish a PowerShell module to the PowerShell Gallery.
+author: PSModule
+branding:
+  icon: upload-cloud
+  color: gray-dark
+
+inputs:
+  Name:
+    description: Name of the module to publish.
+    required: false
+  ModulePath:
+    description: Path to the module to publish.
+    required: false
+    default: outputs/modules
+  APIKey:
+    description: PowerShell Gallery API Key.
+    required: true
+  AutoCleanup:
+    description: Control wether to automatically delete the prerelease tags after the stable release is created.
+    required: false
+    default: 'true'
+  AutoPatching:
+    description: Control wether to automatically handle patches. If disabled, the action will only create a patch release if the pull request has a 'patch' label.
+    required: false
+    default: 'true'
+  ConfigurationFile:
+    description: The path to the configuration file. Settings in the configuration file take precedence over the action inputs.
+    required: false
+    default: .github\auto-release.yml
+  DatePrereleaseFormat:
+    description: If specified, uses a date based prerelease scheme. The format should be a valid .NET format string like 'yyyyMMddHHmm'.
+    required: false
+    default: ''
+  IgnoreLabels:
+    description: A comma separated list of labels that do not trigger a release.
+    required: false
+    default: NoRelease
+  IncrementalPrerelease:
+    description: Control wether to automatically increment the prerelease number. If disabled, the action will ensure only one prerelease exists for a given branch.
+    required: false
+    default: 'true'
+  MajorLabels:
+    description: A comma separated list of labels that trigger a major release.
+    required: false
+    default: major, breaking
+  MinorLabels:
+    description: A comma separated list of labels that trigger a minor release.
+    required: false
+    default: minor, feature
+  PatchLabels:
+    description: A comma separated list of labels that trigger a patch release.
+    required: false
+    default: patch, fix
+  VersionPrefix:
+    description: The prefix to use for the version number.
+    required: false
+    default: v
+  WhatIf:
+    description: If specified, the action will only log the changes it would make, but will not actually create or delete any releases or tags.
+    required: false
+    default: 'false'
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  Version:
+    description: Specifies the version of the GitHub module to be installed. The value must be an exact version.
+    required: false
+  Prerelease:
+    description: Allow prerelease versions if available.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Run Publish-PSModule
+      uses: PSModule/GitHub-Script@v1
+      env:
+        GITHUB_ACTION_INPUT_Name: ${{ inputs.Name }}
+        GITHUB_ACTION_INPUT_ModulePath: ${{ inputs.ModulePath }}
+        GITHUB_ACTION_INPUT_APIKey: ${{ inputs.APIKey }}
+        GITHUB_ACTION_INPUT_AutoCleanup: ${{ inputs.AutoCleanup }}
+        GITHUB_ACTION_INPUT_AutoPatching: ${{ inputs.AutoPatching }}
+        GITHUB_ACTION_INPUT_ConfigurationFile: ${{ inputs.ConfigurationFile }}
+        GITHUB_ACTION_INPUT_DatePrereleaseFormat: ${{ inputs.DatePrereleaseFormat }}
+        GITHUB_ACTION_INPUT_IgnoreLabels: ${{ inputs.IgnoreLabels }}
+        GITHUB_ACTION_INPUT_IncrementalPrerelease: ${{ inputs.IncrementalPrerelease }}
+        GITHUB_ACTION_INPUT_MajorLabels: ${{ inputs.MajorLabels }}
+        GITHUB_ACTION_INPUT_MinorLabels: ${{ inputs.MinorLabels }}
+        GITHUB_ACTION_INPUT_PatchLabels: ${{ inputs.PatchLabels }}
+        GITHUB_ACTION_INPUT_VersionPrefix: ${{ inputs.VersionPrefix }}
+        GITHUB_ACTION_INPUT_WhatIf: ${{ inputs.WhatIf }}
+      with:
+        Debug: ${{ inputs.Debug }}
+        Prerelease: ${{ inputs.Prerelease }}
+        Verbose: ${{ inputs.Verbose }}
+        Version: ${{ inputs.Version }}
+        Script: |
+          # Publish-PSModule
+          ${{ github.action_path }}\scripts\main.ps1

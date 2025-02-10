@@ -111,7 +111,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: ./.github/actions/Test
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -143,7 +143,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -152,7 +152,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: ./.github/actions/Test
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -175,7 +175,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -184,7 +184,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: ./.github/actions/Test
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -211,7 +211,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -219,7 +219,7 @@ jobs:
           Version: ${{ inputs.Version }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@v2
+        uses: ./.github/actions/Build
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -247,7 +247,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -262,7 +262,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: ./.github/actions/Test
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -299,7 +299,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -314,7 +314,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: ./.github/actions/Test
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -351,7 +351,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -366,7 +366,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: ./.github/actions/Test
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -404,7 +404,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -572,7 +572,7 @@ jobs:
         uses: PSModule/Debug@v0
 
       - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
+        uses: ./.github/actions/Initialize
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
