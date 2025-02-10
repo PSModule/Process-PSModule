@@ -55,7 +55,7 @@ jobs:
         uses: ./.github/actions/Initialize
 
       - name: Test-PSModule
-        uses: PSModule/Test-PSModule@main
+        uses: ./.github/actions/Test
         with:
           Path: src
           TestType: SourceCode

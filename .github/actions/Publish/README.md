@@ -99,7 +99,7 @@ jobs:
         uses: ./.github/actions/Initialize
 
       - name: Publish-PSModule
-        uses: PSModule/Publish-PSModule@main
+        uses: ./.github/actions/Publish
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:

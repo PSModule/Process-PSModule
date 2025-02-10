@@ -3,10 +3,8 @@ function Test-PSModuleTest {
     <#
         .SYNOPSIS
         Performs tests on a module.
-
         .EXAMPLE
         Test-PSModule -Name 'World'
-
         "Hello, World!"
     #>
     [CmdletBinding()]
