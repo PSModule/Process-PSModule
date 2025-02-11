@@ -32,9 +32,9 @@ jobs:
         uses: ./.github/actions/Build
         with:
           Name: PSModuleTest
-          Path: tests/src
-          ModulesOutputPath: tests/outputs/modules
-          DocsOutputPath: tests/outputs/docs
+          Path: tests/srcTestRepo/src
+          ModulesOutputPath: tests/srcTestRepo/outputs/modules
+          DocsOutputPath: tests/srcTestRepo/outputs/docs
 
   ActionTestWithManifest:
     name: Action-Test-Build - [DefaultWithManifest]
@@ -50,8 +50,8 @@ jobs:
         uses: ./.github/actions/Build
         with:
           Name: PSModuleTest
-          Path: tests/srcWithManifest
-          ModulesOutputPath: tests/outputs/modules
-          DocsOutputPath: tests/outputs/docs
+          Path: tests/srcWithManifestRepo/src
+          ModulesOutputPath: tests/srcWithManifestRepo/outputs/modules
+          DocsOutputPath: tests/srcWithManifestRepo/outputs/docs
           ModuleArtifactName: moduleWithManifest
           DocsArtifactName: docsWithManifest

@@ -28,5 +28,5 @@ jobs:
       - name: Action-Test-Document
         uses: ./.github/actions/Document
         with:
-          working-directory: ./tests
+          working-directory: tests/srcTestRepo/src
           subject: PSModule
