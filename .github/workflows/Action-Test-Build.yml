@@ -50,8 +50,8 @@ jobs:
         uses: ./.github/actions/Build
         with:
           Name: PSModuleTest
-          Path: tests/srcWithManifestRepo/src
-          ModulesOutputPath: tests/srcWithManifestRepo/outputs/modules
-          DocsOutputPath: tests/srcWithManifestRepo/outputs/docs
+          Path: tests/srcWithManifestTestRepo/src
+          ModulesOutputPath: tests/srcWithManifestTestRepo/outputs/modules
+          DocsOutputPath: tests/srcWithManifestTestRepo/outputs/docs
           ModuleArtifactName: moduleWithManifest
           DocsArtifactName: docsWithManifest
