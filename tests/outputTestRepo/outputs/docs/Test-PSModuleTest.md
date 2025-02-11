@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# New-PSModuleTest
+# Test-PSModuleTest
 
 ## SYNOPSIS
 Performs tests on a module.
@@ -13,7 +13,7 @@ Performs tests on a module.
 ## SYNTAX
 
 ```powershell
-New-PSModuleTest [-Name] <String> [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Test-PSModuleTest [-Name] <String> [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -70,3 +70,4 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## NOTES
 
 ## RELATED LINKS
+

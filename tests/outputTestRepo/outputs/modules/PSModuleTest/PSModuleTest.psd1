@@ -5,17 +5,25 @@
         'Core'
         'Desktop'
     )
-    GUID                  = '20b37221-db1c-43db-9cca-f22b33123548'
+    GUID                  = 'e4fb58a5-2027-4542-b7be-e5e5f352e358'
     Author                = 'PSModule'
     CompanyName           = 'PSModule'
-    Copyright             = '(c) 2024 PSModule. All rights reserved.'
+    Copyright             = '(c) 2025 PSModule. All rights reserved.'
     Description           = 'Process a module from source code to published module.'
     PowerShellVersion     = '5.1'
     ProcessorArchitecture = 'None'
     RequiredModules       = @(
         @{
-            ModuleVersion = '1.0'
-            ModuleName    = 'PSSemVer'
+            ModuleVersion = '1.1.8'
+            ModuleName    = 'DynamicParams'
+        }
+        @{
+            RequiredVersion = '1.0.0'
+            ModuleName      = 'PSSemVer'
+        }
+        @{
+            ModuleVersion = '0.3.1'
+            ModuleName    = 'Store'
         }
         'Utilities'
     )
@@ -39,13 +47,22 @@
         'Test-PSModuleTest'
     )
     CmdletsToExport       = @()
-    VariablesToExport     = @()
-    AliasesToExport       = '*'
+    VariablesToExport     = @(
+        'Moons'
+        'Planets'
+        'SolarSystems'
+    )
+    AliasesToExport       = @(
+        'New-PSModuleTestAlias1'
+        'New-PSModuleTestAlias2'
+        'New-PSModuleTestAlias3'
+        'New-PSModuleTestAlias4'
+        'New-PSModuleTestAlias5'
+    )
     ModuleList            = @(
         'modules/OtherPSModule.psm1'
     )
     FileList              = @(
-        'PSModuleTest.psd1'
         'PSModuleTest.psm1'
         'assemblies/LsonLib.dll'
         'data/Config.psd1'
