@@ -1,0 +1,50 @@
+name: Action-Test [Src-WithManifest]
+
+run-name: "Action-Test [Src-WithManifest] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  ActionTest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: Action-Test [Src-WithManifest] - [${{ matrix.os }}]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: ./.github/actions/Initialize
+
+      - name: Action-Test
+        uses: ./.github/actions/Test
+        id: test
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          Name: PSModuleTest
+          Path: tests/srcWithManifestTestRepo/src
+          TestType: SourceCode
+
+      - name: Status
+        shell: pwsh
+        env:
+          PASSED: ${{ steps.test.outputs.passed }}
+        run: |
+          Write-Host "Passed: [$env:PASSED]"
+          if ($env:PASSED -ne 'true') {
+            exit 1
+          }

@@ -1,0 +1,59 @@
+name: Action-Test-Test-outputs
+
+run-name: "Action-Test-Test-outputs - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+  TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+  TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+  TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+  TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+  TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+  TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+
+jobs:
+  ActionTest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: Action-Test-Test-outputs - [${{ matrix.os }}]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        uses: ./.github/actions/Initialize
+
+      - name: Action-Test-Test-outputs
+        uses: ./.github/actions/Test
+        id: test
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          Name: PSModuleTest
+          Path: tests/outputTestRepo/outputs/modules
+          TestType: Module
+
+      - name: Status
+        shell: pwsh
+        env:
+          PASSED: ${{ steps.test.outputs.passed }}
+        run: |
+          Write-Host "Passed: [$env:PASSED]"
+          if ($env:PASSED -ne 'true') {
+            exit 1
+          }
