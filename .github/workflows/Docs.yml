@@ -41,7 +41,7 @@ jobs:
 
       - name: Build mkdocs-material project
         run: |
-          mkdocs build --config-file ./mkdocs.yml --strict --site-dir _site/
+          mkdocs build --config-file .github/mkdocs.yml --strict --site-dir _site/
 
       - uses: actions/upload-pages-artifact@v3
 
