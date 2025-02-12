@@ -23,7 +23,7 @@ jobs:
     secrets: inherit
     with:
       Name: PSModuleTest
-      Path: tests/srcWithManifestTestRepo/src
-      ModulesOutputPath: tests/srcWithManifestTestRepo/outputs/modules
-      DocsOutputPath: tests/srcWithManifestTestRepo/outputs/docs
+      Path: tests/srcWithManifest
+      ModulesOutputPath: tests/outputs/modules
+      DocsOutputPath: tests/outputs/docs
       SkipTests: Linux
