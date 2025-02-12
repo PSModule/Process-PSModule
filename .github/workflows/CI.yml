@@ -219,7 +219,39 @@ jobs:
           Version: ${{ inputs.Version }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@v2
+        uses: PSModule/Build-PSModule@noDocs
+        with:
+          Name: ${{ inputs.Name }}
+          Path: ${{ inputs.Path }}
+          ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+
+  BuildDocs:
+    name: Build docs
+    needs:
+      - BuildModule
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
+
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+
+      - name: Document module
+        uses: PSModule/Document-PSModule@init
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
