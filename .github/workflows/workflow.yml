@@ -565,8 +565,8 @@ jobs:
 
   LintDocs:
     name: Lint documentation
-    if: ${{ needs.BuildModule.result == 'success' && !cancelled() }}
-    needs: BuildModule
+    if: ${{ needs.BuildDocs.result == 'success' && !cancelled() }}
+    needs: BuildDocs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
