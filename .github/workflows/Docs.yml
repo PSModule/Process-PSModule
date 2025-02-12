@@ -10,6 +10,11 @@ on:
       - mkdocs.yml
       - .github/workflows/Docs.yml
 
+permissions:
+  contents: read  # to checkout the repo
+  pages: write    # to deploy to Pages
+  id-token: write # to verify the deployment originates from an appropriate source
+
 env:
   GH_TOKEN: ${{ github.token }}
 
@@ -20,9 +25,6 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read # to checkout the repo
     steps:
       - uses: actions/checkout@v4
         with:
