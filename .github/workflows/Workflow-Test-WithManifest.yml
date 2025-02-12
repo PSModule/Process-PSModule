@@ -30,3 +30,4 @@ jobs:
       DocsOutputPath: tests/outputs/docs
       TestProcess: true
       SkipTests: Linux
+      Verbose: true
