@@ -267,14 +267,15 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
 
-      - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+      - name: Commit all changes
+        run: |
+          git add .
+          git commit -m 'Update documentation'
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
           # FILTER_REGEX_INCLUDE: '/site/'
-          SUPER_LINTER_DEBUG: true
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ github.workspace }}
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
