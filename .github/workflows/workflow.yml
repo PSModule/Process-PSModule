@@ -309,6 +309,10 @@ jobs:
             $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
 
+            LogGroup "Get folderstructure" {
+                Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+            }
+
             $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
             Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
                 $fileName = $_.Name
