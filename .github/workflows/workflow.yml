@@ -274,6 +274,7 @@ jobs:
         uses: super-linter/super-linter/slim@latest
         env:
           # FILTER_REGEX_INCLUDE: '/site/'
+          SUPER_LINTER_DEBUG: true
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ github.workspace }}
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
