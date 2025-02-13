@@ -305,8 +305,8 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
-            New-Item -Path $env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions -ItemType Directory -Force
-            Copy-Item -Path $env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}/Functions -Destination $env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions -Recurse -Force
+            New-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -ItemType Directory -Force
+            Copy-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}/Functions" -Destination "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -Recurse -Force
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
