@@ -274,7 +274,7 @@ jobs:
           # ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
           # RUN_LOCAL: true
-          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_ALL_CODEBASE: true
           VALIDATE_JSCPD: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
