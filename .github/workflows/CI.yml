@@ -265,11 +265,11 @@ jobs:
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
-          DEFAULT_BRANCH: main
-          DEFAULT_WORKSPACE: ${{ github.workspace }}
-          ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
+          # DEFAULT_BRANCH: main
+          DEFAULT_WORKSPACE: ${{ inputs.DocsOutputPath }}  # ${{ github.workspace }}
+          # ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
-          RUN_LOCAL: true
+          # RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_JSCPD: false
           VALIDATE_MARKDOWN_PRETTIER: false
