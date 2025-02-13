@@ -203,11 +203,6 @@ jobs:
 
   BuildModule:
     name: Build module
-    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-windows-latest.result) && !cancelled() }}
-    needs:
-      - TestSourceCode-pwsh-ubuntu-latest
-      - TestSourceCode-pwsh-macos-latest
-      - TestSourceCode-pwsh-windows-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -244,6 +239,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Debug
         if: ${{ inputs.Debug }}
@@ -268,6 +265,117 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+
+      - name: Commit all changes
+        run: |
+          git add .
+          git commit -m 'Update documentation'
+
+      - name: Lint documentation
+        uses: super-linter/super-linter/slim@latest
+        env:
+          FILTER_REGEX_INCLUDE: '${{ inputs.DocsOutputPath }}/**'
+          DEFAULT_BRANCH: main
+          DEFAULT_WORKSPACE: ${{ github.workspace }}
+          ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_LOCAL: true
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_JSCPD: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
+          VALIDATE_JSON_PRETTIER: false
+          VALIDATE_GITLEAKS: false
+
+      - uses: actions/configure-pages@v5
+
+      - name: Install mkdoks-material
+        shell: pwsh
+        run: |
+          pip install mkdocs-material
+          pip install mkdocs-git-authors-plugin
+          pip install mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-git-committers-plugin-2
+
+      - name: Structure site
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          Script: |
+            New-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -ItemType Directory -Force
+            Copy-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}" -Destination "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -Recurse -Force
+            $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
+            $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
+
+            LogGroup "Get folderstructure" {
+                Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+            }
+
+            $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
+            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
+                $fileName = $_.Name
+                $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
+                LogGroup " - [$fileName] - [$hash]" {
+                    Show-FileContent -Path $_
+                }
+            }
+
+            LogGroup 'Build docs - Process about topics' {
+                $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
+                $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
+                $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
+                Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
+                    Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
+            }
+
+            LogGroup 'Build docs - Copy icon to assets' {
+                $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
+                $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
+                Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+            }
+
+            LogGroup 'Build docs - Copy readme.md' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
+                $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
+                Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
+            }
+
+            LogGroup 'Build docs - Create mkdocs.yml' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
+                $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
+                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
+                Show-FileContent -Path $mkdocsTargetPath
+            }
+
+      - name: Debug File system
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+
+      - name: Build mkdocs-material project
+        working-directory: ${{ inputs.SiteOutputPath }}
+        shell: pwsh
+        run: |
+          Start-LogGroup 'Build docs - mkdocs build - content'
+          Show-FileContent -Path mkdocs.yml
+          Stop-LogGroup
+          Start-LogGroup 'Build docs - mkdocs build'
+          mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
+          Stop-LogGroup
+
+      - uses: actions/upload-pages-artifact@v3
 
   #This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
@@ -563,179 +671,12 @@ jobs:
           retention-days: 1
           overwrite: true
 
-  LintDocs:
-    name: Lint documentation
-    if: ${{ needs.BuildDocs.result == 'success' && !cancelled() }}
-    needs: BuildDocs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Download docs artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docs
-          path: ${{ github.workspace }}
-
-      - name: Commit docs for linting
-        shell: pwsh
-        run: |
-          git config --global user.name "Github Actions"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Update documentation"
-
-      - name: Lint documentation
-        uses: super-linter/super-linter/slim@latest
-        env:
-          DEFAULT_BRANCH: main
-          DEFAULT_WORKSPACE: ${{ github.workspace }}
-          ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
-          GITHUB_TOKEN: ${{ github.token }}
-          RUN_LOCAL: true
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_JSCPD: false
-          VALIDATE_MARKDOWN_PRETTIER: false
-          VALIDATE_YAML_PRETTIER: false
-          VALIDATE_JSON_PRETTIER: false
-          VALIDATE_GITLEAKS: false
-
-  BuildSite:
-    name: Build Site
-    if: ${{ inputs.PublishDocs && needs.LintDocs.result == 'success' && !cancelled() }}
-    needs: LintDocs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Download docs artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docs
-          path: '${{ inputs.SiteOutputPath }}/docs/Functions'
-
-      - uses: actions/configure-pages@v5
-
-      - name: Install mkdoks-material
-        shell: pwsh
-        run: |
-          pip install mkdocs-material
-          pip install mkdocs-git-authors-plugin
-          pip install mkdocs-git-revision-date-localized-plugin
-          pip install mkdocs-git-committers-plugin-2
-
-      - name: Structure site
-        uses: PSModule/GitHub-Script@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          Script: |
-            $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
-            $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
-
-            $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
-            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-                $fileName = $_.Name
-                $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
-                LogGroup " - [$fileName] - [$hash]" {
-                    Show-FileContent -Path $_
-                }
-            }
-
-            LogGroup 'Build docs - Process about topics' {
-                $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
-                $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
-                $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
-                Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
-                    Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
-            }
-
-            LogGroup 'Build docs - Copy icon to assets' {
-                $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
-                $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
-                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
-                Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
-            }
-
-            LogGroup 'Build docs - Copy readme.md' {
-                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
-                $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
-                Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
-            }
-
-            LogGroup 'Build docs - Create mkdocs.yml' {
-                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
-                $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
-                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
-                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
-                Show-FileContent -Path $mkdocsTargetPath
-            }
-
-      - name: Debug File system
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
-
-      - name: Build mkdocs-material project
-        working-directory: ${{ inputs.SiteOutputPath }}
-        shell: pwsh
-        run: |
-          Start-LogGroup 'Build docs - mkdocs build - content'
-          Show-FileContent -Path mkdocs.yml
-          Stop-LogGroup
-          Start-LogGroup 'Build docs - mkdocs build'
-          mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
-          Stop-LogGroup
-
-      - uses: actions/upload-pages-artifact@v3
-
   PublishModule:
     name: Publish module
     if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
       - TestModuleStatus
-      - BuildSite
+      - BuildDocs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -773,10 +714,10 @@ jobs:
 
   PublishSite:
     name: Publish documentation
-    if: ${{ inputs.PublishDocs && needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: ${{ inputs.PublishDocs && needs.BuildDocs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
       - TestModuleStatus
-      - BuildSite
+      - BuildDocs
     permissions:
       pages: write    # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
