@@ -267,7 +267,7 @@ jobs:
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
-          FILTER_REGEX_INCLUDE: '/site/'
+          FILTER_REGEX_INCLUDE: '${{ inputs.DocsOutputPath }}/**'
           SUPER_LINTER_DEBUG: true
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ github.workspace }}
