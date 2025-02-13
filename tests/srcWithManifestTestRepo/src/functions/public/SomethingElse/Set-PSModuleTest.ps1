@@ -1,7 +1,7 @@
 ﻿function Set-PSModuleTest {
     <#
         .SYNOPSIS
-        Performs tests on a module. Url and Api, and maybe a file name.
+        Performs tests on a module.
 
         .EXAMPLE
         Test-PSModule -Name 'World'
