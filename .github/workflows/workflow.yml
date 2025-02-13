@@ -258,7 +258,7 @@ jobs:
           Version: ${{ inputs.Version }}
 
       - name: Document module
-        uses: PSModule/Document-PSModule@init
+        uses: PSModule/Document-PSModule@v0
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
