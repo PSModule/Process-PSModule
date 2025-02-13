@@ -30,4 +30,3 @@ jobs:
       DocsOutputPath: tests/srcTestRepo/outputs/docs
       TestProcess: true
       SkipTests: Module
-      Verbose: true

@@ -30,4 +30,3 @@ jobs:
       DocsOutputPath: tests/srcWithManifestTestRepo/outputs/docs
       TestProcess: true
       SkipTests: Linux
-      Verbose: true
