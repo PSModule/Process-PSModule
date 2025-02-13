@@ -261,7 +261,7 @@ jobs:
         uses: super-linter/super-linter/slim@latest
         env:
           # DEFAULT_BRANCH: main
-          DEFAULT_WORKSPACE: ${{ inputs.DocsOutputPath }}  # ${{ github.workspace }}
+          # DEFAULT_WORKSPACE: ${{ github.workspace }}
           # ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
           # RUN_LOCAL: true
