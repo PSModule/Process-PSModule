@@ -203,11 +203,6 @@ jobs:
 
   BuildModule:
     name: Build module
-    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestSourceCode-pwsh-windows-latest.result) && !cancelled() }}
-    needs:
-      - TestSourceCode-pwsh-ubuntu-latest
-      - TestSourceCode-pwsh-macos-latest
-      - TestSourceCode-pwsh-windows-latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
