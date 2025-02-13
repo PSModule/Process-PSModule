@@ -705,7 +705,7 @@ jobs:
 
   PublishSite:
     name: Publish documentation
-    if: ${{ inputs.PublishDocs && needs.BuildSite.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: ${{ inputs.PublishDocs && needs.BuildDocs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
       - TestModuleStatus
       - BuildDocs
