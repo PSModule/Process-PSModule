@@ -1,6 +1,6 @@
 # Process-PSModule
 
-A workflow for the PSModule process, stitching together the `Initialize`, `Build`, `Test`, and `Publish` actions to create a complete
+A workflow for the PSModule process, stitching together the `Initialize`, `Build`, `Document`, `Test`, and `Publish` actions to create a complete
 CI/CD pipeline for PowerShell modules. The workflow is used by all PowerShell modules in the PSModule organization.
 
 ## Specifications and practices
@@ -20,13 +20,12 @@ Depending on the labels in the pull requests, the workflow will result in differ
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the source code using PSScriptAnalyzer, PSModule source code tests suites. This runs on 4 different environments to check compatibility.
-  - PowerShell 7.x on Windows, Ubuntu and macOS.
-  - Windows PowerShell 5.1 on Windows.
+- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests and lints the source code. This runs on 3 different environments to check compatibility.
+  - PowerShell LTS on Windows, Ubuntu and macOS.
 - [Build-PSModule](https://github.com/PSModule/Build-PSModule/) - Compiles the repository into an efficient PowerShell module.
-- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module using PSScriptAnalyzer, PSModule module tests and custom module tests from the module repository. This runs on 4 different environments to check compatibility.
-  - PowerShell 7.x on Windows, Ubuntu and macOS.
-  - Windows PowerShell 5.1 on Windows.
+- [Document-PSModule](https://github.com/PSModule/Document-PSModule/) - Generates documentation and deploys it to GitHub Pages.
+- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module. This runs on 4 different environments to check compatibility.
+  - PowerShell LTS on Windows, Ubuntu and macOS.
 - [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publishes the module to the PowerShell Gallery, docs to GitHub Pages, and creates a release on the GitHub repository.
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.

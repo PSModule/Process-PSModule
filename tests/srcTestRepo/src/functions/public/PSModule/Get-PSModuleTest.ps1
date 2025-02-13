@@ -1,5 +1,5 @@
 ﻿#Requires -Modules Utilities
-#Requires -Modules @{ ModuleName = 'PSSemVer'; RequiredVersion = '1.0.0' }
+#Requires -Modules @{ ModuleName = 'PSSemVer'; RequiredVersion = '1.1.4' }
 #Requires -Modules @{ ModuleName = 'DynamicParams'; ModuleVersion = '1.1.8' }
 #Requires -Modules @{ ModuleName = 'Store'; ModuleVersion = '0.3.1' }
 
