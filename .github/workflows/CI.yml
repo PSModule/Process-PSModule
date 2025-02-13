@@ -232,6 +232,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Debug
         if: ${{ inputs.Debug }}
@@ -257,10 +260,8 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
 
-      - name: Commit all code
-        run: |
-          git add .
-          git commit -m 'Update documentation'
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest

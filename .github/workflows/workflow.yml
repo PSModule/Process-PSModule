@@ -241,6 +241,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Debug
         if: ${{ inputs.Debug }}
@@ -266,17 +267,13 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
 
-      - name: Commit all code
-        run: |
-          git add .
-          git commit -m 'Update documentation'
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
-          # DEFAULT_BRANCH: main
-          # DEFAULT_WORKSPACE: ${{ github.workspace }}
-          # ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
+          # FILTER_REGEX_INCLUDE: '/site/'
           GITHUB_TOKEN: ${{ github.token }}
           # RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: true
