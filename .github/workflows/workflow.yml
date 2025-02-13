@@ -226,7 +226,7 @@ jobs:
           Version: ${{ inputs.Version }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@noDocs
+        uses: PSModule/Build-PSModule@v3
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
