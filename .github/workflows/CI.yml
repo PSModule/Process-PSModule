@@ -259,6 +259,12 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
 
+      - name: Commit all changes
+        continue-on-error: true
+        run: |
+          git add .
+          git commit -m 'Update documentation'
+
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
