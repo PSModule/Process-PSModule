@@ -273,8 +273,13 @@ jobs:
           # Rename the gitignore file to .gitignore.bak
           Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
 
-          git add .
-          git commit -m 'Update documentation'
+          try {
+              # Add all changes to the repository
+              git add .
+              git commit -m 'Update documentation'
+          } catch {
+              Write-Host "No changes to commit"
+          }
 
           # Restore the gitignore file
           Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
@@ -314,20 +319,19 @@ jobs:
           Version: ${{ inputs.Version }}
           Script: |
             New-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -ItemType Directory -Force
-            Copy-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}" -Destination "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -Recurse -Force
+            Copy-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}/*" -Destination "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -Recurse -Force
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
             $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
 
-            LogGroup "Get folderstructure" {
-                Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+            LogGroup "Get folder structure" {
+                Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
             }
 
             $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
             Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
                 $fileName = $_.Name
-                $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
-                LogGroup " - [$fileName] - [$hash]" {
+                LogGroup " - $fileName" {
                     Show-FileContent -Path $_
                 }
             }
