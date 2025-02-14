@@ -268,9 +268,16 @@ jobs:
 
       - name: Commit all changes
         continue-on-error: true
+        shell: pwsh
         run: |
+          # Rename the gitignore file to .gitignore.bak
+          Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
+
           git add .
           git commit -m 'Update documentation'
+
+          # Restore the gitignore file
+          Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
