@@ -1,7 +1,7 @@
 ﻿function Test-PSModuleTest {
     <#
         .SYNOPSIS
-        Performs tests on a module. Api, url, and file name.
+        Performs tests on a module.
 
         .EXAMPLE
         Test-PSModule -Name 'World'
