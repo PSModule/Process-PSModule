@@ -121,66 +121,28 @@ jobs:
   TestSourceCode-pwsh-macos-latest:
     name: Test source code (pwsh, macos-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS')) }}
-    runs-on: macos-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Test source code
-        id: test
-        uses: PSModule/Test-PSModule@v2
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.Path }}
-          TestType: SourceCode
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
+    uses: ./.github/reusable/Test-SourceCode.yml
+    with:
+      RunsOn: macos-latest
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
   TestSourceCode-pwsh-windows-latest:
     name: Test source code (pwsh, windows-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows')) }}
-    runs-on: windows-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Test source code
-        id: test
-        uses: PSModule/Test-PSModule@v2
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.Path }}
-          TestType: SourceCode
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
+    uses: ./.github/reusable/Test-SourceCode.yml
+    with:
+      RunsOn: windows-latest
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
   BuildModule:
     name: Build module

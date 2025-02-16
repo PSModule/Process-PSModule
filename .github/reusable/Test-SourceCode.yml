@@ -40,8 +40,8 @@ permissions:
   contents: read # to checkout the repo and create releases on the repo
 
 jobs:
-  TestSourceCode:
-    name: Test source code (pwsh, ${{ inputs.runs-on }})
+  Test-SourceCode:
+    name: Test-SourceCode
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout Code
