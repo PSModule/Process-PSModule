@@ -49,7 +49,7 @@ jobs:
           }
 
           $testSuites = @()
-          $testSuites += Get-ChildItem -Path testsPath -Directory
+          $testSuites += Get-ChildItem -Path $testsPath -Directory
           if (-not $testSuites) {
               $testSuites += @($testsPath)
           }
