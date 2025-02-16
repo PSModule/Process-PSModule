@@ -102,7 +102,7 @@ jobs:
   TestSourceCode-pwsh-ubuntu-latest:
     name: Test source code (pwsh, ubuntu-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, 'Linux')) }}
-    uses: ./.github/reusable/Test-SourceCode.yml
+    uses: ./.github/workflows/Test-SourceCode.yml
     with:
       RunsOn: ubuntu-latest
       Name: ${{ inputs.Name }}
@@ -115,7 +115,7 @@ jobs:
   TestSourceCode-pwsh-macos-latest:
     name: Test source code (pwsh, macos-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS')) }}
-    uses: ./.github/reusable/Test-SourceCode.yml
+    uses: ./.github/workflows/Test-SourceCode.yml
     with:
       RunsOn: macos-latest
       Name: ${{ inputs.Name }}
@@ -128,7 +128,7 @@ jobs:
   TestSourceCode-pwsh-windows-latest:
     name: Test source code (pwsh, windows-latest)
     if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows')) }}
-    uses: ./.github/reusable/Test-SourceCode.yml
+    uses: ./.github/workflows/Test-SourceCode.yml
     with:
       RunsOn: windows-latest
       Name: ${{ inputs.Name }}
