@@ -99,7 +99,7 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
-  TestSourceCode:
+  Test-SourceCode:
     strategy:
       matrix:
         include:
@@ -121,40 +121,21 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  BuildModule:
-    name: Build module
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Build module
-        uses: PSModule/Build-PSModule@v3
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.Path }}
-          ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
+  Build-Module:
+    uses: ./.github/workflows/Build-Module.yml
+    with:
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
   BuildDocs:
     name: Build docs
     needs:
-      - BuildModule
+      - Build-Module
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -312,8 +293,8 @@ jobs:
   # This is necessary as there is no way to get output from a matrix job
   TestModule-pwsh-ubuntu-latest:
     name: Test module (pwsh, ubuntu-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux')) && !cancelled() }}
-    needs: BuildModule
+    if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux')) && !cancelled() }}
+    needs: Build-Module
     runs-on: ubuntu-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -366,8 +347,8 @@ jobs:
 
   TestModule-pwsh-macos-latest:
     name: Test module (pwsh, macos-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS')) && !cancelled() }}
-    needs: BuildModule
+    if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS')) && !cancelled() }}
+    needs: Build-Module
     runs-on: macos-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
@@ -418,8 +399,8 @@ jobs:
 
   TestModule-pwsh-windows-latest:
     name: Test module (pwsh, windows-latest)
-    if: ${{ needs.BuildModule.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows')) && !cancelled() }}
-    needs: BuildModule
+    if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows')) && !cancelled() }}
+    needs: Build-Module
     runs-on: windows-latest
     outputs:
       passed: ${{ steps.test.outputs.passed }}
