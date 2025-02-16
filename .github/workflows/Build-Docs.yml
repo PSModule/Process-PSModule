@@ -17,11 +17,21 @@ on:
         description: The path to the output directory for the modules.
         required: false
         default: outputs/modules
+      ModuleArtifactName:
+        type: string
+        description: Name of the module artifact to upload.
+        required: false
+        default: module
       DocsOutputPath:
         type: string
         description: The path to the output directory for the documentation.
         required: false
         default: outputs/docs
+      DocsArtifactName:
+        type: string
+        description: Name of the docs artifact to upload.
+        required: false
+        default: docs
       SiteOutputPath:
         type: string
         description: The path to the output directory for the site.
@@ -73,6 +83,12 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
 
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.ModuleArtifactName }}
+          path: ${{ inputs.ModulesOutputPath }}
+
       - name: Document module
         uses: PSModule/Document-PSModule@v1
         with:
@@ -84,3 +100,135 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.DocsArtifactName }}
+          path: ${{ inputs.DocsOutputPath }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Commit all changes
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          # Rename the gitignore file to .gitignore.bak
+          Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
+
+          try {
+              # Add all changes to the repository
+              git add .
+              git commit -m 'Update documentation'
+          } catch {
+              Write-Host "No changes to commit"
+          }
+
+          # Restore the gitignore file
+          Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
+
+      - name: Lint documentation
+        uses: super-linter/super-linter/slim@latest
+        env:
+          FILTER_REGEX_INCLUDE: ${{ inputs.DocsOutputPath }}
+          DEFAULT_BRANCH: main
+          DEFAULT_WORKSPACE: ${{ github.workspace }}
+          ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_LOCAL: true
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_JSON_PRETTIER: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
+          VALIDATE_JSCPD: false
+          VALIDATE_GITLEAKS: false
+
+      - uses: actions/configure-pages@v5
+
+      - name: Install mkdoks-material
+        shell: pwsh
+        run: |
+          pip install mkdocs-material
+          pip install mkdocs-git-authors-plugin
+          pip install mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-git-committers-plugin-2
+
+      - name: Structure site
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          Script: |
+            New-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -ItemType Directory -Force
+            Copy-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}/*" -Destination "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -Recurse -Force
+            $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
+            $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
+
+            LogGroup "Get folder structure" {
+                Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
+            }
+
+            $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
+            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
+                $fileName = $_.Name
+                LogGroup " - $fileName" {
+                    Show-FileContent -Path $_
+                }
+            }
+
+            LogGroup 'Build docs - Process about topics' {
+                $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
+                $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
+                $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
+                Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
+                    Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
+            }
+
+            LogGroup 'Build docs - Copy icon to assets' {
+                $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
+                $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
+                Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+            }
+
+            LogGroup 'Build docs - Copy readme.md' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
+                $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
+                Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
+            }
+
+            LogGroup 'Build docs - Create mkdocs.yml' {
+                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
+                # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
+                $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
+                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
+                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
+                Show-FileContent -Path $mkdocsTargetPath
+            }
+
+      - name: Debug File system
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+
+      - name: Build mkdocs-material project
+        working-directory: ${{ inputs.SiteOutputPath }}
+        shell: pwsh
+        run: |
+          LogGroup 'Build docs - mkdocs build - content' {
+            Show-FileContent -Path mkdocs.yml
+          }
+
+          LogGroup 'Build docs - mkdocs build' {
+            mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
+          }
+
+      - uses: actions/upload-pages-artifact@v3
