@@ -1,1 +1,1 @@
-﻿Write-Host "1 - Build script executed."
+﻿"1 - Build script executed."
