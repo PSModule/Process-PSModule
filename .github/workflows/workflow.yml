@@ -106,40 +106,23 @@ permissions:
   id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
-  TestSourceCode-pwsh-ubuntu-latest:
-    name: Test source code (pwsh, ubuntu-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, 'Linux')) }}
+  TestSourceCode:
+    strategy:
+      matrix:
+        include:
+          - OSName: Linux
+            RunsOn: ubuntu-latest
+          - OSName: macOS
+            RunsOn: macos-latest
+          - OSName: Windows
+            RunsOn: windows-latest
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
-      RunsOn: ubuntu-latest
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
       Path: ${{ inputs.Path }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-
-  TestSourceCode-pwsh-macos-latest:
-    name: Test source code (pwsh, macos-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'macOS')) }}
-    uses: ./.github/workflows/Test-SourceCode.yml
-    with:
-      RunsOn: macos-latest
-      Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-
-  TestSourceCode-pwsh-windows-latest:
-    name: Test source code (pwsh, windows-latest)
-    if: ${{ !(contains(inputs.SkipTests, 'All' ) || contains(inputs.SkipTests, 'SourceCode' ) || contains(inputs.SkipTests, 'Windows')) }}
-    uses: ./.github/workflows/Test-SourceCode.yml
-    with:
-      RunsOn: windows-latest
-      Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
+      SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
