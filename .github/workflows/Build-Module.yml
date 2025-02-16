@@ -17,6 +17,11 @@ on:
         description: The path to the output directory for the modules.
         required: false
         default: outputs/modules
+      ModuleArtifactName:
+        type: string
+        description: Name of the module artifact to upload.
+        required: false
+        default: module
       Debug:
         type: boolean
         description: Enable debug output.
@@ -62,7 +67,7 @@ jobs:
           Version: ${{ inputs.Version }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@v3
+        uses: PSModule/Build-PSModule@v4
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -71,3 +76,11 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.ModuleArtifactName }}
+          path: ${{ inputs.ModulesOutputPath }}
+          if-no-files-found: error
+          retention-days: 1
