@@ -147,285 +147,291 @@ jobs:
       Version: ${{ inputs.Version }}
       SiteOutputPath: ${{ inputs.SiteOutputPath }}
 
-  # This is necessary as there is no way to get output from a matrix job
-  TestModule-pwsh-ubuntu-latest:
-    name: Test module (pwsh, ubuntu-latest)
-    if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux')) && !cancelled() }}
-    needs: Build-Module
-    runs-on: ubuntu-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Test built module
-        id: test
-        uses: PSModule/Test-PSModule@v2
-        continue-on-error: true
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.ModulesOutputPath }}
-          TestType: Module
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
-
-      - name: Failed test
-        if: steps.test.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"
-
-  TestModule-pwsh-macos-latest:
-    name: Test module (pwsh, macos-latest)
-    if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS')) && !cancelled() }}
-    needs: Build-Module
-    runs-on: macos-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Test built module
-        id: test
-        uses: PSModule/Test-PSModule@v2
-        continue-on-error: true
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.ModulesOutputPath }}
-          TestType: Module
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
-
-      - name: Failed test
-        if: steps.test.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"
-
-  TestModule-pwsh-windows-latest:
-    name: Test module (pwsh, windows-latest)
-    if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows')) && !cancelled() }}
-    needs: Build-Module
-    runs-on: windows-latest
-    outputs:
-      passed: ${{ steps.test.outputs.passed }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-
-      - name: Test built module
-        id: test
-        uses: PSModule/Test-PSModule@v2
-        continue-on-error: true
-        with:
-          Name: ${{ inputs.Name }}
-          Path: ${{ inputs.ModulesOutputPath }}
-          TestType: Module
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
-
-      - name: Failed test
-        if: steps.test.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"
-
-  TestModuleStatus:
-    name: Test module status
-    if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && !cancelled() }}
+  Gather-Tests:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     needs:
-      - TestModule-pwsh-ubuntu-latest
-      - TestModule-pwsh-macos-latest
-      - TestModule-pwsh-windows-latest
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - Build-Module
+    uses: ./.github/workflows/Gather-Tests.yml
 
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+  # # This is necessary as there is no way to get output from a matrix job
+  # TestModule-pwsh-ubuntu-latest:
+  #   name: Test module (pwsh, ubuntu-latest)
+  #   if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux')) && !cancelled() }}
+  #   needs: Build-Module
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     passed: ${{ steps.test.outputs.passed }}
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
+  #     - name: Debug
+  #       if: ${{ inputs.Debug }}
+  #       uses: PSModule/Debug@v0
 
-      - name: Download module artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
+  #     - name: Initialize environment
+  #       uses: PSModule/Initialize-PSModule@v1
+  #       with:
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
 
-      - name: Summerize tests
-        uses: PSModule/GitHub-Script@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          Script: |
-            LogGroup -Name 'Test analysis' {
+  #     - name: Download module artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: module
+  #         path: ${{ inputs.ModulesOutputPath }}
 
-                $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-                $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
-                $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-                $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
-                $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-                $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
-                $anyPassed = $linuxPassed -or $macOSPassed -or $windowsPassed
-                $allSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
+  #     - name: Test built module
+  #       id: test
+  #       uses: PSModule/Test-PSModule@v2
+  #       continue-on-error: true
+  #       with:
+  #         Name: ${{ inputs.Name }}
+  #         Path: ${{ inputs.ModulesOutputPath }}
+  #         TestType: Module
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
 
-                $Status = @(
-                    [pscustomobject]@{
-                        Name    = 'Linux'
-                        Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
-                        Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
-                    }
-                    [pscustomobject]@{
-                        Name    = 'MacOS'
-                        Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
-                        Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
-                    }
-                    [pscustomobject]@{
-                        Name    = 'Windows'
-                        Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
-                        Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
-                    }
-                    [pscustomobject]@{
-                        Name    = 'Result'
-                        Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
-                        Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
-                    }
-                )
+  #     - name: Status
+  #       shell: pwsh
+  #       run: |
+  #         Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
 
-                Write-Host ($Status | Format-Table | Out-String)
-                ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+  #     - name: Failed test
+  #       if: steps.test.outcome != 'success'
+  #       shell: pwsh
+  #       run: Write-Host "Complete successfully"
 
-                if (-not $anyPassed -and -not $allSkipped) {
-                    Write-Host "::[error]::No tests passed"
-                    exit 1
-                }
-            }
+  # TestModule-pwsh-macos-latest:
+  #   name: Test module (pwsh, macos-latest)
+  #   if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS')) && !cancelled() }}
+  #   needs: Build-Module
+  #   runs-on: macos-latest
+  #   outputs:
+  #     passed: ${{ steps.test.outputs.passed }}
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
 
-            LogGroup 'Data' {
-                $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-                $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
-                $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
+  #     - name: Debug
+  #       if: ${{ inputs.Debug }}
+  #       uses: PSModule/Debug@v0
 
-                $data = [pscustomobject]@{
-                  ModuleName         = $moduleName
-                  Path               = $path
-                  ModuleManifestPath = $moduleManifestPath
-                }
-                Write-Verbose ($data | Format-List | Out-String) -Verbose
+  #     - name: Initialize environment
+  #       uses: PSModule/Initialize-PSModule@v1
+  #       with:
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
 
-                Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.4'
+  #     - name: Download module artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: module
+  #         path: ${{ inputs.ModulesOutputPath }}
 
-                Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
-                Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
+  #     - name: Test built module
+  #       id: test
+  #       uses: PSModule/Test-PSModule@v2
+  #       continue-on-error: true
+  #       with:
+  #         Name: ${{ inputs.Name }}
+  #         Path: ${{ inputs.ModulesOutputPath }}
+  #         TestType: Module
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
 
-                if ($linuxPassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
-                }
+  #     - name: Status
+  #       shell: pwsh
+  #       run: |
+  #         Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
 
-                if ($macOSPassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
-                }
+  #     - name: Failed test
+  #       if: steps.test.outcome != 'success'
+  #       shell: pwsh
+  #       run: Write-Host "Complete successfully"
 
-                if ($windowsPassed) {
-                    Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
-                }
-            }
+  # TestModule-pwsh-windows-latest:
+  #   name: Test module (pwsh, windows-latest)
+  #   if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows')) && !cancelled() }}
+  #   needs: Build-Module
+  #   runs-on: windows-latest
+  #   outputs:
+  #     passed: ${{ steps.test.outputs.passed }}
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
 
-            LogGroup 'Module Manifest' {
-                Show-FileContent -Path $moduleManifestPath
-            }
+  #     - name: Debug
+  #       if: ${{ inputs.Debug }}
+  #       uses: PSModule/Debug@v0
 
-      - name: Upload module artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: module
-          path: ${{ inputs.ModulesOutputPath }}
-          if-no-files-found: error
-          retention-days: 1
-          overwrite: true
+  #     - name: Initialize environment
+  #       uses: PSModule/Initialize-PSModule@v1
+  #       with:
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
+
+  #     - name: Download module artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: module
+  #         path: ${{ inputs.ModulesOutputPath }}
+
+  #     - name: Test built module
+  #       id: test
+  #       uses: PSModule/Test-PSModule@v2
+  #       continue-on-error: true
+  #       with:
+  #         Name: ${{ inputs.Name }}
+  #         Path: ${{ inputs.ModulesOutputPath }}
+  #         TestType: Module
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
+
+  #     - name: Status
+  #       shell: pwsh
+  #       run: |
+  #         Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
+
+  #     - name: Failed test
+  #       if: steps.test.outcome != 'success'
+  #       shell: pwsh
+  #       run: Write-Host "Complete successfully"
+
+  # TestModuleStatus:
+  #   name: Test module status
+  #   if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && !cancelled() }}
+  #   needs:
+  #     - TestModule-pwsh-ubuntu-latest
+  #     - TestModule-pwsh-macos-latest
+  #     - TestModule-pwsh-windows-latest
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v4
+
+  #     - name: Debug
+  #       if: ${{ inputs.Debug }}
+  #       uses: PSModule/Debug@v0
+
+  #     - name: Initialize environment
+  #       uses: PSModule/Initialize-PSModule@v1
+  #       with:
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
+
+  #     - name: Download module artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: module
+  #         path: ${{ inputs.ModulesOutputPath }}
+
+  #     - name: Summerize tests
+  #       uses: PSModule/GitHub-Script@v1
+  #       with:
+  #         Debug: ${{ inputs.Debug }}
+  #         Prerelease: ${{ inputs.Prerelease }}
+  #         Verbose: ${{ inputs.Verbose }}
+  #         Version: ${{ inputs.Version }}
+  #         Script: |
+  #           LogGroup -Name 'Test analysis' {
+
+  #               $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
+  #               $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
+  #               $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
+  #               $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
+  #               $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
+  #               $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
+  #               $anyPassed = $linuxPassed -or $macOSPassed -or $windowsPassed
+  #               $allSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
+
+  #               $Status = @(
+  #                   [pscustomobject]@{
+  #                       Name    = 'Linux'
+  #                       Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
+  #                       Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
+  #                   }
+  #                   [pscustomobject]@{
+  #                       Name    = 'MacOS'
+  #                       Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
+  #                       Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
+  #                   }
+  #                   [pscustomobject]@{
+  #                       Name    = 'Windows'
+  #                       Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
+  #                       Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
+  #                   }
+  #                   [pscustomobject]@{
+  #                       Name    = 'Result'
+  #                       Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
+  #                       Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
+  #                   }
+  #               )
+
+  #               Write-Host ($Status | Format-Table | Out-String)
+  #               ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+  #               if (-not $anyPassed -and -not $allSkipped) {
+  #                   Write-Host "::[error]::No tests passed"
+  #                   exit 1
+  #               }
+  #           }
+
+  #           LogGroup 'Data' {
+  #               $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+  #               $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
+  #               $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
+
+  #               $data = [pscustomobject]@{
+  #                 ModuleName         = $moduleName
+  #                 Path               = $path
+  #                 ModuleManifestPath = $moduleManifestPath
+  #               }
+  #               Write-Verbose ($data | Format-List | Out-String) -Verbose
+
+  #               Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.4'
+
+  #               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
+  #               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
+
+  #               if ($linuxPassed) {
+  #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
+  #               }
+
+  #               if ($macOSPassed) {
+  #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
+  #               }
+
+  #               if ($windowsPassed) {
+  #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
+  #               }
+  #           }
+
+  #           LogGroup 'Module Manifest' {
+  #               Show-FileContent -Path $moduleManifestPath
+  #           }
+
+  #     - name: Upload module artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: module
+  #         path: ${{ inputs.ModulesOutputPath }}
+  #         if-no-files-found: error
+  #         retention-days: 1
+  #         overwrite: true
