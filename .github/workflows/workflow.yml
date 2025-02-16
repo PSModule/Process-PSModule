@@ -37,6 +37,11 @@ on:
         description: The path to the source code of the module.
         required: false
         default: src
+      Workspace:
+        type: string
+        description: The path to the workspace.
+        required: false
+        default: ${{ github.workspace }}
       ModulesOutputPath:
         type: string
         description: The path to the output directory for the modules.
@@ -159,6 +164,8 @@ jobs:
     needs:
       - Build-Module
     uses: ./.github/workflows/Gather-Tests.yml
+    with:
+      Workspace: ${{ inputs.Workspace }}
 
   # #This is necessary as there is no way to get output from a matrix job
   # TestModule-pwsh-ubuntu-latest:

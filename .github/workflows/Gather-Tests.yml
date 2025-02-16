@@ -3,6 +3,11 @@ name: Gather-Tests
 on:
   workflow_call:
     inputs:
+      Workspace:
+        type: string
+        description: The path to the workspace.
+        required: false
+        default: ${{ github.workspace }}
       Debug:
         type: boolean
         description: Enable debug output.
@@ -42,7 +47,7 @@ jobs:
       - name: Gether-Tests
         shell: pwsh
         run: |
-          $testsPath = Join-Path -Path '${{ github.workspace }}' -ChildPath 'tests'
+          $testsPath = Join-Path -Path '${{ inputs.Workspace }}' -ChildPath 'tests'
           if (-not (Test-Path -Path $testsPath)) {
               Write-Host "No tests found"
               exit 0
