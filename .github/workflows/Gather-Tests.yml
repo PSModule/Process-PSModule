@@ -44,7 +44,7 @@ jobs:
         if: ${{ inputs.Debug }}
         uses: PSModule/Debug@v0
 
-      - name: Gether-Tests
+      - name: Gather-Tests
         shell: pwsh
         run: |
           $rootPath = Resolve-Path -Path '${{ inputs.Workspace }}'
