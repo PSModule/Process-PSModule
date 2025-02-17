@@ -47,7 +47,8 @@ jobs:
       - name: Gether-Tests
         shell: pwsh
         run: |
-          $testsPath = Join-Path -Path '${{ inputs.Workspace }}' -ChildPath 'tests'
+          $rootPath = Resolve-Path -Path '${{ inputs.Workspace }}'
+          $testsPath = Join-Path -Path $rootPath -ChildPath 'tests'
           if (-not (Test-Path -Path $testsPath)) {
               Write-Host "No tests found"
               exit 0
