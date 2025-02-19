@@ -27,3 +27,4 @@ jobs:
       ModulesOutputPath: tests/srcWithManifestTestRepo/outputs/modules
       DocsOutputPath: tests/srcWithManifestTestRepo/outputs/docs
       SkipTests: Linux
+      Workspace: tests/srcWithManifestTestRepo

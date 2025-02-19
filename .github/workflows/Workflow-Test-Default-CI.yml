@@ -27,3 +27,4 @@ jobs:
       ModulesOutputPath: tests/srcTestRepo/outputs/modules
       DocsOutputPath: tests/srcTestRepo/outputs/docs
       SkipTests: Module
+      Workspace: tests/srcTestRepo
