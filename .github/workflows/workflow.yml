@@ -173,6 +173,7 @@ jobs:
           - OSName: Windows
             RunsOn: windows-latest
     uses: ./.github/workflows/Test-Module.yml
+    secrets: inherit
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
