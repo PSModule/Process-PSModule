@@ -93,16 +93,6 @@ on:
         required: false
         default: false
 
-env:
-  GITHUB_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
-  TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-  TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-  TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-  TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-  TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-  TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-  TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
   pull-requests: write # to write comments to PRs
