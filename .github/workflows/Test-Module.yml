@@ -3,9 +3,6 @@ name: Test-SourceCode
 on:
   workflow_call:
     secrets:
-      APIKey:
-        description: The API key for the PowerShell Gallery.
-        required: true
       TEST_APP_ENT_CLIENT_ID:
         description: The client ID of an Enterprise GitHub App for running tests.
         required: false
