@@ -152,6 +152,32 @@ jobs:
       Version: ${{ inputs.Version }}
       SiteOutputPath: ${{ inputs.SiteOutputPath }}
 
+  TestModule:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+    needs:
+      - Build-Module
+    strategy:
+      matrix:
+        include:
+          - OSName: Linux
+            RunsOn: ubuntu-latest
+          - OSName: macOS
+            RunsOn: macos-latest
+          - OSName: Windows
+            RunsOn: windows-latest
+    uses: ./.github/workflows/Test-Module.yml
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
+      SkipTests: ${{ inputs.SkipTests }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+
   Gather-Tests:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     needs:
