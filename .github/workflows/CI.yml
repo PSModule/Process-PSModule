@@ -94,8 +94,10 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
-  Test-SourceCode:
+  TestSourceCode:
+    name: Test source code
     strategy:
+      fail-fast: false
       matrix:
         include:
           - OSName: Linux
