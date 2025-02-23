@@ -104,6 +104,7 @@ jobs:
   TestSourceCode:
     name: Test source code
     strategy:
+      fail-fast: false
       matrix:
         include:
           - OSName: Linux
