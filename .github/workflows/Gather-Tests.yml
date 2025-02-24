@@ -60,11 +60,19 @@ jobs:
             }
 
             $testSuites = @()
-            $testSuites += Get-ChildItem -Path $testsPath -Directory
+            Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
+                $filePath = $_.FullName
+                'ubuntu-latest', 'macos-latest', 'windows-latest' | ForEach-Object {
+                    $testSuites = @{
+                        RunsOn = $_
+                        FullName = $filePath
+                    }
+                }
+            }
             if (-not $testSuites) {
                 $testSuites += @($testsPath)
             }
 
-            Write-Output $testSuites
+            Write-Output ($testSuites | ConvertTo-Json -Depth 10)
 
-            Set-GitHubOutput -Name TestSuites -Value $testSuites
+            Set-GitHubOutput -Name TestSuites -Value ($testSuites | ConvertTo-Json -Depth 10)
