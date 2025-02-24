@@ -3,9 +3,9 @@ name: Gather-Tests
 on:
   workflow_call:
     inputs:
-      Workspace:
+      Path:
         type: string
-        description: The path to the workspace.
+        description: The path to the root of the repo.
         required: false
         default: ${{ github.workspace }}
       Debug:
@@ -39,10 +39,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
 
       - name: Gather-Tests
         shell: pwsh

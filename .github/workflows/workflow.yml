@@ -154,7 +154,7 @@ jobs:
       - Build-Module
     uses: ./.github/workflows/Gather-Tests.yml
     with:
-      Workspace: ${{ inputs.Workspace }}
+      Path: ${{ inputs.Path }}
 
   # TestModuleStatus:
   #   name: Test module status

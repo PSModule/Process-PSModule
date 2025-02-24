@@ -39,9 +39,9 @@ on:
         required: false
       Path:
         type: string
-        description: The path to the source code of the module.
+        description: The path to the root of the repo.
         required: false
-        default: src
+        default: ${{ github.workspace }}
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
@@ -107,7 +107,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: module
-          path: ${{ inputs.ModulesOutputPath }}
+          path: outputs/module
 
       - name: Test built module
         id: test
@@ -115,7 +115,7 @@ jobs:
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
-          Path: ${{ inputs.ModulesOutputPath }}
+          Path: outputs/module
           TestType: Module
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
