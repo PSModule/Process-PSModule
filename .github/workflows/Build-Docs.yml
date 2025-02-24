@@ -134,12 +134,20 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.Path }}
           Script: |
-            $functionDocsFolder = New-Item -Path "${{ inputs.Path }}/outputs/site/docs/Functions" -ItemType Directory -Force
-            Copy-Item -Path "${{ inputs.Path }}/outputs/docs/*" -Destination "${{ inputs.Path }}/outputs/site/docs/Functions" -Recurse -Force
-            $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-            $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
-            $SiteOutputPath = Join-Path $PWD -ChildPath 'outputs/site'
+            LogGroup "Get folder structure" {
+                $functionDocsFolder = New-Item -Path "/outputs/site/docs/Functions" -ItemType Directory -Force
+                Copy-Item -Path "/outputs/docs/*" -Destination "/outputs/site/docs/Functions" -Recurse -Force
+                $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
+                $ModuleSourcePath = Resolve-Path 'src' | Select-Object -ExpandProperty Path
+                $SiteOutputPath = Resolve-Path 'outputs/site' | Select-Object -ExpandProperty Path
+
+                Write-Host "Function Docs Folder: $functionDocsFolder"
+                Write-Host "Module Name:          $moduleName"
+                Write-Host "Module Source Path:   $ModuleSourcePath"
+                Write-Host "Site Output Path:     $SiteOutputPath"
+            }
 
             LogGroup "Get folder structure" {
                 Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
@@ -158,21 +166,29 @@ jobs:
                 $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
                 Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
                     Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
+
+                Write-Host "About Docs Folder:    $aboutDocsFolder"
+                Write-Host "About Source Folder:  $aboutSourceFolder"
             }
 
             LogGroup 'Build docs - Copy icon to assets' {
                 $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
                 $assetsFolder = New-Item -Path $assetsFolderPath -ItemType Directory -Force
                 $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
+                $iconPath = Resolve-Path 'icon\icon.png' | Select-Object -ExpandProperty Path
                 Copy-Item -Path $iconPath -Destination $assetsFolder -Force -Verbose
+
+                Write-Host "Assets Folder:        $assetsFolder"
+                Write-Host "Icon Path:            $iconPath"
             }
 
             LogGroup 'Build docs - Copy readme.md' {
-                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $readmePath = Join-Path -Path $rootPath -ChildPath 'README.md'
+                $readmePath = Resolve-Path 'README.md' | Select-Object -ExpandProperty Path
                 $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
                 Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
+
+                Write-Host "Readme Path:          $readmePath"
+                Write-Host "Readme Target Path:   $readmeTargetPath"
             }
 
             LogGroup 'Build docs - Create mkdocs.yml' {
@@ -180,6 +196,10 @@ jobs:
                 # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
                 $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
                 $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+
+                Write-Host "Mkdocs Source Path:   $mkdocsSourcePath"
+                Write-Host "Mkdocs Target Path:   $mkdocsTargetPath"
+
                 $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
                 $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
                 $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
