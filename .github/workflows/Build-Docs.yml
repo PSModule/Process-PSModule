@@ -122,6 +122,11 @@ jobs:
           pip install mkdocs-git-revision-date-localized-plugin
           pip install mkdocs-git-committers-plugin-2
 
+      - name: Reinstall GitHub module
+        shell: pwsh
+        run: |
+          Install-PSResource -Name GitHub -TrustRepository -Reinstall
+
       - name: Structure site
         uses: PSModule/GitHub-Script@v1
         with:
