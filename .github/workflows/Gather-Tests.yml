@@ -93,7 +93,7 @@ jobs:
 
             Write-Output ($tests | ConvertTo-Json -Depth 10)
 
-            Set-GitHubOutput -Name Tests -Value $tests
+            Set-GitHubOutput -Name Tests -Value $tests -Verbose -Debug -Confirm:$false
             $output = Get-Content $env:GITHUB_OUTPUT -Raw
             Write-Output $output
-            Set-GitHubOutput -Name Tests -Value $output
+            Set-GitHubStepSummary -Summary $output
