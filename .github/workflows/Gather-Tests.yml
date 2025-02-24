@@ -28,6 +28,10 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+    outputs:
+      TestSuites:
+        description: The test suites to run.
+        value: ${{ fromJson(jobs.Gather-Tests.outputs.TestSuites) }}
 
 permissions:
   contents: read # to checkout the repo
@@ -36,24 +40,31 @@ jobs:
   Gather-Tests:
     name: Gather-Tests
     runs-on: ubuntu-latest
+    outputs:
+      TestSuites: ${{ steps.Gather-Tests.outputs.result }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Gather-Tests
-        shell: pwsh
-        run: |
-          $rootPath = Resolve-Path -Path '${{ inputs.Workspace }}'
-          $testsPath = Join-Path -Path $rootPath -ChildPath 'tests'
-          if (-not (Test-Path -Path $testsPath)) {
-              Write-Host "No tests found"
-              exit 0
-          }
+        uses: PSModule/GitHub-Script@v1
+        id: Gather-Tests
+        with:
+          ShowOutput: true
+          Script: |
+            $rootPath = Resolve-Path -Path '${{ inputs.Path }}'
+            $testsPath = Join-Path -Path $rootPath -ChildPath 'tests'
+            if (-not (Test-Path -Path $testsPath)) {
+                Write-Host "No tests found"
+                exit 0
+            }
 
-          $testSuites = @()
-          $testSuites += Get-ChildItem -Path $testsPath -Directory
-          if (-not $testSuites) {
-              $testSuites += @($testsPath)
-          }
+            $testSuites = @()
+            $testSuites += Get-ChildItem -Path $testsPath -Directory
+            if (-not $testSuites) {
+                $testSuites += @($testsPath)
+            }
 
-          Write-Output $testSuites
+            Write-Output $testSuites
+
+            Set-GitHubOutput -Name TestSuites -Value $testSuites
