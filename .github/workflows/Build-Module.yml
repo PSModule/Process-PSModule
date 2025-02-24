@@ -11,17 +11,7 @@ on:
         type: string
         description: The path to the source code of the module.
         required: false
-        default: src
-      ModulesOutputPath:
-        type: string
-        description: The path to the output directory for the modules.
-        required: false
-        default: outputs/modules
-      ModuleArtifactName:
-        type: string
-        description: Name of the module artifact to upload.
-        required: false
-        default: module
+        default: ${{ github.workspace }}
       Debug:
         type: boolean
         description: Enable debug output.
@@ -54,10 +44,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -71,7 +57,6 @@ jobs:
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
@@ -80,7 +65,7 @@ jobs:
       - name: Upload module artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.ModuleArtifactName }}
-          path: ${{ inputs.ModulesOutputPath }}
+          name: module
+          path: outputs/module
           if-no-files-found: error
           retention-days: 1
