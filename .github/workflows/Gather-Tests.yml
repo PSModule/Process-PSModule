@@ -91,7 +91,9 @@ jobs:
                 }
             }
 
-
             Write-Output ($tests | ConvertTo-Json -Depth 10)
 
             Set-GitHubOutput -Name Tests -Value $tests
+            $output = Get-Content $env:GITHUB_OUTPUT -Raw
+            Write-Output $output
+            Set-GitHubOutput -Name Tests -Value $output
