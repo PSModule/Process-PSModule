@@ -120,7 +120,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: PSModule/Test-PSModule@v3
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -152,7 +152,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: PSModule/Test-PSModule@v3
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -184,7 +184,7 @@ jobs:
 
       - name: Test source code
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: PSModule/Test-PSModule@v3
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
@@ -417,7 +417,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: PSModule/Test-PSModule@v3
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -469,7 +469,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: PSModule/Test-PSModule@v3
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
@@ -521,7 +521,7 @@ jobs:
 
       - name: Test built module
         id: test
-        uses: PSModule/Test-PSModule@v2
+        uses: PSModule/Test-PSModule@v3
         continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
