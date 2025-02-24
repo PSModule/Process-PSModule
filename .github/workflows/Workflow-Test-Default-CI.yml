@@ -23,8 +23,5 @@ jobs:
     secrets: inherit
     with:
       Name: PSModuleTest
-      Path: tests/srcTestRepo/src
-      ModulesOutputPath: tests/srcTestRepo/outputs/modules
-      DocsOutputPath: tests/srcTestRepo/outputs/docs
+      Path: tests/srcTestRepo
       SkipTests: Module
-      Workspace: tests/srcTestRepo

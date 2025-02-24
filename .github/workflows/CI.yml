@@ -34,39 +34,14 @@ on:
         required: false
       Path:
         type: string
-        description: The path to the source code of the module.
-        required: false
-        default: src
-      Workspace:
-        type: string
-        description: The path to the workspace.
+        description: The path to the root of the repo.
         required: false
         default: ${{ github.workspace }}
-      ModulesOutputPath:
-        type: string
-        description: The path to the output directory for the modules.
-        required: false
-        default: outputs/modules
-      DocsOutputPath:
-        type: string
-        description: The path to the output directory for the documentation.
-        required: false
-        default: outputs/docs
-      SiteOutputPath:
-        type: string
-        description: The path to the output directory for the site.
-        required: false
-        default: outputs/site
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
         required: false
         default: None
-      PublishDocs:
-        type: boolean
-        description: Whether to publish the documentation using MkDocs and GitHub Pages.
-        required: false
-        default: true
       Debug:
         type: boolean
         description: Enable debug output.
@@ -123,7 +98,6 @@ jobs:
     with:
       Name: ${{ inputs.Name }}
       Path: ${{ inputs.Path }}
-      ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -136,13 +110,10 @@ jobs:
     with:
       Name: ${{ inputs.Name }}
       Path: ${{ inputs.Path }}
-      ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
-      DocsOutputPath: ${{ inputs.DocsOutputPath }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
-      SiteOutputPath: ${{ inputs.SiteOutputPath }}
 
   TestModule:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
@@ -164,7 +135,6 @@ jobs:
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
       Path: ${{ inputs.Path }}
-      ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
       SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
@@ -177,7 +147,7 @@ jobs:
       - Build-Module
     uses: ./.github/workflows/Gather-Tests.yml
     with:
-      Workspace: ${{ inputs.Workspace }}
+      Path: ${{ inputs.Path }}
 
   # # This is necessary as there is no way to get output from a matrix job
   # TestModule-pwsh-ubuntu-latest:
