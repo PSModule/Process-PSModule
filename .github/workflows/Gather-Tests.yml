@@ -63,7 +63,9 @@ jobs:
             }
 
             $testSuites = @()
-            Get-ChildItem -Path $testsPath -Directory
+            Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
+                $testSuites += $_.FullName
+            }
             if (-not $testSuites) {
                 $testSuites += @($testsPath)
             }
@@ -76,10 +78,9 @@ jobs:
                     $shellsToTest | ForEach-Object {
                         $shell = $_
                         $testPath = Resolve-Path -Path $testSuite | Select-Object -ExpandProperty Path
-                        $test = @{}
                         $test += @{
-                            OS = $os
-                            Path = $testPath
+                            OS    = $os
+                            Path  = $testPath
                             Shell = $shell
                         }
                         $tests += @($test)
