@@ -61,11 +61,3 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-
-      - name: Upload module artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: module
-          path: outputs/module
-          if-no-files-found: error
-          retention-days: 1

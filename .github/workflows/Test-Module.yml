@@ -42,11 +42,6 @@ on:
         description: The path to the source code of the module.
         required: false
         default: src
-      ModulesOutputPath:
-        type: string
-        description: The path to the output directory for the modules.
-        required: false
-        default: outputs/modules
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
