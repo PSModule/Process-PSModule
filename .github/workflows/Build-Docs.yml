@@ -210,7 +210,10 @@ jobs:
       - name: Debug File system
         shell: pwsh
         run: |
-          Get-ChildItem -Path ${{ inputs.Path }} -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+          $basePath = '${{ inputs.Path }}'
+          Get-ChildItem -Path $basePath -Recurse | ForEach-Object {
+              [System.IO.Path]::GetRelativePath($basePath, $_.FullName)
+          } | Sort-Object
 
       - name: Build mkdocs-material project
         working-directory: ${{ inputs.Path }}/outputs/site
@@ -221,7 +224,7 @@ jobs:
           }
 
           LogGroup 'Build docs - mkdocs build' {
-            mkdocs build --config-file mkdocs.yml --site-dir ${{ inputs.Path }}/_site
+            mkdocs build --config-file mkdocs.yml --site-dir ../../_site
           }
 
       - uses: actions/upload-pages-artifact@v3
