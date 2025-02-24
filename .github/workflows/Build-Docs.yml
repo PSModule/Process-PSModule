@@ -135,8 +135,8 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
-            New-Item -Path "$env:GITHUB_WORKSPACE/outputs/site/docs/Functions" -ItemType Directory -Force
-            Copy-Item -Path "$env:GITHUB_WORKSPACE/outputs/docs/*" -Destination "$env:GITHUB_WORKSPACE/outputs/site/docs/Functions" -Recurse -Force
+            New-Item -Path "${{ inputs.Path }}/outputs/site/docs/Functions" -ItemType Directory -Force
+            Copy-Item -Path "${{ inputs.Path }}/outputs/docs/*" -Destination "${{ inputs.Path }}/outputs/site/docs/Functions" -Recurse -Force
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
             $SiteOutputPath = Join-Path $PWD -ChildPath 'outputs/site'
@@ -191,7 +191,7 @@ jobs:
       - name: Debug File system
         shell: pwsh
         run: |
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+          Get-ChildItem -Path ${{ inputs.Path }} -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Build mkdocs-material project
         working-directory: outputs/site
