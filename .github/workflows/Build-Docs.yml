@@ -12,31 +12,6 @@ on:
         description: The path to the source code of the module.
         required: false
         default: src
-      ModulesOutputPath:
-        type: string
-        description: The path to the output directory for the modules.
-        required: false
-        default: outputs/modules
-      ModuleArtifactName:
-        type: string
-        description: Name of the module artifact to upload.
-        required: false
-        default: module
-      DocsOutputPath:
-        type: string
-        description: The path to the output directory for the documentation.
-        required: false
-        default: outputs/docs
-      DocsArtifactName:
-        type: string
-        description: Name of the docs artifact to upload.
-        required: false
-        default: docs
-      SiteOutputPath:
-        type: string
-        description: The path to the output directory for the site.
-        required: false
-        default: outputs/site
       Debug:
         type: boolean
         description: Enable debug output.
@@ -71,10 +46,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -86,16 +57,14 @@ jobs:
       - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.ModuleArtifactName }}
-          path: ${{ inputs.ModulesOutputPath }}
+          name: module
+          path: outputs/module
 
       - name: Document module
         uses: PSModule/Document-PSModule@v1
         with:
           Name: ${{ inputs.Name }}
           Path: ${{ inputs.Path }}
-          ModulesOutputPath: ${{ inputs.ModulesOutputPath }}
-          DocsOutputPath: ${{ inputs.DocsOutputPath }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
@@ -104,8 +73,8 @@ jobs:
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.DocsArtifactName }}
-          path: ${{ inputs.DocsOutputPath }}
+          name: docs
+          path: outputs/docs
           if-no-files-found: error
           retention-days: 1
 
@@ -130,7 +99,7 @@ jobs:
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
         env:
-          FILTER_REGEX_INCLUDE: ${{ inputs.DocsOutputPath }}
+          FILTER_REGEX_INCLUDE: outputs/docs
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ github.workspace }}
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
@@ -161,11 +130,11 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
-            New-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -ItemType Directory -Force
-            Copy-Item -Path "$env:GITHUB_WORKSPACE/${{ inputs.DocsOutputPath }}/*" -Destination "$env:GITHUB_WORKSPACE/${{ inputs.SiteOutputPath }}/docs/Functions" -Recurse -Force
+            New-Item -Path "$env:GITHUB_WORKSPACE/outputs/site/docs/Functions" -ItemType Directory -Force
+            Copy-Item -Path "$env:GITHUB_WORKSPACE/outputs/docs/*" -Destination "$env:GITHUB_WORKSPACE/outputs/site/docs/Functions" -Recurse -Force
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
-            $SiteOutputPath = Join-Path $PWD -ChildPath '${{ inputs.SiteOutputPath }}'
+            $SiteOutputPath = Join-Path $PWD -ChildPath 'outputs/site'
 
             LogGroup "Get folder structure" {
                 Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
@@ -220,7 +189,7 @@ jobs:
           Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Build mkdocs-material project
-        working-directory: ${{ inputs.SiteOutputPath }}
+        working-directory: outputs/site
         shell: pwsh
         run: |
           LogGroup 'Build docs - mkdocs build - content' {
@@ -228,7 +197,7 @@ jobs:
           }
 
           LogGroup 'Build docs - mkdocs build' {
-            mkdocs build --config-file mkdocs.yml --site-dir ${{ github.workspace }}/_site
+            mkdocs build --config-file mkdocs.yml --site-dir ${{ inputs.Path }}/_site
           }
 
       - uses: actions/upload-pages-artifact@v3
