@@ -137,8 +137,8 @@ jobs:
           WorkingDirectory: ${{ inputs.Path }}
           Script: |
             LogGroup "Get folder structure" {
-                $functionDocsFolder = New-Item -Path "/outputs/site/docs/Functions" -ItemType Directory -Force
-                Copy-Item -Path "/outputs/docs/*" -Destination "/outputs/site/docs/Functions" -Recurse -Force
+                $functionDocsFolder = New-Item -Path "outputs/site/docs/Functions" -ItemType Directory -Force
+                Copy-Item -Path "outputs/docs/*" -Destination "outputs/site/docs/Functions" -Recurse -Force
                 $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
                 $ModuleSourcePath = Resolve-Path 'src' | Select-Object -ExpandProperty Path
                 $SiteOutputPath = Resolve-Path 'outputs/site' | Select-Object -ExpandProperty Path
