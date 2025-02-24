@@ -135,7 +135,7 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
-            New-Item -Path "${{ inputs.Path }}/outputs/site/docs/Functions" -ItemType Directory -Force
+            $functionDocsFolder = New-Item -Path "${{ inputs.Path }}/outputs/site/docs/Functions" -ItemType Directory -Force
             Copy-Item -Path "${{ inputs.Path }}/outputs/docs/*" -Destination "${{ inputs.Path }}/outputs/site/docs/Functions" -Recurse -Force
             $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
             $ModuleSourcePath = Join-Path $PWD -ChildPath '${{ inputs.Path }}'
@@ -145,7 +145,6 @@ jobs:
                 Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
             }
 
-            $functionDocsFolder = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Functions' | Get-Item
             Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
                 $fileName = $_.Name
                 LogGroup " - $fileName" {
@@ -163,10 +162,10 @@ jobs:
 
             LogGroup 'Build docs - Copy icon to assets' {
                 $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
-                $null = New-Item -Path $assetsFolderPath -ItemType Directory -Force
+                $assetsFolder = New-Item -Path $assetsFolderPath -ItemType Directory -Force
                 $rootPath = Split-Path -Path $ModuleSourcePath -Parent
                 $iconPath = Join-Path -Path $rootPath -ChildPath 'icon\icon.png'
-                Copy-Item -Path $iconPath -Destination $assetsFolderPath -Force -Verbose
+                Copy-Item -Path $iconPath -Destination $assetsFolder -Force -Verbose
             }
 
             LogGroup 'Build docs - Copy readme.md' {
@@ -194,7 +193,7 @@ jobs:
           Get-ChildItem -Path ${{ inputs.Path }} -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Build mkdocs-material project
-        working-directory: outputs/site
+        working-directory: ${{ inputs.Path }}/outputs/site
         shell: pwsh
         run: |
           LogGroup 'Build docs - mkdocs build - content' {
