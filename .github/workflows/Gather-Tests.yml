@@ -51,30 +51,43 @@ jobs:
         id: Gather-Tests
         with:
           ShowOutput: true
+          WorkingDirectory: ${{ inputs.Path }}
           Script: |
-            $rootPath = Resolve-Path -Path '${{ inputs.Path }}'
-            $testsPath = Join-Path -Path $rootPath -ChildPath 'tests'
+            $shellsToTest = @('pwsh')
+            $OSsToTest = @('ubuntu-latest', 'macos-latest', 'windows-latest')
+
+            $testsPath = Resolve-Path 'tests' | Select-Object -ExpandProperty Path
             if (-not (Test-Path -Path $testsPath)) {
                 Write-Host "No tests found"
                 exit 0
             }
 
             $testSuites = @()
-            Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
-                $filePath = $_.FullName
-            }
+            Get-ChildItem -Path $testsPath -Directory
             if (-not $testSuites) {
                 $testSuites += @($testsPath)
             }
 
-            'ubuntu-latest', 'macos-latest', 'windows-latest' | ForEach-Object {
-                    $testSuites = @{
-                        RunsOn = $_
-                        FullName = $filePath
+            $tests = @()
+            $OSsToTest | ForEach-Object {
+                $os = $_
+                $testSuites | ForEach-Object {
+                    $testSuite = $_
+                    $shellsToTest | ForEach-Object {
+                        $shell = $_
+                        $testPath = Resolve-Path -Path $testSuite | Select-Object -ExpandProperty Path
+                        $test = @{}
+                        $test += @{
+                            OS = $os
+                            Path = $testPath
+                            Shell = $shell
+                        }
+                        $tests += @($test)
                     }
                 }
+            }
 
 
-            Write-Output ($testSuites | ConvertTo-Json -Depth 10)
+            Write-Output ($tests | ConvertTo-Json -Depth 10)
 
-            Set-GitHubOutput -Name TestSuites -Value ($testSuites | ConvertTo-Json -Depth 10)
+            Set-GitHubOutput -Name Tests -Value ($tests | ConvertTo-Json -Depth 10 -Compress)
