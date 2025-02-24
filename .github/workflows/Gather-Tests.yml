@@ -62,16 +62,18 @@ jobs:
             $testSuites = @()
             Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
                 $filePath = $_.FullName
-                'ubuntu-latest', 'macos-latest', 'windows-latest' | ForEach-Object {
+            }
+            if (-not $testSuites) {
+                $testSuites += @($testsPath)
+            }
+
+            'ubuntu-latest', 'macos-latest', 'windows-latest' | ForEach-Object {
                     $testSuites = @{
                         RunsOn = $_
                         FullName = $filePath
                     }
                 }
-            }
-            if (-not $testSuites) {
-                $testSuites += @($testsPath)
-            }
+
 
             Write-Output ($testSuites | ConvertTo-Json -Depth 10)
 
