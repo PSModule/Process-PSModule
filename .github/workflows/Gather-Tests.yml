@@ -91,9 +91,11 @@ jobs:
                 }
             }
 
-            Write-Output ($tests | ConvertTo-Json -Depth 10)
+            $testsJson = $tests | ConvertTo-Json -Depth 10 -Compress
 
-            Set-GitHubOutput -Name Tests -Value $tests -Verbose -Debug -Confirm:$false
+            Write-Output $testsJson
+
+            Set-GitHubOutput -Name Tests -Value $testsJson -Verbose -Debug -Confirm:$false
             $output = Get-Content $env:GITHUB_OUTPUT -Raw
             Write-Output $output
             Set-GitHubStepSummary -Summary $output
