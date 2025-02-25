@@ -149,9 +149,6 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Gather-Tests:
-    # if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
-    # needs:
-    #   - Build-Module
     uses: ./.github/workflows/Gather-Tests.yml
     with:
       Path: ${{ inputs.Path }}

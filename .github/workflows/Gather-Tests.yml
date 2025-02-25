@@ -64,26 +64,19 @@ jobs:
 
             Write-Host "Tests found at [$testsPath]"
 
-            $testSuites = @()
+            $testsPaths = @()
             Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
-                $testSuites += $_.FullName
+                $testsPaths += $_.FullName
             }
-            if (-not $testSuites) {
-                $testSuites += @($testsPath)
+            if (-not $testsPaths) {
+                $testsPaths += @($testsPath)
             }
 
-            $testSuites | Format-List
+            $testsPaths | Format-List
 
-            $tests = @{
+            $testSuites = @{
               OS = $OSsToTest
-              Path = $testSuites
+              Path = $testsPaths
             }
 
-            $testsJson = $tests | ConvertTo-Json -Depth 10 -Compress
-
-            Write-Output $testsJson
-
-            Set-GitHubOutput -Name Tests -Value $tests -Verbose -Debug -Confirm:$false
-            $output = Get-Content $env:GITHUB_OUTPUT -Raw
-            Write-Output $output
-            Set-GitHubStepSummary -Summary $output
+            Set-GitHubOutput -Name TestSuites -Value $testSuites -Verbose -Debug -Confirm:$false
