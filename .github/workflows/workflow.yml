@@ -157,6 +157,7 @@ jobs:
     needs:
       - Get-TestSuites
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
     runs-on: ${{ matrix.OS }}
     steps:
