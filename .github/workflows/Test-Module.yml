@@ -103,6 +103,11 @@ jobs:
           name: module
           path: outputs/module
 
+      - name: Test
+        shell: pwsh
+        run: |
+          Get-ChildItem . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+
       - name: Test-Module
         id: test
         uses: PSModule/Test-PSModule@v3
