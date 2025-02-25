@@ -107,6 +107,7 @@ jobs:
         id: test
         uses: PSModule/Test-PSModule@v3
         with:
+          Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
