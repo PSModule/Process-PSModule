@@ -31,7 +31,7 @@ on:
     outputs:
       TestSuites:
         description: The test suites to run.
-        value: ${{ fromJson(jobs.Gather-Tests.outputs.TestSuites) }}
+        value: ${{ jobs.Gather-Tests.outputs.TestSuites }}
 
 permissions:
   contents: read # to checkout the repo
@@ -41,7 +41,7 @@ jobs:
     name: Gather-Tests
     runs-on: ubuntu-latest
     outputs:
-      TestSuites: ${{ steps.Gather-Tests.outputs.result }}
+      TestSuites: ${{ fromJson(steps.Gather-Tests.outputs.result).TestSuites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
