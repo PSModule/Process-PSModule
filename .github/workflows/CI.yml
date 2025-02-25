@@ -141,13 +141,41 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  Gather-Tests:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
-    needs:
-      - Build-Module
-    uses: ./.github/workflows/Gather-Tests.yml
+  Get-TestSuites:
+    uses: ./.github/workflows/Get-TestSuites.yml
     with:
       Path: ${{ inputs.Path }}
+
+  TestModuleLocal:
+    needs:
+      - Get-TestSuites
+    strategy:
+      matrix: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
+    runs-on: ${{ matrix.OS }}
+    steps:
+      - name: Test
+        shell: pwsh
+        run: |
+          $suite = '${{ matrix.Path }}'
+          if ($IsLinux) {
+            throw "Linux is not supported"
+          }
+          Write-Host "Running test suite: $suite"
+
+  Status:
+    name: Status
+    runs-on: ubuntu-latest
+    needs:
+      - TestModule
+      - TestModuleLocal
+    steps:
+      - name: Status
+        shell: pwsh
+        run: |
+          [pscustomobject]@{
+            TestModule      = '${{ needs.TestModule.result }}'
+            TestModuleLocal = '${{ needs.TestModuleLocal.result }}'
+          }
 
   # # This is necessary as there is no way to get output from a matrix job
   # TestModule-pwsh-ubuntu-latest:

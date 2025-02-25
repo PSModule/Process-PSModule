@@ -1,4 +1,4 @@
-name: Gather-Tests
+name: Get-TestSuites
 
 on:
   workflow_call:
@@ -31,24 +31,24 @@ on:
     outputs:
       TestSuites:
         description: The test suites to run.
-        value: ${{ jobs.Gather-Tests.outputs.TestSuites }}
+        value: ${{ jobs.Get-TestSuites.outputs.TestSuites }}
 
 permissions:
   contents: read # to checkout the repo
 
 jobs:
-  Gather-Tests:
-    name: Gather-Tests
+  Get-TestSuites:
+    name: Get-TestSuites
     runs-on: ubuntu-latest
     outputs:
-      TestSuites: ${{ fromJson(steps.Gather-Tests.outputs.result).TestSuites }}
+      TestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).TestSuites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Gather-Tests
+      - name: Get-TestSuites
         uses: PSModule/GitHub-Script@v1
-        id: Gather-Tests
+        id: Get-TestSuites
         with:
           ShowOutput: true
           WorkingDirectory: ${{ inputs.Path }}
