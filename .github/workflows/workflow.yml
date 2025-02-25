@@ -166,26 +166,20 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
-    runs-on: ${{ matrix.OS }}
-    outputs:
-      Passed: ${{ steps.action-test.outcome }}
-    steps:
-      - name: Test
-        shell: pwsh
-        id: action-test
-        continue-on-error: true
-        run: |
-          $suite = '${{ matrix.Path }}'
-          if ($IsLinux) {
-            throw "Linux is not supported"
-          }
-          Write-Host "Running test suite: $suite"
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host 'outcome:    ${{ steps.action-test.outcome }}'
-          Write-Host 'conclusion: ${{ steps.action-test.conclusion }}'
+    uses: ./.github/workflows/Test-ModuleLocal.yml
+    secrets: inherit
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      SkipTests: ${{ inputs.SkipTests }}
+      TestFolderPath: ${{ matrix.TestFolderPath }}
+      TestName: ${{ matrix.TestName }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
   Status:
     name: Status

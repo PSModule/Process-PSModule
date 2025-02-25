@@ -37,6 +37,16 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
+      TestFolderPath:
+        type: string
+        description: The path to the tests folder.
+        required: false
+        default: tests
+      TestName:
+        type: string
+        description: The path to the tests folder.
+        required: false
+        default: tests
       Path:
         type: string
         description: The path to the root of the repo.
@@ -103,8 +113,11 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          TestResult_TestSuiteName: ${{ inputs.Settings }}-${{ runner.os }}
-          Path:
+          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ runner.os }}
+          TestResult_Enabled: true
+          CodeCoverage_Enabled: true
+          CodeCoverage_OutputFormat: JaCoCo
+          Path: ${{ inputs.TestFolderPath }}
           Run_Path: ${{ inputs.Path }}/outputs/module
 
       - name: Failed test

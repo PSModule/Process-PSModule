@@ -53,62 +53,41 @@ jobs:
           ShowOutput: true
           WorkingDirectory: ${{ inputs.Path }}
           Script: |
-            # Define your test configurations
-            $testConfigs = @(
-                @{
-                    OS     = 'ubuntu-latest'
-                    Shells = 'pwsh'
-                    Path   = ''  # to be filled later
-                },
-                @{
-                    OS     = 'macos-latest'
-                    Shells = 'pwsh'
-                    Path   = ''
-                },
-                @{
-                    OS     = 'windows-latest'
-                    Shells = 'pwsh'
-                    Path   = ''
-                },
-                @{
-                    OS     = 'windows-latest'
-                    Shells = 'powershell'
-                    Path   = ''
-                }
+            # Define test configurations as an array of hashtables.
+            $osConfigs = @(
+                @{ runson = 'ubuntu-latest'; name = 'Linux' }
+                @{ runson = 'macos-latest';  name = 'macOS' }
+                @{ runson = 'windows-latest'; name = 'Windows' }
             )
 
-            # Locate the tests directory
-            $testsPath = Resolve-Path 'tests' | Select-Object -ExpandProperty Path
-            if (-not (Test-Path -Path $testsPath)) {
+            # Locate the tests directory.
+            $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+            if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
                 Write-Host 'No tests found'
                 exit 0
             }
             Write-Host "Tests found at [$testsPath]"
 
-            # Get all directories inside the tests folder.
+            # Get all subdirectories inside the tests folder; if none, use the tests folder itself.
             $testsPaths = Get-ChildItem -Path $testsPath -Directory | ForEach-Object { $_.FullName }
             if (-not $testsPaths) {
-                # If no subdirectories, use the tests folder itself.
-                $testsPaths = , $testsPath
+                $testsPaths = @($testsPath)
             }
 
-            # Build the test suites matrix
-            $testSuites = @()
-            foreach ($folder in $testsPaths) {
-                foreach ($config in $testConfigs) {
-                    # For each folder and config, produce a new object with the proper values.
-                    $testSuite = @{
-                        OS     = $config.OS
-                        Shells = $config.Shells
-                        Path   = $folder
+            # Build the test suites matrix.
+            $testSuites = foreach ($folder in $testsPaths) {
+                foreach ($osConfig in $osConfigs) {
+                    [pscustomobject]@{
+                        RunsOn         = $osConfig.runson
+                        OSName         = $osConfig.name
+                        TestFolderPath = $folder
+                        TestName       = Split-Path -Path $folder -Leaf
                     }
-                    $testSuites += $testSuite
                 }
             }
 
             # (Optional) Display the generated matrix in a table for verification.
             $testSuites | Format-Table -AutoSize
 
-            # Pass the final object to GitHub Actions output
-            Set-GitHubOutput -Name TestSuites -Value $testSuites -Verbose -Debug -Confirm:$false
-
+            # Pass the final object to GitHub Actions output.
+            Set-GitHubOutput -Name TestSuites -Value $testSuites
