@@ -148,19 +148,75 @@ jobs:
   #     Verbose: ${{ inputs.Verbose }}
   #     Version: ${{ inputs.Version }}
 
+  # Gather-Tests:
+  #   # if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+  #   # needs:
+  #   #   - Build-Module
+  #   uses: ./.github/workflows/Gather-Tests.yml
+  #   with:
+  #     Path: ${{ inputs.Path }}
+
   Gather-Tests:
-    # if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
-    # needs:
-    #   - Build-Module
-    uses: ./.github/workflows/Gather-Tests.yml
-    with:
-      Path: ${{ inputs.Path }}
+    name: Gather-Tests
+    runs-on: ubuntu-latest
+    outputs:
+      TestSuites: ${{ fromJson(steps.Gather-Tests.outputs.result).TestSuites }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Gather-Tests
+        uses: PSModule/GitHub-Script@v1
+        id: Gather-Tests
+        with:
+          ShowOutput: true
+          WorkingDirectory: ${{ inputs.Path }}
+          Script: |
+            $shellsToTest = @('pwsh')
+            $OSsToTest = @('ubuntu-latest', 'macos-latest', 'windows-latest')
+
+            $testsPath = Resolve-Path 'tests' | Select-Object -ExpandProperty Path
+            if (-not (Test-Path -Path $testsPath)) {
+                Write-Host "No tests found"
+                exit 0
+            }
+
+            Write-Host "Tests found at [$testsPath]"
+
+            $testSuites = @()
+            Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
+                $testSuites += $_.FullName
+            }
+            if (-not $testSuites) {
+                $testSuites += @($testsPath)
+            }
+
+            $testSuites | Format-List
+
+            $tests = @{
+              OS = $OSsToTest
+              Path = $testSuites
+            }
+
+            $testsJson = $tests | ConvertTo-Json -Depth 10 -Compress
+
+            Write-Output $testsJson
+
+            Set-GitHubOutput -Name Tests -Value $tests -Verbose -Debug -Confirm:$false
+            $output = Get-Content $env:GITHUB_OUTPUT -Raw
+            Write-Output $output
+            Set-GitHubStepSummary -Summary $output
+
+
+
+
+
 
   TestModuleLocal:
     needs:
       - Gather-Tests
     strategy:
-      matrix: ${{ toJson(needs.Gather-Tests.outputs.TestSuites) }}
+      matrix: ${{ fromJson(needs.Gather-Tests.outputs.TestSuites) }}
     runs-on: ${{ matrix.OS }}
     steps:
       - name: Test

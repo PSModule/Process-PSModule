@@ -79,25 +79,6 @@ jobs:
               Path = $testSuites
             }
 
-
-            # $OSsToTest | ForEach-Object {
-            #     $os = $_
-            #     $testSuites | ForEach-Object {
-            #         $testSuite = $_
-            #         $shellsToTest | ForEach-Object {
-            #             $shell = $_
-            #             $testPath = Resolve-Path -Path $testSuite | Select-Object -ExpandProperty Path
-            #             $tests.Add(
-            #                 [pscustomobject]@{
-            #                     OS    = $os
-            #                     Path  = $testPath
-            #                     Shell = $shell
-            #                 }
-            #             )
-            #         }
-            #     }
-            # }
-
             $testsJson = $tests | ConvertTo-Json -Depth 10 -Compress
 
             Write-Output $testsJson
