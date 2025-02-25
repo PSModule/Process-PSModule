@@ -157,7 +157,6 @@ jobs:
       Path: ${{ inputs.Path }}
 
   TestModuleLocal:
-    if: ${{ needs.Gather-Tests.result == 'success' && !cancelled() }}
     needs:
       - Gather-Tests
     strategy:
