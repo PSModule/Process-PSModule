@@ -53,30 +53,62 @@ jobs:
           ShowOutput: true
           WorkingDirectory: ${{ inputs.Path }}
           Script: |
-            $shellsToTest = @('pwsh')
-            $OSsToTest = @('ubuntu-latest', 'macos-latest', 'windows-latest')
+            # Define your test configurations
+            $testConfigs = @(
+                @{
+                    OS     = 'ubuntu-latest'
+                    Shells = 'pwsh'
+                    Path   = ''  # to be filled later
+                },
+                @{
+                    OS     = 'macos-latest'
+                    Shells = 'pwsh'
+                    Path   = ''
+                },
+                @{
+                    OS     = 'windows-latest'
+                    Shells = 'pwsh'
+                    Path   = ''
+                },
+                @{
+                    OS     = 'windows-latest'
+                    Shells = 'powershell'
+                    Path   = ''
+                }
+            )
 
+            # Locate the tests directory
             $testsPath = Resolve-Path 'tests' | Select-Object -ExpandProperty Path
             if (-not (Test-Path -Path $testsPath)) {
-                Write-Host "No tests found"
+                Write-Host 'No tests found'
                 exit 0
             }
-
             Write-Host "Tests found at [$testsPath]"
 
-            $testsPaths = @()
-            Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
-                $testsPaths += $_.FullName
-            }
+            # Get all directories inside the tests folder.
+            $testsPaths = Get-ChildItem -Path $testsPath -Directory | ForEach-Object { $_.FullName }
             if (-not $testsPaths) {
-                $testsPaths += @($testsPath)
+                # If no subdirectories, use the tests folder itself.
+                $testsPaths = , $testsPath
             }
 
-            $testsPaths | Format-List
-
-            $testSuites = @{
-              OS = $OSsToTest
-              Path = $testsPaths
+            # Build the test suites matrix
+            $testSuites = @()
+            foreach ($folder in $testsPaths) {
+                foreach ($config in $testConfigs) {
+                    # For each folder and config, produce a new object with the proper values.
+                    $testSuite = @{
+                        OS     = $config.OS
+                        Shells = $config.Shells
+                        Path   = $folder
+                    }
+                    $testSuites += $testSuite
+                }
             }
 
+            # (Optional) Display the generated matrix in a table for verification.
+            $testSuites | Format-Table -AutoSize
+
+            # Pass the final object to GitHub Actions output
             Set-GitHubOutput -Name TestSuites -Value $testSuites -Verbose -Debug -Confirm:$false
+

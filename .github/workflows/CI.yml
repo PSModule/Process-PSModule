@@ -69,8 +69,8 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
-  TestSourceCode:
-    name: Test source code
+  Test-SourceCode:
+    name: Test-SourceCode
     strategy:
       fail-fast: false
       matrix:
@@ -115,8 +115,9 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  TestModule:
+  Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+    name: Test-Module
     needs:
       - Build-Module
     strategy:
@@ -142,17 +143,21 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-TestSuites:
+    name: Get-TestSuites
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
       Path: ${{ inputs.Path }}
 
-  TestModuleLocal:
+  Test-ModuleLocal:
+    name: Test-ModuleLocal
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     needs:
-      - Get-TestSuites
       - Build-Module
+      - Get-TestSuites
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
+      matrix:
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
     runs-on: ${{ matrix.OS }}
     outputs:
       Passed: ${{ steps.action-test.outcome }}
@@ -178,9 +183,9 @@ jobs:
     name: Status
     runs-on: ubuntu-latest
     needs:
-      - TestSourceCode
-      - TestModule
-      - TestModuleLocal
+      - Test-SourceCode
+      - Test-Module
+      - Test-ModuleLocal
     steps:
       - name: Status
         shell: pwsh

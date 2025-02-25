@@ -50,8 +50,8 @@ permissions:
   contents: read # to checkout the repo and create releases on the repo
 
 jobs:
-  Test-PSModule-SourceCode:
-    name: Test source code (${{ inputs.RunsOn }})
+  Test-SourceCode:
+    name: Test-SourceCode (${{ inputs.RunsOn }})
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
@@ -66,7 +66,7 @@ jobs:
       #     Verbose: ${{ inputs.Verbose }}
       #     Version: ${{ inputs.Version }}
 
-      - name: Test source code
+      - name: Test-SourceCode
         uses: PSModule/Test-PSModule@v3
         with:
           Debug: ${{ inputs.Debug }}
@@ -76,8 +76,8 @@ jobs:
           Path: ${{ inputs.Path }}
           Settings: SourceCode
 
-  Invoke-ScriptAnalyzer-SourceCode:
-    name: Lint source code (${{ inputs.RunsOn }})
+  Lint-SourceCode:
+    name: Lint-SourceCode (${{ inputs.RunsOn }})
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
@@ -92,7 +92,7 @@ jobs:
       #     Verbose: ${{ inputs.Verbose }}
       #     Version: ${{ inputs.Version }}
 
-      - name: Lint source code
+      - name: Lint-SourceCode
         uses: PSModule/Invoke-ScriptAnalyzer@v2
         with:
           Debug: ${{ inputs.Debug }}

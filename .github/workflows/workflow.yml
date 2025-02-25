@@ -76,8 +76,8 @@ permissions:
   id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
-  TestSourceCode:
-    name: Test source code
+  Test-SourceCode:
+    name: Test-SourceCode
     strategy:
       fail-fast: false
       matrix:
@@ -122,8 +122,9 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  TestModule:
+  Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+    name: Test-Module
     needs:
       - Build-Module
     strategy:
@@ -149,16 +150,21 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-TestSuites:
+    name: Get-TestSuites
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
       Path: ${{ inputs.Path }}
 
-  TestModuleLocal:
+  Test-ModuleLocal:
+    name: Test-ModuleLocal
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     needs:
+      - Build-Module
       - Get-TestSuites
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
+      matrix:
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
     runs-on: ${{ matrix.OS }}
     outputs:
       Passed: ${{ steps.action-test.outcome }}
@@ -184,8 +190,9 @@ jobs:
     name: Status
     runs-on: ubuntu-latest
     needs:
-      - TestModule
-      - TestModuleLocal
+      - Test-SourceCode
+      - Test-Module
+      - Test-ModuleLocal
     steps:
       - name: Status
         shell: pwsh
@@ -193,7 +200,7 @@ jobs:
           [pscustomobject]@{
             TestModule      = '${{ needs.TestModule.result }}'
             TestModuleLocal = '${{ needs.TestModuleLocal.result }}'
-          } 
+          }
 
   # TestModuleStatus:
   #   name: Test module status
