@@ -156,6 +156,20 @@ jobs:
     with:
       Path: ${{ inputs.Path }}
 
+  TestModuleLocal:
+    if: ${{ needs.Gather-Tests.result == 'success' && !cancelled() }}
+    needs:
+      - Gather-Tests
+    strategy:
+      matrix: ${{ fromJson(needs.Gather-Tests.outputs.TestSuites) }}
+    runs-on: ${{ matrix.OS }}
+    steps:
+      - name: Test
+        shell: pwsh
+        run: |
+          $suite = '${{ matrix.Path }}'
+          Write-Host "Running test suite: $suite"
+
   # TestModuleStatus:
   #   name: Test module status
   #   if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && !cancelled() }}
