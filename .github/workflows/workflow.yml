@@ -160,7 +160,7 @@ jobs:
     name: Gather-Tests
     runs-on: ubuntu-latest
     outputs:
-      TestSuites: ${{ fromJson(steps.Gather-Tests.outputs.result).TestSuites }}
+      Tests: ${{ fromJson(steps.Gather-Tests.outputs.result).Tests }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -207,16 +207,11 @@ jobs:
             Write-Output $output
             Set-GitHubStepSummary -Summary $output
 
-
-
-
-
-
   TestModuleLocal:
     needs:
       - Gather-Tests
     strategy:
-      matrix: ${{ fromJson(needs.Gather-Tests.outputs.TestSuites) }}
+      matrix: ${{ needs.Gather-Tests.outputs.Tests }}
     runs-on: ${{ matrix.OS }}
     steps:
       - name: Test
