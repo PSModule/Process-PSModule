@@ -150,17 +150,28 @@ jobs:
     needs:
       - Get-TestSuites
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
     runs-on: ${{ matrix.OS }}
+    outputs:
+      Passed: ${{ steps.action-test.outcome }}
     steps:
       - name: Test
         shell: pwsh
+        id: action-test
+        continue-on-error: true
         run: |
           $suite = '${{ matrix.Path }}'
           if ($IsLinux) {
             throw "Linux is not supported"
           }
           Write-Host "Running test suite: $suite"
+
+      - name: Status
+        shell: pwsh
+        run: |
+          Write-Host 'outcome:    ${{ steps.action-test.outcome }}'
+          Write-Host 'conclusion: ${{ steps.action-test.conclusion }}'
 
   Status:
     name: Status

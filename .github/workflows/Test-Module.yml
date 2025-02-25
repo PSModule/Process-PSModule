@@ -86,7 +86,7 @@ jobs:
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     outputs:
-      passed: ${{ steps.test.outputs.passed }}
+      Passed: ${{ steps.action-test.outcome }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -125,7 +125,7 @@ jobs:
       - name: Status
         shell: pwsh
         run: |
-          Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
+          Write-Host '${{ steps.action-test.outcome }}'
 
       - name: Failed test
         if: steps.test.outcome != 'success'
