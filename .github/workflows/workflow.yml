@@ -211,7 +211,7 @@ jobs:
     needs:
       - Gather-Tests
     strategy:
-      matrix: ${{ needs.Gather-Tests.outputs.Tests }}
+      matrix: ${{ fromJson(needs.Gather-Tests.outputs.Tests) }}
     runs-on: ${{ matrix.OS }}
     steps:
       - name: Test
