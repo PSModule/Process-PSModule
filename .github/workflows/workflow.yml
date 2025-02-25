@@ -148,22 +148,25 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  Gather-Tests:
+  Gather-TestSuites:
     uses: ./.github/workflows/Gather-Tests.yml
     with:
       Path: ${{ inputs.Path }}
 
   TestModuleLocal:
     needs:
-      - Gather-Tests
+      - Gather-TestSuites
     strategy:
-      matrix: ${{ needs.Gather-Tests.outputs.Tests }}
+      matrix: ${{ needs.Gather-Tests.outputs.TestSuites }}
     runs-on: ${{ matrix.OS }}
     steps:
       - name: Test
         shell: pwsh
         run: |
           $suite = '${{ matrix.Path }}'
+          if ($IsLinux) {
+            throw "Linux is not supported"
+          }
           Write-Host "Running test suite: $suite"
 
   Status:
