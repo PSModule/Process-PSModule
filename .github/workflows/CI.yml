@@ -121,6 +121,7 @@ jobs:
     needs:
       - Build-Module
     strategy:
+      fail-fast: false
       matrix:
         include:
           - OSName: Linux
