@@ -31,7 +31,7 @@ on:
     outputs:
       TestSuites:
         description: The test suites to run.
-        value: ${{ jobs.Gather-Tests.outputs.TestSuites }}
+        value: ${{ fromJson(jobs.Gather-Tests.outputs.TestSuites) }}
 
 permissions:
   contents: read # to checkout the repo
