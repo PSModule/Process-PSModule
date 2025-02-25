@@ -82,11 +82,13 @@ jobs:
                     $shellsToTest | ForEach-Object {
                         $shell = $_
                         $testPath = Resolve-Path -Path $testSuite | Select-Object -ExpandProperty Path
-                        $tests.Add([pscustomobject]@{
-                            OS    = $os
-                            Path  = $testPath
-                            Shell = $shell
-                        })
+                        $tests.Add(
+                            [pscustomobject]@{
+                                OS    = $os
+                                Path  = $testPath
+                                Shell = $shell
+                            }
+                        )
                     }
                 }
             }
