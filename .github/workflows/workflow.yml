@@ -170,6 +170,27 @@ jobs:
           $suite = '${{ matrix.Path }}'
           Write-Host "Running test suite: $suite"
 
+  Status:
+    name: Status
+    runs-on: ubuntu-latest
+    needs:
+      - TestModule
+      - TestModuleLocal
+    steps:
+      - name: Status
+        shell: pwsh
+        run: |
+          [pscustomobject]@{
+            TestModule = @{
+              Outcome    = ${{ needs.TestModule.outcome }}"
+              Conclusion = ${{ needs.TestModule.conclusion }}"
+            }
+            TestModuleLocal = @{
+              Outcome    = ${{ needs.TestModuleLocal.outcome }}"
+              Conclusion = ${{ needs.TestModuleLocal.conclusion }}"
+            }
+          }
+
   # TestModuleStatus:
   #   name: Test module status
   #   if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && !cancelled() }}
