@@ -76,142 +76,91 @@ permissions:
   id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
-  # TestSourceCode:
-  #   name: Test source code
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       include:
-  #         - OSName: Linux
-  #           RunsOn: ubuntu-latest
-  #         - OSName: macOS
-  #           RunsOn: macos-latest
-  #         - OSName: Windows
-  #           RunsOn: windows-latest
-  #   uses: ./.github/workflows/Test-SourceCode.yml
-  #   with:
-  #     RunsOn: ${{ matrix.RunsOn }}
-  #     OS: ${{ matrix.OSName }}
-  #     Name: ${{ inputs.Name }}
-  #     Path: ${{ inputs.Path }}
-  #     SkipTests: ${{ inputs.SkipTests }}
-  #     Debug: ${{ inputs.Debug }}
-  #     Prerelease: ${{ inputs.Prerelease }}
-  #     Verbose: ${{ inputs.Verbose }}
-  #     Version: ${{ inputs.Version }}
+  TestSourceCode:
+    name: Test source code
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - OSName: Linux
+            RunsOn: ubuntu-latest
+          - OSName: macOS
+            RunsOn: macos-latest
+          - OSName: Windows
+            RunsOn: windows-latest
+    uses: ./.github/workflows/Test-SourceCode.yml
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      SkipTests: ${{ inputs.SkipTests }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
-  # Build-Module:
-  #   uses: ./.github/workflows/Build-Module.yml
-  #   with:
-  #     Name: ${{ inputs.Name }}
-  #     Path: ${{ inputs.Path }}
-  #     Debug: ${{ inputs.Debug }}
-  #     Prerelease: ${{ inputs.Prerelease }}
-  #     Verbose: ${{ inputs.Verbose }}
-  #     Version: ${{ inputs.Version }}
+  Build-Module:
+    uses: ./.github/workflows/Build-Module.yml
+    with:
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
-  # Build-Docs:
-  #   needs:
-  #     - Build-Module
-  #   uses: ./.github/workflows/Build-Docs.yml
-  #   with:
-  #     Name: ${{ inputs.Name }}
-  #     Path: ${{ inputs.Path }}
-  #     Debug: ${{ inputs.Debug }}
-  #     Prerelease: ${{ inputs.Prerelease }}
-  #     Verbose: ${{ inputs.Verbose }}
-  #     Version: ${{ inputs.Version }}
+  Build-Docs:
+    needs:
+      - Build-Module
+    uses: ./.github/workflows/Build-Docs.yml
+    with:
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
-  # TestModule:
-  #   if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
-  #   needs:
-  #     - Build-Module
-  #   strategy:
-  #     matrix:
-  #       include:
-  #         - OSName: Linux
-  #           RunsOn: ubuntu-latest
-  #         - OSName: macOS
-  #           RunsOn: macos-latest
-  #         - OSName: Windows
-  #           RunsOn: windows-latest
-  #   uses: ./.github/workflows/Test-Module.yml
-  #   secrets: inherit
-  #   with:
-  #     RunsOn: ${{ matrix.RunsOn }}
-  #     OS: ${{ matrix.OSName }}
-  #     Name: ${{ inputs.Name }}
-  #     Path: ${{ inputs.Path }}
-  #     SkipTests: ${{ inputs.SkipTests }}
-  #     Debug: ${{ inputs.Debug }}
-  #     Prerelease: ${{ inputs.Prerelease }}
-  #     Verbose: ${{ inputs.Verbose }}
-  #     Version: ${{ inputs.Version }}
-
-  # Gather-Tests:
-  #   # if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
-  #   # needs:
-  #   #   - Build-Module
-  #   uses: ./.github/workflows/Gather-Tests.yml
-  #   with:
-  #     Path: ${{ inputs.Path }}
+  TestModule:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+    needs:
+      - Build-Module
+    strategy:
+      matrix:
+        include:
+          - OSName: Linux
+            RunsOn: ubuntu-latest
+          - OSName: macOS
+            RunsOn: macos-latest
+          - OSName: Windows
+            RunsOn: windows-latest
+    uses: ./.github/workflows/Test-Module.yml
+    secrets: inherit
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ inputs.Name }}
+      Path: ${{ inputs.Path }}
+      SkipTests: ${{ inputs.SkipTests }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
   Gather-Tests:
-    name: Gather-Tests
-    runs-on: ubuntu-latest
-    outputs:
-      Tests: ${{ fromJson(steps.Gather-Tests.outputs.result).Tests }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Gather-Tests
-        uses: PSModule/GitHub-Script@v1
-        id: Gather-Tests
-        with:
-          ShowOutput: true
-          WorkingDirectory: ${{ inputs.Path }}
-          Script: |
-            $shellsToTest = @('pwsh')
-            $OSsToTest = @('ubuntu-latest', 'macos-latest', 'windows-latest')
-
-            $testsPath = Resolve-Path 'tests' | Select-Object -ExpandProperty Path
-            if (-not (Test-Path -Path $testsPath)) {
-                Write-Host "No tests found"
-                exit 0
-            }
-
-            Write-Host "Tests found at [$testsPath]"
-
-            $testSuites = @()
-            Get-ChildItem -Path $testsPath -Directory | ForEach-Object {
-                $testSuites += $_.FullName
-            }
-            if (-not $testSuites) {
-                $testSuites += @($testsPath)
-            }
-
-            $testSuites | Format-List
-
-            $tests = @{
-              OS = $OSsToTest
-              Path = $testSuites
-            }
-
-            $testsJson = $tests | ConvertTo-Json -Depth 10 -Compress
-
-            Write-Output $testsJson
-
-            Set-GitHubOutput -Name Tests -Value $tests -Verbose -Debug -Confirm:$false
-            $output = Get-Content $env:GITHUB_OUTPUT -Raw
-            Write-Output $output
-            Set-GitHubStepSummary -Summary $output
+    # if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+    # needs:
+    #   - Build-Module
+    uses: ./.github/workflows/Gather-Tests.yml
+    with:
+      Path: ${{ inputs.Path }}
 
   TestModuleLocal:
     needs:
       - Gather-Tests
     strategy:
-      matrix: ${{ fromJson(needs.Gather-Tests.outputs.Tests) }}
+      matrix: ${{ needs.Gather-Tests.outputs.Tests }}
     runs-on: ${{ matrix.OS }}
     steps:
       - name: Test
@@ -224,7 +173,7 @@ jobs:
     name: Status
     runs-on: ubuntu-latest
     needs:
-      # - TestModule
+      - TestModule
       - TestModuleLocal
     steps:
       - name: Status
