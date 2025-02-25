@@ -92,7 +92,7 @@ permissions:
 
 jobs:
   Test-ModuleLocal:
-    name: ${{ inputs.RunsOn }}
+    name: ${{ inputs.TestName }}-${{ inputs.OS }}
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
@@ -113,7 +113,7 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ runner.os }}
+          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OS }}
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           CodeCoverage_OutputFormat: JaCoCo
