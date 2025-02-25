@@ -149,6 +149,7 @@ jobs:
   TestModuleLocal:
     needs:
       - Get-TestSuites
+      - Build-Module
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
@@ -177,6 +178,7 @@ jobs:
     name: Status
     runs-on: ubuntu-latest
     needs:
+      - TestSourceCode
       - TestModule
       - TestModuleLocal
     steps:
