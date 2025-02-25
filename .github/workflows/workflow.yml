@@ -180,14 +180,8 @@ jobs:
         shell: pwsh
         run: |
           [pscustomobject]@{
-            TestModule = @{
-              Outcome    = ${{ needs.TestModule.outcome }}"
-              Conclusion = ${{ needs.TestModule.conclusion }}"
-            }
-            TestModuleLocal = @{
-              Outcome    = ${{ needs.TestModuleLocal.outcome }}"
-              Conclusion = ${{ needs.TestModuleLocal.conclusion }}"
-            }
+            TestModule      = '${{ needs.TestModule.result }}'
+            TestModuleLocal = '${{ needs.TestModuleLocal.result }}'
           }
 
   # TestModuleStatus:
