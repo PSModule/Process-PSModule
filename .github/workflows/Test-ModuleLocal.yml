@@ -101,7 +101,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: module
-          path: outputs/module
+          path: ${{ inputs.Path }}/outputs/module
 
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v3
@@ -113,7 +113,7 @@ jobs:
           Version: ${{ inputs.Version }}
           TestResult_TestSuiteName: ${{ inputs.Settings }}-${{ runner.os }}
           Path:
-          Run_Path: ${{ inputs.Path }}/module/output
+          Run_Path: ${{ inputs.Path }}/outputs/module
 
       - name: Failed test
         if: steps.test.outcome != 'success'
