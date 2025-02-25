@@ -92,7 +92,7 @@ permissions:
 
 jobs:
   Test-ModuleLocal:
-    name: Test-ModuleLocal (${{ inputs.RunsOn }})
+    name: ${{ inputs.RunsOn }}
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:

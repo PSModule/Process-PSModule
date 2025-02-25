@@ -157,7 +157,7 @@ jobs:
       Path: ${{ inputs.Path }}
 
   Test-ModuleLocal:
-    name: Test-ModuleLocal
+    name: ${{ matrix.TestName }}
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     needs:
       - Build-Module
