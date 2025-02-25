@@ -44,13 +44,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
+      # - name: Initialize environment
+      #   uses: PSModule/Initialize-PSModule@v1
+      #   with:
+      #     Debug: ${{ inputs.Debug }}
+      #     Prerelease: ${{ inputs.Prerelease }}
+      #     Verbose: ${{ inputs.Verbose }}
+      #     Version: ${{ inputs.Version }}
 
       - name: Build module
         uses: PSModule/Build-PSModule@v4

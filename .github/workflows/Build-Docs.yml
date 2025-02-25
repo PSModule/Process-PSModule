@@ -46,13 +46,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Initialize environment
-        uses: PSModule/Initialize-PSModule@v1
-        with:
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
+      # - name: Initialize environment
+      #   uses: PSModule/Initialize-PSModule@v1
+      #   with:
+      #     Debug: ${{ inputs.Debug }}
+      #     Prerelease: ${{ inputs.Prerelease }}
+      #     Verbose: ${{ inputs.Verbose }}
+      #     Version: ${{ inputs.Version }}
 
       - name: Download module artifact
         uses: actions/download-artifact@v4
