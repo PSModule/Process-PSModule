@@ -105,6 +105,11 @@ jobs:
           name: module
           path: ${{ inputs.Path }}/outputs/module
 
+      - name: Debug
+        shell: pwsh
+        run: |
+          Get-ChildItem . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v3
         id: test

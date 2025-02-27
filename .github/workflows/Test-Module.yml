@@ -111,3 +111,34 @@ jobs:
         if: steps.test.outcome != 'success'
         shell: pwsh
         run: Write-Host "Complete successfully"
+
+
+  Lint-SourceCode:
+    name: Lint-SourceCode (${{ inputs.RunsOn }})
+    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
+    runs-on: ${{ inputs.RunsOn }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.Path }}/outputs/module
+
+      - name: Lint-SourceCode
+        uses: PSModule/Invoke-ScriptAnalyzer@v2
+        id: lint
+        with:
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          Path: ${{ inputs.Path }}
+          Settings: Module
+
+      - name: Failed test
+        if: steps.lint.outcome != 'success'
+        shell: pwsh
+        run: Write-Host "Complete successfully"
