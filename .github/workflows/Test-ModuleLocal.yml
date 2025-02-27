@@ -122,7 +122,7 @@ jobs:
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           CodeCoverage_OutputFormat: JaCoCo
-          Path: ${{ inputs.TestFolderPath }}
+          Path: ${{ inputs.Path }}/${{ inputs.TestFolderPath }}
           Run_Path: ${{ inputs.Path }}/outputs/module
 
       - name: Failed test
