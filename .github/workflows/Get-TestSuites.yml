@@ -80,7 +80,7 @@ jobs:
                     [pscustomobject]@{
                         RunsOn         = $osConfig.runson
                         OSName         = $osConfig.name
-                        TestFolderPath = [System.IO.Path]::GetRelativePath($PWD.Path, $folder)
+                        TestFolderPath = Resolve-Path -Path $folder -Relative
                         TestName       = Split-Path -Path $folder -Leaf
                     }
                 }
