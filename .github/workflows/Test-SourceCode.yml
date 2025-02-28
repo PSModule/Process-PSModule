@@ -15,11 +15,6 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      Path:
-        type: string
-        description: The path to the root of the repo.
-        required: false
-        default: ${{ github.workspace }}
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
@@ -45,6 +40,11 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+      WorkingDirectory:
+        type: string
+        description: The working directory where the script will run from.
+        required: false
+        default: ${{ github.workspace }}
 
 permissions:
   contents: read # to checkout the repo and create releases on the repo
@@ -65,7 +65,7 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          Path: ${{ inputs.Path }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Settings: SourceCode
 
   Lint-SourceCode:
@@ -83,5 +83,6 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          Path: ${{ inputs.Path }}/src
+          Path: src
           Settings: SourceCode
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}

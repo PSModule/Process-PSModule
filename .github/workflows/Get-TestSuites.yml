@@ -3,11 +3,6 @@ name: Get-TestSuites
 on:
   workflow_call:
     inputs:
-      Path:
-        type: string
-        description: The path to the root of the repo.
-        required: false
-        default: ${{ github.workspace }}
       Debug:
         type: boolean
         description: Enable debug output.
@@ -28,6 +23,12 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+      WorkingDirectory:
+        type: string
+        description: The working directory where the script will run from.
+        required: false
+        default: ${{ github.workspace }}
+
     outputs:
       TestSuites:
         description: The test suites to run.
@@ -51,7 +52,7 @@ jobs:
         id: Get-TestSuites
         with:
           ShowOutput: true
-          WorkingDirectory: ${{ inputs.Path }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             # Define test configurations as an array of hashtables.
             $osConfigs = @(

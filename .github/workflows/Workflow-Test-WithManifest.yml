@@ -25,6 +25,6 @@ jobs:
     secrets: inherit
     with:
       Name: PSModuleTest
-      Path: tests/srcWithManifestTestRepo
+      WorkingDirectory: tests/srcWithManifestTestRepo
       TestProcess: true
       SkipTests: Linux

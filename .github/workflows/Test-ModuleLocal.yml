@@ -47,11 +47,6 @@ on:
         description: The path to the tests folder.
         required: false
         default: tests
-      Path:
-        type: string
-        description: The path to the root of the repo.
-        required: false
-        default: ${{ github.workspace }}
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
@@ -77,6 +72,11 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+      WorkingDirectory:
+        type: string
+        description: The working directory where the script will run from.
+        required: false
+        default: ${{ github.workspace }}
 
 env:
   TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
@@ -103,10 +103,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: module
-          path: ${{ inputs.Path }}/outputs/module
+          path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Debug
         shell: pwsh
+        working-directory: ${{ inputs.WorkingDirectory }}
         run: |
           Get-ChildItem . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
@@ -122,8 +123,9 @@ jobs:
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           CodeCoverage_OutputFormat: JaCoCo
-          Path: ${{ inputs.Path }}/${{ inputs.TestFolderPath }}
-          Run_Path: ${{ inputs.Path }}/outputs/module
+          Path: ${{ inputs.TestFolderPath }}
+          Run_Path: outputs/module
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Failed test
         if: steps.test.outcome != 'success'

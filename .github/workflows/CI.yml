@@ -32,11 +32,6 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      Path:
-        type: string
-        description: The path to the root of the repo.
-        required: false
-        default: ${{ github.workspace }}
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
@@ -62,6 +57,11 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+      WorkingDirectory:
+        type: string
+        description: The working directory where the script will run from.
+        required: false
+        default: ${{ github.workspace }}
 
 permissions:
   contents: read       # to checkout the repository
@@ -86,22 +86,22 @@ jobs:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Module:
     uses: ./.github/workflows/Build-Module.yml
     with:
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Docs:
     needs:
@@ -109,11 +109,11 @@ jobs:
     uses: ./.github/workflows/Build-Docs.yml
     with:
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
@@ -136,18 +136,18 @@ jobs:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestSuites:
     name: Get-TestSuites
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
-      Path: ${{ inputs.Path }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
     name: Test-ModuleLocal

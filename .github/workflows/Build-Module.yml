@@ -7,11 +7,6 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      Path:
-        type: string
-        description: The path to the source code of the module.
-        required: false
-        default: ${{ github.workspace }}
       Debug:
         type: boolean
         description: Enable debug output.
@@ -32,6 +27,11 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+      WorkingDirectory:
+        type: string
+        description: The working directory where the script will run from.
+        required: false
+        default: ${{ github.workspace }}
 
 permissions:
   contents: read # to checkout the repository
@@ -51,13 +51,14 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Build module
         uses: PSModule/Build-PSModule@v4
         with:
           Name: ${{ inputs.Name }}
-          Path: ${{ inputs.Path }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
