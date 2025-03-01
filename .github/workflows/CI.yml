@@ -147,10 +147,14 @@ jobs:
     name: Get-TestSuites
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
-    name: Test-ModuleLocal
+    name: ${{ matrix.TestName }}
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     needs:
       - Build-Module
@@ -159,26 +163,20 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
-    runs-on: ${{ matrix.OS }}
-    outputs:
-      Passed: ${{ steps.action-test.outcome }}
-    steps:
-      - name: Test
-        shell: pwsh
-        id: action-test
-        continue-on-error: true
-        run: |
-          $suite = '${{ matrix.Path }}'
-          if ($IsLinux) {
-            throw "Linux is not supported"
-          }
-          Write-Host "Running test suite: $suite"
-
-      - name: Status
-        shell: pwsh
-        run: |
-          Write-Host 'outcome:    ${{ steps.action-test.outcome }}'
-          Write-Host 'conclusion: ${{ steps.action-test.conclusion }}'
+    uses: ./.github/workflows/Test-ModuleLocal.yml
+    secrets: inherit
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ inputs.Name }}
+      SkipTests: ${{ inputs.SkipTests }}
+      TestFolderPath: ${{ matrix.TestFolderPath }}
+      TestName: ${{ matrix.TestName }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Status:
     name: Status
@@ -195,165 +193,6 @@ jobs:
             TestModule      = '${{ needs.TestModule.result }}'
             TestModuleLocal = '${{ needs.TestModuleLocal.result }}'
           }
-
-  # # This is necessary as there is no way to get output from a matrix job
-  # TestModule-pwsh-ubuntu-latest:
-  #   name: Test module (pwsh, ubuntu-latest)
-  #   if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Linux')) && !cancelled() }}
-  #   needs: Build-Module
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     passed: ${{ steps.test.outputs.passed }}
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-
-  #     - name: Debug
-  #       if: ${{ inputs.Debug }}
-  #       uses: PSModule/Debug@v0
-
-  #     - name: Initialize environment
-  #       uses: PSModule/Initialize-PSModule@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Download module artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: module
-  #         path: ${{ inputs.ModulesOutputPath }}
-
-  #     - name: Test built module
-  #       id: test
-  #       uses: PSModule/Test-PSModule@v2
-  #       continue-on-error: true
-  #       with:
-  #         Name: ${{ inputs.Name }}
-  #         Path: ${{ inputs.ModulesOutputPath }}
-  #         TestType: Module
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Status
-  #       shell: pwsh
-  #       run: |
-  #         Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
-
-  #     - name: Failed test
-  #       if: steps.test.outcome != 'success'
-  #       shell: pwsh
-  #       run: Write-Host "Complete successfully"
-
-  # TestModule-pwsh-macos-latest:
-  #   name: Test module (pwsh, macos-latest)
-  #   if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'macOS')) && !cancelled() }}
-  #   needs: Build-Module
-  #   runs-on: macos-latest
-  #   outputs:
-  #     passed: ${{ steps.test.outputs.passed }}
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-
-  #     - name: Debug
-  #       if: ${{ inputs.Debug }}
-  #       uses: PSModule/Debug@v0
-
-  #     - name: Initialize environment
-  #       uses: PSModule/Initialize-PSModule@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Download module artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: module
-  #         path: ${{ inputs.ModulesOutputPath }}
-
-  #     - name: Test built module
-  #       id: test
-  #       uses: PSModule/Test-PSModule@v2
-  #       continue-on-error: true
-  #       with:
-  #         Name: ${{ inputs.Name }}
-  #         Path: ${{ inputs.ModulesOutputPath }}
-  #         TestType: Module
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Status
-  #       shell: pwsh
-  #       run: |
-  #         Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
-
-  #     - name: Failed test
-  #       if: steps.test.outcome != 'success'
-  #       shell: pwsh
-  #       run: Write-Host "Complete successfully"
-
-  # TestModule-pwsh-windows-latest:
-  #   name: Test module (pwsh, windows-latest)
-  #   if: ${{ needs.Build-Module.result == 'success' && !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, 'Windows')) && !cancelled() }}
-  #   needs: Build-Module
-  #   runs-on: windows-latest
-  #   outputs:
-  #     passed: ${{ steps.test.outputs.passed }}
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-
-  #     - name: Debug
-  #       if: ${{ inputs.Debug }}
-  #       uses: PSModule/Debug@v0
-
-  #     - name: Initialize environment
-  #       uses: PSModule/Initialize-PSModule@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Download module artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: module
-  #         path: ${{ inputs.ModulesOutputPath }}
-
-  #     - name: Test built module
-  #       id: test
-  #       uses: PSModule/Test-PSModule@v2
-  #       continue-on-error: true
-  #       with:
-  #         Name: ${{ inputs.Name }}
-  #         Path: ${{ inputs.ModulesOutputPath }}
-  #         TestType: Module
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Status
-  #       shell: pwsh
-  #       run: |
-  #         Write-Host "Passed: [${{ steps.test.outputs.passed }}]"
-
-  #     - name: Failed test
-  #       if: steps.test.outcome != 'success'
-  #       shell: pwsh
-  #       run: Write-Host "Complete successfully"
 
   # TestModuleStatus:
   #   name: Test module status
@@ -441,6 +280,13 @@ jobs:
   #               $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}/$moduleName"
   #               $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
+  #               # Obay module manifest overrides
+  #               $sourcePath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.Path }}"
+  #               $sourceModuleManifestPath = Join-Path -Path $sourcePath -ChildPath "manifest.psd1"
+  #               if (Test-Path -Path $sourceModuleManifestPath) {
+  #                 $sourceManifest = Import-PowerShellDataFile -Path $sourceModuleManifestPath
+  #               }
+
   #               $data = [pscustomobject]@{
   #                 ModuleName         = $moduleName
   #                 Path               = $path
@@ -448,7 +294,9 @@ jobs:
   #               }
   #               Write-Verbose ($data | Format-List | Out-String) -Verbose
 
-  #               Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion '7.4'
+  #               # If the source module manifest has a PowerShellVersion, use that, otherwise use the latest version.
+  #               $powerShellVersion = $sourceManifest.PowerShellVersion ?? '7.4'
+  #               Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion $powerShellVersion
 
   #               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
   #               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
@@ -464,6 +312,10 @@ jobs:
   #               if ($windowsPassed) {
   #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
   #               }
+  #           }
+
+  #           LogGroup 'Module Manifest - Source' {
+  #               Show-FileContent -Path $moduleManifestPath
   #           }
 
   #           LogGroup 'Module Manifest' {

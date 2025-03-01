@@ -93,22 +93,22 @@ jobs:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Module:
     uses: ./.github/workflows/Build-Module.yml
     with:
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Docs:
     needs:
@@ -116,11 +116,11 @@ jobs:
     uses: ./.github/workflows/Build-Docs.yml
     with:
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
@@ -143,18 +143,22 @@ jobs:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestSuites:
     name: Get-TestSuites
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
-      Path: ${{ inputs.Path }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
     name: ${{ matrix.TestName }}
@@ -172,7 +176,6 @@ jobs:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      Path: ${{ inputs.Path }}
       SkipTests: ${{ inputs.SkipTests }}
       TestFolderPath: ${{ matrix.TestFolderPath }}
       TestName: ${{ matrix.TestName }}
@@ -180,6 +183,7 @@ jobs:
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Status:
     name: Status
