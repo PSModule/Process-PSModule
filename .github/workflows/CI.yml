@@ -438,7 +438,7 @@ jobs:
 
   #           LogGroup 'Data' {
   #               $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-  #               $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}\$moduleName"
+  #               $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}/$moduleName"
   #               $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
 
   #               $data = [pscustomobject]@{
