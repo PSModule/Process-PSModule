@@ -213,7 +213,7 @@ jobs:
         working-directory: ${{ inputs.WorkingDirectory }}
         run: |
           Get-ChildItem -Path . -Recurse | ForEach-Object {
-              [System.IO.Path]::GetRelativePath(., $_.FullName)
+              [System.IO.Path]::GetRelativePath($PSScriptRoot, $_.FullName)
           } | Sort-Object
 
       - name: Build mkdocs-material project
