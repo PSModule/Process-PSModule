@@ -77,8 +77,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lint-SourceCode
-        # uses: PSModule/Invoke-ScriptAnalyzer@v2
-        uses: PSModule/Invoke-ScriptAnalyzer@test
+        uses: PSModule/Invoke-ScriptAnalyzer@v2
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}

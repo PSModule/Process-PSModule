@@ -113,7 +113,7 @@ jobs:
         run: Write-Host "Complete successfully"
 
 
-  Lint-SourceCode:
+  Lint-Module:
     name: Lint-SourceCode (${{ inputs.RunsOn }})
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
@@ -128,8 +128,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Lint-SourceCode
-        # uses: PSModule/Invoke-ScriptAnalyzer@v2
-        uses: PSModule/Invoke-ScriptAnalyzer@test
+        uses: PSModule/Invoke-ScriptAnalyzer@v2
         id: lint
         with:
           Path: outputs/module

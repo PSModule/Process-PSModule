@@ -112,8 +112,7 @@ jobs:
           Get-ChildItem . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Test-ModuleLocal
-        # uses: PSModule/Invoke-Pester@v3
-        uses: PSModule/Invoke-Pester@fix
+        uses: PSModule/Invoke-Pester@v3
         id: test
         with:
           Debug: true #${{ inputs.Debug }}
@@ -123,6 +122,7 @@ jobs:
           TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OS }}
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
+          Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
           Path: ${{ inputs.TestFolderPath }}
           Run_Path: outputs/module
