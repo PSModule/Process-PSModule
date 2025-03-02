@@ -131,6 +131,7 @@ jobs:
         uses: PSModule/Invoke-ScriptAnalyzer@v2
         id: lint
         with:
+          Path: outputs/module
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
