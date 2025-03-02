@@ -201,11 +201,13 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
+            $PSStyle.Out
             $repository = $env:GITHUB_REPOSITORY
             $runId = $env:GITHUB_RUN_ID
             $OutputPath = "./CodeCoverageArtifacts"
-            New-Item -ItemType Directory -Path $OutputPath | Out-Null
+            $null = New-Item -ItemType Directory -Path $OutputPath
             $artifactsJson = gh api "repos/$repository/actions/runs/$runId/artifacts" | ConvertFrom-Json
+            $artifactsJson.artifacts | Format-Table -AutoSize | Out-String
             foreach ($artifact in $artifactsJson.artifacts) {
                 if ($artifact.name -like "*CodeCoverage") {
                     $zipPath = Join-Path $OutputPath "$($artifact.name).zip"
