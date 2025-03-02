@@ -201,6 +201,9 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
+            $PSStyle.OutputRendering = 'Ansi'
+            $repo = $env:GITHUB_REPOSITORY
+            $runId = $env:GITHUB_RUN_ID
             gh run download $runId --repo $repo --pattern *CodeCoverage --dir .
             Get-ChildItem -Path . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
