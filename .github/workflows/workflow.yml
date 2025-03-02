@@ -210,7 +210,7 @@ jobs:
             $files | ForEach-Object {
               $fileName = $_.Name
               LogGroup " - $fileName" {
-                Show-FileContent -Path $_
+                Get-Content -Path $_
               }
             }
 
