@@ -200,7 +200,6 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             $repository = $env:GITHUB_REPOSITORY
             $runId = $env:GITHUB_RUN_ID
