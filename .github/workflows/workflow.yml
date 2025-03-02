@@ -205,7 +205,14 @@ jobs:
             $repo = $env:GITHUB_REPOSITORY
             $runId = $env:GITHUB_RUN_ID
             gh run download $runId --repo $repo --pattern *CodeCoverage --dir .
-            Get-ChildItem -Path . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+            $files = Get-ChildItem -Path . -Recurse -File | Select-Object -ExpandProperty FullName | Sort-Object
+            $files | Out-String
+            $files | ForEach-Object {
+              $fileName = $_.Name
+              LogGroup " - $fileName" {
+                Show-FileContent -Path $_
+              }
+            }
 
   # TestModuleStatus:
   #   name: Test module status
