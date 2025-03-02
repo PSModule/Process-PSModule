@@ -202,11 +202,12 @@ jobs:
           Version: ${{ inputs.Version }}
           Script: |
             $PSStyle.OutputRendering = 'Ansi'
+            $repo = $env:GITHUB_REPOSITORY
             $runId = $env:GITHUB_RUN_ID
             $artifactsJson = gh api "repos/$repository/actions/runs/$runId/artifacts" | ConvertFrom-Json
             $artifacts = $artifactsJson.artifacts | Where-Object { $_.Name -Like "*CodeCoverage"} | Sort-Object -Property name
             $artifacts | Format-List | Out-String
-            gh run download $runId --pattern "*CodeCoverage"
+            gh run download $runId --pattern "*CodeCoverage" --repo $repo
 
   # TestModuleStatus:
   #   name: Test module status
