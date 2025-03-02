@@ -207,7 +207,8 @@ jobs:
             $artifactsJson = gh api "repos/$repo/actions/runs/$runId/artifacts" | ConvertFrom-Json
             $artifacts = $artifactsJson.artifacts | Where-Object { $_.name -Like "*CodeCoverage"} | Sort-Object -Property name
             $artifacts | Format-List | Out-String
-            gh run download $runId --repo $repo
+            gh run download $runId --repo $repo --pattern *CodeCoverage
+            Get-ChildItem -Path . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
   # TestModuleStatus:
   #   name: Test module status
