@@ -190,8 +190,8 @@ jobs:
         shell: pwsh
         run: |
           [pscustomobject]@{
-            TestModule      = '${{ needs.TestModule.result }}'
-            TestModuleLocal = '${{ needs.TestModuleLocal.result }}'
+            TestModule      = '${{ needs.Test-Module.result }}'
+            TestModuleLocal = '${{ needs.Test-ModuleLocal.result }}'
           }
 
   # TestModuleStatus:
