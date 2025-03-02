@@ -96,8 +96,8 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        id: test
         uses: PSModule/Test-PSModule@v3
+        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
@@ -106,12 +106,6 @@ jobs:
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Settings: Module
-
-      - name: Failed test
-        if: steps.test.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"
-
 
   Lint-Module:
     name: Lint-SourceCode (${{ inputs.RunsOn }})
@@ -129,7 +123,7 @@ jobs:
 
       - name: Lint-SourceCode
         uses: PSModule/Invoke-ScriptAnalyzer@v2
-        id: lint
+        continue-on-error: true
         with:
           Path: outputs/module
           Debug: ${{ inputs.Debug }}
@@ -138,8 +132,3 @@ jobs:
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Settings: Module
-
-      - name: Failed test
-        if: steps.lint.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"

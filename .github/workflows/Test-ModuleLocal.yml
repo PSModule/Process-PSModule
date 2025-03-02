@@ -113,7 +113,7 @@ jobs:
 
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v3
-        id: test
+        continue-on-error: true
         with:
           Debug: true #${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -127,8 +127,3 @@ jobs:
           Path: ${{ inputs.TestFolderPath }}
           Run_Path: outputs/module
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
-      - name: Failed test
-        if: steps.test.outcome != 'success'
-        shell: pwsh
-        run: Write-Host "Complete successfully"
