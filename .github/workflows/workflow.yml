@@ -201,13 +201,7 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
-            $PSStyle.OutputRendering = 'Ansi'
-            $repo = $env:GITHUB_REPOSITORY
-            $runId = $env:GITHUB_RUN_ID
-            $artifactsJson = gh api "repos/$repo/actions/runs/$runId/artifacts" | ConvertFrom-Json
-            $artifacts = $artifactsJson.artifacts | Where-Object { $_.name -Like "*CodeCoverage"} | Sort-Object -Property name
-            $artifacts | Format-List | Out-String
-            gh run download $runId --repo $repo --pattern *CodeCoverage
+            gh run download $runId --repo $repo --pattern *CodeCoverage --dir .
             Get-ChildItem -Path . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
   # TestModuleStatus:
