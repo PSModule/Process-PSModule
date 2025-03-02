@@ -260,6 +260,7 @@ jobs:
 
             # Output the combined report
             $mergedReport.Save("merged-jacoco-report.xml")
+            $mergedReport | Out-String
 
 
   # TestModuleStatus:
