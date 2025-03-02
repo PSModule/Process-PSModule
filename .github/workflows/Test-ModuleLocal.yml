@@ -124,9 +124,9 @@ jobs:
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           CodeCoverage_OutputFormat: JaCoCo
-          Path: ${{ inputs.WorkingDirectory }}/${{ inputs.TestFolderPath }}
-          Run_Path: ${{ inputs.WorkingDirectory }}/outputs/module
-          # WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Path: ${{ inputs.TestFolderPath }}
+          Run_Path: outputs/module
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Failed test
         if: steps.test.outcome != 'success'
