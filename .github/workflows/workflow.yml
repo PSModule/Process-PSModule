@@ -201,34 +201,12 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Script: |
-            $PSStyle.Out
-            $repository = $env:GITHUB_REPOSITORY
+            $PSStyle.OutputRendering = 'Ansi'
             $runId = $env:GITHUB_RUN_ID
-            $OutputPath = "./CodeCoverageArtifacts"
-            $null = New-Item -ItemType Directory -Path $OutputPath
             $artifactsJson = gh api "repos/$repository/actions/runs/$runId/artifacts" | ConvertFrom-Json
             $artifacts = $artifactsJson.artifacts | Where-Object { $_.Name -Like "*CodeCoverage"} | Sort-Object -Property name
             $artifacts | Format-List | Out-String
-            foreach ($artifact in $artifacts) {
-                if ($artifact.name -like "*CodeCoverage") {
-                    $zipPath = Join-Path $OutputPath "$($artifact.name).zip"
-
-                    Write-Host "Downloading artifact '$($artifact.name)'..."
-                    gh api `
-                        --method GET `
-                        -H "Accept: application/vnd.github+json" `
-                        "/repos/$repository/actions/artifacts/$($artifact.id)/zip" `
-                        --output $zipPath
-
-                    # Extract the artifact
-                    Write-Host "Extracting artifact '$($artifact.name)'..."
-                    Expand-Archive -Path $zipPath -DestinationPath (Join-Path $OutputPath $artifact.name) -Force
-
-                    # Optionally remove the zip after extraction
-                    Remove-Item $zipPath -Force
-                }
-            }
-            Get-ChildItem -Path $OutputPath -Recurse
+            gh run download $runId --name "*CodeCoverage"
 
   # TestModuleStatus:
   #   name: Test module status
