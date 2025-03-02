@@ -116,9 +116,9 @@ jobs:
         uses: PSModule/Invoke-Pester@fix
         id: test
         with:
-          Debug: ${{ inputs.Debug }}
+          Debug: true #${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
+          Verbose: true #${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OS }}
           TestResult_Enabled: true
