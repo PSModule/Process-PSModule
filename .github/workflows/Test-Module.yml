@@ -128,7 +128,8 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Lint-SourceCode
-        uses: PSModule/Invoke-ScriptAnalyzer@v2
+        # uses: PSModule/Invoke-ScriptAnalyzer@v2
+        uses: PSModule/Invoke-ScriptAnalyzer@test
         id: lint
         with:
           Path: outputs/module

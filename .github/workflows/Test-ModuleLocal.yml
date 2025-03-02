@@ -112,7 +112,8 @@ jobs:
           Get-ChildItem . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@v3
+        # uses: PSModule/Invoke-Pester@v3
+        uses: PSModule/Invoke-Pester@fix
         id: test
         with:
           Debug: ${{ inputs.Debug }}
