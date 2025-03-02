@@ -207,8 +207,9 @@ jobs:
             $OutputPath = "./CodeCoverageArtifacts"
             $null = New-Item -ItemType Directory -Path $OutputPath
             $artifactsJson = gh api "repos/$repository/actions/runs/$runId/artifacts" | ConvertFrom-Json
-            $artifactsJson.artifacts | Format-Table -AutoSize | Out-String
-            foreach ($artifact in $artifactsJson.artifacts) {
+            $artifacts = $artifactsJson.artifacts | Where-Object { $_.Name -Like "*CodeCoverage"} | Sort-Object -Property name
+            $artifacts | Format-List | Out-String
+            foreach ($artifact in $artifacts) {
                 if ($artifact.name -like "*CodeCoverage") {
                     $zipPath = Join-Path $OutputPath "$($artifact.name).zip"
 
