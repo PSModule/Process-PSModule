@@ -260,7 +260,22 @@ jobs:
 
             # Output the combined report
             $mergedReport.Save("merged-jacoco-report.xml")
-            $mergedReport | Out-String
+
+            # Assuming $mergedReport is your final [xml] object:
+            $xmlString = $mergedReport.OuterXml
+
+            # To format (pretty-print) the XML nicely:
+            $stringWriter = New-Object System.IO.StringWriter
+            $xmlWriter = [System.Xml.XmlTextWriter]::new($stringWriter)
+            $xmlWriter.Formatting = "Indented"
+            $mergedReport.WriteTo($xmlWriter)
+            $xmlWriter.Flush()
+            $prettyXml = $stringWriter.ToString()
+
+            $prettyXml | Out-String
+
+            # Output or export the XML string
+            # $prettyXml | Out-File -FilePath "merged-jacoco-report.xml" -Encoding UTF8
 
 
   # TestModuleStatus:
