@@ -36,8 +36,6 @@ jobs:
   Get-TestResults:
     name: Get-TestResults
     runs-on: ubuntu-latest
-    outputs:
-      TestResults: ${{ fromJson(steps.Get-TestResults.outputs.result).TestResults }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
