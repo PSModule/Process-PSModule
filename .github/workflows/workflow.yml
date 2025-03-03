@@ -215,7 +215,7 @@ jobs:
                 Get-Content -Path $file | Out-String
               }
               LogGroup "$fileName - Process" {
-                $xmlDoc = [xml](Get-Content $_.FullName)
+                $xmlDoc = [xml](Get-Content -Path $file.FullName)
                 $cases = $xmlDoc.SelectNodes('//test-case') | ForEach-Object {
                     [pscustomobject]@{
                         Name           = $_.name
