@@ -108,7 +108,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -140,7 +140,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -172,7 +172,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -203,7 +203,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -237,7 +237,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -399,7 +399,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -451,7 +451,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -503,7 +503,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
@@ -556,7 +556,7 @@ jobs:
 
       - name: Debug
         if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
+        uses: PSModule/Debug@v1
 
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
