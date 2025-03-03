@@ -198,7 +198,6 @@ jobs:
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-CodeCoverage:
     name: Get-CodeCoverage
@@ -213,7 +212,6 @@ jobs:
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Get-CodeCoverage:
   #   name: Get-CodeCoverage
