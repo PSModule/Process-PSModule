@@ -206,6 +206,10 @@ jobs:
             $runId = $env:GITHUB_RUN_ID
             gh run download $runId --repo $repo --pattern *-TestResults
             $files = Get-ChildItem -Path . -Recurse -File
+
+            LogGroup "List TestResults files" {
+              $files.Name | Out-String
+            }
             $files | Format-Table -AutoSize | Out-String
 
             $allCases = [System.Collections.Generic.List[psobject]]::new()
@@ -229,7 +233,7 @@ jobs:
                     }
                 }
                 $cases | ForEach-Object { $allCases.Add($_) }
-                $cases | Format-Table -AutoSize | Out-String
+                $cases | Format-List | Out-String
               }
             }
 
