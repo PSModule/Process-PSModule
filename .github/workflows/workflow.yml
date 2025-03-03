@@ -200,6 +200,21 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
+  Get-CodeCoverage:
+    name: Get-CodeCoverage
+    needs:
+      - Test-SourceCode
+      - Test-Module
+      - Test-ModuleLocal
+    uses: ./.github/workflows/Get-CodeCoverage.yml
+    secrets: inherit
+    with:
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
   # Get-CodeCoverage:
   #   name: Get-CodeCoverage
   #   runs-on: ubuntu-latest
