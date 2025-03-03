@@ -208,6 +208,13 @@ jobs:
             $files = Get-ChildItem -Path . -Recurse -File | Select-Object -ExpandProperty FullName | Sort-Object
             $files | Format-Table -AutoSize | Out-String
 
+            foreach ($file in $files) {
+              $fileName = $file.BaseName
+              LogGroup $fileName {
+                Get-Content -Path $file | Out-String
+              }
+            }
+
   # Get-CodeCoverage:
   #   name: Get-CodeCoverage
   #   runs-on: ubuntu-latest
