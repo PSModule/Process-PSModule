@@ -213,202 +213,67 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  # TestModuleStatus:
-  #   name: Test module status
-  #   if: ${{ contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-ubuntu-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-macos-latest.result) && contains(fromJson('["success", "skipped"]'), needs.TestModule-pwsh-windows-latest.result) && !cancelled() }}
-  #   needs:
-  #     - TestModule-pwsh-ubuntu-latest
-  #     - TestModule-pwsh-macos-latest
-  #     - TestModule-pwsh-windows-latest
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
+  PublishModule:
+    name: Publish module
+    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    needs:
+      - Get-TestResults
+      - Get-CodeCoverage
+      - Build-Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  #     - name: Debug
-  #       if: ${{ inputs.Debug }}
-  #       uses: PSModule/Debug@v0
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
-  #     - name: Initialize environment
-  #       uses: PSModule/Initialize-PSModule@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
+      - name: Initialize environment
+        uses: PSModule/Initialize-PSModule@v1
+        with:
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
 
-  #     - name: Download module artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: module
-  #         path: ${{ inputs.ModulesOutputPath }}
+      - name: Download module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: module
+          path: ${{ inputs.ModulesOutputPath }}
 
-  #     - name: Summerize tests
-  #       uses: PSModule/GitHub-Script@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-  #         Script: |
-  #           LogGroup -Name 'Test analysis' {
+      - name: Publish module
+        uses: PSModule/Publish-PSModule@v1
+        with:
+          Name: ${{ inputs.Name }}
+          ModulePath: ${{ inputs.ModulesOutputPath }}
+          APIKey: ${{ secrets.APIKEY }}
+          WhatIf: ${{ inputs.TestProcess }}
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
 
-  #               $linuxPassed = '${{ needs.TestModule-pwsh-ubuntu-latest.outputs.passed }}' -eq 'true'
-  #               $linuxSkipped = '${{ needs.TestModule-pwsh-ubuntu-latest.result }}' -eq 'skipped'
-  #               $macOSPassed = '${{ needs.TestModule-pwsh-macos-latest.outputs.passed }}' -eq 'true'
-  #               $macOSSkipped = '${{ needs.TestModule-pwsh-macos-latest.result }}' -eq 'skipped'
-  #               $windowsPassed = '${{ needs.TestModule-pwsh-windows-latest.outputs.passed }}' -eq 'true'
-  #               $windowsSkipped = '${{ needs.TestModule-pwsh-windows-latest.result }}' -eq 'skipped'
-  #               $anyPassed = $linuxPassed -or $macOSPassed -or $windowsPassed
-  #               $allSkipped = $linuxSkipped -and $macOSSkipped -and $windowsSkipped
+  PublishSite:
+    name: Publish documentation
+    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    needs:
+      - Get-TestResults
+      - Get-CodeCoverage
+      - Build-Docs
+    permissions:
+      pages: write    # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug
+        if: ${{ inputs.Debug }}
+        uses: PSModule/Debug@v0
 
-  #               $Status = @(
-  #                   [pscustomobject]@{
-  #                       Name    = 'Linux'
-  #                       Icon    = $linuxSkipped ? '⚠️' : $linuxPassed ? '✅' : '❌'
-  #                       Status  = $linuxSkipped ? 'Skipped' : $linuxPassed ? 'Passed' : 'Failed'
-  #                   }
-  #                   [pscustomobject]@{
-  #                       Name    = 'MacOS'
-  #                       Icon    = $macOSSkipped ? '⚠️' : $macOSPassed ? '✅' : '❌'
-  #                       Status  = $macOSSkipped ? 'Skipped' : $macOSPassed ? 'Passed' : 'Failed'
-  #                   }
-  #                   [pscustomobject]@{
-  #                       Name    = 'Windows'
-  #                       Icon    = $windowsSkipped ? '⚠️' : $windowsPassed ? '✅' : '❌'
-  #                       Status  = $windowsSkipped ? 'Skipped' : $windowsPassed ? 'Passed' : 'Failed'
-  #                   }
-  #                   [pscustomobject]@{
-  #                       Name    = 'Result'
-  #                       Icon    = $allSkipped ? '⚠️' : $anyPassed ? '✅' : '❌'
-  #                       Status  = $allSkipped ? 'Skipped' : $anyPassed ? 'Passed' : 'Failed'
-  #                   }
-  #               )
-
-  #               Write-Host ($Status | Format-Table | Out-String)
-  #               ($Status | New-MDTable) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-
-  #               if (-not $anyPassed -and -not $allSkipped) {
-  #                   Write-Host "::[error]::No tests passed"
-  #                   exit 1
-  #               }
-  #           }
-
-  #           LogGroup 'Data' {
-  #               $moduleName = [string]::IsNullOrEmpty('${{ inputs.Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ inputs.Name }}'
-  #               $path = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.ModulesOutputPath }}/$moduleName"
-  #               $moduleManifestPath = Join-Path -Path $Path -ChildPath "$moduleName.psd1"
-
-  #               # Obay module manifest overrides
-  #               $sourcePath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.Path }}"
-  #               $sourceModuleManifestPath = Join-Path -Path $sourcePath -ChildPath "manifest.psd1"
-  #               if (Test-Path -Path $sourceModuleManifestPath) {
-  #                 $sourceManifest = Import-PowerShellDataFile -Path $sourceModuleManifestPath
-  #               }
-
-  #               $data = [pscustomobject]@{
-  #                 ModuleName         = $moduleName
-  #                 Path               = $path
-  #                 ModuleManifestPath = $moduleManifestPath
-  #               }
-  #               Write-Verbose ($data | Format-List | Out-String) -Verbose
-
-  #               # If the source module manifest has a PowerShellVersion, use that, otherwise use the latest version.
-  #               $powerShellVersion = $sourceManifest.PowerShellVersion ?? '7.4'
-  #               Set-ModuleManifest -Path $moduleManifestPath -PowerShellVersion $powerShellVersion
-
-  #               Add-ModuleManifestData -Path $moduleManifestPath -CompatiblePSEditions 'Core'
-  #               Add-ModuleManifestData -Path $moduleManifestPath -Tags 'PSEdition_Core'
-
-  #               if ($linuxPassed) {
-  #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Linux'
-  #               }
-
-  #               if ($macOSPassed) {
-  #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'MacOS'
-  #               }
-
-  #               if ($windowsPassed) {
-  #                   Add-ModuleManifestData -Path $moduleManifestPath -Tags 'Windows'
-  #               }
-  #           }
-
-  #           LogGroup 'Module Manifest - Source' {
-  #               Show-FileContent -Path $moduleManifestPath
-  #           }
-
-  #           LogGroup 'Module Manifest' {
-  #               Show-FileContent -Path $moduleManifestPath
-  #           }
-
-  #     - name: Upload module artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: module
-  #         path: ${{ inputs.ModulesOutputPath }}
-  #         if-no-files-found: error
-  #         retention-days: 1
-  #         overwrite: true
-
-  # PublishModule:
-  #   name: Publish module
-  #   if: ${{ needs.TestModuleStatus.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
-  #   needs:
-  #     - TestModuleStatus
-  #     - Build-Docs
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-
-  #     - name: Debug
-  #       if: ${{ inputs.Debug }}
-  #       uses: PSModule/Debug@v0
-
-  #     - name: Initialize environment
-  #       uses: PSModule/Initialize-PSModule@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  #     - name: Download module artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: module
-  #         path: ${{ inputs.ModulesOutputPath }}
-
-  #     - name: Publish module
-  #       uses: PSModule/Publish-PSModule@v1
-  #       with:
-  #         Name: ${{ inputs.Name }}
-  #         ModulePath: ${{ inputs.ModulesOutputPath }}
-  #         APIKey: ${{ secrets.APIKEY }}
-  #         WhatIf: ${{ inputs.TestProcess }}
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-
-  # PublishSite:
-  #   name: Publish documentation
-  #   if: ${{ inputs.PublishDocs && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-  #   needs:
-  #     - TestModuleStatus
-  #     - Build-Docs
-  #   permissions:
-  #     pages: write    # to deploy to Pages
-  #     id-token: write # to verify the deployment originates from an appropriate source
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Debug
-  #       if: ${{ inputs.Debug }}
-  #       uses: PSModule/Debug@v0
-
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
