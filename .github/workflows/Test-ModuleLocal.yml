@@ -108,12 +108,14 @@ jobs:
       - name: Install-PSModuleHelpers
         uses: PSModule/Install-PSModuleHelpers@v1
 
-      - name: Get-ModuleName
+      - name: Import-Module
+        id: import-module
         shell: pwsh
         working-directory: ${{ inputs.WorkingDirectory }}
         run: |
           $name = Get-ChildItem "outputs/module" | Select-Object -ExpandProperty Name
-          Install-PSModule -Path "outputs/module/$name"
+          $path = Install-PSModule -Path "outputs/module/$name" -PassThru
+          "path=$path" >> $GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v3
@@ -129,5 +131,5 @@ jobs:
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
           Path: ${{ inputs.TestFolderPath }}
-          Run_Path: outputs/module
+          Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
