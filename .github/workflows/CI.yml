@@ -191,100 +191,20 @@ jobs:
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  # Get-CodeCoverage:
-  #   name: Get-CodeCoverage
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - Test-SourceCode
-  #     - Test-Module
-  #     - Test-ModuleLocal
-  #   steps:
-  #     - name: Get-CodeCoverage
-  #       uses: PSModule/GitHub-Script@v1
-  #       with:
-  #         Debug: ${{ inputs.Debug }}
-  #         Prerelease: ${{ inputs.Prerelease }}
-  #         Verbose: ${{ inputs.Verbose }}
-  #         Version: ${{ inputs.Version }}
-  #         Script: |
-  #           $PSStyle.OutputRendering = 'Ansi'
-  #           $repo = $env:GITHUB_REPOSITORY
-  #           $runId = $env:GITHUB_RUN_ID
-  #           gh run download $runId --repo $repo --pattern *-CodeCoverage
-  #           $files = Get-ChildItem -Path . -Recurse -File | Select-Object -ExpandProperty FullName | Sort-Object
-  #           # Load the first XML as the base report
-  #           [xml]$mergedReport = Get-Content -Path $files[0]
-
-  #           # Function to merge counters
-  #           function Merge-Counters($baseNode, $newNode) {
-  #               foreach ($newCounter in $newNode.counter) {
-  #                   $baseCounter = $baseNode.counter | Where-Object { $_.type -eq $newCounter.type }
-  #                   if ($baseCounter) {
-  #                       $baseCounter.missed = [int]$baseCounter.missed + [int]$newCounter.missed
-  #                       $baseCounter.covered = [int]$baseCounter.covered + [int]$newCounter.covered
-  #                   } else {
-  #                       # Import new counter if it doesn't exist
-  #                       $importedCounter = $mergedReport.ImportNode($newCounter, $true)
-  #                       $baseNode.AppendChild($importedCounter) | Out-Null
-  #                   }
-  #               }
-  #           }
-
-  #           # Loop through remaining reports to merge coverage data
-  #           foreach ($reportPath in $files[1..($files.Count - 1)]) {
-  #               [xml]$currentReport = Get-Content -Path $reportPath
-
-  #               # Merge the top-level counters
-  #               Merge-Counters -baseNode $mergedReport.report -newNode $currentReport.report
-
-  #               # Merge packages and classes
-  #               foreach ($package in $currentReport.report.package) {
-  #                   $basePackage = $mergedReport.report.package | Where-Object { $_.name -eq $package.name }
-
-  #                   if ($basePackage) {
-  #                       # Merge counters at package level
-  #                       Merge-Counters -baseNode $basePackage -newNode $package
-
-  #                       foreach ($class in $package.class) {
-  #                           $baseClass = $basePackage.class | Where-Object { $_.name -eq $class.name }
-  #                           if ($baseClass) {
-  #                               # Merge counters at class level
-  #                               Merge-Counters -baseNode $baseClass -newNode $class
-  #                           } else {
-  #                               # Import new class
-  #                               $importedClass = $mergedReport.ImportNode($class, $true)
-  #                               $basePackage.AppendChild($importedClass) | Out-Null
-  #                           }
-  #                       }
-  #                   } else {
-  #                       # Import entire new package
-  #                       $importedPackage = $mergedReport.ImportNode($package, $true)
-  #                       $mergedReport.report.AppendChild($importedPackage) | Out-Null
-  #                   }
-  #               }
-  #           }
-
-  #           # Output the combined report
-  #           $mergedReport.Save("merged-jacoco-report.xml")
-
-  #           # Assuming $mergedReport is your final [xml] object:
-  #           $xmlString = $mergedReport.OuterXml
-
-  #           # To format (pretty-print) the XML nicely:
-  #           $stringWriter = New-Object System.IO.StringWriter
-  #           $xmlWriter = [System.Xml.XmlTextWriter]::new($stringWriter)
-  #           $xmlWriter.Formatting = "Indented"
-  #           $mergedReport.WriteTo($xmlWriter)
-  #           $xmlWriter.Flush()
-  #           $prettyXml = $stringWriter.ToString()
-
-  #           $prettyXml | Out-String
-
-  #           # Output or export the XML string
-  #           # $prettyXml | Out-File -FilePath "merged-jacoco-report.xml" -Encoding UTF8
-
+  Get-CodeCoverage:
+    name: Get-CodeCoverage
+    needs:
+      - Test-SourceCode
+      - Test-Module
+      - Test-ModuleLocal
+    uses: ./.github/workflows/Get-CodeCoverage.yml
+    secrets: inherit
+    with:
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
 
   # TestModuleStatus:
   #   name: Test module status
