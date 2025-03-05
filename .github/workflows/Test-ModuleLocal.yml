@@ -105,11 +105,15 @@ jobs:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
-      - name: Debug
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@v1
+
+      - name: Get-ModuleName
         shell: pwsh
         working-directory: ${{ inputs.WorkingDirectory }}
         run: |
-          Get-ChildItem . -Recurse | Select-Object -ExpandProperty FullName | Sort-Object
+          $name = Get-ChildItem "outputs/module" | Select-Object -ExpandProperty Name
+          Install-PSModule -Path "outputs/module/$name"
 
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v3
