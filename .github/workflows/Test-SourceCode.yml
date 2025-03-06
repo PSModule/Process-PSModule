@@ -44,7 +44,7 @@ on:
         type: string
         description: The working directory where the script will run from.
         required: false
-        default: ${{ github.workspace }}
+        default: '.'
 
 permissions:
   contents: read # to checkout the repo and create releases on the repo

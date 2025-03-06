@@ -66,7 +66,7 @@ on:
         type: string
         description: The working directory where the script will run from.
         required: false
-        default: ${{ github.workspace }}
+        default: '.'
 
 env:
   TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
