@@ -115,6 +115,7 @@ jobs:
         run: |
           $name = Get-ChildItem "outputs/module" | Select-Object -ExpandProperty Name
           $path = Install-PSModule -Path "outputs/module/$name" -PassThru
+          Write-Warning $path
           "path=$path" >> $GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
