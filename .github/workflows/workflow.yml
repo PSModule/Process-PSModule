@@ -187,6 +187,7 @@ jobs:
 
   Get-TestResults:
     name: Get-TestResults
+    if: always() && !cancelled()
     needs:
       - Test-SourceCode
       - Test-Module
@@ -201,6 +202,7 @@ jobs:
 
   Get-CodeCoverage:
     name: Get-CodeCoverage
+    if: always() && !cancelled()
     needs:
       - Test-SourceCode
       - Test-Module
@@ -241,13 +243,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: module
-          path: ${{ inputs.ModulesOutputPath }}
+          path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v1
         with:
           Name: ${{ inputs.Name }}
-          ModulePath: ${{ inputs.ModulesOutputPath }}
+          ModulePath: ${{ inputs.WorkingDirectory }}/outputs/module
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ inputs.TestProcess }}
           Debug: ${{ inputs.Debug }}
