@@ -122,9 +122,9 @@ jobs:
         uses: PSModule/Invoke-Pester@v3
         continue-on-error: true
         with:
-          Debug: true #${{ inputs.Debug }}
+          Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
-          Verbose: true #${{ inputs.Verbose }}
+          Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OS }}
           TestResult_Enabled: true
