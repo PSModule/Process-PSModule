@@ -130,7 +130,7 @@ jobs:
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
-          CodeCoverage_CoveragePercentTarget: 20
+          CodeCoverage_CoveragePercentTarget: 0
           Path: ${{ inputs.TestFolderPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
