@@ -36,7 +36,7 @@ on:
         type: string
         description: The path to the root of the repo.
         required: false
-        default: ${{ github.workspace }}
+        default: '.'
       SkipTests:
         type: string
         description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
