@@ -86,6 +86,9 @@ jobs:
     if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Download module artifact
         uses: actions/download-artifact@v4
         with:
