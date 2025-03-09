@@ -126,7 +126,26 @@ jobs:
       - name: Reinstall GitHub module
         shell: pwsh
         run: |
-          Install-PSResource -Name GitHub -TrustRepository -Reinstall
+          'GitHub' | ForEach-Object {
+              $name = $_
+              Write-Output "Installing module: $name"
+              $retryCount = 5
+              $retryDelay = 10
+              for ($i = 0; $i -lt $retryCount; $i++) {
+                  try {
+                      Install-PSResource -Name $name -WarningAction SilentlyContinue -TrustRepository -Repository PSGallery -Reinstall
+                      break
+                  } catch {
+                      Write-Warning "Installation of $name failed with error: $_"
+                      if ($i -eq $retryCount - 1) {
+                          throw
+                      }
+                      Write-Warning "Retrying in $retryDelay seconds..."
+                      Start-Sleep -Seconds $retryDelay
+                  }
+              }
+              Import-Module -Name $name
+          }
 
       - name: Structure site
         uses: PSModule/GitHub-Script@v1
