@@ -119,7 +119,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Lint-Module
-        uses: PSModule/Invoke-ScriptAnalyzer@v2
+        uses: PSModule/Invoke-ScriptAnalyzer@v3
         continue-on-error: true
         with:
           Path: outputs/module
