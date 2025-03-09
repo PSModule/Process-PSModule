@@ -73,10 +73,61 @@ jobs:
             }
             Write-Host "Tests found at [$testsPath]"
 
-            # Get all subdirectories inside the tests folder; if none, use the tests folder itself.
-            $testsPaths = Get-ChildItem -Path $testsPath -Directory | ForEach-Object { $_.FullName }
-            if (-not $testsPaths) {
+            # First, check if the root tests folder contains configuration.ps1, .container.ps1 or .tests.ps1 files
+            $hasTestFiles = Get-ChildItem -Path $testsPath -File -Recurse:$false | Where-Object {
+                $_.Name -like '*.Configuration.ps1' -or
+                $_.Name -like '*.Container.ps1' -or
+                $_.Name -like '*.Tests.ps1'
+            }
+
+            # Define the test paths based on our findings
+            $testsPaths = @()
+            if ($hasTestFiles) {
+                # If the tests folder directly contains test files, only use the root folder
+                Write-Host "Test files found directly in tests folder. Using only the root tests folder."
                 $testsPaths = @($testsPath)
+            } else {
+                # Otherwise, recursively search for subdirectories that might contain tests
+                Write-Host "No test files found in root tests folder. Searching subdirectories..."
+
+                # Helper function to find test directories recursively
+                function Find-TestDirectories {
+                    param (
+                        [string]$Path
+                    )
+
+                    $directories = @()
+                    $childDirs = Get-ChildItem -Path $Path -Directory
+
+                    foreach ($dir in $childDirs) {
+                        # Check if this directory contains test files
+                        $hasTests = Get-ChildItem -Path $dir.FullName -File -Recurse:$false | Where-Object {
+                            $_.Name -like '*.Configuration.ps1' -or
+                            $_.Name -like '*.Container.ps1' -or
+                            $_.Name -like '*.Tests.ps1'
+                        }
+
+                        if ($hasTests) {
+                            $directories += $dir.FullName
+                        } else {
+                            # Recursively check subdirectories
+                            $directories += Find-TestDirectories -Path $dir.FullName
+                        }
+                    }
+
+                    return $directories
+                }
+
+                $testsPaths = Find-TestDirectories -Path $testsPath
+
+                # If no test directories were found, default to the root tests folder
+                if (-not $testsPaths) {
+                    Write-Host "No specific test directories found. Using the root tests folder."
+                    $testsPaths = @($testsPath)
+                } else {
+                    Write-Host "Found test directories:"
+                    $testsPaths | ForEach-Object { Write-Host " - $_" }
+                }
             }
 
             # Build the test suites matrix.
