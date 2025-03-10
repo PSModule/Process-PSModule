@@ -180,6 +180,7 @@ jobs:
 
   Get-TestResults:
     name: Get-TestResults
+    if: always() && !cancelled()
     needs:
       - Test-SourceCode
       - Test-Module
@@ -194,6 +195,7 @@ jobs:
 
   Get-CodeCoverage:
     name: Get-CodeCoverage
+    if: always() && !cancelled()
     needs:
       - Test-SourceCode
       - Test-Module
