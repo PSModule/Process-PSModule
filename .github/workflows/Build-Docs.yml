@@ -71,22 +71,28 @@ jobs:
           retention-days: 1
 
       - name: Commit all changes
+        uses: PSModule/GitHub-Script@v1
         continue-on-error: true
-        shell: pwsh
-        run: |
-          # Rename the gitignore file to .gitignore.bak
-          Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
+        with:
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Script: |
+            # Rename the gitignore file to .gitignore.bak
+            Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
 
-          try {
-              # Add all changes to the repository
-              git add .
-              git commit -m 'Update documentation'
-          } catch {
-              Write-Host "No changes to commit"
-          }
+            try {
+                # Add all changes to the repository
+                git add .
+                git commit -m 'Update documentation'
+            } catch {
+                Write-Host "No changes to commit"
+            }
 
-          # Restore the gitignore file
-          Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
+            # Restore the gitignore file
+            Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
