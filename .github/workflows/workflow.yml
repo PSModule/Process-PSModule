@@ -74,18 +74,25 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
+  Get-TestSuites:
+    name: Get-TestSuites
+    uses: ./.github/workflows/Get-TestSuites.yml
+    with:
+      SkipTests: ${{ inputs.SkipTests }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
   Test-SourceCode:
     name: Test-SourceCode
+    needs:
+      - Get-TestSuites
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - OSName: Linux
-            RunsOn: ubuntu-latest
-          - OSName: macOS
-            RunsOn: macos-latest
-          - OSName: Windows
-            RunsOn: windows-latest
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
       RunsOn: ${{ matrix.RunsOn }}
@@ -120,31 +127,16 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  Get-TestSuites:
-    name: Get-TestSuites
-    uses: ./.github/workflows/Get-TestSuites.yml
-    with:
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
   Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     name: Test-Module
     needs:
       - Build-Module
+      - Get-TestSuites
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - OSName: Linux
-            RunsOn: ubuntu-latest
-          - OSName: macOS
-            RunsOn: macos-latest
-          - OSName: Windows
-            RunsOn: windows-latest
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
@@ -167,7 +159,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.TestSuites) }}
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:

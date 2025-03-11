@@ -127,16 +127,11 @@ jobs:
     name: Test-Module
     needs:
       - Build-Module
+      - Get-TestSuites
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - OSName: Linux
-            RunsOn: ubuntu-latest
-          - OSName: macOS
-            RunsOn: macos-latest
-          - OSName: Windows
-            RunsOn: windows-latest
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
