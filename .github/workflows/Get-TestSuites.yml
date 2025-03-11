@@ -79,7 +79,7 @@ jobs:
             # Locate the tests directory.
             $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
-                Write-Host 'No tests found'
+                Write-Warning 'No tests found'
                 exit 0
             }
             Write-Host "Tests found at [$testsPath]"
