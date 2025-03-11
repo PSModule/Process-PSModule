@@ -120,6 +120,16 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
+  Get-TestSuites:
+    name: Get-TestSuites
+    uses: ./.github/workflows/Get-TestSuites.yml
+    with:
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
   Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     name: Test-Module
@@ -148,16 +158,6 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  Get-TestSuites:
-    name: Get-TestSuites
-    uses: ./.github/workflows/Get-TestSuites.yml
-    with:
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
   Test-ModuleLocal:
     name: ${{ matrix.TestName }}
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
@@ -175,7 +175,7 @@ jobs:
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
       SkipTests: ${{ inputs.SkipTests }}
-      TestFolderPath: ${{ matrix.TestFolderPath }}
+      TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}

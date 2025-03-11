@@ -73,71 +73,51 @@ jobs:
             }
             Write-Host "Tests found at [$testsPath]"
 
-            # First, check if the root tests folder contains configuration.ps1, .container.ps1 or .tests.ps1 files
-            $hasTestFiles = Get-ChildItem -Path $testsPath -File -Recurse:$false | Where-Object {
-                $_.Name -like '*.Configuration.ps1' -or
-                $_.Name -like '*.Container.ps1' -or
-                $_.Name -like '*.Tests.ps1'
-            }
+            function Get-TestItemsFromFolder {
+                param ([string]$FolderPath)
 
-            # Define the test paths based on our findings
-            $testsPaths = @()
-            if ($hasTestFiles) {
-                # If the tests folder directly contains test files, only use the root folder
-                Write-Host "Test files found directly in tests folder. Using only the root tests folder."
-                $testsPaths = @($testsPath)
-            } else {
-                # Otherwise, recursively search for subdirectories that might contain tests
-                Write-Host "No test files found in root tests folder. Searching subdirectories..."
-
-                # Helper function to find test directories recursively
-                function Find-TestDirectories {
-                    param (
-                        [string]$Path
-                    )
-
-                    $directories = @()
-                    $childDirs = Get-ChildItem -Path $Path -Directory
-
-                    foreach ($dir in $childDirs) {
-                        # Check if this directory contains test files
-                        $hasTests = Get-ChildItem -Path $dir.FullName -File -Recurse:$false | Where-Object {
-                            $_.Name -like '*.Configuration.ps1' -or
-                            $_.Name -like '*.Container.ps1' -or
-                            $_.Name -like '*.Tests.ps1'
-                        }
-
-                        if ($hasTests) {
-                            $directories += $dir.FullName
-                        } else {
-                            # Recursively check subdirectories
-                            $directories += Find-TestDirectories -Path $dir.FullName
-                        }
-                    }
-
-                    return $directories
+                $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
+                if ($configFiles.Count -eq 1) {
+                    return @($configFiles)
+                } elseif ($configFiles.Count -gt 1) {
+                    throw "Multiple configuration files found in [$FolderPath]. Please separate configurations into different folders."
                 }
 
-                $testsPaths = Find-TestDirectories -Path $testsPath
-
-                # If no test directories were found, default to the root tests folder
-                if (-not $testsPaths) {
-                    Write-Host "No specific test directories found. Using the root tests folder."
-                    $testsPaths = @($testsPath)
-                } else {
-                    Write-Host "Found test directories:"
-                    $testsPaths | ForEach-Object { Write-Host " - $_" }
+                $containerFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Container.ps1'
+                if ($containerFiles.Count -ge 1) {
+                    return $containerFiles
                 }
+
+                $testFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Tests.ps1'
+                return $testFiles
             }
 
-            # Build the test suites matrix.
-            $testSuites = foreach ($folder in $testsPaths) {
-                foreach ($osConfig in $osConfigs) {
-                    [pscustomobject]@{
-                        RunsOn         = $osConfig.runson
-                        OSName         = $osConfig.name
-                        TestFolderPath = Resolve-Path -Path $folder -Relative
-                        TestName       = Split-Path -Path $folder -Leaf
+            function Find-TestDirectories {
+                param ([string]$Path)
+
+                $directories = @()
+                $childDirs = Get-ChildItem -Path $Path -Directory
+
+                foreach ($dir in $childDirs) {
+                    $directories += $dir.FullName
+                    $directories += Find-TestDirectories -Path $dir.FullName
+                }
+
+                return $directories
+            }
+
+            $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
+
+            $testSuites = foreach ($folder in $allTestFolders) {
+                $testItems = Get-TestItemsFromFolder -FolderPath $folder
+                foreach ($item in $testItems) {
+                    foreach ($osConfig in $osConfigs) {
+                        [pscustomobject]@{
+                            RunsOn   = $osConfig.runson
+                            OSName   = $osConfig.name
+                            TestPath = Resolve-Path -Path $item.FullName -Relative
+                            TestName = $item.BaseName
+                        }
                     }
                 }
             }

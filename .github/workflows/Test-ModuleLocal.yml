@@ -37,7 +37,7 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      TestFolderPath:
+      TestPath:
         type: string
         description: The path to the tests folder.
         required: false
@@ -132,6 +132,6 @@ jobs:
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
           CodeCoverage_CoveragePercentTarget: 0
-          Path: ${{ inputs.TestFolderPath }}
+          Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
