@@ -82,6 +82,7 @@ jobs:
 
   Test-SourceCode:
     name: Test-SourceCode
+    if: ${{ needs.Get-TestSuites.outputs.SourceCodeTestSuites != '[]' }}
     needs:
       - Get-TestSuites
     strategy:
@@ -123,8 +124,8 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
     name: Test-Module
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.SourceCodeTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-TestSuites
@@ -147,7 +148,7 @@ jobs:
 
   Test-ModuleLocal:
     name: ${{ matrix.TestName }}
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-TestSuites
