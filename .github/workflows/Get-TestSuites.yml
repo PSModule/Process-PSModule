@@ -119,10 +119,22 @@ jobs:
 
             $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
 
+            $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -Split ",|\s+" | ForEach-Object { $_.Trim() }
+
+            Write-Host "The following tests will be skipped:"
+            $skipTests | ForEach-Object { " - $_ " }
+
             $testSuites = foreach ($folder in $allTestFolders) {
                 $testItems = Get-TestItemsFromFolder -FolderPath $folder
                 foreach ($item in $testItems) {
                     foreach ($osConfig in $osConfigs) {
+                        if ($skipTests -contains 'All' -or
+                            $skipTests -contains $osConfig.OSName -or
+                            ($skipTests -contains 'Module' -and $item.Name -match '\.Tests\.ps1$') -or
+                            ($skipTests -contains 'SourceCode' -and $item.Name -match '\.(Configuration|Container)\.ps1$')) {
+                            continue
+                        }
+
                         [pscustomobject]@{
                             RunsOn   = $osConfig.RunsOn
                             OSName   = $osConfig.OSName
@@ -133,8 +145,10 @@ jobs:
                 }
             }
 
-            # Create separate outputs for source code tests (OS only) and module tests (existing detailed output)
-            $sourceCodeTestSuites = $osConfigs | Select-Object -Property RunsOn, OSName -Unique
+            # Adjust source code test suites based on SkipTests
+            $sourceCodeTestSuites = $osConfigs | Where-Object {
+                -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'SourceCode')
+            } | Select-Object -Property RunsOn, OSName -Unique
 
             # Display the generated matrices for verification.
             Write-Host "Source Code Test Suites:"
