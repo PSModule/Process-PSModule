@@ -121,8 +121,9 @@ jobs:
 
             $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -Split ",|\s+" | ForEach-Object { $_.Trim() }
 
-            Write-Host "The following tests will be skipped:"
-            $skipTests | ForEach-Object { " - $_ " }
+            LogGroup 'Tests to be skipped:' {
+              $skipTests | ForEach-Object { " - $_ " }
+            }
 
             $testSuites = foreach ($folder in $allTestFolders) {
                 $testItems = Get-TestItemsFromFolder -FolderPath $folder
@@ -151,10 +152,12 @@ jobs:
             } | Select-Object -Property RunsOn, OSName -Unique
 
             # Display the generated matrices for verification.
-            Write-Host "Source Code Test Suites:"
-            $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
-            Write-Host "Module Test Suites:"
-            $testSuites | Format-Table -AutoSize | Out-String
+            LogGroup 'Source Code Test Suites:' {
+              $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
+            }
+            LogGroup 'Module Test Suites:' {
+              $testSuites | Format-Table -AutoSize | Out-String
+            }
 
             # Pass the final objects to GitHub Actions output.
             Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
