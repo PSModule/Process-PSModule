@@ -72,7 +72,6 @@ jobs:
   Get-TestSuites:
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
-      SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
