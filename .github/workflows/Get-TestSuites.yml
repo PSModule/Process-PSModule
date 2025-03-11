@@ -159,6 +159,6 @@ jobs:
               $testSuites | Format-Table -AutoSize | Out-String
             }
 
-            # Pass the final objects to GitHub Actions output.
-            Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
-            Set-GitHubOutput -Name ModuleTestSuites -Value $testSuites
+            # Pass the final objects to GitHub Actions output as JSON
+            Set-GitHubOutput -Name SourceCodeTestSuites -Value ($sourceCodeTestSuites ?? '[]')
+            Set-GitHubOutput -Name ModuleTestSuites -Value ($testSuites ?? '[]')
