@@ -81,7 +81,9 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             # Rename the gitignore file to .gitignore.bak
-            Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
+            if (Test-Path -Path .gitignore) {
+                Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
+            }
 
             try {
                 # Add all changes to the repository
@@ -92,7 +94,9 @@ jobs:
             }
 
             # Restore the gitignore file
-            Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
+            if (Test-Path -Path .gitignore.bak) {
+                Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
+            }
 
       - name: Lint documentation
         uses: super-linter/super-linter/slim@latest
