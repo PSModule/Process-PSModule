@@ -104,14 +104,14 @@ jobs:
             }
 
             LogGroup 'Source Code Test Suites:' {
-                if ($skipTests -notcontain 'SourceCode') {
+                if ($skipTests -notcontains 'SourceCode') {
                     $osConfigs | Format-Table -AutoSize | Out-String
                     Set-GitHubOutput -Name SourceCodeTestSuites -Value $osConfigs
                 }
             }
 
             LogGroup 'Module Test Suites:' {
-                if ($skipTests -notcontain 'Module') {
+                if ($skipTests -notcontains 'Module') {
                     $osConfigs | Format-Table -AutoSize | Out-String
                     Set-GitHubOutput -Name ModuleTestSuites -Value $osConfigs
                 }
