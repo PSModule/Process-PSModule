@@ -73,14 +73,12 @@ jobs:
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
-            # Define test configurations as an array of hashtables.
-            $osConfigs = @(
-                @{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
-                @{ RunsOn = 'macos-latest';  OSName = 'macOS' }
-                @{ RunsOn = 'windows-latest'; OSName = 'Windows' }
-            )
-
+            # Get-TestSuites
             $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -Split ",|\s+" | ForEach-Object { $_.Trim() }
+
+            LogGroup 'Tests to be skipped:' {
+              $skipTests | ForEach-Object { " - $_ " }
+            }
 
             if ($skipTests -contains 'All') {
                 Write-Host "Skipping all tests as requested."
@@ -90,116 +88,93 @@ jobs:
                 exit 0
             }
 
-            # Filter out OS-specific tests early
-            $osConfigs = $osConfigs | Where-Object { $skipTests -notcontains $_.OSName }
+            # Define test configurations as an array of hashtables.
+            $osConfigs = @(
+                @{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
+                @{ RunsOn = 'macos-latest';  OSName = 'macOS' }
+                @{ RunsOn = 'windows-latest'; OSName = 'Windows' }
+            ) | Where-Object { $skipTests -notcontains $_.OSName }
 
             if (-not $osConfigs) {
-                Write-Host "No OS configurations left after filtering. Exiting."
+                Write-Host "Skipping all OS configurations."
                 Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
                 Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
                 Set-GitHubOutput -Name ModuleLocalTestSuites -Value '[]'
                 exit 0
             }
 
-            # Locate the tests directory.
-            $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-            if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
-                Write-Warning 'No tests found'
-                exit 0
+            LogGroup 'Source Code Test Suites:' {
+                if ($skipTests -notcontain 'SourceCode') {
+                    $osConfigs | Format-Table -AutoSize | Out-String
+                    Set-GitHubOutput -Name SourceCodeTestSuites -Value $osConfigs
+                }
             }
-            Write-Host "Tests found at [$testsPath]"
 
-            function Get-TestItemsFromFolder {
-                param ([string]$FolderPath)
+            LogGroup 'Module Test Suites:' {
+                if ($skipTests -notcontain 'Module') {
+                    $osConfigs | Format-Table -AutoSize | Out-String
+                    Set-GitHubOutput -Name ModuleTestSuites -Value $osConfigs
+                }
+            }
 
-                $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
-                if ($configFiles.Count -eq 1) {
-                    return @($configFiles)
-                } elseif ($configFiles.Count -gt 1) {
-                    throw "Multiple configuration files found in [$FolderPath]. Please separate configurations into different folders."
+            LogGroup 'Module Local Test Suites:' {
+                # Locate the tests directory.
+                $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
+                    Write-Warning 'No tests found'
+                    exit 0
+                }
+                Write-Host "Tests found at [$testsPath]"
+
+                function Get-TestItemsFromFolder {
+                    param ([string]$FolderPath)
+
+                    $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
+                    if ($configFiles.Count -eq 1) {
+                        return @($configFiles)
+                    } elseif ($configFiles.Count -gt 1) {
+                        throw "Multiple configuration files found in [$FolderPath]. Please separate configurations into different folders."
+                    }
+
+                    $containerFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Container.ps1'
+                    if ($containerFiles.Count -ge 1) {
+                        return $containerFiles
+                    }
+
+                    $testFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Tests.ps1'
+                    return $testFiles
                 }
 
-                $containerFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Container.ps1'
-                if ($containerFiles.Count -ge 1) {
-                    return $containerFiles
+                function Find-TestDirectories {
+                    param ([string]$Path)
+
+                    $directories = @()
+                    $childDirs = Get-ChildItem -Path $Path -Directory
+
+                    foreach ($dir in $childDirs) {
+                        $directories += $dir.FullName
+                        $directories += Find-TestDirectories -Path $dir.FullName
+                    }
+
+                    return $directories
                 }
 
-                $testFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Tests.ps1'
-                return $testFiles
-            }
+                $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
 
-            function Find-TestDirectories {
-                param ([string]$Path)
-
-                $directories = @()
-                $childDirs = Get-ChildItem -Path $Path -Directory
-
-                foreach ($dir in $childDirs) {
-                    $directories += $dir.FullName
-                    $directories += Find-TestDirectories -Path $dir.FullName
-                }
-
-                return $directories
-            }
-
-            $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
-
-            $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -Split ",|\s+" | ForEach-Object { $_.Trim() }
-
-            LogGroup 'Tests to be skipped:' {
-              $skipTests | ForEach-Object { " - $_ " }
-            }
-
-            $testSuites = foreach ($folder in $allTestFolders) {
-                $testItems = Get-TestItemsFromFolder -FolderPath $folder
-                foreach ($item in $testItems) {
-                    foreach ($osConfig in $osConfigs) {
-                        if ($skipTests -contains 'All' -or
-                            $skipTests -contains $osConfig.OSName -or
-                            ($skipTests -contains 'Module' -and $item.Name -match '\.Tests\.ps1$') -or
-                            ($skipTests -contains 'SourceCode' -and $item.Name -match '\.(Configuration|Container)\.ps1$')) {
-                            continue
-                        }
-
-                        [pscustomobject]@{
-                            RunsOn   = $osConfig.RunsOn
-                            OSName   = $osConfig.OSName
-                            TestPath = Resolve-Path -Path $item.FullName -Relative
-                            TestName = ($item.BaseName -Split '.')[0]
+                $moduleLocalTestSuites = foreach ($folder in $allTestFolders) {
+                    $testItems = Get-TestItemsFromFolder -FolderPath $folder
+                    foreach ($item in $testItems) {
+                        foreach ($osConfig in $osConfigs) {
+                            [pscustomobject]@{
+                                RunsOn   = $osConfig.RunsOn
+                                OSName   = $osConfig.OSName
+                                TestPath = Resolve-Path -Path $item.FullName -Relative
+                                TestName = ($item.BaseName -Split '.')[0]
+                            }
                         }
                     }
                 }
-            }
 
-            # Adjust source code test suites based on SkipTests
-            $sourceCodeTestSuites = $osConfigs | Where-Object {
-                -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'SourceCode')
-            } | Select-Object -Property RunsOn, OSName -Unique
-
-            # Generate ModuleTestSuites (static tests)
-            $moduleTestSuites = $testSuites | Where-Object {
-                $_.TestName -match '\.(Configuration|Container)\.ps1$' -and
-                -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'Module')
+                $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
+                Set-GitHubOutput -Name ModuleLocalTestSuites -Value ($moduleLocalTestSuites ?? '[]')
             }
-
-            # Generate ModuleLocalTestSuites (local tests)
-            $moduleLocalTestSuites = $testSuites | Where-Object {
-                $_.TestName -match '\.Tests\.ps1$' -and
-                -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'Module')
-            }
-
-            # Display the generated matrices for verification.
-            LogGroup 'Source Code Test Suites:' {
-              $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
-            }
-            LogGroup 'Module Test Suites:' {
-              $moduleTestSuites | Format-Table -AutoSize | Out-String
-            }
-            LogGroup 'Module Local Test Suites:' {
-              $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
-            }
-
-            # Pass the final objects to GitHub Actions output as JSON
-            Set-GitHubOutput -Name SourceCodeTestSuites -Value ($sourceCodeTestSuites ?? '[]')
-            Set-GitHubOutput -Name ModuleTestSuites -Value ($moduleTestSuites ?? '[]')
-            Set-GitHubOutput -Name ModuleLocalTestSuites -Value ($moduleLocalTestSuites ?? '[]')
