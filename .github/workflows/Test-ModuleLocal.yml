@@ -47,11 +47,6 @@ on:
         description: The path to the tests folder.
         required: false
         default: tests
-      SkipTests:
-        type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
-        required: false
-        default: None
       Debug:
         type: boolean
         description: Enable debug output.
@@ -84,7 +79,6 @@ permissions:
 jobs:
   Test-ModuleLocal:
     name: Test-${{ inputs.TestName }} (${{ inputs.RunsOn }})
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code

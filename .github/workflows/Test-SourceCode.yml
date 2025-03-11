@@ -15,11 +15,6 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      SkipTests:
-        type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
-        required: false
-        default: None
       Debug:
         type: boolean
         description: Enable debug output.
@@ -52,7 +47,6 @@ permissions:
 jobs:
   Test-SourceCode:
     name: Test-SourceCode (${{ inputs.RunsOn }})
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
@@ -70,7 +64,6 @@ jobs:
 
   Lint-SourceCode:
     name: Lint-SourceCode (${{ inputs.RunsOn }})
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'SourceCode') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code

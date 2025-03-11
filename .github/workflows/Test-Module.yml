@@ -83,7 +83,6 @@ permissions:
 jobs:
   Test-Module:
     name: Test-Module (${{ inputs.RunsOn }})
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout repository
@@ -109,7 +108,6 @@ jobs:
 
   Lint-Module:
     name: Lint-Module (${{ inputs.RunsOn }})
-    if: ${{ !(contains(inputs.SkipTests, 'All') || contains(inputs.SkipTests, 'Module') || contains(inputs.SkipTests, inputs.OS)) }}
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Download module artifact
