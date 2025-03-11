@@ -72,7 +72,6 @@ jobs:
 
       - name: Commit all changes
         uses: PSModule/GitHub-Script@v1
-        continue-on-error: true
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
