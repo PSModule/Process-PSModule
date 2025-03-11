@@ -90,9 +90,9 @@ jobs:
 
             # Define test configurations as an array of hashtables.
             $osConfigs = @(
-                @{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
-                @{ RunsOn = 'macos-latest';  OSName = 'macOS' }
-                @{ RunsOn = 'windows-latest'; OSName = 'Windows' }
+                [PSCustomObject]@{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
+                [PSCustomObject]@{ RunsOn = 'macos-latest';  OSName = 'macOS' }
+                [PSCustomObject]@{ RunsOn = 'windows-latest'; OSName = 'Windows' }
             ) | Where-Object { $skipTests -notcontains $_.OSName }
 
             if (-not $osConfigs) {
