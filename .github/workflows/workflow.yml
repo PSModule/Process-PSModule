@@ -136,7 +136,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:

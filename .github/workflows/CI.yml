@@ -94,7 +94,6 @@ jobs:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      SkipTests: ${{ inputs.SkipTests }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -125,29 +124,6 @@ jobs:
 
   Test-Module:
     name: Test-Module
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.SourceCodeTestSuites != '[]' }}
-    needs:
-      - Build-Module
-      - Get-TestSuites
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
-    uses: ./.github/workflows/Test-Module.yml
-    secrets: inherit
-    with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
-      SkipTests: ${{ inputs.SkipTests }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
-  Test-ModuleLocal:
-    name: ${{ matrix.TestName }}
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
@@ -156,13 +132,34 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleTestSuites) }}
+    uses: ./.github/workflows/Test-Module.yml
+    secrets: inherit
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ inputs.Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  Test-ModuleLocal:
+    name: ${{ matrix.TestName }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleLocalTestSuites != '[]' }}
+    needs:
+      - Build-Module
+      - Get-TestSuites
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleLocalTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
-      SkipTests: ${{ inputs.SkipTests }}
       TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
       Debug: ${{ inputs.Debug }}
