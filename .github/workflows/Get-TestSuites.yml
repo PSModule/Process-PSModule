@@ -36,11 +36,14 @@ on:
 
     outputs:
       SourceCodeTestSuites:
-        description: Source Code test suites to run.
+        description: Source Code PSModule test suites to run.
         value: ${{ jobs.Get-TestSuites.outputs.SourceCodeTestSuites }}
       ModuleTestSuites:
-        description: Module test suites to run.
+        description: Module PSModule test suites to run.
         value: ${{ jobs.Get-TestSuites.outputs.ModuleTestSuites }}
+      ModuleLocalTestSuites:
+        description: Module local test suites to run.
+        value: ${{ jobs.Get-TestSuites.outputs.ModuleLocalTestSuites }}
 
 permissions:
   contents: read # to checkout the repo
@@ -52,6 +55,7 @@ jobs:
     outputs:
       SourceCodeTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).SourceCodeTestSuites }}
       ModuleTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleTestSuites }}
+      ModuleLocalTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleLocalTestSuites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -151,14 +155,30 @@ jobs:
                 -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'SourceCode')
             } | Select-Object -Property RunsOn, OSName -Unique
 
+            # Generate ModuleTestSuites (static tests)
+            $moduleTestSuites = $testSuites | Where-Object {
+                $_.TestName -match '\.(Configuration|Container)\.ps1$' -and
+                -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'Module')
+            }
+
+            # Generate ModuleLocalTestSuites (local tests)
+            $moduleLocalTestSuites = $testSuites | Where-Object {
+                $_.TestName -match '\.Tests\.ps1$' -and
+                -not ($skipTests -contains 'All' -or $skipTests -contains $_.OSName -or $skipTests -contains 'Module')
+            }
+
             # Display the generated matrices for verification.
             LogGroup 'Source Code Test Suites:' {
               $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
             }
             LogGroup 'Module Test Suites:' {
-              $testSuites | Format-Table -AutoSize | Out-String
+              $moduleTestSuites | Format-Table -AutoSize | Out-String
+            }
+            LogGroup 'Module Local Test Suites:' {
+              $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
             }
 
             # Pass the final objects to GitHub Actions output as JSON
             Set-GitHubOutput -Name SourceCodeTestSuites -Value ($sourceCodeTestSuites ?? '[]')
-            Set-GitHubOutput -Name ModuleTestSuites -Value ($testSuites ?? '[]')
+            Set-GitHubOutput -Name ModuleTestSuites -Value ($moduleTestSuites ?? '[]')
+            Set-GitHubOutput -Name ModuleLocalTestSuites -Value ($moduleLocalTestSuites ?? '[]')
