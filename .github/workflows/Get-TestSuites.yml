@@ -80,6 +80,27 @@ jobs:
                 @{ RunsOn = 'windows-latest'; OSName = 'Windows' }
             )
 
+            $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -Split ",|\s+" | ForEach-Object { $_.Trim() }
+
+            if ($skipTests -contains 'All') {
+                Write-Host "Skipping all tests as requested."
+                Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
+                Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
+                Set-GitHubOutput -Name ModuleLocalTestSuites -Value '[]'
+                exit 0
+            }
+
+            # Filter out OS-specific tests early
+            $osConfigs = $osConfigs | Where-Object { $skipTests -notcontains $_.OSName }
+
+            if (-not $osConfigs) {
+                Write-Host "No OS configurations left after filtering. Exiting."
+                Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
+                Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
+                Set-GitHubOutput -Name ModuleLocalTestSuites -Value '[]'
+                exit 0
+            }
+
             # Locate the tests directory.
             $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
