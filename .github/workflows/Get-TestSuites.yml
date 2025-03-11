@@ -105,76 +105,79 @@ jobs:
 
             LogGroup 'Source Code Test Suites:' {
                 if ($skipTests -notcontains 'SourceCode') {
-                    $osConfigs | Format-Table -AutoSize | Out-String
-                    Set-GitHubOutput -Name SourceCodeTestSuites -Value $osConfigs
+                    $sourceCodeTestSuites = $osConfigs
                 }
+                $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
+                Set-GitHubOutput -Name SourceCodeTestSuites -Value ($sourceCodeTestSuites ?? '[]')
             }
 
             LogGroup 'Module Test Suites:' {
                 if ($skipTests -notcontains 'Module') {
-                    $osConfigs | Format-Table -AutoSize | Out-String
-                    Set-GitHubOutput -Name ModuleTestSuites -Value $osConfigs
+                    $moduleTestSuites = $osConfigs
                 }
+                $moduleTestSuites | Format-Table -AutoSize | Out-String
+                Set-GitHubOutput -Name ModuleTestSuites -Value ($moduleTestSuites ?? '[]')
             }
 
             LogGroup 'Module Local Test Suites:' {
-                # Locate the tests directory.
-                $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
-                    Write-Warning 'No tests found'
-                    exit 0
-                }
-                Write-Host "Tests found at [$testsPath]"
+                if ($skipTests -notcontains 'Module') {
+                    # Locate the tests directory.
+                    $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                    if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
+                        Write-Warning 'No tests found'
+                        exit 0
+                    }
+                    Write-Host "Tests found at [$testsPath]"
 
-                function Get-TestItemsFromFolder {
-                    param ([string]$FolderPath)
+                    function Get-TestItemsFromFolder {
+                        param ([string]$FolderPath)
 
-                    $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
-                    if ($configFiles.Count -eq 1) {
-                        return @($configFiles)
-                    } elseif ($configFiles.Count -gt 1) {
-                        throw "Multiple configuration files found in [$FolderPath]. Please separate configurations into different folders."
+                        $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
+                        if ($configFiles.Count -eq 1) {
+                            return @($configFiles)
+                        } elseif ($configFiles.Count -gt 1) {
+                            throw "Multiple configuration files found in [$FolderPath]. Please separate configurations into different folders."
+                        }
+
+                        $containerFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Container.ps1'
+                        if ($containerFiles.Count -ge 1) {
+                            return $containerFiles
+                        }
+
+                        $testFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Tests.ps1'
+                        return $testFiles
                     }
 
-                    $containerFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Container.ps1'
-                    if ($containerFiles.Count -ge 1) {
-                        return $containerFiles
+                    function Find-TestDirectories {
+                        param ([string]$Path)
+
+                        $directories = @()
+                        $childDirs = Get-ChildItem -Path $Path -Directory
+
+                        foreach ($dir in $childDirs) {
+                            $directories += $dir.FullName
+                            $directories += Find-TestDirectories -Path $dir.FullName
+                        }
+
+                        return $directories
                     }
 
-                    $testFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Tests.ps1'
-                    return $testFiles
-                }
+                    $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
 
-                function Find-TestDirectories {
-                    param ([string]$Path)
-
-                    $directories = @()
-                    $childDirs = Get-ChildItem -Path $Path -Directory
-
-                    foreach ($dir in $childDirs) {
-                        $directories += $dir.FullName
-                        $directories += Find-TestDirectories -Path $dir.FullName
-                    }
-
-                    return $directories
-                }
-
-                $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
-
-                $moduleLocalTestSuites = foreach ($folder in $allTestFolders) {
-                    $testItems = Get-TestItemsFromFolder -FolderPath $folder
-                    foreach ($item in $testItems) {
-                        foreach ($osConfig in $osConfigs) {
-                            [pscustomobject]@{
-                                RunsOn   = $osConfig.RunsOn
-                                OSName   = $osConfig.OSName
-                                TestPath = Resolve-Path -Path $item.FullName -Relative
-                                TestName = ($item.BaseName).Split('.')[0]
+                    $moduleLocalTestSuites = foreach ($folder in $allTestFolders) {
+                        $testItems = Get-TestItemsFromFolder -FolderPath $folder
+                        foreach ($item in $testItems) {
+                            foreach ($osConfig in $osConfigs) {
+                                [pscustomobject]@{
+                                    RunsOn   = $osConfig.RunsOn
+                                    OSName   = $osConfig.OSName
+                                    TestPath = Resolve-Path -Path $item.FullName -Relative
+                                    TestName = ($item.BaseName).Split('.')[0]
+                                }
                             }
                         }
                     }
                 }
-
                 $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
                 Set-GitHubOutput -Name ModuleLocalTestSuites -Value ($moduleLocalTestSuites ?? '[]')
             }
