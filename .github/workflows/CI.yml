@@ -70,7 +70,6 @@ permissions:
 
 jobs:
   Get-TestSuites:
-    name: Get-TestSuites
     uses: ./.github/workflows/Get-TestSuites.yml
     with:
       SkipTests: ${{ inputs.SkipTests }}
@@ -81,7 +80,6 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-SourceCode:
-    name: Test-SourceCode
     if: ${{ needs.Get-TestSuites.outputs.SourceCodeTestSuites != '[]' }}
     needs:
       - Get-TestSuites
@@ -123,7 +121,6 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
-    name: Test-Module
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
@@ -145,7 +142,6 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
-    name: ${{ matrix.TestName }}
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleLocalTestSuites != '[]' }}
     needs:
       - Build-Module
@@ -169,7 +165,6 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    name: Get-TestResults
     if: always() && !cancelled()
     needs:
       - Test-SourceCode
@@ -184,7 +179,6 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
-    name: Get-CodeCoverage
     if: always() && !cancelled()
     needs:
       - Test-SourceCode
