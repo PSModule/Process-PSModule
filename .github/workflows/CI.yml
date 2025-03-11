@@ -170,7 +170,7 @@ jobs:
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
       SkipTests: ${{ inputs.SkipTests }}
-      TestFolderPath: ${{ matrix.TestFolderPath }}
+      TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
