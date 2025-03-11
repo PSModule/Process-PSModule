@@ -3,6 +3,11 @@ name: Get-TestSuites
 on:
   workflow_call:
     inputs:
+      SkipTests:
+        type: string
+        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
+        required: false
+        default: None
       Debug:
         type: boolean
         description: Enable debug output.
@@ -30,9 +35,12 @@ on:
         default: '.'
 
     outputs:
-      TestSuites:
-        description: The test suites to run.
-        value: ${{ jobs.Get-TestSuites.outputs.TestSuites }}
+      SourceCodeTestSuites:
+        description: Source Code test suites to run.
+        value: ${{ jobs.Get-TestSuites.outputs.SourceCodeTestSuites }}
+      ModuleTestSuites:
+        description: Module test suites to run.
+        value: ${{ jobs.Get-TestSuites.outputs.ModuleTestSuites }}
 
 permissions:
   contents: read # to checkout the repo
@@ -42,7 +50,8 @@ jobs:
     name: Get-TestSuites
     runs-on: ubuntu-latest
     outputs:
-      TestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).TestSuites }}
+      SourceCodeTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).SourceCodeTestSuites }}
+      ModuleTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleTestSuites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -50,6 +59,8 @@ jobs:
       - name: Get-TestSuites
         uses: PSModule/GitHub-Script@v1
         id: Get-TestSuites
+        env:
+          PSMODULE_GET_TESTSUITES_INPUT_SkipTests: ${{ inputs.SkipTests }}
         with:
           ShowOutput: true
           Debug: ${{ inputs.Debug }}
@@ -60,9 +71,9 @@ jobs:
           Script: |
             # Define test configurations as an array of hashtables.
             $osConfigs = @(
-                @{ runson = 'ubuntu-latest'; name = 'Linux' }
-                @{ runson = 'macos-latest';  name = 'macOS' }
-                @{ runson = 'windows-latest'; name = 'Windows' }
+                @{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
+                @{ RunsOn = 'macos-latest';  OSName = 'macOS' }
+                @{ RunsOn = 'windows-latest'; OSName = 'Windows' }
             )
 
             # Locate the tests directory.
@@ -113,8 +124,8 @@ jobs:
                 foreach ($item in $testItems) {
                     foreach ($osConfig in $osConfigs) {
                         [pscustomobject]@{
-                            RunsOn   = $osConfig.runson
-                            OSName   = $osConfig.name
+                            RunsOn   = $osConfig.RunsOn
+                            OSName   = $osConfig.OSName
                             TestPath = Resolve-Path -Path $item.FullName -Relative
                             TestName = $item.BaseName
                         }
@@ -122,8 +133,15 @@ jobs:
                 }
             }
 
-            # (Optional) Display the generated matrix in a table for verification.
-            $testSuites | Format-Table -AutoSize
+            # Create separate outputs for source code tests (OS only) and module tests (existing detailed output)
+            $sourceCodeTestSuites = $osConfigs | Select-Object -Property RunsOn, OSName -Unique
 
-            # Pass the final object to GitHub Actions output.
-            Set-GitHubOutput -Name TestSuites -Value $testSuites
+            # Display the generated matrices for verification.
+            Write-Host "Source Code Test Suites:"
+            $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
+            Write-Host "Module Test Suites:"
+            $testSuites | Format-Table -AutoSize | Out-String
+
+            # Pass the final objects to GitHub Actions output.
+            Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
+            Set-GitHubOutput -Name ModuleTestSuites -Value $testSuites
