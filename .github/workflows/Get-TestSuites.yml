@@ -169,7 +169,7 @@ jobs:
                                 RunsOn   = $osConfig.RunsOn
                                 OSName   = $osConfig.OSName
                                 TestPath = Resolve-Path -Path $item.FullName -Relative
-                                TestName = ($item.BaseName -Split '.')[0]
+                                TestName = ($item.BaseName).Split('.')[0]
                             }
                         }
                     }
