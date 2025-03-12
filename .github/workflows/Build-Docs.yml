@@ -189,8 +189,25 @@ jobs:
 
             LogGroup 'Build docs - Create mkdocs.yml' {
                 $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                # This should be moved to an action so that we can use a default one, and not have to copy it from the repo.
-                $mkdocsSourcePath = Join-Path -Path $rootPath -ChildPath 'mkdocs.yml'
+                $possiblePaths = @(
+                    '.github/mkdocs.yml',
+                    'docs/mkdocs.yml',
+                    'mkdocs.yml'
+                )
+
+                $mkdocsSourcePath = $null
+                foreach ($path in $possiblePaths) {
+                    $candidatePath = Join-Path -Path $rootPath -ChildPath $path
+                    if (Test-Path -Path $candidatePath) {
+                        $mkdocsSourcePath = $candidatePath
+                        break
+                    }
+                }
+
+                if (-not $mkdocsSourcePath) {
+                    throw "Mkdocs source file not found in any of the expected locations: $($possiblePaths -join ', ')"
+                }
+
                 $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
 
                 Write-Host "Mkdocs Source Path:   $mkdocsSourcePath"
