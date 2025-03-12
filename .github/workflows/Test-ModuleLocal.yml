@@ -106,7 +106,7 @@ jobs:
 
       - name: Test-ModuleLocal
         # uses: PSModule/Invoke-Pester@v4
-        uses: PSModule/Invoke-Pester@prescript
+        uses: PSModule/Invoke-Pester@v4
         continue-on-error: true
         env:
           TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}

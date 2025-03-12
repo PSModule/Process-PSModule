@@ -3,6 +3,11 @@ name: Get-TestResults
 on:
   workflow_call:
     inputs:
+      Needs:
+        type: string
+        description: The json objects representing the jobs that this job depends on.
+        required: false
+        default: ''
       Debug:
         type: boolean
         description: Enable debug output.
@@ -37,6 +42,14 @@ jobs:
     name: Get-TestResults
     runs-on: ubuntu-latest
     steps:
+      - name: Needs
+        shell: pwsh
+        env:
+          Needs: ${{ inputs.Needs }}
+        run: |
+          $env:Needs
+          $env:Needs | ConvertFrom-Json
+
       - name: Get-TestResults
         uses: PSModule/Get-PesterTestResults@v1
         id: Get-TestResults
