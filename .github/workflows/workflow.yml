@@ -177,7 +177,6 @@ jobs:
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
-      Needs: ${{ toJson(needs) }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
