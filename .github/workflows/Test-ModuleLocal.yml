@@ -101,6 +101,7 @@ jobs:
           $name = Get-ChildItem "outputs/module" | Select-Object -ExpandProperty Name
           $path = Install-PSModule -Path "outputs/module/$name" -PassThru
           Write-Warning $path
+          "name=$name" >> $env:GITHUB_OUTPUT
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
@@ -131,4 +132,5 @@ jobs:
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Prescript: |
-            Import-Module -Name '${{ steps.import-module.outputs.path }}'
+            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
+q
