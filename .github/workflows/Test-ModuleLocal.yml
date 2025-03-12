@@ -104,7 +104,8 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@v4
+        # uses: PSModule/Invoke-Pester@v4
+        uses: PSModule/Invoke-Pester@prescript
         continue-on-error: true
         env:
           TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
@@ -129,3 +130,5 @@ jobs:
           Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Prescript: |
+            Import-Module -Name '${{ steps.import-module.outputs.path }}'
