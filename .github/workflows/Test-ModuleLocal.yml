@@ -133,4 +133,3 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Prescript: |
             Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
-q
