@@ -74,10 +74,12 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             # Get-TestSuites
-            $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -Split ",|\s+" | ForEach-Object { $_.Trim() }
+            $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -split '[,\s]+' | ForEach-Object {
+                $_.Trim()
+            }
 
             LogGroup 'Tests to be skipped:' {
-              $skipTests | ForEach-Object { " - $_ " }
+              $skipTests | ForEach-Object { " - $_" }
             }
 
             if ($skipTests -contains 'All') {
@@ -108,7 +110,8 @@ jobs:
                     $sourceCodeTestSuites = $osConfigs
                 }
                 $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
-                Set-GitHubOutput -Name SourceCodeTestSuites -Value ($sourceCodeTestSuites ?? '[]')
+                $sourceCodeTestSuites = $sourceCodeTestSuites | ConvertTo-Json -AsArray
+                Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
             }
 
             LogGroup 'Module Test Suites:' {
@@ -116,7 +119,8 @@ jobs:
                     $moduleTestSuites = $osConfigs
                 }
                 $moduleTestSuites | Format-Table -AutoSize | Out-String
-                Set-GitHubOutput -Name ModuleTestSuites -Value ($moduleTestSuites ?? '[]')
+                $moduleTestSuites = $moduleTestSuites | ConvertTo-Json -AsArray
+                Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
             }
 
             LogGroup 'Module Local Test Suites:' {
@@ -179,5 +183,6 @@ jobs:
                     }
                 }
                 $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
-                Set-GitHubOutput -Name ModuleLocalTestSuites -Value ($moduleLocalTestSuites ?? '[]')
+                $moduleLocalTestSuites = $moduleLocalTestSuites | ConvertTo-Json -AsArray
+                Set-GitHubOutput -Name ModuleLocalTestSuites -Value $moduleLocalTestSuites
             }
