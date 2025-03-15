@@ -110,7 +110,7 @@ jobs:
                     $sourceCodeTestSuites = $osConfigs
                 }
                 $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
-                $sourceCodeTestSuites = $sourceCodeTestSuites | ConvertTo-Json -AsArray
+                $sourceCodeTestSuites = ($null -ne $sourceCodeTestSuites) ? ($sourceCodeTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
             }
 
@@ -119,7 +119,7 @@ jobs:
                     $moduleTestSuites = $osConfigs
                 }
                 $moduleTestSuites | Format-Table -AutoSize | Out-String
-                $moduleTestSuites = $moduleTestSuites | ConvertTo-Json -AsArray
+                $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
             }
 
@@ -183,6 +183,6 @@ jobs:
                     }
                 }
                 $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
-                $moduleLocalTestSuites = $moduleLocalTestSuites | ConvertTo-Json -AsArray
+                $moduleLocalTestSuites = ($null -ne $moduleLocalTestSuites) ? ($moduleLocalTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name ModuleLocalTestSuites -Value $moduleLocalTestSuites
             }
