@@ -105,7 +105,6 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        # uses: PSModule/Invoke-Pester@v4
         uses: PSModule/Invoke-Pester@v4
         continue-on-error: true
         env:
