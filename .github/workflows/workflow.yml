@@ -164,6 +164,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
+    if: always() && !cancelled()
     needs:
       - Get-Settings
       - Test-SourceCode
@@ -178,6 +179,7 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
+    if: always() && !cancelled()
     needs:
       - Get-Settings
       - Test-SourceCode
