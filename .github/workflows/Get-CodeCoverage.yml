@@ -5,7 +5,7 @@ on:
     inputs:
       CodeCoveragePercentTarget:
         type: number
-        default: The target for code coverage.
+        description: The target for code coverage.
       Debug:
         type: boolean
         description: Enable debug output.
