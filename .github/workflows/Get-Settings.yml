@@ -93,7 +93,7 @@ jobs:
                     $settings = Import-Hashtable -Path $settingsPath
                 }
                 $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
-                LogGroup "Imported settings from [$relativeSettingsPath]:" {
+                LogGroup "Settings from [$relativeSettingsPath]:" {
                     Write-Host ($settings | Format-Hashtable | Out-String)
                 }
             } else {
@@ -101,87 +101,78 @@ jobs:
                 $settings = @{}
             }
 
-            if ([string]::IsNullOrEmpty($settings['Name'])) {
-                $settings['Name'] = $env:GITHUB_REPOSITORY_NAME
-            }
-
-            LogGroup 'Default settings' {
-                $defaultSettings = @{
-                    Name       = ''
-                    Test       = @{
-                        Skip       = $false
-                        Linux      = @{
-                            Skip = $false
+            LogGroup 'Settings' {
+                $settings = [pscustomobject]@{
+                    Name       = $settings.Name ?? $env:GITHUB_REPOSITORY_NAME
+                    Test       = [pscustomobject]@{
+                        Skip       = $settings.Test.Skip ?? $false
+                        Linux      = [pscustomobject]@{
+                            Skip = $settings.Test.Linux.Skip ?? $false
                         }
-                        MacOS      = @{
-                            Skip = $false
+                        MacOS      = [pscustomobject]@{
+                            Skip = $settings.Test.MacOS.Skip ?? $false
                         }
-                        Windows    = @{
-                            Skip = $false
+                        Windows    = [pscustomobject]@{
+                            Skip = $settings.Test.Windows.Skip ?? $false
                         }
-                        SourceCode = @{
-                            Skip    = $false
-                            Linux   = @{
-                                Skip = $false
+                        SourceCode = [pscustomobject]@{
+                            Skip    = $settings.Test.SourceCode.Skip ?? $false
+                            Linux   = [pscustomobject]@{
+                                Skip = $settings.Test.SourceCode.Linux.Skip ?? $false
                             }
-                            MacOS   = @{
-                                Skip = $false
+                            MacOS   = [pscustomobject]@{
+                                Skip = $settings.Test.SourceCode.MacOS.Skip ?? $false
                             }
-                            Windows = @{
-                                Skip = $false
+                            Windows = [pscustomobject]@{
+                                Skip = $settings.Test.SourceCode.Windows.Skip ?? $false
                             }
                         }
-                        PSModule   = @{
-                            Skip    = $false
-                            Linux   = @{
-                                Skip = $false
+                        PSModule   = [pscustomobject]@{
+                            Skip    = $settings.Test.PSModule.Skip ?? $false
+                            Linux   = [pscustomobject]@{
+                                Skip = $settings.Test.PSModule.Linux.Skip ?? $false
                             }
-                            MacOS   = @{
-                                Skip = $false
+                            MacOS   = [pscustomobject]@{
+                                Skip = $settings.Test.PSModule.MacOS.Skip ?? $false
                             }
-                            Windows = @{
-                                Skip = $false
+                            Windows = [pscustomobject]@{
+                                Skip = $settings.Test.PSModule.Windows.Skip ?? $false
                             }
                         }
-                        Module     = @{
-                            Skip    = $false
-                            Linux   = @{
-                                Skip = $false
+                        Module     = [pscustomobject]@{
+                            Skip    = $settings.Test.Module.Skip ?? $false
+                            Linux   = [pscustomobject]@{
+                                Skip = $settings.Test.Module.Linux.Skip ?? $false
                             }
-                            MacOS   = @{
-                                Skip = $false
+                            MacOS   = [pscustomobject]@{
+                                Skip = $settings.Test.Module.MacOS.Skip ?? $false
                             }
-                            Windows = @{
-                                Skip = $false
+                            Windows = [pscustomobject]@{
+                                Skip = $settings.Test.Module.Windows.Skip ?? $false
                             }
                         }
                     }
-                    Build      = @{
-                        Skip   = $true
-                        Module = @{
-                            Skip = $true
+                    Build      = [pscustomobject]@{
+                        Skip   = $settings.Build.Skip ?? $false
+                        Module = [pscustomobject]@{
+                            Skip = $settings.Build.Module.Skip ?? $false
                         }
-                        Docs   = @{
-                            Skip = $true
+                        Docs   = [pscustomobject]@{
+                            Skip = $settings.Build.Docs.Skip ?? $false
                         }
                     }
-                    Publishing = @{
-                        AutoCleanup           = $true
-                        AutoPatching          = $true
-                        IncrementalPrerelease = $true
-                        DatePrereleaseFormat  = ''
-                        VersionPrefix         = 'v'
-                        MajorLabels           = 'major', 'breaking'
-                        MinorLabels           = 'minor', 'feature'
-                        PatchLabels           = 'patch', 'fix'
-                        IgnoreLabels          = 'NoRelease'
+                    Publishing = [pscustomobject]@{
+                        AutoCleanup           = $settings.Publishing.AutoCleanup ?? $true
+                        AutoPatching          = $settings.Publishing.AutoPatching ?? $true
+                        IncrementalPrerelease = $settings.Publishing.IncrementalPrerelease ?? $false
+                        DatePrereleaseFormat  = $settings.Publishing.DatePrereleaseFormat ?? ''
+                        VersionPrefix         = $settings.Publishing.VersionPrefix ?? 'v'
+                        MajorLabels           = $settings.Publishing.MajorLabels ?? @('major', 'breaking')
+                        MinorLabels           = $settings.Publishing.MinorLabels ?? @('minor', 'feature')
+                        PatchLabels           = $settings.Publishing.PatchLabels ?? @('patch', 'fix')
+                        IgnoreLabels          = $settings.Publishing.IgnoreLabels ?? @('NoRelease')
                     }
                 }
-                Write-Host ($defaultSettings | Format-Hashtable | Out-String)
-            }
-
-            LogGroup 'Merged settings' {
-                $settings = Merge-Hashtable -Main $defaultSettings -Overrides $settings
                 Write-Host ($settings | Format-Hashtable | Out-String)
             }
 
