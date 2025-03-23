@@ -1,7 +1,8 @@
 @{
-    Name       = 'PSModuleTest'
-    Build      = @{}
-    Test       = @{
+    Name                      = 'PSModuleTest'
+    CodeCoveragePercentTarget = 20
+    Build                     = @{}
+    Test                      = @{
         SourceCode = @{
             Skip = $true
         }
@@ -9,7 +10,7 @@
             Skip = $true
         }
     }
-    Publishing = @{
+    Publishing                = @{
         AutoCleanup = $false
     }
 }

@@ -101,6 +101,7 @@ jobs:
             LogGroup 'Settings' {
                 $settings = [pscustomobject]@{
                     Name       = $settings.Name ?? $env:GITHUB_REPOSITORY_NAME
+                    CodeCoveragePercentTarget = $settings.CodeCoveragePercentTarget ?? 80
                     Test       = [pscustomobject]@{
                         Skip       = $settings.Test.Skip ?? $false
                         Linux      = [pscustomobject]@{
