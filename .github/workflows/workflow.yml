@@ -194,7 +194,7 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Publish-Module:
-    if: ${{ needs.*.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
       - Get-Settings
       - Get-TestResults
@@ -232,13 +232,11 @@ jobs:
           Version: ${{ inputs.Version }}
 
   Publish-Site:
-    if: ${{ needs.*.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
       - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
-      - Test-SourceCode
-      - Test-Module
       - Build-Docs
     permissions:
       pages: write    # to deploy to Pages
