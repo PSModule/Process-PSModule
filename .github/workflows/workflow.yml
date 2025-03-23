@@ -119,7 +119,7 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  Test-PSModule:
+  Test-Module:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' }}
     needs:
       - Build-Module
