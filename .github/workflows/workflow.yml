@@ -69,7 +69,6 @@ jobs:
     uses: ./.github/workflows/Get-Settings.yml
     with:
       SettingsPath: ${{ inputs.SettingsPath }}
-      TestProcess: ${{ inputs.TestProcess }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
