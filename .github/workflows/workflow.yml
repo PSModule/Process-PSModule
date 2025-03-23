@@ -106,7 +106,7 @@ jobs:
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ needs.Get-Settings.outputs.Settings.Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -118,7 +118,7 @@ jobs:
     needs:
       - Get-Settings
     with:
-      Name: ${{ inputs.Name }}
+      Name: ${{ needs.Get-Settings.outputs.Settings.Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -131,7 +131,7 @@ jobs:
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
-      Name: ${{ inputs.Name }}
+      Name: ${{ needs.Get-Settings.outputs.Settings.Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -152,7 +152,7 @@ jobs:
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ needs.Get-Settings.outputs.Settings.Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -173,7 +173,7 @@ jobs:
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ needs.Get-Settings.outputs.Settings.Name }}
       TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
       Debug: ${{ inputs.Debug }}
@@ -243,7 +243,7 @@ jobs:
       - name: Publish module
         uses: PSModule/Publish-PSModule@v2
         with:
-          Name: ${{ inputs.Name }}
+          Name: ${{ needs.Get-Settings.outputs.Settings.Name }}
           ModulePath: ${{ inputs.WorkingDirectory }}/outputs/module
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ inputs.TestProcess }}

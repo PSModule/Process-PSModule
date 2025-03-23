@@ -48,18 +48,9 @@ on:
         default: '.'
 
     outputs:
-      Name:
-        description: The name of the module to process.
-        value: ${{ jobs.Get-Settings.outputs.Name }}
-      Skip:
-        description: Defines what to skip in the process.
-        value: ${{ jobs.Get-Settings.outputs.Skip }}
-      TestProcess:
-        description: Whether to test the process.
-        value: ${{ jobs.Get-Settings.outputs.TestProcess }}
-      SettingsPath:
+      Settings:
         description: The path to the settings file.
-        value: ${{ jobs.Get-Settings.outputs.SettingsPath }}
+        value: ${{ jobs.Get-Settings.outputs.Settings }}
       SourceCodeTestSuites:
         description: Source Code PSModule test suites to run.
         value: ${{ jobs.Get-Settings.outputs.SourceCodeTestSuites }}
@@ -78,10 +69,7 @@ jobs:
     name: Get-Settings
     runs-on: ubuntu-latest
     outputs:
-      Name: ${{ fromJson(steps.Get-Settings.outputs.result).Name }}
-      Skip: ${{ fromJson(steps.Get-Settings.outputs.result).Skip }}
-      TestProcess: ${{ fromJson(steps.Get-Settings.outputs.result).TestProcess }}
-      SettingsPath: ${{ fromJson(steps.Get-Settings.outputs.result).SettingsPath }}
+      Settings: ${{ fromJson(steps.Get-TestSuites.outputs.result).Settings }}
       SourceCodeTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).SourceCodeTestSuites }}
       ModuleTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleTestSuites }}
       ModuleLocalTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleLocalTestSuites }}
@@ -133,7 +121,7 @@ jobs:
                 Write-Host ($settings | Format-Hashtable | Out-String)
             }
 
-            Set-GitHubOutput -Name settings -Value ($settings | ConvertTo-Json -Depth 10)
+            Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
 
 
       - name: Get-TestSuites
