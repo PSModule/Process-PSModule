@@ -79,22 +79,21 @@ jobs:
           Script: |
             # Get-Settings
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
-            Write-Host "Inputs:"
-            [pscustomobject]@{
-                settingsPath = $settingsPath
-            } | Format-List | Out-String
+            LogGroup "Inputs:" {
+                [pscustomobject]@{
+                    settingsPath = $settingsPath
+                } | Format-List | Out-String
+            }
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                Write-Host "[$settingsPath]"
                 if (-not $settingsPath) {
                     Write-Host 'No settings file found.'
                 } else {
-                    Write-Host "Settings file found at [$settingsPath]"
                     $settings = Import-Hashtable -Path $settingsPath
                 }
                 $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
-                LogGroup "Settings from [$relativeSettingsPath]:" {
+                LogGroup "Imported settings from [$relativeSettingsPath]:" {
                     Write-Host ($settings | Format-Hashtable | Out-String)
                 }
             } else {
@@ -107,66 +106,66 @@ jobs:
             }
 
             LogGroup 'Default settings' {
-                $defaultSettings = [pscustomobject]@{
+                $defaultSettings = @{
                     Name       = ''
-                    Test       = [pscustomobject]@{
+                    Test       = @{
                         Skip       = $false
-                        Linux      = [pscustomobject]@{
+                        Linux      = @{
                             Skip = $false
                         }
-                        MacOS      = [pscustomobject]@{
+                        MacOS      = @{
                             Skip = $false
                         }
-                        Windows    = [pscustomobject]@{
+                        Windows    = @{
                             Skip = $false
                         }
-                        SourceCode = [pscustomobject]@{
+                        SourceCode = @{
                             Skip    = $false
-                            Linux   = [pscustomobject]@{
+                            Linux   = @{
                                 Skip = $false
                             }
-                            MacOS   = [pscustomobject]@{
+                            MacOS   = @{
                                 Skip = $false
                             }
-                            Windows = [pscustomobject]@{
+                            Windows = @{
                                 Skip = $false
                             }
                         }
-                        PSModule   = [pscustomobject]@{
+                        PSModule   = @{
                             Skip    = $false
-                            Linux   = [pscustomobject]@{
+                            Linux   = @{
                                 Skip = $false
                             }
-                            MacOS   = [pscustomobject]@{
+                            MacOS   = @{
                                 Skip = $false
                             }
-                            Windows = [pscustomobject]@{
+                            Windows = @{
                                 Skip = $false
                             }
                         }
-                        Module     = [pscustomobject]@{
+                        Module     = @{
                             Skip    = $false
-                            Linux   = [pscustomobject]@{
+                            Linux   = @{
                                 Skip = $false
                             }
-                            MacOS   = [pscustomobject]@{
+                            MacOS   = @{
                                 Skip = $false
                             }
-                            Windows = [pscustomobject]@{
+                            Windows = @{
                                 Skip = $false
                             }
                         }
                     }
-                    Build      = [pscustomobject]@{
+                    Build      = @{
                         Skip   = $true
-                        Module = [pscustomobject]@{
+                        Module = @{
                             Skip = $true
                         }
-                        Docs   = [pscustomobject]@{
+                        Docs   = @{
                             Skip = $true
                         }
                     }
-                    Publishing = [pscustomobject]@{
+                    Publishing = @{
                         AutoCleanup           = $true
                         AutoPatching          = $true
                         IncrementalPrerelease = $true
