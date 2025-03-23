@@ -130,9 +130,8 @@ jobs:
             }
 
             LogGroup "Settings from [$settingsPath]:" {
-                Write-Host ($settings | Format-Table -AutoSize | Out-String)
+                Write-Host ($settings | Format-Hashtable | Out-String)
             }
-
 
 
       - name: Get-TestSuites
