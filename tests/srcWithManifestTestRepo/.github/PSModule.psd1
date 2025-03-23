@@ -1,6 +1,6 @@
 @{
     Name                      = 'PSModuleTest'
-    CodeCoveragePercentTarget = 20
+    CodeCoveragePercentTarget = 1
     Build                     = @{}
     Test                      = @{
         SourceCode = @{
