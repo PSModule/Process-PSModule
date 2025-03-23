@@ -120,3 +120,5 @@ jobs:
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Settings: Module
+          TestResult_Enabled: true
+          TestResult_TestSuiteName: PSModuleLint-Module-${{ runner.os }}
