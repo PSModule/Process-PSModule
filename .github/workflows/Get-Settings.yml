@@ -173,7 +173,7 @@ jobs:
                         IgnoreLabels          = $settings.Publishing.IgnoreLabels ?? @('NoRelease')
                     }
                 }
-                Write-Host ($settings | Format-Hashtable | Out-String)
+                Write-Host ($settings | ConvertFrom-Hashtable | Format-Hashtable | Out-String)
             }
 
             Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
