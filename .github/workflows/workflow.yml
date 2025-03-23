@@ -173,6 +173,9 @@ jobs:
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
+      ModuleTestSuites: ${{ needs.Get-Settings.outputs.ModuleTestSuites }}
+      SourceCodeTestSuites: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites }}
+      PSModuleTestSuites: ${{ needs.Get-Settings.outputs.PSModuleTestSuites }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -182,7 +185,6 @@ jobs:
     if: always() && !cancelled()
     needs:
       - Get-Settings
-      - Test-SourceCode
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
