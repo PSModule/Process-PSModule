@@ -24,7 +24,5 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
-      Name: PSModuleTest
       WorkingDirectory: tests/srcWithManifestTestRepo
       TestProcess: true
-      Skip: LinuxTests

@@ -22,6 +22,4 @@ jobs:
     uses: ./.github/workflows/CI.yml
     secrets: inherit
     with:
-      Name: PSModuleTest
       WorkingDirectory: tests/srcTestRepo
-      Skip: ModuleTests
