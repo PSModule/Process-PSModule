@@ -181,7 +181,7 @@ jobs:
             }
 
             LogGroup 'Merged settings' {
-                $settings = $defaultSettings | Merge-Hashtable -Hashtable $settings
+                $settings = Merge-Hashtable -Main $defaultSettings -Overrides $settings
                 Write-Host ($settings | Format-Hashtable | Out-String)
             }
 
