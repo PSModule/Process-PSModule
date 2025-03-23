@@ -32,31 +32,20 @@
                 Skip = $true
             }
         }
+        PSModule   = @{
+            Skip    = $true
+            Linux   = @{
+                Skip = $true
+            }
+            Windows = @{
+                Skip = $true
+            }
+            macOS   = @{
+                Skip = $true
+            }
+        }
         Module     = @{
-            PSModule = @{
-                Skip    = $true
-                Linux   = @{
-                    Skip = $true
-                }
-                Windows = @{
-                    Skip = $true
-                }
-                macOS   = @{
-                    Skip = $true
-                }
-            }
-            Module   = @{
-                Skip    = $true
-                Linux   = @{
-                    Skip = $true
-                }
-                Windows = @{
-                    Skip = $true
-                }
-                macOS   = @{
-                    Skip = $true
-                }
-            }
+            Skip = $false
         }
     }
     Publishing = @{

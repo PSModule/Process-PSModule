@@ -28,22 +28,6 @@ on:
         description: The classic personal access token for running tests.
         required: false
     inputs:
-      Name:
-        type: string
-        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
-        required: false
-      Skip:
-        type: string
-        description: |
-          Defines what to skip. Allowed values are 'None', 'AllTests', 'SourceCodeTests', 'ModuleTests', 'PSModuleTests', 'LocalModuleTests',
-          'macOSTests', 'WindowsTests', 'LinuxTests', 'BuildDocs', 'PublishDocs', 'PublishModule'.
-        required: false
-        default: None
-      TestProcess:
-        type: boolean
-        description: Whether to test the process.
-        required: false
-        default: false
       SettingsPath:
         type: string
         description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
@@ -84,8 +68,6 @@ jobs:
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
-      Name: ${{ inputs.Name }}
-      Skip: ${{ inputs.Skip }}
       SettingsPath: ${{ inputs.SettingsPath }}
       TestProcess: ${{ inputs.TestProcess }}
       Debug: ${{ inputs.Debug }}

@@ -3,20 +3,6 @@ name: Get-Settings
 on:
   workflow_call:
     inputs:
-      Name:
-        type: string
-        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
-        required: false
-      Skip:
-        type: string
-        description: |
-          Defines what to skip. Allowed values are 'None', 'AllTests', 'SourceCodeTests', 'ModuleTests', 'PSModuleTests', 'LocalModuleTests',
-          'macOSTests', 'WindowsTests', 'LinuxTests', 'BuildDocs', 'PublishDocs', 'PublishModule'.
-        required: false
-      TestProcess:
-        type: boolean
-        description: Whether to test the process.
-        required: false
       SettingsPath:
         type: string
         description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
@@ -43,7 +29,7 @@ on:
         default: false
       WorkingDirectory:
         type: string
-        description: The working directory where the script will run from.
+        description: The path to the root of the repo.
         required: false
         default: '.'
 
@@ -69,10 +55,10 @@ jobs:
     name: Get-Settings
     runs-on: ubuntu-latest
     outputs:
-      Settings: ${{ fromJson(steps.Get-TestSuites.outputs.result).Settings }}
-      SourceCodeTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).SourceCodeTestSuites }}
-      ModuleTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleTestSuites }}
-      ModuleLocalTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleLocalTestSuites }}
+      Settings: ${{ fromJson(steps.Get-Settings.outputs.result).Settings }}
+      SourceCodeTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).SourceCodeTestSuites }}
+      ModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleTestSuites }}
+      ModuleLocalTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleLocalTestSuites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -81,9 +67,6 @@ jobs:
         uses: PSModule/GitHub-Script@v1
         id: Get-Settings
         env:
-          PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
-          PSMODULE_GET_SETTINGS_INPUT_Skip: ${{ inputs.Skip }}
-          PSMODULE_GET_SETTINGS_INPUT_TestProcess: ${{ inputs.TestProcess }}
           PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         with:
           ShowInfo: false
@@ -96,18 +79,6 @@ jobs:
           Script: |
             # Get-Settings
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
-            $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
-            $skip = $env:PSMODULE_GET_SETTINGS_INPUT_Skip
-            $testProcess = $env:PSMODULE_GET_SETTINGS_INPUT_TestProcess
-
-            LogGroup "Inputs:" {
-              [PSCustomObject]@{
-                Name          = $name
-                Skip          = $skip
-                TestProcess   = $testProcess
-                SettingsPath  = $settingsPath
-              } | Format-List | Out-String
-            }
 
             $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $settingsPath) {
@@ -117,84 +88,69 @@ jobs:
                 $settings = Import-Hashtable -Path $settingsPath
             }
 
-            LogGroup "Settings from [$settingsPath]:" {
+            $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
+            LogGroup "Settings from [$relativeSettingsPath]:" {
                 Write-Host ($settings | Format-Hashtable | Out-String)
             }
 
             Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
 
-
-      - name: Get-TestSuites
-        uses: PSModule/GitHub-Script@v1
-        id: Get-TestSuites
-        env:
-          PSMODULE_GET_TESTSUITES_INPUT_Skip: ${{ inputs.Skip }}
-        with:
-          ShowInfo: false
-          ShowOutput: true
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Script: |
             # Get-TestSuites
-            $Skip = $env:PSMODULE_GET_TESTSUITES_INPUT_Skip -split '[,\s]+' | ForEach-Object {
-                $_.Trim()
-            }
+            $sourceCodeTestSuites = [System.Collections.Generic.List[pscustomobject]]::new()
+            $psModuleTestSuites = [System.Collections.Generic.List[pscustomobject]]::new()
+            $moduleTestSuites = [System.Collections.Generic.List[pscustomobject]]::new()
 
-            LogGroup 'Tests to be skipped:' {
-              $Skip | ForEach-Object { " - $_" }
-            }
-
-            if ($Skip -contains 'All') {
-                Write-Host "Skipping all tests as requested."
-                Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
-                Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
-                Set-GitHubOutput -Name ModuleLocalTestSuites -Value '[]'
+            if ($settings.Test.Skip) {
+                Write-Host 'Skipping all tests.'
+                Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
+                Set-GitHubOutput -Name PSModuleTestSuites -Value $psModuleTestSuites
+                Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
                 exit 0
             }
 
             # Define test configurations as an array of hashtables.
-            $osConfigs = @(
-                [PSCustomObject]@{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
-                [PSCustomObject]@{ RunsOn = 'macos-latest';  OSName = 'macOS' }
-                [PSCustomObject]@{ RunsOn = 'windows-latest'; OSName = 'Windows' }
-            ) | Where-Object { $Skip -notcontains $_.OSName }
-
-            if (-not $osConfigs) {
-                Write-Host "Skipping all OS configurations."
-                Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
-                Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
-                Set-GitHubOutput -Name ModuleLocalTestSuites -Value '[]'
-                exit 0
-            }
+            $linux = [PSCustomObject]@{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
+            $macOS = [PSCustomObject]@{ RunsOn = 'macos-latest'; OSName = 'macOS' }
+            $windows = [PSCustomObject]@{ RunsOn = 'windows-latest'; OSName = 'Windows' }
 
             LogGroup 'Source Code Test Suites:' {
-                if ($Skip -notcontains 'SourceCode') {
-                    $sourceCodeTestSuites = $osConfigs
+                if ($settings.Test.SourceCode.Skip) {
+                    Write-Host 'Skipping all source code tests.'
+                    Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
+                } else {
+                    if (-not $settings.Test.Linux.Skip -and -not $settings.Test.SourceCode.Linux.Skip) { $sourceCodeTestSuites.Add($linux) }
+                    if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.SourceCode.MacOS.Skip) { $sourceCodeTestSuites.Add($macOS) }
+                    if (-not $settings.Test.Windows.Skip -and -not $settings.Test.SourceCode.Windows.Skip) { $sourceCodeTestSuites.Add($windows) }
                 }
                 $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
                 $sourceCodeTestSuites = ($null -ne $sourceCodeTestSuites) ? ($sourceCodeTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
             }
 
-            LogGroup 'Module Test Suites:' {
-                if ($Skip -notcontains 'Module') {
-                    $moduleTestSuites = $osConfigs
+            LogGroup 'PSModule Test Suites:' {
+                if ($settings.Test.PSModule.Skip) {
+                    Write-Host 'Skipping all PSModule tests.'
+                    Set-GitHubOutput -Name PSModuleTestSuites -Value $psModuleTestSuites
+                } else {
+                    if (-not $settings.Test.Linux.Skip -and -not $settings.Test.PSModule.Linux.Skip) { $psModuleTestSuites.Add($linux) }
+                    if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.PSModule.MacOS.Skip) { $psModuleTestSuites.Add($macOS) }
+                    if (-not $settings.Test.Windows.Skip -and -not $settings.Test.PSModule.Windows.Skip) { $psModuleTestSuites.Add($windows) }
                 }
-                $moduleTestSuites | Format-Table -AutoSize | Out-String
-                $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
-                Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
+                $psModuleTestSuites | Format-Table -AutoSize | Out-String
+                $psModuleTestSuites = ($null -ne $psModuleTestSuites) ? ($psModuleTestSuites | ConvertTo-Json -AsArray) : '[]'
+                Set-GitHubOutput -Name PSModuleTestSuites -Value $psModuleTestSuites
             }
 
             LogGroup 'Module Local Test Suites:' {
-                if ($Skip -notcontains 'Module') {
+                if ($settings.Test.Module.Skip) {
+                    Write-Host 'Skipping all module tests.'
+                    Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
+                } else {
                     # Locate the tests directory.
                     $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
                     if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
                         Write-Warning 'No tests found'
-                        exit 0
+                        Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
                     }
                     Write-Host "Tests found at [$testsPath]"
 
@@ -233,21 +189,43 @@ jobs:
 
                     $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
 
-                    $moduleLocalTestSuites = foreach ($folder in $allTestFolders) {
+                    foreach ($folder in $allTestFolders) {
                         $testItems = Get-TestItemsFromFolder -FolderPath $folder
                         foreach ($item in $testItems) {
-                            foreach ($osConfig in $osConfigs) {
-                                [pscustomobject]@{
-                                    RunsOn   = $osConfig.RunsOn
-                                    OSName   = $osConfig.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
+                            if (-not $settings.Test.Linux.Skip -and -not $settings.Test.Module.Linux.Skip) {
+                                $moduleTestSuites.Add(
+                                    [pscustomobject]@{
+                                        RunsOn   = $linux.RunsOn
+                                        OSName   = $linux.OSName
+                                        TestPath = Resolve-Path -Path $item.FullName -Relative
+                                        TestName = ($item.BaseName).Split('.')[0]
+                                    }
+                                )
+                            }
+                            if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.Module.MacOS.Skip) {
+                                $moduleTestSuites.Add(
+                                    [pscustomobject]@{
+                                        RunsOn   = $macOS.RunsOn
+                                        OSName   = $macOS.OSName
+                                        TestPath = Resolve-Path -Path $item.FullName -Relative
+                                        TestName = ($item.BaseName).Split('.')[0]
+                                    }
+                                )
+                            }
+                            if (-not $settings.Test.Windows.Skip -and -not $settings.Test.Module.Windows.Skip) {
+                                $moduleTestSuites.Add(
+                                    [pscustomobject]@{
+                                        RunsOn   = $windows.RunsOn
+                                        OSName   = $windows.OSName
+                                        TestPath = Resolve-Path -Path $item.FullName -Relative
+                                        TestName = ($item.BaseName).Split('.')[0]
+                                    }
+                                )
                             }
                         }
                     }
                 }
-                $moduleLocalTestSuites | Format-Table -AutoSize | Out-String
-                $moduleLocalTestSuites = ($null -ne $moduleLocalTestSuites) ? ($moduleLocalTestSuites | ConvertTo-Json -AsArray) : '[]'
-                Set-GitHubOutput -Name ModuleLocalTestSuites -Value $moduleLocalTestSuites
+                $moduleTestSuites | Format-Table -AutoSize | Out-String
+                $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
+                Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
             }
