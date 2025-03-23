@@ -1,23 +1,37 @@
 @{
     Name       = 'PSModuleTest'
-    Path       = @{
-        Workspace    = ''
-        SourceCode   = 'src'
-        ModuleOutput = 'outputs/module'
-        DocsOutput   = 'outputs/docs'
-        SiteOutput   = 'outputs/site'
+    Build      = @{
+        Skip   = $true
+        Module = @{
+            Skip = $true
+        }
+        Docs   = @{
+            Skip = $true
+        }
     }
-    Artifacts  = @{
-        ModuleArtifactName   = 'module'
-        DocsArtifactName     = 'docs'
-        AddArtifactToRelease = 'true'
-    }
-    Tests      = @{
-        SkipSourceCode = 'false'
-        SkipModule     = 'false'
+    Test       = @{
+        Skip       = $true
+        SourceCode = @{
+            Skip = $true
+        }
+        Module     = @{
+            PSModule = @{
+                Skip = $true
+            }
+            Module   = @{
+                Skip = $true
+            }
+        }
     }
     Publishing = @{
-        DocsLocation         = 'GitHubPages'
-        AutoCleanPrereleases = 'true'
+        AutoCleanup           = 'true'
+        AutoPatching          = 'true'
+        DatePrereleaseFormat  = ''
+        IgnoreLabels          = 'NoRelease'
+        IncrementalPrerelease = 'true'
+        MajorLabels           = 'major', 'breaking'
+        MinorLabels           = 'minor', 'feature'
+        PatchLabels           = 'patch', 'fix'
+        VersionPrefix         = 'v'
     }
 }
