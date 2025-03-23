@@ -40,12 +40,12 @@ on:
       SourceCodeTestSuites:
         description: Source Code PSModule test suites to run.
         value: ${{ jobs.Get-Settings.outputs.SourceCodeTestSuites }}
-      ModuleTestSuites:
+      PSModuleTestSuites:
         description: Module PSModule test suites to run.
-        value: ${{ jobs.Get-Settings.outputs.ModuleTestSuites }}
-      ModuleLocalTestSuites:
+        value: ${{ jobs.Get-Settings.outputs.PSModuleTestSuites }}
+      ModuleTestSuites:
         description: Module local test suites to run.
-        value: ${{ jobs.Get-Settings.outputs.ModuleLocalTestSuites }}
+        value: ${{ jobs.Get-Settings.outputs.ModuleTestSuites }}
 
 permissions:
   contents: read # to checkout the repo
@@ -57,8 +57,8 @@ jobs:
     outputs:
       Settings: ${{ fromJson(steps.Get-Settings.outputs.result).Settings }}
       SourceCodeTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).SourceCodeTestSuites }}
+      PSModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).PSModuleTestSuites }}
       ModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleTestSuites }}
-      ModuleLocalTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleLocalTestSuites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
