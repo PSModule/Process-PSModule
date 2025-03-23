@@ -104,7 +104,6 @@ jobs:
         include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
-      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
@@ -131,7 +130,6 @@ jobs:
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
-      Skip: ${{ inputs.Skip }}
       Name: ${{ inputs.Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
@@ -151,7 +149,6 @@ jobs:
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
@@ -173,7 +170,6 @@ jobs:
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
@@ -194,7 +190,6 @@ jobs:
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -209,7 +204,6 @@ jobs:
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
