@@ -127,6 +127,7 @@ jobs:
 
   Build-Docs:
     needs:
+      - Get-Settings
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
@@ -182,8 +183,8 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    if: always() && !cancelled()
     needs:
+      - Get-Settings
       - Test-SourceCode
       - Test-Module
       - Test-ModuleLocal
@@ -196,8 +197,8 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
-    if: always() && !cancelled()
     needs:
+      - Get-Settings
       - Test-SourceCode
       - Test-Module
       - Test-ModuleLocal
@@ -212,6 +213,7 @@ jobs:
   Publish-Module:
     if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
+      - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
       - Build-Docs
@@ -253,6 +255,7 @@ jobs:
   Publish-Site:
     if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
+      - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
       - Build-Docs

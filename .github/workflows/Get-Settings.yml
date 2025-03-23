@@ -98,6 +98,7 @@ jobs:
           PSMODULE_GET_SETTINGS_INPUT_TestProcess: ${{ inputs.TestProcess }}
           PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         with:
+          ShowInit: false
           ShowOutput: true
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -120,7 +121,7 @@ jobs:
               } | Format-Table -AutoSize | Out-String
             }
 
-            Install-PSResource -Name 'powershell-yaml' -Repository 'PSModule' -TrustRepository
+            Install-PSResource -Name 'powershell-yaml' -Repository PSGallery -TrustRepository
 
             $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $settingsPath) {
