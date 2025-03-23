@@ -190,6 +190,7 @@ jobs:
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
+      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoveragePercentTarget }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}

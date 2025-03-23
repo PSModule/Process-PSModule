@@ -3,6 +3,9 @@ name: Get-CodeCoverage
 on:
   workflow_call:
     inputs:
+      CodeCoveragePercentTarget:
+        type: number
+        default: The target for code coverage.
       Debug:
         type: boolean
         description: Enable debug output.
@@ -41,6 +44,7 @@ jobs:
         uses: PSModule/Get-PesterCodeCoverage@v1
         id: Get-CodeCoverage
         with:
+          CodeCoveragePercentTarget: ${{ inputs.CodeCoveragePercentTarget }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
