@@ -1,6 +1,5 @@
 # Process-PSModule
 
-
 A workflow for the PSModule process, stitching together the `Initialize`, `Build`, `Document`, `Test`, and `Publish` actions to create a complete
 CI/CD pipeline for PowerShell modules. The workflow is used by all PowerShell modules in the PSModule organization.
 
