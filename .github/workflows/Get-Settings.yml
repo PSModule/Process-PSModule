@@ -5,7 +5,7 @@ on:
     inputs:
       SettingsPath:
         type: string
-        description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
+        description: The path to the settings file.
         required: false
       Debug:
         type: boolean
@@ -79,21 +79,30 @@ jobs:
           Script: |
             # Get-Settings
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
+            Write-Host "Inputs:"
+            [pscustomobject]@{
+                settingsPath = $settingsPath
+            } | Format-List | Out-String
 
-            if (-not $settingsPath) {
-                $settingsPath = '.github/PSModule.psd1'
-            }
-            $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-            if (-not $settingsPath) {
-                Write-Host 'No settings file found.'
+            if ([string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
+                $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                if (-not $settingsPath) {
+                    Write-Host 'No settings file found.'
+                } else {
+                    Write-Host "Settings file found at [$settingsPath]"
+                    $settings = Import-Hashtable -Path $settingsPath
+                }
+                $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
+                LogGroup "Settings from [$relativeSettingsPath]:" {
+                    Write-Host ($settings | Format-Hashtable | Out-String)
+                }
             } else {
-                Write-Host "Settings file found at [$settingsPath]"
-                $settings = Import-Hashtable -Path $settingsPath
+                Write-Host 'No settings file found.'
+                $settings = [pscustomobject]@{}
             }
 
-            $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
-            LogGroup "Settings from [$relativeSettingsPath]:" {
-                Write-Host ($settings | Format-Hashtable | Out-String)
+            if ([string]::IsNullOrEmpty($settings.Name)) {
+                $settings.Name = $env:GITHUB_REPOSITORY_NAME
             }
 
             LogGroup 'Default settings' {
@@ -169,10 +178,6 @@ jobs:
                     }
                 }
                 Write-Host ($defaultSettings | Format-Hashtable | Out-String)
-            }
-
-            if ([string]::IsNullOrEmpty($settings.Name)) {
-                $settings.Name = $env:GITHUB_REPOSITORY_NAME
             }
 
             LogGroup 'Merged settings' {
@@ -316,3 +321,5 @@ jobs:
                 $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
             }
+
+            throw 'Exiting with error to ensure the action fails.'
