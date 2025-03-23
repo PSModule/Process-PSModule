@@ -1,0 +1,23 @@
+@{
+    Name       = 'PSModuleTest'
+    Path       = @{
+        Workspace    = ''
+        SourceCode   = 'src'
+        ModuleOutput = 'outputs/module'
+        DocsOutput   = 'outputs/docs'
+        SiteOutput   = 'outputs/site'
+    }
+    Artifacts  = @{
+        ModuleArtifactName   = 'module'
+        DocsArtifactName     = 'docs'
+        AddArtifactToRelease = 'true'
+    }
+    Tests      = @{
+        SkipSourceCode = 'false'
+        SkipModule     = 'false'
+    }
+    Publishing = @{
+        DocsLocation         = 'GitHubPages'
+        AutoCleanPrereleases = 'true'
+    }
+}

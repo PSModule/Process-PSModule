@@ -98,7 +98,7 @@ jobs:
           PSMODULE_GET_SETTINGS_INPUT_TestProcess: ${{ inputs.TestProcess }}
           PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         with:
-          ShowInit: false
+          ShowInfo: false
           ShowOutput: true
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -118,22 +118,22 @@ jobs:
                 Skip          = $skip
                 TestProcess   = $testProcess
                 SettingsPath  = $settingsPath
-              } | Format-Table -AutoSize | Out-String
+              } | Format-List | Out-String
             }
-
-            Install-PSResource -Name 'powershell-yaml' -Repository PSGallery -TrustRepository
 
             $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $settingsPath) {
                 Write-Host 'No settings file found.'
             } else {
                 Write-Host "Settings file found at [$settingsPath]"
-                $settings = Get-Content -Path $settingsPath | ConvertFrom-Yaml
+                $settings = Import-Hashtable -Path $settingsPath
             }
 
-            LogGroup "Settings" {
+            LogGroup "Settings from [$settingsPath]:" {
                 Write-Host ($settings | Format-Table -AutoSize | Out-String)
             }
+
+
 
       - name: Get-TestSuites
         uses: PSModule/GitHub-Script@v1
@@ -141,6 +141,7 @@ jobs:
         env:
           PSMODULE_GET_TESTSUITES_INPUT_Skip: ${{ inputs.Skip }}
         with:
+          ShowInfo: false
           ShowOutput: true
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
