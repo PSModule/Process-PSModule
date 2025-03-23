@@ -84,7 +84,7 @@ jobs:
                 settingsPath = $settingsPath
             } | Format-List | Out-String
 
-            if ([string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
+            if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
                 Write-Host "[$settingsPath]"
                 if (-not $settingsPath) {
