@@ -80,6 +80,9 @@ jobs:
             # Get-Settings
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
 
+            if (-not $settingsPath) {
+                $settingsPath = '.github/PSModule.psd1'
+            }
             $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $settingsPath) {
                 Write-Host 'No settings file found.'
@@ -90,6 +93,90 @@ jobs:
 
             $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
             LogGroup "Settings from [$relativeSettingsPath]:" {
+                Write-Host ($settings | Format-Hashtable | Out-String)
+            }
+
+            LogGroup 'Default settings' {
+                $defaultSettings = [pscustomobject]@{
+                    Name       = ''
+                    Test       = [pscustomobject]@{
+                        Skip       = $false
+                        Linux      = [pscustomobject]@{
+                            Skip = $false
+                        }
+                        MacOS      = [pscustomobject]@{
+                            Skip = $false
+                        }
+                        Windows    = [pscustomobject]@{
+                            Skip = $false
+                        }
+                        SourceCode = [pscustomobject]@{
+                            Skip    = $false
+                            Linux   = [pscustomobject]@{
+                                Skip = $false
+                            }
+                            MacOS   = [pscustomobject]@{
+                                Skip = $false
+                            }
+                            Windows = [pscustomobject]@{
+                                Skip = $false
+                            }
+                        }
+                        PSModule   = [pscustomobject]@{
+                            Skip    = $false
+                            Linux   = [pscustomobject]@{
+                                Skip = $false
+                            }
+                            MacOS   = [pscustomobject]@{
+                                Skip = $false
+                            }
+                            Windows = [pscustomobject]@{
+                                Skip = $false
+                            }
+                        }
+                        Module     = [pscustomobject]@{
+                            Skip    = $false
+                            Linux   = [pscustomobject]@{
+                                Skip = $false
+                            }
+                            MacOS   = [pscustomobject]@{
+                                Skip = $false
+                            }
+                            Windows = [pscustomobject]@{
+                                Skip = $false
+                            }
+                        }
+                    }
+                    Build      = [pscustomobject]@{
+                        Skip   = $true
+                        Module = [pscustomobject]@{
+                            Skip = $true
+                        }
+                        Docs   = [pscustomobject]@{
+                            Skip = $true
+                        }
+                    }
+                    Publishing = [pscustomobject]@{
+                        AutoCleanup           = $true
+                        AutoPatching          = $true
+                        IncrementalPrerelease = $true
+                        DatePrereleaseFormat  = ''
+                        VersionPrefix         = 'v'
+                        MajorLabels           = 'major', 'breaking'
+                        MinorLabels           = 'minor', 'feature'
+                        PatchLabels           = 'patch', 'fix'
+                        IgnoreLabels          = 'NoRelease'
+                    }
+                }
+                Write-Host ($defaultSettings | Format-Hashtable | Out-String)
+            }
+
+            if ([string]::IsNullOrEmpty($settings.Name)) {
+                $settings.Name = $env:GITHUB_REPOSITORY_NAME
+            }
+
+            LogGroup 'Merged settings' {
+                $settings = $defaultSettings | Merge-Hashtable -Hashtable $settings
                 Write-Host ($settings | Format-Hashtable | Out-String)
             }
 
