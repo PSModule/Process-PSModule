@@ -86,6 +86,7 @@ jobs:
 
             if ([string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                Write-Host "[$settingsPath]"
                 if (-not $settingsPath) {
                     Write-Host 'No settings file found.'
                 } else {
@@ -97,7 +98,7 @@ jobs:
                     Write-Host ($settings | Format-Hashtable | Out-String)
                 }
             } else {
-                Write-Host 'No settings file found.'
+                Write-Host 'No settings file provided.'
                 $settings = @{}
             }
 
