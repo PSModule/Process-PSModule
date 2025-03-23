@@ -98,11 +98,11 @@ jobs:
                 }
             } else {
                 Write-Host 'No settings file found.'
-                $settings = [pscustomobject]@{}
+                $settings = @{}
             }
 
-            if ([string]::IsNullOrEmpty($settings.Name)) {
-                $settings.Name = $env:GITHUB_REPOSITORY_NAME
+            if ([string]::IsNullOrEmpty($settings['Name'])) {
+                $settings['Name'] = $env:GITHUB_REPOSITORY_NAME
             }
 
             LogGroup 'Default settings' {
