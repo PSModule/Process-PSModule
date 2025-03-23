@@ -133,6 +133,8 @@ jobs:
                 Write-Host ($settings | Format-Hashtable | Out-String)
             }
 
+            Set-GitHubOutput -Name settings -Value ($settings | ConvertTo-Json -Depth 10)
+
 
       - name: Get-TestSuites
         uses: PSModule/GitHub-Script@v1

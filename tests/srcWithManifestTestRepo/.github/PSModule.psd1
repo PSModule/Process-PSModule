@@ -11,15 +11,51 @@
     }
     Test       = @{
         Skip       = $true
-        SourceCode = @{
+        Linux      = @{
             Skip = $true
+        }
+        Windows    = @{
+            Skip = $true
+        }
+        macOS      = @{
+            Skip = $true
+        }
+        SourceCode = @{
+            Skip    = $true
+            Linux   = @{
+                Skip = $true
+            }
+            Windows = @{
+                Skip = $true
+            }
+            macOS   = @{
+                Skip = $true
+            }
         }
         Module     = @{
             PSModule = @{
-                Skip = $true
+                Skip    = $true
+                Linux   = @{
+                    Skip = $true
+                }
+                Windows = @{
+                    Skip = $true
+                }
+                macOS   = @{
+                    Skip = $true
+                }
             }
             Module   = @{
-                Skip = $true
+                Skip    = $true
+                Linux   = @{
+                    Skip = $true
+                }
+                Windows = @{
+                    Skip = $true
+                }
+                macOS   = @{
+                    Skip = $true
+                }
             }
         }
     }
