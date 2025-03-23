@@ -119,15 +119,15 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  Test-Module:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
+  Test-PSModule:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.PSModuleTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
@@ -141,22 +141,22 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleLocalTestSuites != '[]' }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleLocalTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
