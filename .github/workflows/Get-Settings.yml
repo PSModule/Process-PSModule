@@ -87,17 +87,13 @@ jobs:
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                if (-not $settingsPath) {
-                    Write-Host 'No settings file found.'
-                } else {
-                    $settings = Import-Hashtable -Path $settingsPath
-                }
+                $settings = Import-Hashtable -Path $settingsPath
                 $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
                 LogGroup "Settings from [$relativeSettingsPath]:" {
                     Write-Host ($settings | Format-Hashtable | Out-String)
                 }
             } else {
-                Write-Host 'No settings file provided.'
+                Write-Host 'No settings file present.'
                 $settings = @{}
             }
 
@@ -299,5 +295,3 @@ jobs:
                 $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
             }
-
-            throw 'Exiting with error to ensure the action fails.'
