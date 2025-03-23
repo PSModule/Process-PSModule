@@ -24,4 +24,4 @@ jobs:
     with:
       Name: PSModuleTest
       WorkingDirectory: tests/srcWithManifestTestRepo
-      SkipTests: Linux
+      Skip: LinuxTests

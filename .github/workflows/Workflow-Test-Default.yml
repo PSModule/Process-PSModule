@@ -27,4 +27,4 @@ jobs:
       Name: PSModuleTest
       WorkingDirectory: tests/srcTestRepo
       TestProcess: true
-      SkipTests: Module
+      Skip: ModuleTests

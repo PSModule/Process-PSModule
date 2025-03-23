@@ -32,14 +32,11 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      WorkingDirectory:
+      Skip:
         type: string
-        description: The path to the root of the repo.
-        required: false
-        default: '.'
-      SkipTests:
-        type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
+        description: |
+          Defines what to skip. Allowed values are 'None', 'AllTests', 'SourceCodeTests', 'ModuleTests', 'PSModuleTests', 'LocalModuleTests',
+          'macOSTests', 'WindowsTests', 'LinuxTests', 'BuildDocs', 'PublishDocs', 'PublishModule'.
         required: false
         default: None
       TestProcess:
@@ -47,6 +44,11 @@ on:
         description: Whether to test the process.
         required: false
         default: false
+      SettingsPath:
+        type: string
+        description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
+        required: false
+        default: .github/PSModule.yml
       Debug:
         type: boolean
         description: Enable debug output.
@@ -67,6 +69,11 @@ on:
         description: Whether to use a prerelease version of the 'GitHub' module.
         required: false
         default: false
+      WorkingDirectory:
+        type: string
+        description: The path to the root of the repo.
+        required: false
+        default: '.'
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
@@ -74,10 +81,13 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
-  Get-TestSuites:
-    uses: ./.github/workflows/Get-TestSuites.yml
+  Get-Settings:
+    uses: ./.github/workflows/Get-Settings.yml
     with:
-      SkipTests: ${{ inputs.SkipTests }}
+      Name: ${{ inputs.Name }}
+      Skip: ${{ inputs.Skip }}
+      SettingsPath: ${{ inputs.SettingsPath }}
+      TestProcess: ${{ inputs.TestProcess }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -85,15 +95,16 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-SourceCode:
-    if: ${{ needs.Get-TestSuites.outputs.SourceCodeTestSuites != '[]' }}
+    if: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
     needs:
-      - Get-TestSuites
+      - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
+      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
@@ -105,6 +116,8 @@ jobs:
 
   Build-Module:
     uses: ./.github/workflows/Build-Module.yml
+    needs:
+      - Get-Settings
     with:
       Name: ${{ inputs.Name }}
       Debug: ${{ inputs.Debug }}
@@ -118,6 +131,7 @@ jobs:
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
+      Skip: ${{ inputs.Skip }}
       Name: ${{ inputs.Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
@@ -126,17 +140,18 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleTestSuites != '[]' }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
-      - Get-TestSuites
+      - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
+      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
@@ -147,17 +162,18 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleLocalTestSuites != '[]' }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleLocalTestSuites != '[]' }}
     needs:
       - Build-Module
-      - Get-TestSuites
+      - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleLocalTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleLocalTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
+      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
       Name: ${{ inputs.Name }}
@@ -178,6 +194,7 @@ jobs:
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
+      Skip: ${{ inputs.Skip }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -192,6 +209,7 @@ jobs:
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
+      Skip: ${{ inputs.Skip }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}

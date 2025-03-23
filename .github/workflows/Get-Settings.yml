@@ -1,13 +1,26 @@
-name: Get-TestSuites
+name: Get-Settings
 
 on:
   workflow_call:
     inputs:
-      SkipTests:
+      Name:
         type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
+        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-        default: None
+      Skip:
+        type: string
+        description: |
+          Defines what to skip. Allowed values are 'None', 'AllTests', 'SourceCodeTests', 'ModuleTests', 'PSModuleTests', 'LocalModuleTests',
+          'macOSTests', 'WindowsTests', 'LinuxTests', 'BuildDocs', 'PublishDocs', 'PublishModule'.
+        required: false
+      TestProcess:
+        type: boolean
+        description: Whether to test the process.
+        required: false
+      SettingsPath:
+        type: string
+        description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
+        required: false
       Debug:
         type: boolean
         description: Enable debug output.
@@ -35,24 +48,40 @@ on:
         default: '.'
 
     outputs:
+      Name:
+        description: The name of the module to process.
+        value: ${{ jobs.Get-Settings.outputs.Name }}
+      Skip:
+        description: Defines what to skip in the process.
+        value: ${{ jobs.Get-Settings.outputs.Skip }}
+      TestProcess:
+        description: Whether to test the process.
+        value: ${{ jobs.Get-Settings.outputs.TestProcess }}
+      SettingsPath:
+        description: The path to the settings file.
+        value: ${{ jobs.Get-Settings.outputs.SettingsPath }}
       SourceCodeTestSuites:
         description: Source Code PSModule test suites to run.
-        value: ${{ jobs.Get-TestSuites.outputs.SourceCodeTestSuites }}
+        value: ${{ jobs.Get-Settings.outputs.SourceCodeTestSuites }}
       ModuleTestSuites:
         description: Module PSModule test suites to run.
-        value: ${{ jobs.Get-TestSuites.outputs.ModuleTestSuites }}
+        value: ${{ jobs.Get-Settings.outputs.ModuleTestSuites }}
       ModuleLocalTestSuites:
         description: Module local test suites to run.
-        value: ${{ jobs.Get-TestSuites.outputs.ModuleLocalTestSuites }}
+        value: ${{ jobs.Get-Settings.outputs.ModuleLocalTestSuites }}
 
 permissions:
   contents: read # to checkout the repo
 
 jobs:
-  Get-TestSuites:
-    name: Get-TestSuites
+  Get-Settings:
+    name: Get-Settings
     runs-on: ubuntu-latest
     outputs:
+      Name: ${{ fromJson(steps.Get-Settings.outputs.result).Name }}
+      Skip: ${{ fromJson(steps.Get-Settings.outputs.result).Skip }}
+      TestProcess: ${{ fromJson(steps.Get-Settings.outputs.result).TestProcess }}
+      SettingsPath: ${{ fromJson(steps.Get-Settings.outputs.result).SettingsPath }}
       SourceCodeTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).SourceCodeTestSuites }}
       ModuleTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleTestSuites }}
       ModuleLocalTestSuites: ${{ fromJson(steps.Get-TestSuites.outputs.result).ModuleLocalTestSuites }}
@@ -60,11 +89,56 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Get-Settings
+        uses: PSModule/GitHub-Script@v1
+        id: Get-Settings
+        env:
+          PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
+          PSMODULE_GET_SETTINGS_INPUT_Skip: ${{ inputs.Skip }}
+          PSMODULE_GET_SETTINGS_INPUT_TestProcess: ${{ inputs.TestProcess }}
+          PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
+        with:
+          ShowOutput: true
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Script: |
+            # Get-Settings
+            $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
+            $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
+            $skip = $env:PSMODULE_GET_SETTINGS_INPUT_Skip
+            $testProcess = $env:PSMODULE_GET_SETTINGS_INPUT_TestProcess
+
+            LogGroup "Inputs:" {
+              [PSCustomObject]@{
+                Name          = $name
+                Skip          = $skip
+                TestProcess   = $testProcess
+                SettingsPath  = $settingsPath
+              } | Format-Table -AutoSize | Out-String
+            }
+
+            Install-PSResource -Name 'powershell-yaml' -Repository 'PSModule' -TrustRepository
+
+            $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+            if (-not $settingsPath) {
+                Write-Host 'No settings file found.'
+            } else {
+                Write-Host "Settings file found at [$settingsPath]"
+                $settings = Get-Content -Path $settingsPath | ConvertFrom-Yaml
+            }
+
+            LogGroup "Settings" {
+                Write-Host ($settings | Format-Table -AutoSize | Out-String)
+            }
+
       - name: Get-TestSuites
         uses: PSModule/GitHub-Script@v1
         id: Get-TestSuites
         env:
-          PSMODULE_GET_TESTSUITES_INPUT_SkipTests: ${{ inputs.SkipTests }}
+          PSMODULE_GET_TESTSUITES_INPUT_Skip: ${{ inputs.Skip }}
         with:
           ShowOutput: true
           Debug: ${{ inputs.Debug }}
@@ -74,15 +148,15 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             # Get-TestSuites
-            $skipTests = $env:PSMODULE_GET_TESTSUITES_INPUT_SkipTests -split '[,\s]+' | ForEach-Object {
+            $Skip = $env:PSMODULE_GET_TESTSUITES_INPUT_Skip -split '[,\s]+' | ForEach-Object {
                 $_.Trim()
             }
 
             LogGroup 'Tests to be skipped:' {
-              $skipTests | ForEach-Object { " - $_" }
+              $Skip | ForEach-Object { " - $_" }
             }
 
-            if ($skipTests -contains 'All') {
+            if ($Skip -contains 'All') {
                 Write-Host "Skipping all tests as requested."
                 Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
                 Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
@@ -95,7 +169,7 @@ jobs:
                 [PSCustomObject]@{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
                 [PSCustomObject]@{ RunsOn = 'macos-latest';  OSName = 'macOS' }
                 [PSCustomObject]@{ RunsOn = 'windows-latest'; OSName = 'Windows' }
-            ) | Where-Object { $skipTests -notcontains $_.OSName }
+            ) | Where-Object { $Skip -notcontains $_.OSName }
 
             if (-not $osConfigs) {
                 Write-Host "Skipping all OS configurations."
@@ -106,7 +180,7 @@ jobs:
             }
 
             LogGroup 'Source Code Test Suites:' {
-                if ($skipTests -notcontains 'SourceCode') {
+                if ($Skip -notcontains 'SourceCode') {
                     $sourceCodeTestSuites = $osConfigs
                 }
                 $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
@@ -115,7 +189,7 @@ jobs:
             }
 
             LogGroup 'Module Test Suites:' {
-                if ($skipTests -notcontains 'Module') {
+                if ($Skip -notcontains 'Module') {
                     $moduleTestSuites = $osConfigs
                 }
                 $moduleTestSuites | Format-Table -AutoSize | Out-String
@@ -124,7 +198,7 @@ jobs:
             }
 
             LogGroup 'Module Local Test Suites:' {
-                if ($skipTests -notcontains 'Module') {
+                if ($Skip -notcontains 'Module') {
                     # Locate the tests directory.
                     $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
                     if (-not $testsPath -or -not (Test-Path -Path $testsPath)) {
