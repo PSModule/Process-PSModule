@@ -203,10 +203,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
       - name: Initialize environment
         uses: PSModule/Initialize-PSModule@v1
         with:
@@ -227,7 +223,7 @@ jobs:
           Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
           ModulePath: ${{ inputs.WorkingDirectory }}/outputs/module
           APIKey: ${{ secrets.APIKEY }}
-          WhatIf: ${{ inputs.TestProcess }}
+          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
@@ -248,10 +244,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Debug
-        if: ${{ inputs.Debug }}
-        uses: PSModule/Debug@v0
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

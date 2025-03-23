@@ -69,6 +69,7 @@ jobs:
         env:
           PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         with:
+          Name: Get-Settings
           ShowInfo: false
           ShowOutput: true
           Debug: ${{ inputs.Debug }}
