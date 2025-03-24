@@ -190,7 +190,7 @@ jobs:
                 Publish = [pscustomobject]@{
                     AutoCleanup           = $settings.Publish.AutoCleanup ?? $true
                     AutoPatching          = $settings.Publish.AutoPatching ?? $true
-                    IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $false
+                    IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $true
                     DatePrereleaseFormat  = $settings.Publish.DatePrereleaseFormat ?? ''
                     VersionPrefix         = $settings.Publish.VersionPrefix ?? 'v'
                     MajorLabels           = $settings.Publish.MajorLabels ?? 'major, breaking'
