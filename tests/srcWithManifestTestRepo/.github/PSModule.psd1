@@ -1,6 +1,6 @@
 @{
-    Name       = 'PSModuleTest'
-    Test       = @{
+    Name    = 'PSModuleTest'
+    Test    = @{
         SourceCode   = @{
             Skip = $true
         }
