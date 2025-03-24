@@ -194,7 +194,7 @@ jobs:
                 }
             }
             LogGroup "Settings from [$relativeSettingsPath]:" {
-                $settings = switch -Regex ($settingsPath.Extension) {
+                switch -Regex ($settingsFile.Extension) {
                     '.json' {
                         Write-Host ($settings | ConvertTo-Json | Out-String)
                     }
