@@ -83,17 +83,34 @@ jobs:
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
-            # Get-Settings
+            'powershell-yaml' | Install-PSResource -Repository PSGallery -TrustRepository -Reinstall
+
+            $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
             LogGroup "Inputs:" {
                 [pscustomobject]@{
-                    settingsPath = $settingsPath
+                    Name         = $name
+                    SettingsPath = $settingsPath
                 } | Format-List | Out-String
             }
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
-                $settingsPath = Resolve-Path -Path $settingsPath -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                $settings = Import-Hashtable -Path $settingsPath
+                $settingsPath = Get-Item -Path $settingsPath
+                $settings = switch -Regex ($settingsPath.Extension) {
+                    '.json' {
+                        Get-Content -Path $settingsPath | ConvertFrom-Json
+                    }
+                    '.yaml|.yml' {
+                        Get-Content -Path $settingsPath | ConvertFrom-Yaml
+                    }
+                    '.psd1' {
+                        Import-Hashtable -Path $settingsPath
+                    }
+                    default {
+                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML, and YML."
+                    }
+                }
+
                 $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
                 LogGroup "Settings from [$relativeSettingsPath]:" {
                     Write-Host ($settings | Format-Hashtable | Out-String)
@@ -105,7 +122,7 @@ jobs:
 
             LogGroup 'Settings' {
                 $settings = [pscustomobject]@{
-                    Name       = ($env:PSMODULE_GET_SETTINGS_INPUT_Name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
+                    Name       = ($name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
                     Test       = [pscustomobject]@{
                         Skip       = $settings.Test.Skip ?? $false
                         Linux      = [pscustomobject]@{

@@ -24,3 +24,4 @@ jobs:
     with:
       WorkingDirectory: tests/srcWithManifestTestRepo
       Name: PSModuleTest2
+      SettingsPath: .github/PSModule.json
