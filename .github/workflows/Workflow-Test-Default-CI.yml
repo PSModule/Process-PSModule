@@ -24,4 +24,3 @@ jobs:
     with:
       WorkingDirectory: tests/srcTestRepo
       Name: PSModuleTest2
-      SettingsPath: .github/PSModule.yml
