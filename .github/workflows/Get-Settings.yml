@@ -97,15 +97,16 @@ jobs:
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsPath = Get-Item -Path $settingsPath
+                $content = Get-Content -Path $settingsPath
                 $settings = switch -Regex ($settingsPath.Extension) {
                     '.json' {
-                        Get-Content -Path $settingsPath | ConvertFrom-Json
+                        $content | ConvertFrom-Json
                     }
                     '.yaml|.yml' {
-                        Get-Content -Path $settingsPath | ConvertFrom-Yaml
+                        $content | ConvertFrom-Yaml
                     }
                     '.psd1' {
-                        Import-Hashtable -Path $settingsPath
+                        $content | ConvertFrom-Hashtable
                     }
                     default {
                         throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
@@ -114,7 +115,7 @@ jobs:
 
                 $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
                 LogGroup "Settings from [$relativeSettingsPath]:" {
-                    Write-Host ($settings | Format-Hashtable | Out-String)
+                    Write-Host $content
                 }
             } else {
                 Write-Host 'No settings file present.'
