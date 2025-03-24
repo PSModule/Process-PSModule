@@ -112,11 +112,6 @@ jobs:
                         throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
                     }
                 }
-
-                $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
-                LogGroup "Settings from [$relativeSettingsPath]:" {
-                    Write-Host $content
-                }
             } else {
                 Write-Host 'No settings file present.'
                 $settings = @{}
@@ -198,7 +193,23 @@ jobs:
                         IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
                     }
                 }
-                Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
+                $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
+                LogGroup "Settings from [$relativeSettingsPath]:" {
+                    $settings = switch -Regex ($settingsPath.Extension) {
+                        '.json' {
+                            Write-Host ($settings | ConvertTo-Json | Out-String)
+                        }
+                        '.yaml|.yml' {
+                            Write-Host ($settings | ConvertTo-Yaml | Out-String)
+                        }
+                        '.psd1' {
+                            Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
+                        }
+                        default {
+                            throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
+                        }
+                    }
+                }
             }
 
             Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
