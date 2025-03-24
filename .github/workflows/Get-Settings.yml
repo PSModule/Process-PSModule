@@ -87,7 +87,7 @@ jobs:
 
             $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
-            LogGroup "Inputs:" {
+            LogGroup "Inputs" {
                 [pscustomobject]@{
                     PWD          = (Get-Location).Path
                     Name         = $name
@@ -97,7 +97,7 @@ jobs:
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsFile = Get-Item -Path $settingsPath
-                $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
+                $relativeSettingsPath = $settingsFile | Resolve-Path -Relative
                 $content = $settingsFile | Get-Content -Raw
                 $settings = switch -Regex ($settingsFile.Extension) {
                     '.json' {
@@ -110,7 +110,7 @@ jobs:
                         $content | ConvertFrom-Hashtable
                     }
                     default {
-                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
+                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are json, yaml/yml and psd1."
                     }
                 }
             } else {
@@ -118,96 +118,94 @@ jobs:
                 $settings = @{}
             }
 
-            LogGroup 'Settings' {
-                $settings = [pscustomobject]@{
-                    Name       = ($name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
-                    Test       = [pscustomobject]@{
-                        Skip       = $settings.Test.Skip ?? $false
-                        Linux      = [pscustomobject]@{
-                            Skip = $settings.Test.Linux.Skip ?? $false
+            $settings = [pscustomobject]@{
+                Name       = ($name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
+                Test       = [pscustomobject]@{
+                    Skip       = $settings.Test.Skip ?? $false
+                    Linux      = [pscustomobject]@{
+                        Skip = $settings.Test.Linux.Skip ?? $false
+                    }
+                    MacOS      = [pscustomobject]@{
+                        Skip = $settings.Test.MacOS.Skip ?? $false
+                    }
+                    Windows    = [pscustomobject]@{
+                        Skip = $settings.Test.Windows.Skip ?? $false
+                    }
+                    SourceCode = [pscustomobject]@{
+                        Skip    = $settings.Test.SourceCode.Skip ?? $false
+                        Linux   = [pscustomobject]@{
+                            Skip = $settings.Test.SourceCode.Linux.Skip ?? $false
                         }
-                        MacOS      = [pscustomobject]@{
-                            Skip = $settings.Test.MacOS.Skip ?? $false
+                        MacOS   = [pscustomobject]@{
+                            Skip = $settings.Test.SourceCode.MacOS.Skip ?? $false
                         }
-                        Windows    = [pscustomobject]@{
-                            Skip = $settings.Test.Windows.Skip ?? $false
-                        }
-                        SourceCode = [pscustomobject]@{
-                            Skip    = $settings.Test.SourceCode.Skip ?? $false
-                            Linux   = [pscustomobject]@{
-                                Skip = $settings.Test.SourceCode.Linux.Skip ?? $false
-                            }
-                            MacOS   = [pscustomobject]@{
-                                Skip = $settings.Test.SourceCode.MacOS.Skip ?? $false
-                            }
-                            Windows = [pscustomobject]@{
-                                Skip = $settings.Test.SourceCode.Windows.Skip ?? $false
-                            }
-                        }
-                        PSModule   = [pscustomobject]@{
-                            Skip    = $settings.Test.PSModule.Skip ?? $false
-                            Linux   = [pscustomobject]@{
-                                Skip = $settings.Test.PSModule.Linux.Skip ?? $false
-                            }
-                            MacOS   = [pscustomobject]@{
-                                Skip = $settings.Test.PSModule.MacOS.Skip ?? $false
-                            }
-                            Windows = [pscustomobject]@{
-                                Skip = $settings.Test.PSModule.Windows.Skip ?? $false
-                            }
-                        }
-                        Module     = [pscustomobject]@{
-                            Skip    = $settings.Test.Module.Skip ?? $false
-                            Linux   = [pscustomobject]@{
-                                Skip = $settings.Test.Module.Linux.Skip ?? $false
-                            }
-                            MacOS   = [pscustomobject]@{
-                                Skip = $settings.Test.Module.MacOS.Skip ?? $false
-                            }
-                            Windows = [pscustomobject]@{
-                                Skip = $settings.Test.Module.Windows.Skip ?? $false
-                            }
-                        }
-                        CodeCoverage = [pscustomobject]@{
-                          Skip = $settings.Test.CodeCoverage.Skip ?? $false
-                          PercentTarget = $settings.Test.CodeCoverage.PercentTarget ?? 0
+                        Windows = [pscustomobject]@{
+                            Skip = $settings.Test.SourceCode.Windows.Skip ?? $false
                         }
                     }
-                    Build      = [pscustomobject]@{
-                        Skip   = $settings.Build.Skip ?? $false
-                        Module = [pscustomobject]@{
-                            Skip = $settings.Build.Module.Skip ?? $false
+                    PSModule   = [pscustomobject]@{
+                        Skip    = $settings.Test.PSModule.Skip ?? $false
+                        Linux   = [pscustomobject]@{
+                            Skip = $settings.Test.PSModule.Linux.Skip ?? $false
                         }
-                        Docs   = [pscustomobject]@{
-                            Skip = $settings.Build.Docs.Skip ?? $false
+                        MacOS   = [pscustomobject]@{
+                            Skip = $settings.Test.PSModule.MacOS.Skip ?? $false
+                        }
+                        Windows = [pscustomobject]@{
+                            Skip = $settings.Test.PSModule.Windows.Skip ?? $false
                         }
                     }
-                    Publish = [pscustomobject]@{
-                        AutoCleanup           = $settings.Publish.AutoCleanup ?? $true
-                        AutoPatching          = $settings.Publish.AutoPatching ?? $true
-                        IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $false
-                        DatePrereleaseFormat  = $settings.Publish.DatePrereleaseFormat ?? ''
-                        VersionPrefix         = $settings.Publish.VersionPrefix ?? 'v'
-                        MajorLabels           = $settings.Publish.MajorLabels ?? 'major, breaking'
-                        MinorLabels           = $settings.Publish.MinorLabels ?? 'minor, feature'
-                        PatchLabels           = $settings.Publish.PatchLabels ?? 'patch, fix'
-                        IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
+                    Module     = [pscustomobject]@{
+                        Skip    = $settings.Test.Module.Skip ?? $false
+                        Linux   = [pscustomobject]@{
+                            Skip = $settings.Test.Module.Linux.Skip ?? $false
+                        }
+                        MacOS   = [pscustomobject]@{
+                            Skip = $settings.Test.Module.MacOS.Skip ?? $false
+                        }
+                        Windows = [pscustomobject]@{
+                            Skip = $settings.Test.Module.Windows.Skip ?? $false
+                        }
+                    }
+                    CodeCoverage = [pscustomobject]@{
+                      Skip = $settings.Test.CodeCoverage.Skip ?? $false
+                      PercentTarget = $settings.Test.CodeCoverage.PercentTarget ?? 0
                     }
                 }
-                LogGroup "Settings from [$relativeSettingsPath]:" {
-                    $settings = switch -Regex ($settingsPath.Extension) {
-                        '.json' {
-                            Write-Host ($settings | ConvertTo-Json | Out-String)
-                        }
-                        '.yaml|.yml' {
-                            Write-Host ($settings | ConvertTo-Yaml | Out-String)
-                        }
-                        '.psd1' {
-                            Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
-                        }
-                        default {
-                            throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
-                        }
+                Build      = [pscustomobject]@{
+                    Skip   = $settings.Build.Skip ?? $false
+                    Module = [pscustomobject]@{
+                        Skip = $settings.Build.Module.Skip ?? $false
+                    }
+                    Docs   = [pscustomobject]@{
+                        Skip = $settings.Build.Docs.Skip ?? $false
+                    }
+                }
+                Publish = [pscustomobject]@{
+                    AutoCleanup           = $settings.Publish.AutoCleanup ?? $true
+                    AutoPatching          = $settings.Publish.AutoPatching ?? $true
+                    IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $false
+                    DatePrereleaseFormat  = $settings.Publish.DatePrereleaseFormat ?? ''
+                    VersionPrefix         = $settings.Publish.VersionPrefix ?? 'v'
+                    MajorLabels           = $settings.Publish.MajorLabels ?? 'major, breaking'
+                    MinorLabels           = $settings.Publish.MinorLabels ?? 'minor, feature'
+                    PatchLabels           = $settings.Publish.PatchLabels ?? 'patch, fix'
+                    IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
+                }
+            }
+            LogGroup "Settings from [$relativeSettingsPath]:" {
+                $settings = switch -Regex ($settingsPath.Extension) {
+                    '.json' {
+                        Write-Host ($settings | ConvertTo-Json | Out-String)
+                    }
+                    '.yaml|.yml' {
+                        Write-Host ($settings | ConvertTo-Yaml | Out-String)
+                    }
+                    '.psd1' {
+                        Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
+                    }
+                    default {
+                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
                     }
                 }
             }
