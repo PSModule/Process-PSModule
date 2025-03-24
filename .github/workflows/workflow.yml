@@ -169,7 +169,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    if: always() && !cancelled()
+    if: needs.Get-Settings.result == 'success' || always() && !cancelled()
     needs:
       - Get-Settings
       - Test-SourceCode
