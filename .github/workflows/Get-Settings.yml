@@ -89,6 +89,7 @@ jobs:
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
             LogGroup "Inputs:" {
                 [pscustomobject]@{
+                    PWD          = (Get-Location).Path
                     Name         = $name
                     SettingsPath = $settingsPath
                 } | Format-List | Out-String
@@ -107,7 +108,7 @@ jobs:
                         Import-Hashtable -Path $settingsPath
                     }
                     default {
-                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML, and YML."
+                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
                     }
                 }
 
