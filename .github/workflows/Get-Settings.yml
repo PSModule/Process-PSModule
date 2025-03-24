@@ -174,7 +174,7 @@ jobs:
                         }
                         CodeCoverage = [pscustomobject]@{
                           Skip = $settings.Test.CodeCoverage.Skip ?? $false
-                          PercentTarget = $settings.Test.PercentTarget ?? 0
+                          PercentTarget = $settings.Test.CodeCoverage.PercentTarget ?? 0
                         }
                     }
                     Build      = [pscustomobject]@{
