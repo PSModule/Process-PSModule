@@ -96,9 +96,10 @@ jobs:
             }
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
-                $settingsPath = Get-Item -Path $settingsPath
-                $content = Get-Content -Path $settingsPath -Raw
-                $settings = switch -Regex ($settingsPath.Extension) {
+                $settingsFile = Get-Item -Path $settingsPath
+                $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
+                $content = $settingsFile | Get-Content -Raw
+                $settings = switch -Regex ($settingsFile.Extension) {
                     '.json' {
                         $content | ConvertFrom-Json
                     }
@@ -193,7 +194,6 @@ jobs:
                         IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
                     }
                 }
-                $relativeSettingsPath = Resolve-Path -Path $settingsPath -Relative
                 LogGroup "Settings from [$relativeSettingsPath]:" {
                     $settings = switch -Regex ($settingsPath.Extension) {
                         '.json' {
