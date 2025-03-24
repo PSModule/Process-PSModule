@@ -169,7 +169,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    if: always() && !cancelled()
+    if: needs.Get-Settings.result == 'success' && (always() && !cancelled())
     needs:
       - Get-Settings
       - Test-SourceCode
@@ -187,7 +187,7 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
-    if: always() && !cancelled()
+    if: needs.Get-Settings.result == 'success' && (always() && !cancelled())
     needs:
       - Get-Settings
       - Test-Module
@@ -195,8 +195,8 @@ jobs:
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
-      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoverage.PercentTarget }}
-      StepSummary_Mode: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoverage.StepSummaryMode }}
+      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.PercentTarget }}
+      StepSummary_Mode: ${{ fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.StepSummaryMode }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
