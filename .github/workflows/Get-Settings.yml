@@ -104,7 +104,7 @@ jobs:
                     switch -Regex ($settingsFile.Extension) {
                         '.json' {
                             $settings = $content | ConvertFrom-Json
-                            Write-Host ($settings | ConvertTo-Json | Out-String)
+                            Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
                         }
                         '.yaml|.yml' {
                             $settings = $content | ConvertFrom-Yaml
@@ -202,7 +202,7 @@ jobs:
             LogGroup "Final settings" {
                 switch -Regex ($settingsFile.Extension) {
                     '.json' {
-                        Write-Host ($settings | ConvertTo-Json | Out-String)
+                        Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
                     }
                     '.yaml|.yml' {
                         Write-Host ($settings | ConvertTo-Yaml | Out-String)
