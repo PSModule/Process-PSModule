@@ -96,21 +96,27 @@ jobs:
             }
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
-                $settingsFile = Get-Item -Path $settingsPath
-                $relativeSettingsPath = $settingsFile | Resolve-Path -Relative
-                $content = $settingsFile | Get-Content -Raw
-                $settings = switch -Regex ($settingsFile.Extension) {
-                    '.json' {
-                        $content | ConvertFrom-Json
-                    }
-                    '.yaml|.yml' {
-                        $content | ConvertFrom-Yaml
-                    }
-                    '.psd1' {
-                        $content | ConvertFrom-Hashtable
-                    }
-                    default {
-                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are json, yaml/yml and psd1."
+                LogGroup "Import settings" {
+                    $settingsFile = Get-Item -Path $settingsPath
+                    $relativeSettingsPath = $settingsFile | Resolve-Path -Relative
+                    Write-Host "Importing settings from [$relativeSettingsPath]"
+                    $content = $settingsFile | Get-Content -Raw
+                    switch -Regex ($settingsFile.Extension) {
+                        '.json' {
+                            $settings = $content | ConvertFrom-Json
+                            Write-Host ($settings | ConvertTo-Json | Out-String)
+                        }
+                        '.yaml|.yml' {
+                            $settings = $content | ConvertFrom-Yaml
+                            Write-Host ($settings | ConvertTo-Yaml | Out-String)
+                        }
+                        '.psd1' {
+                            $settings = $content | ConvertFrom-Hashtable
+                            Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
+                        }
+                        default {
+                            throw "Unsupported settings file format: [$settingsPath]. Supported formats are json, yaml/yml and psd1."
+                        }
                     }
                 }
             } else {
@@ -193,7 +199,7 @@ jobs:
                     IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
                 }
             }
-            LogGroup "Settings from [$relativeSettingsPath]:" {
+            LogGroup "Final settings" {
                 switch -Regex ($settingsFile.Extension) {
                     '.json' {
                         Write-Host ($settings | ConvertTo-Json | Out-String)
