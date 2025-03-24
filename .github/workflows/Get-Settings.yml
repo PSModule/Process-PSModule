@@ -3,6 +3,10 @@ name: Get-Settings
 on:
   workflow_call:
     inputs:
+      Name:
+        type: string
+        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
+        required: false
       SettingsPath:
         type: string
         description: The path to the settings file.
@@ -67,6 +71,7 @@ jobs:
         uses: PSModule/GitHub-Script@v1
         id: Get-Settings
         env:
+          PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
           PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         with:
           Name: Get-Settings
@@ -100,8 +105,7 @@ jobs:
 
             LogGroup 'Settings' {
                 $settings = [pscustomobject]@{
-                    Name       = $settings.Name ?? $env:GITHUB_REPOSITORY_NAME
-                    CodeCoveragePercentTarget = $settings.CodeCoveragePercentTarget ?? 0
+                    Name       = ($env:PSMODULE_GET_SETTINGS_INPUT_Name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
                     Test       = [pscustomobject]@{
                         Skip       = $settings.Test.Skip ?? $false
                         Linux      = [pscustomobject]@{
@@ -148,6 +152,10 @@ jobs:
                             Windows = [pscustomobject]@{
                                 Skip = $settings.Test.Module.Windows.Skip ?? $false
                             }
+                        }
+                        CodeCoverage = [pscustomobject]@{
+                          Skip = $settings.Test.CodeCoverage.Skip ?? $false
+                          PercentTarget = $settings.Test.PercentTarget ?? 0
                         }
                     }
                     Build      = [pscustomobject]@{

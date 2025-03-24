@@ -28,6 +28,10 @@ on:
         description: The classic personal access token for running tests.
         required: false
     inputs:
+      Name:
+        type: string
+        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
+        required: false
       SettingsPath:
         type: string
         description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
@@ -68,6 +72,7 @@ jobs:
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
+      Name: ${{ inputs.Name }}
       SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
@@ -190,7 +195,8 @@ jobs:
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
-      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoveragePercentTarget }}
+      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoverage.PercentTarget }}
+      StepSummary_Mode: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoverage.StepSummaryMode }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -233,6 +239,15 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
+          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.AutoCleanup }}
+          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.AutoPatching }}
+          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.DatePrereleaseFormat }}
+          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.IgnoreLabels }}
+          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.IncrementalPrerelease }}
+          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.MajorLabels }}
+          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.MinorLabels }}
+          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.PatchLabels }}
+          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.VersionPrefix }}
 
   Publish-Site:
     if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}

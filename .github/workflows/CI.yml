@@ -32,13 +32,11 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      Skip:
+      SettingsPath:
         type: string
-        description: |
-          Defines what to skip. Allowed values are 'None', 'AllTests', 'SourceCodeTests', 'ModuleTests', 'PSModuleTests', 'LocalModuleTests',
-          'macOSTests', 'WindowsTests', 'LinuxTests', 'BuildDocs', 'PublishDocs', 'PublishModule'.
+        description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
         required: false
-        default: None
+        default: .github/PSModule.psd1
       Debug:
         type: boolean
         description: Enable debug output.
@@ -61,7 +59,7 @@ on:
         default: false
       WorkingDirectory:
         type: string
-        description: The working directory where the script will run from.
+        description: The path to the root of the repo.
         required: false
         default: '.'
 
@@ -74,7 +72,8 @@ jobs:
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
-      Skip: ${{ inputs.Skip }}
+      Name: ${{ inputs.Name }}
+      SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -91,10 +90,9 @@ jobs:
         include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
-      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -103,8 +101,10 @@ jobs:
 
   Build-Module:
     uses: ./.github/workflows/Build-Module.yml
+    needs:
+      - Get-Settings
     with:
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -113,11 +113,11 @@ jobs:
 
   Build-Docs:
     needs:
+      - Get-Settings
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
-      Skip: ${{ inputs.Skip }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -125,6 +125,27 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' }}
+    needs:
+      - Build-Module
+      - Get-Settings
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.Get-Settings.outputs.PSModuleTestSuites) }}
+    uses: ./.github/workflows/Test-Module.yml
+    secrets: inherit
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  Test-ModuleLocal:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
@@ -133,37 +154,14 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
-    uses: ./.github/workflows/Test-Module.yml
-    secrets: inherit
-    with:
-      Skip: ${{ inputs.Skip }}
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
-  Test-ModuleLocal:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleLocalTestSuites != '[]' }}
-    needs:
-      - Build-Module
-      - Get-Settings
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleLocalTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
       TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -173,13 +171,16 @@ jobs:
   Get-TestResults:
     if: always() && !cancelled()
     needs:
+      - Get-Settings
       - Test-SourceCode
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
+      ModuleTestSuites: ${{ needs.Get-Settings.outputs.ModuleTestSuites }}
+      SourceCodeTestSuites: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites }}
+      PSModuleTestSuites: ${{ needs.Get-Settings.outputs.PSModuleTestSuites }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -188,13 +189,14 @@ jobs:
   Get-CodeCoverage:
     if: always() && !cancelled()
     needs:
-      - Test-SourceCode
+      - Get-Settings
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
-      Skip: ${{ inputs.Skip }}
+      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoverage.PercentTarget }}
+      StepSummary_Mode: ${{ fromJson(needs.Get-Settings.outputs.Settings).CodeCoverage.StepSummaryMode }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
