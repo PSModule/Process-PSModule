@@ -201,9 +201,6 @@ jobs:
             }
             LogGroup "Final settings" {
                 switch -Regex ($settingsFile.Extension) {
-                    '.json' {
-                        Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
-                    }
                     '.yaml|.yml' {
                         Write-Host ($settings | ConvertTo-Yaml | Out-String)
                     }
@@ -211,7 +208,7 @@ jobs:
                         Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
                     }
                     default {
-                        throw "Unsupported settings file format: [$settingsPath]. Supported formats are JSON, YAML/YML and PSD1."
+                        Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
                     }
                 }
             }
