@@ -75,8 +75,7 @@ jobs:
 | `DocsOutputPath` | `string` | The path to the output directory for the documentation. | `false` | `outputs/docs` |
 | `PublishDocs` | `boolean` | Whether to publish the documentation using MkDocs and GitHub Pages. | `false` | `true` |
 | `SiteOutputPath` | `string` | The path to the output directory for the site. | `false` | `outputs/site` |
-| `SkipTests` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'. | `false` | `None` |
-| `TestProcess` | `boolean` | Whether to test the process. | `false` | `false` |
+| `Skip` | `string` | Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'. | `false` | `None` |
 | `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | N/A |
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
 | `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |

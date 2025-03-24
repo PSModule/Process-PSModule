@@ -91,7 +91,6 @@ jobs:
 
       - name: Test-Module
         uses: PSModule/Test-PSModule@v3
-        continue-on-error: true
         with:
           Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
@@ -113,7 +112,6 @@ jobs:
 
       - name: Lint-Module
         uses: PSModule/Invoke-ScriptAnalyzer@v3
-        continue-on-error: true
         with:
           Path: outputs/module
           Debug: ${{ inputs.Debug }}
@@ -122,3 +120,5 @@ jobs:
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Settings: Module
+          TestResult_Enabled: true
+          TestResult_TestSuiteName: PSModuleLint-Module-${{ runner.os }}

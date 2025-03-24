@@ -3,6 +3,16 @@ name: Get-CodeCoverage
 on:
   workflow_call:
     inputs:
+      StepSummary_Mode:
+        type: string
+        description: |
+          Controls which sections to show in the GitHub step summary.
+          Use 'Full' for all sections, 'None' to disable, or a comma-separated list of 'Missed, Executed, Files'.
+        required: false
+        default: Missed, Files
+      CodeCoveragePercentTarget:
+        type: number
+        description: The target for code coverage.
       Debug:
         type: boolean
         description: Enable debug output.
@@ -41,6 +51,8 @@ jobs:
         uses: PSModule/Get-PesterCodeCoverage@v1
         id: Get-CodeCoverage
         with:
+          CodeCoveragePercentTarget: ${{ inputs.CodeCoveragePercentTarget }}
+          StepSummary_Mode: ${{ inputs.StepSummary_Mode }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}

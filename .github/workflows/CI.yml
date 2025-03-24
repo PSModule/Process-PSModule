@@ -32,11 +32,11 @@ on:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      SkipTests:
+      SettingsPath:
         type: string
-        description: Defines what types of tests to skip. Allowed values are 'All', 'SourceCode', 'Module', 'None', 'macOS', 'Windows', 'Linux'.
+        description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
         required: false
-        default: None
+        default: .github/PSModule.psd1
       Debug:
         type: boolean
         description: Enable debug output.
@@ -59,7 +59,7 @@ on:
         default: false
       WorkingDirectory:
         type: string
-        description: The working directory where the script will run from.
+        description: The path to the root of the repo.
         required: false
         default: '.'
 
@@ -69,10 +69,11 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
-  Get-TestSuites:
-    uses: ./.github/workflows/Get-TestSuites.yml
+  Get-Settings:
+    uses: ./.github/workflows/Get-Settings.yml
     with:
-      SkipTests: ${{ inputs.SkipTests }}
+      Name: ${{ inputs.Name }}
+      SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -80,18 +81,18 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-SourceCode:
-    if: ${{ needs.Get-TestSuites.outputs.SourceCodeTestSuites != '[]' }}
+    if: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
     needs:
-      - Get-TestSuites
+      - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.SourceCodeTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -100,8 +101,10 @@ jobs:
 
   Build-Module:
     uses: ./.github/workflows/Build-Module.yml
+    needs:
+      - Get-Settings
     with:
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -110,10 +113,11 @@ jobs:
 
   Build-Docs:
     needs:
+      - Get-Settings
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -121,20 +125,20 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-Module:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleTestSuites != '[]' }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' }}
     needs:
       - Build-Module
-      - Get-TestSuites
+      - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.PSModuleTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -142,22 +146,22 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Test-ModuleLocal:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-TestSuites.outputs.ModuleLocalTestSuites != '[]' }}
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
-      - Get-TestSuites
+      - Get-Settings
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.Get-TestSuites.outputs.ModuleLocalTestSuites) }}
+        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OS: ${{ matrix.OSName }}
-      Name: ${{ inputs.Name }}
       TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
@@ -165,28 +169,34 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    if: always() && !cancelled()
+    if: needs.Get-Settings.result == 'success' && (always() && !cancelled())
     needs:
+      - Get-Settings
       - Test-SourceCode
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
+      ModuleTestSuites: ${{ needs.Get-Settings.outputs.ModuleTestSuites }}
+      SourceCodeTestSuites: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites }}
+      PSModuleTestSuites: ${{ needs.Get-Settings.outputs.PSModuleTestSuites }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
-    if: always() && !cancelled()
+    if: needs.Get-Settings.result == 'success' && (always() && !cancelled())
     needs:
-      - Test-SourceCode
+      - Get-Settings
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
+      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.PercentTarget }}
+      StepSummary_Mode: ${{ fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.StepSummaryMode }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}

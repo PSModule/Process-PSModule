@@ -79,3 +79,5 @@ jobs:
           Path: src
           Settings: SourceCode
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          TestResult_Enabled: true
+          TestResult_TestSuiteName: PSModuleLint-SourceCode-${{ runner.os }}

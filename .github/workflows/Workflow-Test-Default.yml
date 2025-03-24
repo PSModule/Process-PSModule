@@ -24,7 +24,5 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets: inherit
     with:
-      Name: PSModuleTest
       WorkingDirectory: tests/srcTestRepo
-      TestProcess: true
-      SkipTests: Module
+      Name: PSModuleTest2
