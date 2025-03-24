@@ -97,7 +97,7 @@ jobs:
 
             if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
                 $settingsPath = Get-Item -Path $settingsPath
-                $content = Get-Content -Path $settingsPath
+                $content = Get-Content -Path $settingsPath -Raw
                 $settings = switch -Regex ($settingsPath.Extension) {
                     '.json' {
                         $content | ConvertFrom-Json
