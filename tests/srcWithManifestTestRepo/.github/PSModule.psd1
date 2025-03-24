@@ -16,7 +16,7 @@
             PercentTarget = 1
         }
     }
-    Publishing = @{
+    Publish = @{
         AutoCleanup = $false
     }
 }

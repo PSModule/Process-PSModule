@@ -167,16 +167,16 @@ jobs:
                             Skip = $settings.Build.Docs.Skip ?? $false
                         }
                     }
-                    Publishing = [pscustomobject]@{
-                        AutoCleanup           = $settings.Publishing.AutoCleanup ?? $true
-                        AutoPatching          = $settings.Publishing.AutoPatching ?? $true
-                        IncrementalPrerelease = $settings.Publishing.IncrementalPrerelease ?? $false
-                        DatePrereleaseFormat  = $settings.Publishing.DatePrereleaseFormat ?? ''
-                        VersionPrefix         = $settings.Publishing.VersionPrefix ?? 'v'
-                        MajorLabels           = $settings.Publishing.MajorLabels ?? @('major', 'breaking')
-                        MinorLabels           = $settings.Publishing.MinorLabels ?? @('minor', 'feature')
-                        PatchLabels           = $settings.Publishing.PatchLabels ?? @('patch', 'fix')
-                        IgnoreLabels          = $settings.Publishing.IgnoreLabels ?? @('NoRelease')
+                    Publish = [pscustomobject]@{
+                        AutoCleanup           = $settings.Publish.AutoCleanup ?? $true
+                        AutoPatching          = $settings.Publish.AutoPatching ?? $true
+                        IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $false
+                        DatePrereleaseFormat  = $settings.Publish.DatePrereleaseFormat ?? ''
+                        VersionPrefix         = $settings.Publish.VersionPrefix ?? 'v'
+                        MajorLabels           = $settings.Publish.MajorLabels ?? @('major', 'breaking')
+                        MinorLabels           = $settings.Publish.MinorLabels ?? @('minor', 'feature')
+                        PatchLabels           = $settings.Publish.PatchLabels ?? @('patch', 'fix')
+                        IgnoreLabels          = $settings.Publish.IgnoreLabels ?? @('NoRelease')
                     }
                 }
                 Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
