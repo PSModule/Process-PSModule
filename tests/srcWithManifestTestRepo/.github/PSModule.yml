@@ -1,7 +1,7 @@
 Name: PSModuleTest
 Test:
-  Skip: true
-  # SourceCode:
+  SourceCode:
+    Skip: true
   PSModule:
     Linux:
       Skip: true
