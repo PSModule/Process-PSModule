@@ -169,7 +169,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    if: needs.Get-Settings.result == 'success' && (always() && !cancelled())
+    if: needs.Get-Settings.result == 'success' && needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' && needs.Get-Settings.outputs.ModuleTestSuites != '[]' && (always() && !cancelled())
     needs:
       - Get-Settings
       - Test-SourceCode
@@ -187,7 +187,7 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
-    if: needs.Get-Settings.result == 'success' && (always() && !cancelled())
+    if: needs.Get-Settings.result == 'success' && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' && needs.Get-Settings.outputs.ModuleTestSuites != '[]' && (always() && !cancelled())
     needs:
       - Get-Settings
       - Test-Module
