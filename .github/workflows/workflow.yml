@@ -100,6 +100,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Module:
+    if: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Module.Skip != true }}
     uses: ./.github/workflows/Build-Module.yml
     needs:
       - Get-Settings
@@ -112,6 +113,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Docs:
+    if: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.Skip != true }}
     needs:
       - Get-Settings
       - Build-Module
