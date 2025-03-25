@@ -36,7 +36,7 @@ on:
         type: string
         description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
         required: false
-        default: .github/PSModule.psd1
+        default: .github/PSModule.yml
       Debug:
         type: boolean
         description: Enable debug output.
