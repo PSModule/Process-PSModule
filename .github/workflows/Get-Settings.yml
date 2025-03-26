@@ -173,6 +173,9 @@ jobs:
                             Skip = $settings.Test.Module.Windows.Skip ?? $false
                         }
                     }
+                    TestResults = [pscustomobject]@{
+                        Skip = $settings.Test.TestResults.Skip ?? $false
+                    }
                     CodeCoverage = [pscustomobject]@{
                       Skip = $settings.Test.CodeCoverage.Skip ?? $false
                       PercentTarget = $settings.Test.CodeCoverage.PercentTarget ?? 0
