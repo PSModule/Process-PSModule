@@ -171,7 +171,7 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Get-TestResults:
-    if: needs.Get-Settings.result == 'success' && fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip != 'true' && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
+    if: needs.Get-Settings.result == 'success' && fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip == 'false' && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
     needs:
       - Get-Settings
       - Test-SourceCode
@@ -189,7 +189,7 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Get-CodeCoverage:
-    if: needs.Get-Settings.result == 'success' && fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.Skip != 'true' && (needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
+    if: needs.Get-Settings.result == 'success' && fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.Skip == 'false' && (needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
     needs:
       - Get-Settings
       - Test-Module
