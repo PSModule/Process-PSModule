@@ -126,6 +126,7 @@ jobs:
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
           CodeCoverage_CoveragePercentTarget: 0
+          Filter_ExcludeTag: Flaky
           Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
