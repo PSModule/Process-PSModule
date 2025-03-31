@@ -131,7 +131,7 @@ jobs:
                     RepositoryName = $env:GITHUB_REPOSITORY_NAME
                 } | Format-List | Out-String
 
-                $name = ![string]::IsNullOrEmpty($inputName) ? $name : [string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
+                $name = ![string]::IsNullOrEmpty($inputName) ? $name : ![string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
             }
 
             $settings = [pscustomobject]@{
