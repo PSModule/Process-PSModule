@@ -261,7 +261,7 @@ jobs:
             LogGroup 'Module Local Test Suites:' {
                 $moduleTestSuites = if ($settings.Test.Module.Skip) {
                     Write-Host 'Skipping all module tests.'
-                    Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
+                    Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
                 } else {
                     # Locate the tests directory.
                     $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
