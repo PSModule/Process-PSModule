@@ -85,12 +85,12 @@ jobs:
           Script: |
             'powershell-yaml' | Install-PSResource -Repository PSGallery -TrustRepository -Reinstall
 
-            $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
+            $inputName = $env:PSMODULE_GET_SETTINGS_INPUT_Name
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
             LogGroup "Inputs" {
                 [pscustomobject]@{
                     PWD          = (Get-Location).Path
-                    Name         = $name
+                    Name         = $inputName
                     SettingsPath = $settingsPath
                 } | Format-List | Out-String
             }
@@ -124,8 +124,18 @@ jobs:
                 $settings = @{}
             }
 
+            LogGroup "Name" {
+                [pscustomobject]@{
+                    InputName      = $inputName
+                    SettingsName   = $settings.Name
+                    RepositoryName = $env:GITHUB_REPOSITORY_NAME
+                } | Format-List | Out-String
+
+                $name = ![string]::IsNullOrEmpty($inputName) ? $name : [string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
+            }
+
             $settings = [pscustomobject]@{
-                Name       = [string]::IsNullOrEmpty($name) ? $name : [string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
+                Name       = $name
                 Test       = [pscustomobject]@{
                     Skip       = $settings.Test.Skip ?? $false
                     Linux      = [pscustomobject]@{
