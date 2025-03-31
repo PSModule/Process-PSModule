@@ -132,6 +132,8 @@ jobs:
                 } | Format-List | Out-String
 
                 $name = ![string]::IsNullOrEmpty($inputName) ? $name : ![string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
+
+                Write-Host "Using [$name] as the module name."
             }
 
             $settings = [pscustomobject]@{
