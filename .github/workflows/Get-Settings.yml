@@ -125,7 +125,7 @@ jobs:
             }
 
             $settings = [pscustomobject]@{
-                Name       = ($name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
+                Name       = [string]::IsNullOrEmpty($name) ? $name : [string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
                 Test       = [pscustomobject]@{
                     Skip       = $settings.Test.Skip ?? $false
                     Linux      = [pscustomobject]@{
@@ -261,7 +261,6 @@ jobs:
             LogGroup 'Module Local Test Suites:' {
                 $moduleTestSuites = if ($settings.Test.Module.Skip) {
                     Write-Host 'Skipping all module tests.'
-                    Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
                 } else {
                     # Locate the tests directory.
                     $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
