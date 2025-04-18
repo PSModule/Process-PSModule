@@ -204,7 +204,7 @@ Publish:
 ```
 </details>
 
-### Example 1 - Rapid testing
+### Example 1 - Defaults with Code Coverage target
 
 This example runs all steps and will require that code coverage is 80% before passing.
 
