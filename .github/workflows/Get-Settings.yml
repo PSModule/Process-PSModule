@@ -85,12 +85,12 @@ jobs:
           Script: |
             'powershell-yaml' | Install-PSResource -Repository PSGallery -TrustRepository -Reinstall
 
-            $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
+            $inputName = $env:PSMODULE_GET_SETTINGS_INPUT_Name
             $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
             LogGroup "Inputs" {
                 [pscustomobject]@{
                     PWD          = (Get-Location).Path
-                    Name         = $name
+                    Name         = $inputName
                     SettingsPath = $settingsPath
                 } | Format-List | Out-String
             }
@@ -124,9 +124,21 @@ jobs:
                 $settings = @{}
             }
 
+            LogGroup "Name" {
+                [pscustomobject]@{
+                    InputName      = $inputName
+                    SettingsName   = $settings.Name
+                    RepositoryName = $env:GITHUB_REPOSITORY_NAME
+                } | Format-List | Out-String
+
+                $name = ![string]::IsNullOrEmpty($inputName) ? $name : ![string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
+
+                Write-Host "Using [$name] as the module name."
+            }
+
             $settings = [pscustomobject]@{
-                Name       = ($name ?? $settings.Name) ?? $env:GITHUB_REPOSITORY_NAME
-                Test       = [pscustomobject]@{
+                Name    = $name
+                Test    = [pscustomobject]@{
                     Skip       = $settings.Test.Skip ?? $false
                     Linux      = [pscustomobject]@{
                         Skip = $settings.Test.Linux.Skip ?? $false
@@ -179,9 +191,10 @@ jobs:
                     CodeCoverage = [pscustomobject]@{
                       Skip = $settings.Test.CodeCoverage.Skip ?? $false
                       PercentTarget = $settings.Test.CodeCoverage.PercentTarget ?? 0
+                      StepSummaryMode = $settings.Test.CodeCoverage.StepSummary_Mode ?? 'Missed, Files'
                     }
                 }
-                Build      = [pscustomobject]@{
+                Build   = [pscustomobject]@{
                     Skip   = $settings.Build.Skip ?? $false
                     Module = [pscustomobject]@{
                         Skip = $settings.Build.Module.Skip ?? $false
@@ -189,17 +202,24 @@ jobs:
                     Docs   = [pscustomobject]@{
                         Skip = $settings.Build.Docs.Skip ?? $false
                     }
+                    Site = [pscustomobject]@{
+                        Skip = $settings.Build.Site.Skip ?? $false
+                    }
                 }
                 Publish = [pscustomobject]@{
-                    AutoCleanup           = $settings.Publish.AutoCleanup ?? $true
-                    AutoPatching          = $settings.Publish.AutoPatching ?? $true
-                    IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $true
-                    DatePrereleaseFormat  = $settings.Publish.DatePrereleaseFormat ?? ''
-                    VersionPrefix         = $settings.Publish.VersionPrefix ?? 'v'
-                    MajorLabels           = $settings.Publish.MajorLabels ?? 'major, breaking'
-                    MinorLabels           = $settings.Publish.MinorLabels ?? 'minor, feature'
-                    PatchLabels           = $settings.Publish.PatchLabels ?? 'patch, fix'
-                    IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
+                    Module = [pscustomobject]@{
+                        Skip                  = $settings.Publish.Module.Skip ?? $false
+                        AutoCleanup           = $settings.Publish.Module.AutoCleanup ?? $true
+                        AutoPatching          = $settings.Publish.Module.AutoPatching ?? $true
+                        IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $true
+                        DatePrereleaseFormat  = $settings.Publish.Module.DatePrereleaseFormat ?? ''
+                        VersionPrefix         = $settings.Publish.Module.VersionPrefix ?? 'v'
+                        MajorLabels           = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
+                        MinorLabels           = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
+                        PatchLabels           = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
+                        IgnoreLabels          = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
+                    }
+
                 }
             }
             LogGroup "Final settings" {
@@ -261,7 +281,6 @@ jobs:
             LogGroup 'Module Local Test Suites:' {
                 $moduleTestSuites = if ($settings.Test.Module.Skip) {
                     Write-Host 'Skipping all module tests.'
-                    Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
                 } else {
                     # Locate the tests directory.
                     $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path

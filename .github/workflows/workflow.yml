@@ -80,25 +80,6 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  Test-SourceCode:
-    if: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
-    needs:
-      - Get-Settings
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
-    uses: ./.github/workflows/Test-SourceCode.yml
-    with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
   Build-Module:
     if: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Module.Skip != true }}
     uses: ./.github/workflows/Build-Module.yml
@@ -119,6 +100,58 @@ jobs:
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  Build-Site:
+    if: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Site.Skip != true }}
+    needs:
+      - Get-Settings
+      - Build-Docs
+    uses: ./.github/workflows/Build-Site.yml
+    with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  Test-SourceCode:
+    if: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
+    needs:
+      - Get-Settings
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
+    uses: ./.github/workflows/Test-SourceCode.yml
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  Lint-SourceCode:
+    if: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
+    needs:
+      - Get-Settings
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
+    uses: ./.github/workflows/Lint-SourceCode.yml
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
       Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
@@ -175,6 +208,7 @@ jobs:
     needs:
       - Get-Settings
       - Test-SourceCode
+      - Lint-SourceCode
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
@@ -204,13 +238,34 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
-  Publish-Module:
-    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+  Publish-Site:
+    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
       - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
-      - Build-Docs
+      - Build-Site
+    permissions:
+      pages: write    # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  Publish-Module:
+    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    needs:
+      - Get-Settings
+      - Get-TestResults
+      - Get-CodeCoverage
+      - Build-Site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -241,31 +296,12 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.AutoCleanup }}
-          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.AutoPatching }}
-          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.DatePrereleaseFormat }}
-          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.IgnoreLabels }}
-          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.IncrementalPrerelease }}
-          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.MajorLabels }}
-          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.MinorLabels }}
-          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.PatchLabels }}
-          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.VersionPrefix }}
-
-  Publish-Site:
-    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-    needs:
-      - Get-Settings
-      - Get-TestResults
-      - Get-CodeCoverage
-      - Build-Docs
-    permissions:
-      pages: write    # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoCleanup }}
+          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoPatching }}
+          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.DatePrereleaseFormat }}
+          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IgnoreLabels }}
+          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IncrementalPrerelease }}
+          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MajorLabels }}
+          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MinorLabels }}
+          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.PatchLabels }}
+          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}

@@ -114,7 +114,6 @@ jobs:
           TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
           TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
           TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -130,5 +129,3 @@ jobs:
           Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Prescript: |
-            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
