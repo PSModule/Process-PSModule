@@ -56,10 +56,6 @@ jobs:
         uses: PSModule/Document-PSModule@v1
         with:
           Name: ${{ inputs.Name }}
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Upload docs artifact
