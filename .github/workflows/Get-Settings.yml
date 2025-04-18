@@ -137,8 +137,8 @@ jobs:
             }
 
             $settings = [pscustomobject]@{
-                Name       = $name
-                Test       = [pscustomobject]@{
+                Name    = $name
+                Test    = [pscustomobject]@{
                     Skip       = $settings.Test.Skip ?? $false
                     Linux      = [pscustomobject]@{
                         Skip = $settings.Test.Linux.Skip ?? $false
@@ -194,7 +194,7 @@ jobs:
                       StepSummaryMode = $settings.Test.CodeCoverage.StepSummary_Mode ?? 'Missed, Files'
                     }
                 }
-                Build      = [pscustomobject]@{
+                Build   = [pscustomobject]@{
                     Skip   = $settings.Build.Skip ?? $false
                     Module = [pscustomobject]@{
                         Skip = $settings.Build.Module.Skip ?? $false
@@ -202,17 +202,24 @@ jobs:
                     Docs   = [pscustomobject]@{
                         Skip = $settings.Build.Docs.Skip ?? $false
                     }
+                    Site = [pscustomobject]@{
+                        Skip = $settings.Build.Site.Skip ?? $false
+                    }
                 }
                 Publish = [pscustomobject]@{
-                    AutoCleanup           = $settings.Publish.AutoCleanup ?? $true
-                    AutoPatching          = $settings.Publish.AutoPatching ?? $true
-                    IncrementalPrerelease = $settings.Publish.IncrementalPrerelease ?? $true
-                    DatePrereleaseFormat  = $settings.Publish.DatePrereleaseFormat ?? ''
-                    VersionPrefix         = $settings.Publish.VersionPrefix ?? 'v'
-                    MajorLabels           = $settings.Publish.MajorLabels ?? 'major, breaking'
-                    MinorLabels           = $settings.Publish.MinorLabels ?? 'minor, feature'
-                    PatchLabels           = $settings.Publish.PatchLabels ?? 'patch, fix'
-                    IgnoreLabels          = $settings.Publish.IgnoreLabels ?? 'NoRelease'
+                    Module = [pscustomobject]@{
+                        Skip                  = $settings.Publish.Module.Skip ?? $false
+                        AutoCleanup           = $settings.Publish.Module.AutoCleanup ?? $true
+                        AutoPatching          = $settings.Publish.Module.AutoPatching ?? $true
+                        IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $true
+                        DatePrereleaseFormat  = $settings.Publish.Module.DatePrereleaseFormat ?? ''
+                        VersionPrefix         = $settings.Publish.Module.VersionPrefix ?? 'v'
+                        MajorLabels           = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
+                        MinorLabels           = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
+                        PatchLabels           = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
+                        IgnoreLabels          = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
+                    }
+
                 }
             }
             LogGroup "Final settings" {
