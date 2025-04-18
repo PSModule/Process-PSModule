@@ -1,4 +1,4 @@
-name: Test-SourceCode
+name: Lint-SourceCode
 
 on:
   workflow_call:
@@ -45,19 +45,22 @@ permissions:
   contents: read # to checkout the repo and create releases on the repo
 
 jobs:
-  Test-SourceCode:
-    name: Test-SourceCode (${{ inputs.RunsOn }})
+  Lint-SourceCode:
+    name: Lint-SourceCode (${{ inputs.RunsOn }})
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Test-SourceCode
-        uses: PSModule/Test-PSModule@v3
+      - name: Lint-SourceCode
+        uses: PSModule/Invoke-ScriptAnalyzer@v3
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Path: src
           Settings: SourceCode
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          TestResult_Enabled: true
+          TestResult_TestSuiteName: PSModuleLint-SourceCode-${{ runner.os }}

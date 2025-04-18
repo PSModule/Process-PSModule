@@ -99,6 +99,25 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
+  Lint-SourceCode:
+    if: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
+    needs:
+      - Get-Settings
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
+    uses: ./.github/workflows/Lint-SourceCode.yml
+    with:
+      RunsOn: ${{ matrix.RunsOn }}
+      OS: ${{ matrix.OSName }}
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
   Build-Module:
     if: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Module.Skip != true }}
     uses: ./.github/workflows/Build-Module.yml
@@ -175,6 +194,7 @@ jobs:
     needs:
       - Get-Settings
       - Test-SourceCode
+      - Lint-SourceCode
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
