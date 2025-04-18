@@ -96,43 +96,43 @@ The file can be a JSON, YML or PSD1 file. By default it will look for `.github/P
 The following settings are available in the settings file:
 Here's a Markdown-formatted table describing your PowerShell object structure clearly and concisely:
 
-| Name                                   | Type      | Description                                 | Default             |
-|----------------------------------------|-----------|---------------------------------------------|---------------------|
-| `Name`                                 | `String`  | Name of the module. Defaults to repo name.  | `null`              |
-| `Test.Skip`                            | `Boolean` | Skip all tests                              | `false`             |
-| `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                         | `false`             |
-| `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                         | `false`             |
-| `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                       | `false`             |
-| `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                      | `false`             |
-| `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux             | `false`             |
-| `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS             | `false`             |
-| `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows           | `false`             |
-| `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests               | `false`             |
-| `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux      | `false`             |
-| `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS      | `false`             |
-| `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows    | `false`             |
-| `Test.Module.Skip`                     | `Boolean` | Skip module tests                           | `false`             |
-| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                  | `false`             |
-| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                  | `false`             |
-| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                | `false`             |
-| `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                 | `false`             |
-| `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                    | `false`             |
-| `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage             | `0`                 |
-| `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports | `'Missed, Files'`   |
-| `Build.Skip`                           | `Boolean` | Skip all build tasks                        | `false`             |
-| `Build.Module.Skip`                    | `Boolean` | Skip module build                           | `false`             |
-| `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                    | `false`             |
-| `Build.Site.Skip`                      | `Boolean` | Skip website build                          | `false`             |
-| `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                      | `false`             |
-| `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old module versions   | `true`              |
-| `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version          | `true`              |
-| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning       | `true`              |
-| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease            | `''`                |
-| `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                     | `'v'`               |
-| `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump      | `'major, breaking'` |
-| `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump      | `'minor, feature'`  |
-| `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump      | `'patch, fix'`      |
-| `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                | `'NoRelease'`       |
+| Name                                   | Type      | Description                                                                                              | Default             |
+|----------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|---------------------|
+| `Name`                                 | `String`  | Name of the module to publish. Defaults to repository name.                                              | `null`              |
+| `Test.Skip`                            | `Boolean` | Skip all tests                                                                                           | `false`             |
+| `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                                                                                      | `false`             |
+| `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                                                                                      | `false`             |
+| `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                                                                                    | `false`             |
+| `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                                                                                   | `false`             |
+| `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux                                                                          | `false`             |
+| `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS                                                                          | `false`             |
+| `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows                                                                        | `false`             |
+| `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests                                                                            | `false`             |
+| `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux                                                                   | `false`             |
+| `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS                                                                   | `false`             |
+| `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows                                                                 | `false`             |
+| `Test.Module.Skip`                     | `Boolean` | Skip module tests                                                                                        | `false`             |
+| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                                                                               | `false`             |
+| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                                                                               | `false`             |
+| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                                                                             | `false`             |
+| `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                                                                              | `false`             |
+| `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                                                                                 | `false`             |
+| `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage                                                                          | `0`                 |
+| `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports                                                              | `'Missed, Files'`   |
+| `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                     | `false`             |
+| `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                        | `false`             |
+| `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                                 | `false`             |
+| `Build.Site.Skip`                      | `Boolean` | Skip website build                                                                                       | `false`             |
+| `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                   | `false`             |
+| `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old prerelease module versions                                                     | `true`              |
+| `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                       | `true`              |
+| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning                                                                    | `true`              |
+| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease ([.NET DateTime](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
+| `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                                                                                  | `'v'`               |
+| `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump                                                                   | `'major, breaking'` |
+| `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                   | `'minor, feature'`  |
+| `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                   | `'patch, fix'`      |
+| `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                             | `'NoRelease'`       |
 
 ### Example 1 - Rapid testing
 
