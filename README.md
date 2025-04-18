@@ -98,39 +98,31 @@ Here's a Markdown-formatted table describing your PowerShell object structure cl
 
 | Name                                   | Type      | Description                                 | Default             |
 |----------------------------------------|-----------|---------------------------------------------|---------------------|
-| `Name`                                 | `String`  | Name identifier for the settings            | `null`              |
-| **Test**                               | `Object`  | Settings related to testing                 |                     |
+| `Name`                                 | `String`  | Name of the module. Defaults to repo name.  | `null`              |
 | `Test.Skip`                            | `Boolean` | Skip all tests                              | `false`             |
 | `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                         | `false`             |
 | `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                         | `false`             |
 | `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                       | `false`             |
-| **Test.SourceCode**                    | `Object`  | Settings for source code tests              |                     |
 | `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                      | `false`             |
 | `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux             | `false`             |
 | `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS             | `false`             |
 | `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows           | `false`             |
-| **Test.PSModule**                      | `Object`  | Settings for PSModule framework tests       |                     |
 | `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests               | `false`             |
 | `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux      | `false`             |
 | `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS      | `false`             |
 | `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows    | `false`             |
-| **Test.Module**                        | `Object`  | Settings for module tests                   |                     |
-| `Test.Module.Skip`                     | `Boolean` | Skip  module tests                          | `false`             |
-| `Test.Module.Linux.Skip`               | `Boolean` | Skip  module tests on Linux                 | `false`             |
-| `Test.Module.MacOS.Skip`               | `Boolean` | Skip  module tests on macOS                 | `false`             |
-| `Test.Module.Windows.Skip`             | `Boolean` | Skip  module tests on Windows               | `false`             |
-| **Test.TestResults**                   | `Object`  | Settings for test result publishing         |                     |
+| `Test.Module.Skip`                     | `Boolean` | Skip module tests                           | `false`             |
+| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                  | `false`             |
+| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                  | `false`             |
+| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                | `false`             |
 | `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                 | `false`             |
-| **Test.CodeCoverage**                  | `Object`  | Settings for code coverage                  |                     |
 | `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                    | `false`             |
 | `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage             | `0`                 |
 | `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports | `'Missed, Files'`   |
-| **Build**                              | `Object`  | Settings for build processes                |                     |
 | `Build.Skip`                           | `Boolean` | Skip all build tasks                        | `false`             |
 | `Build.Module.Skip`                    | `Boolean` | Skip module build                           | `false`             |
 | `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                    | `false`             |
 | `Build.Site.Skip`                      | `Boolean` | Skip website build                          | `false`             |
-| **Publish.Module**                     | `Object`  | Settings for module publishing              |                     |
 | `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                      | `false`             |
 | `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old module versions   | `true`              |
 | `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version          | `true`              |
