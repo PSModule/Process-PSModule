@@ -275,15 +275,15 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.AutoCleanup }}
-          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.AutoPatching }}
-          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.DatePrereleaseFormat }}
-          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.IgnoreLabels }}
-          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.IncrementalPrerelease }}
-          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.MajorLabels }}
-          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.MinorLabels }}
-          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.PatchLabels }}
-          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.VersionPrefix }}
+          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoCleanup }}
+          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoPatching }}
+          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.DatePrereleaseFormat }}
+          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IgnoreLabels }}
+          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IncrementalPrerelease }}
+          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MajorLabels }}
+          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MinorLabels }}
+          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.PatchLabels }}
+          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}
 
   Publish-Site:
     if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
