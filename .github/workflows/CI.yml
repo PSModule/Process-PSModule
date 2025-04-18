@@ -69,7 +69,6 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
-jobs:
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
