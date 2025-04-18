@@ -51,8 +51,8 @@ Depending on the labels in the pull requests, the workflow will result in differ
 - [Publish site](./.github/workflows/Publish-Site.yml)
   - Publishes the static site with the module documentationto GitHub Pages.
 - [Publish module](./.github/workflows/Publish-Module.yml)
-    - Publishes the module to the PowerShell Gallery.
-    - Creates a release on the GitHub repository.
+  - Publishes the module to the PowerShell Gallery.
+  - Creates a release on the GitHub repository.
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
 <details>
@@ -122,7 +122,7 @@ Here's a Markdown-formatted table describing your PowerShell object structure cl
 | `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                     | `false`             |
 | `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                        | `false`             |
 | `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                                 | `false`             |
-| `Build.Site.Skip`                      | `Boolean` | Skip website build                                                                                       | `false`             |
+| `Build.Site.Skip`                      | `Boolean` | Skip site build                                                                                          | `false`             |
 | `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                   | `false`             |
 | `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old prerelease module versions                                                     | `true`              |
 | `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                       | `true`              |
