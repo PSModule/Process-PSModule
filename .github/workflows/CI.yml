@@ -69,6 +69,7 @@ permissions:
   statuses: write      # to update the status of the workflow from linter
 
 jobs:
+jobs:
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
@@ -137,6 +138,20 @@ jobs:
       - Get-Settings
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
+    with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  Build-Site:
+    if: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Site.Skip != true }}
+    needs:
+      - Get-Settings
+      - Build-Docs
+    uses: ./.github/workflows/Build-Site.yml
     with:
       Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}

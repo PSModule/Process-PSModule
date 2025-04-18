@@ -239,12 +239,12 @@ jobs:
       Version: ${{ inputs.Version }}
 
   Publish-Module:
-    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
     needs:
       - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
-      - Build-Docs
+      - Build-Site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -286,12 +286,12 @@ jobs:
           VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}
 
   Publish-Site:
-    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Docs.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
       - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
-      - Build-Docs
+      - Build-Site
     permissions:
       pages: write    # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
