@@ -86,13 +86,6 @@ jobs:
                 Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
             }
 
-            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-                $fileName = $_.Name
-                LogGroup " - $fileName" {
-                    Show-FileContent -Path $_
-                }
-            }
-
             LogGroup 'Build docs - Process about topics' {
                 $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
                 $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force

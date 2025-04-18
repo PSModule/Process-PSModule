@@ -36,7 +36,7 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Import and tests the module using Pester test from the module repository.
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Build-Docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation 
+  - Generates documentation
 - [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module. This runs on 4 different environments to check compatibility.
   - PowerShell LTS on Windows, Ubuntu and macOS.
 - [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publishes the module to the PowerShell Gallery, docs to GitHub Pages, and creates a release on the GitHub repository.
