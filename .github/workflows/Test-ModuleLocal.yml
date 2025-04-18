@@ -130,5 +130,3 @@ jobs:
           Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Prescript: |
-            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0

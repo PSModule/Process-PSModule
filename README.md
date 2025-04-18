@@ -1,8 +1,7 @@
 # Process-PSModule
 
-
-A workflow for the PSModule process, stitching together the `Initialize`, `Build`, `Document`, `Test`, and `Publish` actions to create a complete
-CI/CD pipeline for PowerShell modules. The workflow is used by all PowerShell modules in the PSModule organization.
+A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests and publishes PowerShell modules to the PowerShell
+Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
 
 ## Specifications and practices
 
@@ -21,9 +20,21 @@ Depending on the labels in the pull requests, the workflow will result in differ
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests and lints the source code. This runs on 3 different environments to check compatibility.
-  - PowerShell LTS on Windows, Ubuntu and macOS.
-- [Build-PSModule](https://github.com/PSModule/Build-PSModule/) - Compiles the repository into an efficient PowerShell module.
+- [Get-Settings](./.github/workflows/Get-Settings.yml)
+  - Reads the settings file from a file in the module repository to configure the workflow.
+  - Gathers tests and creates test configuration based on the settings and the tests available in the module repository.
+  - This includes the selection of what OSes to run the tests on.
+- [Build-Module](./.github/workflows/Build-Module.yml)
+  - Compiles the module source code into a PowerShell module using a temporary version `999.0.0`.
+- [Test-SourceCode](./.github/workflows/Test-SourceCode.yml)
+  - Tests and lints the source code using [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
+  - This produces a json based report that is used to later evaluate the results of the tests.
+- [Test-Module](./.github/workflows/Test-Module.yml)
+  - Tests and lints the module using [PSModule framework settings for style and standards foor modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
+  - This produces a json based report that is used to later evaluate the results of the tests.
+- [Test-ModuleLocal](./.github/workflows/Test-ModuleLocal.yml)
+  - Import and tests the module using Pester test from the module repository.
+  - This produces a json based report that is used to later evaluate the results of the tests.
 - [Document-PSModule](https://github.com/PSModule/Document-PSModule/) - Generates documentation and deploys it to GitHub Pages.
 - [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module. This runs on 4 different environments to check compatibility.
   - PowerShell LTS on Windows, Ubuntu and macOS.
