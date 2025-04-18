@@ -134,6 +134,76 @@ Here's a Markdown-formatted table describing your PowerShell object structure cl
 | `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                   | `'patch, fix'`      |
 | `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                             | `'NoRelease'`       |
 
+<details>
+<summary>`PSModule.yml` with all defaults</summary>
+
+```yml
+Name: null
+
+Build:
+  Skip: false
+  Module:
+    Skip: false
+  Docs:
+    Skip: false
+  Site:
+    Skip: false
+
+Test:
+  Skip: false
+  Linux:
+    Skip: false
+  MacOS:
+    Skip: false
+  Windows:
+    Skip: false
+  SourceCode:
+    Skip: false
+    Linux:
+      Skip: false
+    MacOS:
+      Skip: false
+    Windows:
+      Skip: false
+  PSModule:
+    Skip: false
+    Linux:
+      Skip: false
+    MacOS:
+      Skip: false
+    Windows:
+      Skip: false
+  Module:
+    Skip: false
+    Linux:
+      Skip: false
+    MacOS:
+      Skip: false
+    Windows:
+      Skip: false
+  TestResults:
+    Skip: false
+  CodeCoverage:
+    Skip: false
+    PercentTarget: 0
+    StepSummaryMode: 'Missed, Files'
+
+Publish:
+  Module:
+    Skip: false
+    AutoCleanup: true
+    AutoPatching: true
+    IncrementalPrerelease: true
+    DatePrereleaseFormat: ''
+    VersionPrefix: 'v'
+    MajorLabels: 'major, breaking'
+    MinorLabels: 'minor, feature'
+    PatchLabels: 'patch, fix'
+    IgnoreLabels: 'NoRelease'
+
+```
+</details>
+
 ### Example 1 - Rapid testing
 
 This example runs all steps and will require that code coverage is 80% before passing.
