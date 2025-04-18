@@ -25,18 +25,20 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Gathers tests and creates test configuration based on the settings and the tests available in the module repository.
   - This includes the selection of what OSes to run the tests on.
 - [Build-Module](./.github/workflows/Build-Module.yml)
-  - Compiles the module source code into a PowerShell module using a temporary version `999.0.0`.
+  - Compiles the module source code into a PowerShell module.
 - [Test-SourceCode](./.github/workflows/Test-SourceCode.yml)
-  - Tests and lints the source code using [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
+  - Tests and lints the source code in parallel (matrix) using [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Test-Module](./.github/workflows/Test-Module.yml)
-  - Tests and lints the module using [PSModule framework settings for style and standards foor modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
+  - Tests and lints the module in parallel (matrix) using [PSModule framework settings for style and standards foor modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Test-ModuleLocal](./.github/workflows/Test-ModuleLocal.yml)
-  - Import and tests the module using Pester test from the module repository.
+  - Import and tests the module in parallel (matrix) using Pester tests from the module repository.
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Build-Docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation
+  - Generates documentation and lints the documentation using [SuperLinter](https://github.com/super-linter/super-linter).
+- [Build-Site](./.github/workflows/Build-Site.yml)
+  - Generates a static site using [MkDocs](https://www.mkdocs.org/).
 - [Test-PSModule](https://github.com/PSModule/Test-PSModule/) - Tests the compiled module. This runs on 4 different environments to check compatibility.
   - PowerShell LTS on Windows, Ubuntu and macOS.
 - [Publish-PSModule](https://github.com/PSModule/Publish-PSModule/) - Publishes the module to the PowerShell Gallery, docs to GitHub Pages, and creates a release on the GitHub repository.
