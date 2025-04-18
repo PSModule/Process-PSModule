@@ -46,6 +46,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@v1
+
       - name: Download docs artifact
         uses: actions/download-artifact@v4
         with:
@@ -84,6 +87,13 @@ jobs:
 
             LogGroup "Get folder structure" {
                 Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
+            }
+
+            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
+                $fileName = $_.Name
+                LogGroup " - $fileName" {
+                    Show-FileContent -Path $_
+                }
             }
 
             LogGroup 'Build docs - Process about topics' {
