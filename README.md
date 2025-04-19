@@ -21,7 +21,9 @@ Process-PSModule follows:
       Within the environment, remove the branch protection for `main`.
       <details>
       <summary>Remove the branch protection for `main`</summary>
+
       ![Remove the branch protection on main](./media/pagesEnvironment.png)
+      
       </details>
    1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it enough permission to manage the module you are working on.
    1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
