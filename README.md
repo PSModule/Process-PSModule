@@ -18,11 +18,8 @@ Process-PSModule follows:
 1. Configure the repository:
    1. Enable GitHub Pages in the repository settings. Set it to deploy from `GitHub Actions`.
    1. This will create an environment called `github-pages` that GitHub deploys your site to.
-      <details>
-      <summary>Within the environment, remove the branch protection for <code>main</code>.</summary>
-
+      <details><summary>Within the environment, remove the branch protection for <code>main</code>.</summary>
       ![Remove the branch protection on main](./media/pagesEnvironment.png)
-
       </details>
    1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it enough permission to manage the module you are working on.
    1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
