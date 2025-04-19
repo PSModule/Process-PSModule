@@ -93,7 +93,8 @@ permissions:
 jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v2
-    secrets: inherit
+    secrets:
+      APIKEY: ${{ secrets.APIKEY }}
 
 ```
 </details>
