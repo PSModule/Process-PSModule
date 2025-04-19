@@ -12,6 +12,16 @@ Process-PSModule follows:
 - [SemVer 2.0.0 specifications](https://semver.org)
 - [Continiuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
 
+## How to get started
+
+1. [Create a repository from the Template-Module](https://github.com/PSModule/Template-PSModule).
+This will create a new repository with the same structure as the PSModule organization.
+2. Configure the repository:
+   1. Enable GitHub Pages in the repository settings. Set it to deploy from `GitHub Actions`.
+      This will create an environment called `github-pages` that is used to deploy the documentation to GitHub Pages. Remove the branch protection on it.
+   2. Create a new secret in the repository called `APIKey` and set it to the API key for the PowerShell Gallery.
+3. Create a branch, make your changes, create a PR and let the workflow run.
+
 ## How it works
 
 The workflow is designed to be trigger on pull requests to the repository's default branch.
