@@ -101,7 +101,7 @@ jobs:
 ## Configuration
 
 The workflow is configured using a settings file in the module repository.
-The file can be a JSON, YML or PSD1 file. By default it will look for `.github/PSModule.yml`.
+The file can be a `JSON`, `YAML` or `PSD1` file. By default it will look for `.github/PSModule.yml`.
 
 The following settings are available in the settings file:
 Here's a Markdown-formatted table describing your PowerShell object structure clearly and concisely:
@@ -255,11 +255,12 @@ Build:
 | Name | Type | Description | Required | Default |
 | ---- | ---- | ----------- | -------- | ------- |
 | `Name` | `string` | The name of the module to process. This defaults to the repository name if nothing is specified. | `false` | N/A |
-| `Path` | `string` | The path to the source code of the module. | `false` | `src` |
-| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | N/A |
+| `SettingsPath` | `string` | The path to the settings file. Settings in the settings file take precedence over the action inputs. | `false` | `.github/PSModule.yml` |
+| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
 | `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
 | `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
+| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
 
 ### Secrets
 
