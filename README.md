@@ -3,15 +3,6 @@
 A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests and publishes PowerShell modules to the PowerShell
 Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
 
-## Specifications and practices
-
-Process-PSModule follows:
-
-- [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
-- [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
-- [SemVer 2.0.0 specifications](https://semver.org)
-- [Continiuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
-
 ## How to get started
 
 1. [Create a repository from the Template-Module](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
@@ -306,3 +297,12 @@ permissions:
 ```
 
 For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
+
+## Specifications and practices
+
+Process-PSModule follows:
+
+- [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
+- [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
+- [SemVer 2.0.0 specifications](https://semver.org)
+- [Continiuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
