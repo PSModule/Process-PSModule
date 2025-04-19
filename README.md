@@ -19,7 +19,7 @@ This will create a new repository with the same structure as the PSModule organi
 2. Configure the repository:
    1. Enable GitHub Pages in the repository settings. Set it to deploy from `GitHub Actions`.
       This will create an environment called `github-pages` that is used to deploy the documentation to GitHub Pages. Remove the branch protection on it.
-   2. Create a new secret in the repository called `APIKey` and set it to the API key for the PowerShell Gallery.
+   2. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
 3. Create a branch, make your changes, create a PR and let the workflow run.
 
 ## How it works
