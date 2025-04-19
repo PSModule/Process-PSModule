@@ -269,8 +269,7 @@ in the workflow file.
 
 | Name | Location | Description | Default |
 | ---- | -------- | ----------- | ------- |
-| `GITHUB_TOKEN` | `github` context | The token used to authenticate with GitHub. | `${{ secrets.GITHUB_TOKEN }}` |
-| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
+| `APIKEY` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
 | `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests. | N/A |
 | `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests. | N/A |
 | `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests. | N/A |
