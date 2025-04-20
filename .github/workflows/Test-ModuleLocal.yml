@@ -130,3 +130,5 @@ jobs:
           Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Prescript: | # This is to speed up module loading in Pester.
+            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
