@@ -114,7 +114,7 @@ jobs:
           TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
           TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
           TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }} # Used in tests!
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
