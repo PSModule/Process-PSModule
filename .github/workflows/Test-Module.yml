@@ -90,7 +90,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        uses: PSModule/Test-PSModule@debugImport #v3
+        uses: PSModule/Test-PSModule@v3
         with:
           Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
