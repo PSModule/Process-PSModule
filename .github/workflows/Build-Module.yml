@@ -54,7 +54,7 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Build module
-        uses: PSModule/Build-PSModule@v4
+        uses: PSModule/Build-PSModule@debugImport #v4
         with:
           Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
