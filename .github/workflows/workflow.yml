@@ -290,7 +290,7 @@ jobs:
       - name: Update PSResourceGet
         shell: pwsh
         run: |
-          Update-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
+          Update-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository -Scope AllUsers
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v2
