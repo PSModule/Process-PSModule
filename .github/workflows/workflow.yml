@@ -291,7 +291,7 @@ jobs:
         shell: pwsh
         run: |
           Get-Module -ListAvailable
-          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository -Scope AllUsers
+          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v2
