@@ -287,6 +287,11 @@ jobs:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
+      - name: Update Microsoft.PowerShell.PSResourceGet
+        shell: pwsh
+        run: |
+          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
+
       - name: Publish module
         uses: PSModule/Publish-PSModule@v2
         with:
