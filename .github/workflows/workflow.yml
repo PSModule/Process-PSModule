@@ -285,7 +285,7 @@ jobs:
           Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@v2
+        uses: PSModule/Publish-PSModule@removeInit
         with:
           Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
           ModulePath: ${{ inputs.WorkingDirectory }}/outputs/module
