@@ -131,7 +131,13 @@ jobs:
                     RepositoryName = $env:GITHUB_REPOSITORY_NAME
                 } | Format-List | Out-String
 
-                $name = ![string]::IsNullOrEmpty($inputName) ? $name : ![string]::IsNullOrEmpty($settings.Name) ? $settings.Name : $env:GITHUB_REPOSITORY_NAME
+                if (![string]::IsNullOrEmpty($inputName)) {
+                    $name = $inputName
+                } elseif (![string]::IsNullOrEmpty($settings.Name)) {
+                    $name = $settings.Name
+                } else {
+                    $name = $env:GITHUB_REPOSITORY_NAME
+                }
 
                 Write-Host "Using [$name] as the module name."
             }
