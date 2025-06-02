@@ -40,6 +40,8 @@ jobs:
   Build-Module:
     name: Build-Module
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -48,8 +50,4 @@ jobs:
         uses: PSModule/Build-PSModule@v4
         with:
           Name: ${{ inputs.Name }}
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
