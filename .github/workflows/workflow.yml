@@ -290,7 +290,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-          ModulePath: ${{ inputs.WorkingDirectory }}/outputs/module
+          ModulePath: outputs/module
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoCleanup }}
