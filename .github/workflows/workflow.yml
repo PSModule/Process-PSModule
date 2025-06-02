@@ -286,15 +286,13 @@ jobs:
 
       - name: Publish module
         uses: PSModule/Publish-PSModule@v2
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
           ModulePath: ${{ inputs.WorkingDirectory }}/outputs/module
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
           AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoCleanup }}
           AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoPatching }}
           DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.DatePrereleaseFormat }}
@@ -304,3 +302,4 @@ jobs:
           MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MinorLabels }}
           PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.PatchLabels }}
           VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
