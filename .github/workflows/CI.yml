@@ -87,10 +87,6 @@ jobs:
       - Get-Settings
     with:
       Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   Build-Docs:
