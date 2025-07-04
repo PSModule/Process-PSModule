@@ -41,6 +41,10 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Test module](./.github/workflows/Test-ModuleLocal.yml)
   - Import and tests the module in parallel (matrix) using Pester tests from the module repository.
+  - Supports setup and teardown scripts:
+    - **BeforeAll.ps1**: Runs once before all test matrix jobs to set up test environment (e.g., deploy infrastructure, download test data)
+    - **AfterAll.ps1**: Runs once after all test matrix jobs complete to clean up test environment (e.g., remove test resources, cleanup databases)
+  - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as tests
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Get test results](./.github/workflows/Get-TestResults.yml)
   - Gathers the test results from the previous steps and creates a summary of the results.
@@ -256,6 +260,46 @@ Build:
 | `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
 | `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
 | `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
+
+### Setup and Teardown Scripts
+
+The workflow supports automatic execution of setup and teardown scripts for module tests:
+
+#### BeforeAll.ps1
+- **Location**: Place in your test directories (e.g., `tests/BeforeAll.ps1`)
+- **Purpose**: Runs once before all test matrix jobs to prepare the test environment
+- **Use cases**: Deploy test infrastructure, download test data, initialize databases, configure services
+- **Environment**: Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
+
+#### AfterAll.ps1
+- **Location**: Place in your test directories (e.g., `tests/AfterAll.ps1`)
+- **Purpose**: Runs once after all test matrix jobs complete to clean up the test environment
+- **Use cases**: Remove test resources, cleanup databases, stop services, upload artifacts
+- **Environment**: Has access to the same environment variables as your tests
+
+**Example BeforeAll.ps1:**
+```powershell
+Write-Host "Setting up test environment..."
+# Deploy test infrastructure
+# Download test data
+# Initialize test databases
+Write-Host "Test environment ready!"
+```
+
+**Example AfterAll.ps1:**
+```powershell
+Write-Host "Cleaning up test environment..."
+# Remove test resources
+# Cleanup databases
+# Stop services
+Write-Host "Cleanup completed!"
+```
+
+**Notes:**
+- Scripts are automatically detected and executed if present
+- Each unique test directory path is processed only once
+- Scripts run with PowerShell and have access to PSModuleHelpers
+- If no scripts are found, the workflow continues normally
 
 ### Secrets
 
