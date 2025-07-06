@@ -178,88 +178,11 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  BeforeAll-ModuleLocal:
-    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
-    name: BeforeAll Setup
-    runs-on: ubuntu-latest
-    needs:
-      - Build-Module
-      - Get-Settings
-    outputs:
-      hasBeforeAll: ${{ steps.check-beforeall.outputs.hasBeforeAll }}
-      hasAfterAll: ${{ steps.check-afterall.outputs.hasAfterAll }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Check for BeforeAll/AfterAll scripts
-        id: check-beforeall
-        shell: bash
-        working-directory: ${{ inputs.WorkingDirectory }}
-        run: |
-          hasBeforeAll=false
-          hasAfterAll=false
-          
-          # Check each test path for BeforeAll/AfterAll scripts
-          testSuites='${{ needs.Get-Settings.outputs.ModuleTestSuites }}'
-          echo "Test suites: $testSuites"
-          
-          if echo "$testSuites" | jq -e '.[] | select(.TestPath)' > /dev/null 2>&1; then
-            for testPath in $(echo "$testSuites" | jq -r '.[].TestPath' | sort -u); do
-              echo "Checking test path: $testPath"
-              if [ -f "$testPath/BeforeAll.ps1" ]; then
-                echo "BeforeAll.ps1 found in $testPath"
-                hasBeforeAll=true
-              fi
-              if [ -f "$testPath/AfterAll.ps1" ]; then
-                echo "AfterAll.ps1 found in $testPath"
-                hasAfterAll=true
-              fi
-            done
-          fi
-          
-          echo "hasBeforeAll=$hasBeforeAll" >> $GITHUB_OUTPUT
-          echo "hasAfterAll=$hasAfterAll" >> $GITHUB_OUTPUT
-
-      - name: Install-PSModuleHelpers
-        if: steps.check-beforeall.outputs.hasBeforeAll == 'true'
-        uses: PSModule/Install-PSModuleHelpers@v1
-
-      - name: Run BeforeAll scripts
-        if: steps.check-beforeall.outputs.hasBeforeAll == 'true'
-        shell: pwsh
-        working-directory: ${{ inputs.WorkingDirectory }}
-        env:
-          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          $testSuites = '${{ needs.Get-Settings.outputs.ModuleTestSuites }}' | ConvertFrom-Json
-          $processedPaths = @()
-          
-          foreach ($suite in $testSuites) {
-            $testPath = $suite.TestPath
-            if ($testPath -and $testPath -notin $processedPaths) {
-              $beforeAllScript = Join-Path $testPath "BeforeAll.ps1"
-              if (Test-Path $beforeAllScript) {
-                Write-Host "Running BeforeAll setup script: $beforeAllScript"
-                & $beforeAllScript
-                $processedPaths += $testPath
-              }
-            }
-          }
-
   Test-ModuleLocal:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-Settings
-      - BeforeAll-ModuleLocal
     strategy:
       fail-fast: false
       matrix:
@@ -278,48 +201,6 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
-  AfterAll-ModuleLocal:
-    if: ${{ always() && needs.BeforeAll-ModuleLocal.outputs.hasAfterAll == 'true' }}
-    name: AfterAll Teardown
-    runs-on: ubuntu-latest
-    needs:
-      - BeforeAll-ModuleLocal
-      - Test-ModuleLocal
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@v1
-
-      - name: Run AfterAll scripts
-        shell: pwsh
-        working-directory: ${{ inputs.WorkingDirectory }}
-        env:
-          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          $testSuites = '${{ needs.Get-Settings.outputs.ModuleTestSuites }}' | ConvertFrom-Json
-          $processedPaths = @()
-          
-          foreach ($suite in $testSuites) {
-            $testPath = $suite.TestPath
-            if ($testPath -and $testPath -notin $processedPaths) {
-              $afterAllScript = Join-Path $testPath "AfterAll.ps1"
-              if (Test-Path $afterAllScript) {
-                Write-Host "Running AfterAll teardown script: $afterAllScript"
-                & $afterAllScript
-                $processedPaths += $testPath
-              }
-            }
-          }
-
   Get-TestResults:
     if: needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
     needs:
@@ -328,7 +209,6 @@ jobs:
       - Lint-SourceCode
       - Test-Module
       - Test-ModuleLocal
-      - AfterAll-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
@@ -346,7 +226,6 @@ jobs:
       - Get-Settings
       - Test-Module
       - Test-ModuleLocal
-      - AfterAll-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
