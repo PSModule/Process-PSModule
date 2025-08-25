@@ -172,7 +172,7 @@ jobs:
             mkdocs build --config-file mkdocs.yml --site-dir ../../_site
           }
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           name: github-pages
           path: ${{ inputs.WorkingDirectory }}/_site
