@@ -104,28 +104,6 @@ jobs:
           "name=$name" >> $env:GITHUB_OUTPUT
           "path=$path" >> $env:GITHUB_OUTPUT
 
-      - name: Run BeforeAll Setup Script
-        shell: pwsh
-        working-directory: ${{ inputs.WorkingDirectory }}
-        env:
-          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          $testPath = '${{ inputs.TestPath }}'
-          $beforeAllScript = Join-Path $testPath "BeforeAll.ps1"
-          if (Test-Path $beforeAllScript) {
-            Write-Host "Running BeforeAll setup script: $beforeAllScript"
-            & $beforeAllScript
-          } else {
-            Write-Host "No BeforeAll.ps1 script found in $testPath"
-          }
-
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v4
         env:
@@ -155,26 +133,3 @@ jobs:
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
             Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
-
-      - name: Run AfterAll Teardown Script
-        if: always()
-        shell: pwsh
-        working-directory: ${{ inputs.WorkingDirectory }}
-        env:
-          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          $testPath = '${{ inputs.TestPath }}'
-          $afterAllScript = Join-Path $testPath "AfterAll.ps1"
-          if (Test-Path $afterAllScript) {
-            Write-Host "Running AfterAll teardown script: $afterAllScript"
-            & $afterAllScript
-          } else {
-            Write-Host "No AfterAll.ps1 script found in $testPath"
-          }
