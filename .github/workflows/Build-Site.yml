@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -50,7 +50,7 @@ jobs:
         uses: PSModule/Install-PSModuleHelpers@v1
 
       - name: Download docs artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: docs
           path: ${{ inputs.WorkingDirectory }}/outputs/docs
@@ -172,7 +172,7 @@ jobs:
             mkdocs build --config-file mkdocs.yml --site-dir ../../_site
           }
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           name: github-pages
           path: ${{ inputs.WorkingDirectory }}/_site

@@ -65,7 +65,7 @@ jobs:
       ModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleTestSuites }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get-Settings
         uses: PSModule/GitHub-Script@v1

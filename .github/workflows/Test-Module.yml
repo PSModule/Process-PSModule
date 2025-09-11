@@ -81,10 +81,10 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download module artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
@@ -105,7 +105,7 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Download module artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
