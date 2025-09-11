@@ -50,6 +50,12 @@ on:
       ModuleTestSuites:
         description: Module local test suites to run.
         value: ${{ jobs.Get-Settings.outputs.ModuleTestSuites }}
+      HasBeforeAllScripts:
+        description: Whether BeforeAll.ps1 scripts are found in test directories.
+        value: ${{ jobs.Get-Settings.outputs.HasBeforeAllScripts }}
+      HasAfterAllScripts:
+        description: Whether AfterAll.ps1 scripts are found in test directories.
+        value: ${{ jobs.Get-Settings.outputs.HasAfterAllScripts }}
 
 permissions:
   contents: read # to checkout the repo
@@ -63,6 +69,8 @@ jobs:
       SourceCodeTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).SourceCodeTestSuites }}
       PSModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).PSModuleTestSuites }}
       ModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleTestSuites }}
+      HasBeforeAllScripts: ${{ fromJson(steps.Get-Settings.outputs.result).HasBeforeAllScripts }}
+      HasAfterAllScripts: ${{ fromJson(steps.Get-Settings.outputs.result).HasAfterAllScripts }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -363,4 +371,41 @@ jobs:
                 $moduleTestSuites | Format-Table -AutoSize | Out-String
                 $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
                 Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
+            }
+
+            # Check for BeforeAll.ps1 and AfterAll.ps1 scripts
+            LogGroup 'Setup/Teardown Scripts Detection:' {
+                $hasBeforeAllScripts = $false
+                $hasAfterAllScripts = $false
+                
+                if (-not $settings.Test.Module.Skip) {
+                    # Locate the tests directory.
+                    $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                    if ($testsPath) {
+                        Write-Host "Checking for setup/teardown scripts in [$testsPath]"
+                        
+                        $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
+                        
+                        foreach ($folder in $allTestFolders) {
+                            $beforeAllScript = Join-Path $folder "BeforeAll.ps1"
+                            $afterAllScript = Join-Path $folder "AfterAll.ps1"
+                            
+                            if (Test-Path $beforeAllScript) {
+                                Write-Host "Found BeforeAll.ps1 in: $folder"
+                                $hasBeforeAllScripts = $true
+                            }
+                            
+                            if (Test-Path $afterAllScript) {
+                                Write-Host "Found AfterAll.ps1 in: $folder"
+                                $hasAfterAllScripts = $true
+                            }
+                        }
+                    }
+                }
+                
+                Write-Host "BeforeAll scripts found: $hasBeforeAllScripts"
+                Write-Host "AfterAll scripts found: $hasAfterAllScripts"
+                
+                Set-GitHubOutput -Name HasBeforeAllScripts -Value $hasBeforeAllScripts.ToString().ToLower()
+                Set-GitHubOutput -Name HasAfterAllScripts -Value $hasAfterAllScripts.ToString().ToLower()
             }

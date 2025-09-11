@@ -178,11 +178,27 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
+  BeforeAll-ModuleLocal:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
+    needs:
+      - Build-Module
+      - Get-Settings
+    uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
+    secrets: inherit
+    with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
   Test-ModuleLocal:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-Settings
+      - BeforeAll-ModuleLocal
     strategy:
       fail-fast: false
       matrix:
@@ -201,6 +217,21 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
+  AfterAll-ModuleLocal:
+    if: ${{ always() && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
+    needs:
+      - Get-Settings
+      - Test-ModuleLocal
+    uses: ./.github/workflows/AfterAll-ModuleLocal.yml
+    secrets: inherit
+    with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
   Get-TestResults:
     if: needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
     needs:
@@ -209,6 +240,7 @@ jobs:
       - Lint-SourceCode
       - Test-Module
       - Test-ModuleLocal
+      - AfterAll-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
@@ -226,6 +258,7 @@ jobs:
       - Get-Settings
       - Test-Module
       - Test-ModuleLocal
+      - AfterAll-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
