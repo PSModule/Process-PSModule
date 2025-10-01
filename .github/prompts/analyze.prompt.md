@@ -2,6 +2,8 @@
 description: Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation.
 ---
 
+# Analyze
+
 The user input to you can be provided directly by the agent or as a command argument - you **MUST** consider it before proceeding with the prompt (if not empty).
 
 User input:
@@ -66,14 +68,19 @@ Execution steps:
 6. Produce a Markdown report (no file writes) with sections:
 
    ### Specification Analysis Report
+
    | ID | Category | Severity | Location(s) | Summary | Recommendation |
    |----|----------|----------|-------------|---------|----------------|
    | A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+
    (Add one row per finding; generate stable IDs prefixed by category initial.)
 
    Additional subsections:
    - Coverage Summary Table:
+
      | Requirement Key | Has Task? | Task IDs | Notes |
+     |-----------------|-----------|----------|-------|
+
    - Constitution Alignment Issues (if any)
    - Unmapped Tasks (if any)
    - Metrics:
