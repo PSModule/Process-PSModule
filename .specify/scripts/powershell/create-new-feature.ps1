@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not $FeatureDescription -or $FeatureDescription.Count -eq 0) {
-    Write-Error "Usage: ./create-new-feature.ps1 [-Json] <feature description>"
+    Write-Error 'Usage: ./create-new-feature.ps1 [-Json] <feature description>'
     exit 1
 }
 $featureDesc = ($FeatureDescription -join ' ').Trim()
@@ -39,7 +39,7 @@ function Find-RepositoryRoot {
 }
 $fallbackRoot = (Find-RepositoryRoot -StartDir $PSScriptRoot)
 if (-not $fallbackRoot) {
-    Write-Error "Error: Could not determine repository root. Please run this script from within the repository."
+    Write-Error 'Error: Could not determine repository root. Please run this script from within the repository.'
     exit 1
 }
 
@@ -48,7 +48,7 @@ try {
     if ($LASTEXITCODE -eq 0) {
         $hasGit = $true
     } else {
-        throw "Git not available"
+        throw 'Git not available'
     }
 } catch {
     $repoRoot = $fallbackRoot
@@ -91,21 +91,21 @@ New-Item -ItemType Directory -Path $featureDir -Force | Out-Null
 
 $template = Join-Path $repoRoot '.specify/templates/spec-template.md'
 $specFile = Join-Path $featureDir 'spec.md'
-if (Test-Path $template) { 
-    Copy-Item $template $specFile -Force 
-} else { 
-    New-Item -ItemType File -Path $specFile | Out-Null 
+if (Test-Path $template) {
+    Copy-Item $template $specFile -Force
+} else {
+    New-Item -ItemType File -Path $specFile | Out-Null
 }
 
 # Set the SPECIFY_FEATURE environment variable for the current session
 $env:SPECIFY_FEATURE = $branchName
 
 if ($Json) {
-    $obj = [PSCustomObject]@{ 
+    $obj = [PSCustomObject]@{
         BRANCH_NAME = $branchName
-        SPEC_FILE = $specFile
+        SPEC_FILE   = $specFile
         FEATURE_NUM = $featureNum
-        HAS_GIT = $hasGit
+        HAS_GIT     = $hasGit
     }
     $obj | ConvertTo-Json -Compress
 } else {
