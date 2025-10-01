@@ -5,7 +5,6 @@
 
 ## Execution Flow (/plan command scope)
 
-```
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
@@ -24,7 +23,6 @@
    → Update Progress Tracking: Post-Design Constitution Check
 8. Plan Phase 2 → Describe task generation approach (DO NOT create tasks.md)
 9. STOP - Ready for /tasks command
-```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
 
@@ -100,7 +98,7 @@
 
 ### Documentation (this feature)
 
-```
+```plaintext
 specs/[###-feature]/
 ├── plan.md              # This file (/plan command output)
 ├── research.md          # Phase 0 output (/plan command)
@@ -119,7 +117,7 @@ specs/[###-feature]/
   not include Option labels.
 -->
 
-```
+```plaintext
 # [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
 ├── models/
@@ -165,7 +163,7 @@ directories captured above]
    - For each dependency → best practices task
    - For each integration → patterns task
 2. **Generate and dispatch research agents**:
-   ```
+   ```plaintext
    For each unknown in Technical Context:
      Task: "Research {unknown} for {feature context}"
    For each technology choice:

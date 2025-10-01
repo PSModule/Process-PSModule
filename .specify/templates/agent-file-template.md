@@ -3,10 +3,12 @@
 Auto-generated from all feature plans. Last updated: [DATE]
 
 ## Active Technologies
+
 [EXTRACTED FROM ALL PLAN.MD FILES]
 
 ## Project Structure
-```
+
+```plaintext
 [ACTUAL STRUCTURE FROM PLANS]
 ```
 
