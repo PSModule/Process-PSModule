@@ -1,32 +1,38 @@
 <!--
-Sync Impact Report - Constitution v1.1.2
+Sync Impact Report - Constitution v1.3.0
 ========================================
-Version Change: 1.1.1 → 1.1.2 (PATCH - product clarification)
+Version Change: 1.2.0 → 1.3.0 (MINOR - expanded build process documentation)
 Date: 2025-10-01
 
-Modified Principles:
-- Added preamble clarifying Process-PSModule as an opinionated reusable workflow product
-- Enhanced configuration guidance for consuming repositories
-- Clarified relationship between framework and consuming repos
+Modified Principles: None
 
 Added Sections:
-- Product Overview (new section before Core Principles)
+- Build Process Requirements (comprehensive build execution flow documentation)
+  - Custom build scripts support
+  - Module manifest generation details
+  - Root module compilation process
+  - Data loading mechanism
+  - Class/enum export mechanism
+  - Source file processing order
 
 Removed Sections: None
 
 Templates Status:
-✅ plan-template.md - Updated to reference v1.1.2
+✅ plan-template.md - No changes needed (constitution check references general principles)
 ✅ spec-template.md - No changes needed (no constitution-specific requirements)
 ✅ tasks-template.md - No changes needed (general task structure applies)
 
 Follow-up TODOs:
 - TODO(RATIFICATION_DATE): Determine original constitution adoption date
 
-Rationale for PATCH bump:
-- Clarification of product nature and scope without new requirements
-- Added context about opinionated flow and structure
-- Explained configuration mechanism and consuming repo requirements
-- Non-semantic refinement that improves understanding of product purpose
+Rationale for MINOR bump:
+- Added materially expanded guidance on Build-PSModule action execution flow
+- Documented custom build script (*build.ps1) support and execution order
+- Detailed manifest generation process including derived vs. preserved properties
+- Documented root module compilation with specific folder processing order
+- Added data loader and class/enum export mechanism documentation
+- Material expansion that provides actionable build process requirements
+- Consuming repositories now understand complete build automation
 -->
 
 # Process-PSModule Constitution
@@ -44,11 +50,197 @@ Rationale for PATCH bump:
 
 ### Consuming Repository Requirements
 Repositories that consume Process-PSModule workflows MUST:
-- Follow the module source structure documented in framework actions
+- Follow the module source structure documented in framework actions (see Required Module Structure below)
 - Provide configuration file (`.github/PSModule.yml`) with appropriate settings
 - Adhere to the opinionated workflow execution order
-- Reference Process-PSModule workflows using stable version tags
+- Reference Process-PSModule workflows using stable version tags (e.g., `@v4`)
 - Review action README documentation for structure and configuration requirements
+- Use the [Template-PSModule](https://github.com/PSModule/Template-PSModule) repository as a starting point
+
+### Required Module Structure
+
+**Process-PSModule enforces an opinionated module structure.** Consuming repositories MUST organize their PowerShell module source code in the following structure within the `src/` folder:
+
+```
+src/
+├── manifest.psd1          # PowerShell module manifest (optional, auto-generated if missing)
+├── header.ps1             # Code executed at module load start
+├── finally.ps1            # Code executed at module load end
+├── README.md              # Documentation reference (points to Build-PSModule)
+├── assemblies/            # .NET assemblies (.dll) to load
+├── classes/
+│   ├── private/           # Private PowerShell classes
+│   └── public/            # Public PowerShell classes (exported)
+├── data/                  # Configuration data files (.psd1)
+├── formats/               # Format definition files (.ps1xml)
+├── functions/
+│   ├── private/           # Private functions (not exported)
+│   └── public/            # Public functions (exported to module)
+├── init/                  # Initialization scripts
+├── modules/               # Nested PowerShell modules (.psm1)
+├── scripts/               # Script files (.ps1)
+├── types/                 # Type definition files (.ps1xml)
+└── variables/
+    ├── private/           # Private variables
+    └── public/            # Public variables (exported)
+```
+
+**Structure Details**:
+- **Build-PSModule** action processes this structure and compiles it into a module
+- **Private vs Public**: `private/` folders contain internal implementations; `public/` folders contain exported elements
+- **Optional Components**: Not all folders are required; include only what your module needs
+- **Function Organization**: Functions can be organized in subdirectories (e.g., `functions/public/Get-/Get-Item.ps1`)
+- **Manifest**: If `manifest.psd1` is not provided, Build-PSModule generates one automatically
+- **Documentation**: See [Build-PSModule README](https://github.com/PSModule/Build-PSModule) for complete structure details
+
+### Workflow Integration Requirements
+
+Consuming repositories MUST create a workflow file (e.g., `.github/workflows/Process-PSModule.yml`) that calls the reusable Process-PSModule workflow:
+
+```yaml
+name: Process-PSModule
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed, opened, reopened, synchronize, labeled]
+
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v4
+    secrets:
+      APIKEY: ${{ secrets.APIKEY }}  # PowerShell Gallery API key
+```
+
+**Configuration Requirements**:
+- Configuration file at `.github/PSModule.yml` (YAML, JSON, or PSD1 format supported)
+- Reference: [Process-PSModule Configuration Documentation](https://github.com/PSModule/Process-PSModule#configuration)
+- Use Template-PSModule as starting point: https://github.com/PSModule/Template-PSModule
+
+### Build Process Requirements
+
+**Process-PSModule uses the Build-PSModule action to compile module source code into a production-ready PowerShell module.** The build process is automated and opinionated, following a specific execution flow:
+
+#### Build Execution Flow
+
+1. **Execute Custom Build Scripts** (Optional)
+   - Build-PSModule searches for `*build.ps1` files **anywhere in the repository**
+   - Scripts are executed in **alphabetical order by filename** (path-independent)
+   - Allows custom pre-build logic (e.g., code generation, asset processing, configuration setup)
+   - Example: `1-build.ps1` runs before `2-build.ps1` regardless of directory location
+   - Custom scripts can modify source files before the build process continues
+
+2. **Copy Source Code**
+   - All files from `src/` folder are copied to the output folder
+   - Existing root module file (`<ModuleName>.psm1`) is **excluded** (recreated in step 4)
+   - Creates a clean build environment for compilation
+
+3. **Build Module Manifest** (`<ModuleName>.psd1`)
+   - Searches for existing `manifest.psd1` or `<ModuleName>.psd1` in source
+   - If found, uses it as base (preserving specified properties)
+   - If not found, creates new manifest from scratch
+   - **Automatically Derived Properties**:
+     - `RootModule`: Set to `<ModuleName>.psm1`
+     - `ModuleVersion`: Temporary value (`999.0.0`) - updated by Publish-PSModule during release
+     - `Author`: GitHub repository owner (or preserved from source manifest)
+     - `CompanyName`: GitHub repository owner (or preserved from source manifest)
+     - `Copyright`: Generated as `(c) YYYY <Owner>. All rights reserved.` (or preserved from source manifest)
+     - `Description`: GitHub repository description (or preserved from source manifest)
+     - `GUID`: New GUID generated by New-ModuleManifest
+     - `FileList`: All files in the module output folder
+     - `RequiredAssemblies`: All `*.dll` files from `assemblies/` and `modules/` (depth = 1)
+     - `NestedModules`: All `*.psm1`, `*.ps1`, `*.dll` files from `modules/` (one level down)
+     - `ScriptsToProcess`: All `*.ps1` files from `scripts/` folder (loaded into caller session)
+     - `TypesToProcess`: All `*.Types.ps1xml` files (searched recursively)
+     - `FormatsToProcess`: All `*.Format.ps1xml` files (searched recursively)
+     - `DscResourcesToExport`: All `*.psm1` files from `resources/` folder
+     - `FunctionsToExport`: All functions from `functions/public/` (determined by AST parsing)
+     - `CmdletsToExport`: Empty array (or preserved from source manifest)
+     - `VariablesToExport`: All variables from `variables/public/` (determined by AST parsing)
+     - `AliasesToExport`: All aliases from `functions/public/` (determined by AST parsing)
+     - `ModuleList`: All `*.psm1` files in source folder (excluding root module)
+     - `RequiredModules`: Gathered from `#Requires -Modules` statements in source files
+     - `PowerShellVersion`: Gathered from `#Requires -Version` statements in source files
+     - `CompatiblePSEditions`: Gathered from `#Requires -PSEdition` statements (defaults to `@('Core','Desktop')`)
+     - `Tags`: GitHub repository topics plus compatibility tags from source files
+     - `LicenseUri`: Public URL to `LICENSE` file (or preserved from source manifest)
+     - `ProjectUri`: GitHub repository URL (or preserved from source manifest)
+     - `IconUri`: Public URL to `icon/icon.png` (or preserved from source manifest)
+   - **Preserved from Source Manifest** (if provided):
+     - `PowerShellHostName`, `PowerShellHostVersion`, `DotNetFrameworkVersion`, `ClrVersion`, `ProcessorArchitecture`
+     - `RequireLicenseAcceptance` (defaults to `false` if not specified)
+     - `ExternalModuleDependencies`, `HelpInfoURI`, `DefaultCommandPrefix`
+     - `ReleaseNotes` (not automated - can be set via PR/release description)
+     - `Prerelease` (managed by Publish-PSModule during release)
+
+4. **Build Root Module** (`<ModuleName>.psm1`)
+   - Creates new root module file (ignoring any existing `.psm1` in source)
+   - **Compilation Order**:
+     1. **Module Header**:
+        - Adds content from `header.ps1` if exists (then removes file)
+        - If no `header.ps1`, adds default `[CmdletBinding()]` parameter block
+        - Adds PSScriptAnalyzer suppression for cross-platform compatibility
+     2. **Post-Header Initialization**:
+        - Loads module manifest information (`$script:PSModuleInfo`)
+        - Adds platform detection (`$IsWindows` for PS 5.1 compatibility)
+     3. **Data Loader** (if `data/` folder exists):
+        - Recursively imports all `*.psd1` files from `data/` folder
+        - Creates module-scoped variables: `$script:<filename>` for each data file
+        - Example: `data/Config.psd1` becomes `$script:Config`
+     4. **Source File Integration** (in this specific order):
+        - Processes each folder alphabetically within the folder, files on root first, then subfolders
+        - Files are wrapped with debug logging regions
+        - After processing, source folders are **removed** from output:
+          1. `init/` - Initialization scripts (executed first during module load)
+          2. `classes/private/` - Private PowerShell classes (not exported)
+          3. `classes/public/` - Public PowerShell classes (exported via TypeAccelerators)
+          4. `functions/private/` - Private functions (not exported)
+          5. `functions/public/` - Public functions (exported to module consumers)
+          6. `variables/private/` - Private variables (not exported)
+          7. `variables/public/` - Public variables (exported to module consumers)
+          8. Any remaining `*.ps1` files on module root
+     5. **Class and Enum Exporter** (if `classes/public/` exists):
+        - Uses `System.Management.Automation.TypeAccelerators` for type registration
+        - Exports enums from `classes/public/` as type accelerators
+        - Exports classes from `classes/public/` as type accelerators
+        - Adds `OnRemove` handler to clean up type accelerators when module is removed
+        - Provides Write-Verbose output for each exported type
+     6. **Export-ModuleMember**:
+        - Adds `Export-ModuleMember` call with explicit lists
+        - Only exports items from `public/` folders:
+          - **Functions**: From `functions/public/`
+          - **Cmdlets**: From manifest (usually empty for script modules)
+          - **Variables**: From `variables/public/`
+          - **Aliases**: From functions in `functions/public/`
+     7. **Format with PSScriptAnalyzer**:
+        - Entire root module content is formatted using `Invoke-Formatter`
+        - Uses PSScriptAnalyzer settings from `Build/PSScriptAnalyzer.Tests.psd1`
+        - Ensures consistent code style and UTF-8 BOM encoding
+
+5. **Update Manifest Aliases**
+   - Re-analyzes root module to extract actual aliases defined
+   - Updates `AliasesToExport` in manifest with discovered aliases
+
+6. **Upload Module Artifact**
+   - Built module is packaged and uploaded as workflow artifact
+   - Artifact name defaults to `module` (configurable via action input)
+   - Available for subsequent workflow steps (testing, publishing)
+
+#### Build Process Constraints
+
+- **No Manual Root Module**: Any existing `.psm1` file in `src/` is **ignored and replaced**
+- **Source Folder Removal**: Processed source folders are removed from output (only compiled root module remains)
+- **Alphabetical Processing**: Files within each folder are processed alphabetically
+- **Manifest Precedence**: Source manifest values take precedence over generated values
+- **UTF-8 BOM Encoding**: Final root module uses UTF-8 with BOM encoding
+- **PowerShell 7.4+ Target**: Build process and generated code target PowerShell 7.4+
+
+#### Build Process References
+
+- [Build-PSModule Action](https://github.com/PSModule/Build-PSModule)
+- [PowerShell Gallery Publishing Guidelines](https://learn.microsoft.com/powershell/gallery/concepts/publishing-guidelines)
+- [PowerShell Module Manifests](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_module_manifests)
+- [PowerShell Module Authoring](https://learn.microsoft.com/powershell/scripting/dev-cross-plat/performance/module-authoring-considerations)
 
 ## Core Principles
 
@@ -215,13 +407,13 @@ Changes to this constitution require:
 - PowerShell 7.4+ compatibility MUST be verified
 - Action-based implementation preferred over inline workflow code
 - CI validation workflow MUST pass before merging changes to core workflows
-- **Consuming repositories** MUST follow structure requirements in action README documentation
+- **Consuming repositories** MUST follow the Required Module Structure documented in Product Overview
 
 ### Runtime Development Guidance
 For agent-specific runtime development guidance **when developing the framework**, agents should reference:
 - GitHub Copilot: `.github/copilot-instructions.md` (if exists)
 - Other agents: Check for `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or `QWEN.md`
 
-**For Consuming Repositories**: Follow the opinionated structure and configuration documented in the README files of the GitHub Actions this framework provides.
+**For Consuming Repositories**: Follow the Required Module Structure and Workflow Integration Requirements documented in the Product Overview section. Start with [Template-PSModule](https://github.com/PSModule/Template-PSModule).
 
-**Version**: 1.1.2 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
+**Version**: 1.3.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
