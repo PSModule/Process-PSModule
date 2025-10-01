@@ -1,6 +1,6 @@
 # Process-PSModule
 
-A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests and publishes PowerShell modules to the PowerShell
+A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell
 Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
 
 ## How to get started
@@ -18,7 +18,7 @@ Gallery and produces documentation that is published to GitHub Pages. The workfl
 
 ## How it works
 
-The workflow is designed to be trigger on pull requests to the repository's default branch.
+The workflow is designed to be triggered on pull requests to the repository's default branch.
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
 Depending on the labels in the pull requests, the workflow will result in different outcomes.
 
@@ -63,7 +63,7 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Generates a static site using:
     - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 - [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentationto GitHub Pages.
+  - Publishes the static site with the module documentation to GitHub Pages.
 - [Publish module](./.github/workflows/Publish-Module.yml)
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
@@ -107,10 +107,9 @@ jobs:
 ## Configuration
 
 The workflow is configured using a settings file in the module repository.
-The file can be a `JSON`, `YAML` or `PSD1` file. By default it will look for `.github/PSModule.yml`.
+The file can be a `JSON`, `YAML`, or `PSD1` file. By default, it will look for `.github/PSModule.yml`.
 
 The following settings are available in the settings file:
-Here's a Markdown-formatted table describing your PowerShell object structure clearly and concisely:
 
 | Name                                   | Type      | Description                                                                                              | Default             |
 |----------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|---------------------|
@@ -279,7 +278,7 @@ The workflow supports automatic execution of setup and teardown scripts for modu
 
 - Place in your test directories (`tests/BeforeAll.ps1`)
 - Runs once before all test matrix jobs to prepare the test environment
-- Deploy test infrastructure, download test data, initialize databases, configure services
+- Deploy test infrastructure, download test data, initialize databases, or configure services
 - Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
 
 ##### Example - `BeforeAll.ps1`
@@ -296,7 +295,7 @@ Write-Host "Test environment ready!"
 
 - Place in your test directories (`tests/AfterAll.ps1`)
 - Runs once after all test matrix jobs complete to clean up the test environment
-- Remove test resources, cleanup databases, stop services, upload artifacts
+- Remove test resources, clean up databases, stop services, or upload artifacts
 - Has access to the same environment variables as your tests
 
 ##### Example - `AfterAll.ps1`
@@ -327,9 +326,7 @@ in the workflow file.
 
 ## Permissions
 
-The action requires the following permissions:
-
-If running the action in a restrictive mode, the following permissions needs to be granted to the action:
+If running the action in a restrictive mode, the following permissions need to be granted to the action:
 
 ```yaml
 permissions:
@@ -357,4 +354,4 @@ Process-PSModule follows:
 - [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
 - [SemVer 2.0.0 specifications](https://semver.org)
-- [Continiuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
+- [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)

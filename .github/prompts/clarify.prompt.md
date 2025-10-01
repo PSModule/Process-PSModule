@@ -79,10 +79,10 @@ Execution steps:
    - Information is better deferred to planning phase (note internally)
 
 3. Generate (internally) a prioritized queue of candidate clarification questions (maximum 5). Do NOT output them all at once. Apply these constraints:
-    - Maximum of 5 total questions across the whole session.
+    - Maximum of 5 total questions across the entire session.
     - Each question must be answerable with EITHER:
       * A short multiple‑choice selection (2–5 distinct, mutually exclusive options), OR
-      * A one-word / short‑phrase answer (explicitly constrain: "Answer in <=5 words").
+      * A one-word / short‑phrase answer (explicitly constrain: "Answer in ≤5 words").
     - Only include questions whose answers materially impact architecture, data modeling, task decomposition, test design, UX behavior, operational readiness, or compliance validation.
     - Ensure category coverage balance: attempt to cover the highest impact unresolved categories first; avoid asking two low-impact questions when a single high-impact area (e.g., security posture) is unresolved.
     - Exclude questions already answered, trivial stylistic preferences, or plan-level execution details (unless blocking correctness).
@@ -102,9 +102,9 @@ Execution steps:
        | Short | Provide a different short answer (<=5 words) (Include only if free-form alternative is appropriate) |
        ```
 
-    - For short‑answer style (no meaningful discrete options), output a single line after the question: `Format: Short answer (<=5 words)`.
+    - For short‑answer style (no meaningful discrete options), output a single line after the question: `Format: Short answer (≤5 words)`.
     - After the user answers:
-       * Validate the answer maps to one option or fits the <=5 word constraint.
+       * Validate the answer maps to one option or fits the ≤5 word constraint.
        * If ambiguous, ask for a quick disambiguation (count still belongs to same question; do not advance).
        * Once satisfactory, record it in working memory (do not yet write to disk) and move to the next queued question.
     - Stop asking further questions when:

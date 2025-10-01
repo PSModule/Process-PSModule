@@ -18,7 +18,7 @@
 5. Generate Functional Requirements
    → Each requirement must be testable
    → Mark ambiguous requirements
-6. Identify Key Entities (if data involved)
+6. Identify Key Entities (if data is involved)
 7. Run Review Checklist
    → If any [NEEDS CLARIFICATION]: WARN "Spec has uncertainties"
    → If implementation details found: ERROR "Remove tech details"
@@ -88,7 +88,7 @@ Example of marking unclear requirements:
 
 ### Key Entities *(include if feature involves data)*
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
+- **[Entity 1]**: [What it represents, key attributes without implementation details]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
 ---

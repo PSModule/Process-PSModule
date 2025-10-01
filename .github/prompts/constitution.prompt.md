@@ -16,7 +16,7 @@ Follow this execution flow:
 
 1. Load the existing constitution template at `.specify/memory/constitution.md`.
    - Identify every placeholder token of the form `[ALL_CAPS_IDENTIFIER]`.
-   **IMPORTANT**: The user might require less or more principles than the ones used in the template. If a number is specified, respect that - follow the general template. You will update the doc accordingly.
+   **IMPORTANT**: The user might require fewer or more principles than the ones used in the template. If a number is specified, respect that - follow the general template. You will update the document accordingly.
 
 2. Collect/derive values for placeholders:
    - If user input (conversation) supplies a value, use it.
@@ -52,7 +52,7 @@ Follow this execution flow:
 6. Validation before final output:
    - No remaining unexplained bracket tokens.
    - Version line matches report.
-   - Dates ISO format YYYY-MM-DD.
+   - Dates in ISO format (YYYY-MM-DD).
    - Principles are declarative, testable, and free of vague language ("should" → replace with MUST/SHOULD rationale where appropriate).
 
 7. Write the completed constitution back to `.specify/memory/constitution.md` (overwrite).

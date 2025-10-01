@@ -120,9 +120,9 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 - `data/` - Configuration data files (`.psd1`) loaded as module variables
 - `formats/` - Format definition files (`.ps1xml`) for object display
 - `functions/private/` - Private functions (internal implementation)
-  - Supports subdirectories for grouping (e.g., `functions/public/CoponentA/`, `functions/public/ComponentB/`)
+  - Supports subdirectories for grouping (e.g., `functions/public/ComponentA/`, `functions/public/ComponentB/`)
 - `functions/public/` - Public functions (exported to module consumers)
-  - Supports subdirectories for grouping (e.g., `functions/public/CoponentA/`, `functions/public/ComponentB/`)
+  - Supports subdirectories for grouping (e.g., `functions/public/ComponentA/`, `functions/public/ComponentB/`)
   - Optional category documentation files (e.g., `functions/public/PSModule/PSModule.md`)
 - `init/` - Initialization scripts (executed first during module load)
 - `modules/` - Nested PowerShell modules (`.psm1`) or additional assemblies

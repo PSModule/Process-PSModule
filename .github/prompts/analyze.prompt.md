@@ -61,9 +61,9 @@ Execution steps:
 
 5. Severity assignment heuristic:
    - CRITICAL: Violates constitution MUST, missing core spec artifact, or requirement with zero coverage that blocks baseline functionality.
-   - HIGH: Duplicate or conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion.
-   - MEDIUM: Terminology drift, missing non-functional task coverage, underspecified edge case.
-   - LOW: Style/wording improvements, minor redundancy not affecting execution order.
+   - HIGH: Duplicate or conflicting requirement, ambiguous security/performance attribute, or untestable acceptance criterion.
+   - MEDIUM: Terminology drift, missing non-functional task coverage, or underspecified edge case.
+   - LOW: Style/wording improvements, or minor redundancy not affecting execution order.
 
 6. Produce a Markdown report (no file writes) with sections:
 
@@ -95,9 +95,9 @@ Execution steps:
      * Critical Issues Count
 
 7. At end of report, output a concise Next Actions block:
-   - If CRITICAL issues exist: Recommend resolving before `/implement`.
-   - If only LOW/MEDIUM: User may proceed, but provide improvement suggestions.
-   - Provide explicit command suggestions: e.g., "Run /specify with refinement", "Run /plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'".
+   - If CRITICAL issues exist: Recommend resolving them before `/implement`.
+   - If only LOW/MEDIUM issues: User may proceed, but provide improvement suggestions.
+   - Provide explicit command suggestions: e.g., "Run /specify with refinement", "Run /plan to adjust architecture", or "Manually edit tasks.md to add coverage for 'performance-metrics'".
 
 8. Ask the user: "Would you like me to suggest concrete remediation edits for the top N issues?" (Do NOT apply them automatically.)
 
