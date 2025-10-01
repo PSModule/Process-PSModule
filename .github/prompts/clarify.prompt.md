@@ -157,7 +157,7 @@ Behavior rules:
 - Never exceed 5 total asked questions (clarification retries for a single question do not count as new questions).
 - Avoid speculative tech stack questions unless the absence blocks functional clarity.
 - Respect user early termination signals ("stop", "done", "proceed").
-  - If no questions asked due to full coverage, output a compact coverage summary (all categories Clear) then suggest advancing.
-  - If quota reached with unresolved high-impact categories remaining, explicitly flag them under Deferred with rationale.
+- If no questions asked due to full coverage, output a compact coverage summary (all categories Clear) then suggest advancing.
+- If quota reached with unresolved high-impact categories remaining, explicitly flag them under Deferred with rationale.
 
 Context for prioritization: $ARGUMENTS
