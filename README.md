@@ -1,6 +1,6 @@
 # Process-PSModule
 
-A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests and publishes PowerShell modules to the PowerShell
+A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell
 Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
 
 ## How to get started
@@ -18,7 +18,7 @@ Gallery and produces documentation that is published to GitHub Pages. The workfl
 
 ## How it works
 
-The workflow is designed to be trigger on pull requests to the repository's default branch.
+The workflow is designed to be triggered on pull requests to the repository's default branch.
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
 Depending on the labels in the pull requests, the workflow will result in different outcomes.
 
@@ -31,19 +31,23 @@ Depending on the labels in the pull requests, the workflow will result in differ
 - [Build module](./.github/workflows/Build-Module.yml)
   - Compiles the module source code into a PowerShell module.
 - [Test source code](./.github/workflows/Test-SourceCode.yml)
-  - Tests the source code in parallel (matrix) using [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
+  - Tests the source code in parallel (matrix) using:
+    - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Lint source code](./.github/workflows/Lint-SourceCode.yml)
-  - Lints the source code in parallel (matrix) using [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
+  - Lints the source code in parallel (matrix) using:
+    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
   - This produces a json based report that is used to later evaluate the results of the linter.
 - [Framework test](./.github/workflows/Test-Module.yml)
-  - Tests and lints the module in parallel (matrix) using [PSModule framework settings for style and standards foor modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests) + [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
+  - Tests and lints the module in parallel (matrix) using:
+    - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
+    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Test module](./.github/workflows/Test-ModuleLocal.yml)
   - Import and tests the module in parallel (matrix) using Pester tests from the module repository.
   - Supports setup and teardown scripts executed via separate dedicated jobs:
-    - **BeforeAll.ps1**: Runs once before all test matrix jobs to set up test environment (e.g., deploy infrastructure, download test data)
-    - **AfterAll.ps1**: Runs once after all test matrix jobs complete to clean up test environment (e.g., remove test resources, cleanup databases)
+    - `BeforeAll`: Runs once before all test matrix jobs to set up test environment (e.g., deploy infrastructure, download test data)
+    - `AfterAll`: Runs once after all test matrix jobs complete to clean up test environment (e.g., remove test resources, cleanup databases)
   - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as tests
   - This produces a json based report that is used to later evaluate the results of the tests.
 - [Get test results](./.github/workflows/Get-TestResults.yml)
@@ -53,16 +57,19 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Gathers the code coverage from the previous steps and creates a summary of the results.
   - If the code coverage is below the target, the workflow will fail here.
 - [Build docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation and lints the documentation using [super-linter](https://github.com/super-linter/super-linter).
+  - Generates documentation and lints the documentation using:
+    - [super-linter](https://github.com/super-linter/super-linter).
 - [Build site](./.github/workflows/Build-Site.yml)
-  - Generates a static site using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+  - Generates a static site using:
+    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 - [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentationto GitHub Pages.
+  - Publishes the static site with the module documentation to GitHub Pages.
 - [Publish module](./.github/workflows/Publish-Module.yml)
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
+
 <details>
 <summary>Workflow suggestion</summary>
 
@@ -100,10 +107,9 @@ jobs:
 ## Configuration
 
 The workflow is configured using a settings file in the module repository.
-The file can be a `JSON`, `YAML` or `PSD1` file. By default it will look for `.github/PSModule.yml`.
+The file can be a `JSON`, `YAML`, or `PSD1` file. By default, it will look for `.github/PSModule.yml`.
 
 The following settings are available in the settings file:
-Here's a Markdown-formatted table describing your PowerShell object structure clearly and concisely:
 
 | Name                                   | Type      | Description                                                                                              | Default             |
 |----------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|---------------------|
@@ -265,19 +271,18 @@ Build:
 
 The workflow supports automatic execution of setup and teardown scripts for module tests:
 
-#### BeforeAll.ps1
-- **Location**: Place in your test directories (e.g., `tests/BeforeAll.ps1`)
-- **Purpose**: Runs once before all test matrix jobs to prepare the test environment
-- **Use cases**: Deploy test infrastructure, download test data, initialize databases, configure services
-- **Environment**: Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
+- Scripts are automatically detected and executed if present
+- If no scripts are found, the workflow continues normally
 
-#### AfterAll.ps1
-- **Location**: Place in your test directories (e.g., `tests/AfterAll.ps1`)
-- **Purpose**: Runs once after all test matrix jobs complete to clean up the test environment
-- **Use cases**: Remove test resources, cleanup databases, stop services, upload artifacts
-- **Environment**: Has access to the same environment variables as your tests
+#### Setup - `BeforeAll.ps1`
 
-**Example BeforeAll.ps1:**
+- Place in your test directories (`tests/BeforeAll.ps1`)
+- Runs once before all test matrix jobs to prepare the test environment
+- Deploy test infrastructure, download test data, initialize databases, or configure services
+- Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
+
+##### Example - `BeforeAll.ps1`
+
 ```powershell
 Write-Host "Setting up test environment..."
 # Deploy test infrastructure
@@ -286,7 +291,15 @@ Write-Host "Setting up test environment..."
 Write-Host "Test environment ready!"
 ```
 
-**Example AfterAll.ps1:**
+#### Teardown - `AfterAll.ps1`
+
+- Place in your test directories (`tests/AfterAll.ps1`)
+- Runs once after all test matrix jobs complete to clean up the test environment
+- Remove test resources, clean up databases, stop services, or upload artifacts
+- Has access to the same environment variables as your tests
+
+##### Example - `AfterAll.ps1`
+
 ```powershell
 Write-Host "Cleaning up test environment..."
 # Remove test resources
@@ -294,25 +307,6 @@ Write-Host "Cleaning up test environment..."
 # Stop services
 Write-Host "Cleanup completed!"
 ```
-
-**Notes:**
-- Scripts are automatically detected and executed if present
-- Each unique test directory path is processed only once
-- Scripts run with PowerShell and have access to PSModuleHelpers
-- If no scripts are found, the workflow continues normally
-
-**Execution Order:**
-
-The workflow executes setup and teardown scripts using separate dedicated jobs with the following order:
-
-```plaintext
-BeforeAll-ModuleLocal → Test-ModuleLocal (matrix) → AfterAll-ModuleLocal → Get-TestResults/Get-CodeCoverage
-```
-
-- **BeforeAll-ModuleLocal**: Runs once before all test matrix jobs
-- **Test-ModuleLocal**: Runs tests in parallel matrix configuration
-- **AfterAll-ModuleLocal**: Runs once after all test matrix jobs complete (always executes for cleanup, even if tests fail)
-- **Get-TestResults/Get-CodeCoverage**: Process results after cleanup is complete
 
 ### Secrets
 
@@ -332,9 +326,7 @@ in the workflow file.
 
 ## Permissions
 
-The action requires the following permissions:
-
-If running the action in a restrictive mode, the following permissions needs to be granted to the action:
+If running the action in a restrictive mode, the following permissions need to be granted to the action:
 
 ```yaml
 permissions:
@@ -362,4 +354,4 @@ Process-PSModule follows:
 - [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
 - [SemVer 2.0.0 specifications](https://semver.org)
-- [Continiuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
+- [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)

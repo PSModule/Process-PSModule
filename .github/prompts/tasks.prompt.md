@@ -35,7 +35,7 @@ $ARGUMENTS
 4. Task generation rules:
    - Each contract file → contract test task marked [P]
    - Each entity in data-model → model creation task marked [P]
-   - Each endpoint → implementation task (not parallel if shared files)
+   - Each endpoint → implementation task (not parallel if files are shared)
    - Each user story → integration test marked [P]
    - Different files = can be parallel [P]
    - Same file = sequential (no [P])
@@ -61,4 +61,4 @@ $ARGUMENTS
 
 Context for task generation: $ARGUMENTS
 
-The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without additional context.
+The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without requiring additional context.

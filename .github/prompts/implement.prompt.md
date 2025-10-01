@@ -34,19 +34,19 @@ $ARGUMENTS
    - **Validation checkpoints**: Verify each phase completion before proceeding
 
 5. Implementation execution rules:
-   - **Setup first**: Initialize project structure, dependencies, configuration
+   - **Setup first**: Initialize project structure, dependencies, and configuration
    - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
-   - **Core development**: Implement models, services, CLI commands, endpoints
-   - **Integration work**: Database connections, middleware, logging, external services
-   - **Polish and validation**: Unit tests, performance optimization, documentation
+   - **Core development**: Implement models, services, CLI commands, and endpoints
+   - **Integration work**: Database connections, middleware, logging, and external services
+   - **Polish and validation**: Unit tests, performance optimization, and documentation
 
 6. Progress tracking and error handling:
    - Report progress after each completed task
    - Halt execution if any non-parallel task fails
-   - For parallel tasks [P], continue with successful tasks, report failed ones
+   - For parallel tasks [P], continue with successful tasks and report failed ones
    - Provide clear error messages with context for debugging
    - Suggest next steps if implementation cannot proceed
-   - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file.
+   - **IMPORTANT**: For completed tasks, make sure to mark the task as [X] in the tasks file.
 
 7. Completion validation:
    - Verify all required tasks are completed
