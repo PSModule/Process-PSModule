@@ -67,19 +67,22 @@ Execution steps:
 
 6. Produce a Markdown report (no file writes) with sections:
 
+   ```markdown
    ### Specification Analysis Report
 
    | ID | Category | Severity | Location(s) | Summary | Recommendation |
    |----|----------|----------|-------------|---------|----------------|
    | A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
-
    (Add one row per finding; generate stable IDs prefixed by category initial.)
+   ```
 
    Additional subsections:
    - Coverage Summary Table:
 
-     | Requirement Key | Has Task? | Task IDs | Notes |
-     |-----------------|-----------|----------|-------|
+    ```markdown
+    | Requirement Key | Has Task? | Task IDs | Notes |
+    |-----------------|-----------|----------|-------|
+    ```
 
    - Constitution Alignment Issues (if any)
    - Unmapped Tasks (if any)

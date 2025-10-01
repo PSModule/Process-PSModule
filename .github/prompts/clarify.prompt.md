@@ -2,6 +2,8 @@
 description: Identify underspecified areas in the current feature spec by asking up to 5 highly targeted clarification questions and encoding answers back into the spec.
 ---
 
+# Clarify
+
 The user input to you can be provided directly by the agent or as a command argument - you **MUST** consider it before proceeding with the prompt (if not empty).
 
 User input:
@@ -79,24 +81,26 @@ Execution steps:
 3. Generate (internally) a prioritized queue of candidate clarification questions (maximum 5). Do NOT output them all at once. Apply these constraints:
     - Maximum of 5 total questions across the whole session.
     - Each question must be answerable with EITHER:
-       * A short multiple‑choice selection (2–5 distinct, mutually exclusive options), OR
-       * A one-word / short‑phrase answer (explicitly constrain: "Answer in <=5 words").
-   - Only include questions whose answers materially impact architecture, data modeling, task decomposition, test design, UX behavior, operational readiness, or compliance validation.
-   - Ensure category coverage balance: attempt to cover the highest impact unresolved categories first; avoid asking two low-impact questions when a single high-impact area (e.g., security posture) is unresolved.
-   - Exclude questions already answered, trivial stylistic preferences, or plan-level execution details (unless blocking correctness).
-   - Favor clarifications that reduce downstream rework risk or prevent misaligned acceptance tests.
-   - If more than 5 categories remain unresolved, select the top 5 by (Impact * Uncertainty) heuristic.
+      * A short multiple‑choice selection (2–5 distinct, mutually exclusive options), OR
+      * A one-word / short‑phrase answer (explicitly constrain: "Answer in <=5 words").
+    - Only include questions whose answers materially impact architecture, data modeling, task decomposition, test design, UX behavior, operational readiness, or compliance validation.
+    - Ensure category coverage balance: attempt to cover the highest impact unresolved categories first; avoid asking two low-impact questions when a single high-impact area (e.g., security posture) is unresolved.
+    - Exclude questions already answered, trivial stylistic preferences, or plan-level execution details (unless blocking correctness).
+    - Favor clarifications that reduce downstream rework risk or prevent misaligned acceptance tests.
+    - If more than 5 categories remain unresolved, select the top 5 by (Impact * Uncertainty) heuristic.
 
 4. Sequential questioning loop (interactive):
     - Present EXACTLY ONE question at a time.
     - For multiple‑choice questions render options as a Markdown table:
 
+       ```markdown
        | Option | Description |
        |--------|-------------|
        | A | <Option A description> |
        | B | <Option B description> |
-       | C | <Option C description> | (add D/E as needed up to 5)
-       | Short | Provide a different short answer (<=5 words) | (Include only if free-form alternative is appropriate)
+       | C | <Option C description> (add D/E as needed up to 5) |
+       | Short | Provide a different short answer (<=5 words) (Include only if free-form alternative is appropriate) |
+       ```
 
     - For short‑answer style (no meaningful discrete options), output a single line after the question: `Format: Short answer (<=5 words)`.
     - After the user answers:
@@ -147,12 +151,13 @@ Execution steps:
    - Suggested next command.
 
 Behavior rules:
+
 - If no meaningful ambiguities found (or all potential questions would be low-impact), respond: "No critical ambiguities detected worth formal clarification." and suggest proceeding.
 - If spec file missing, instruct user to run `/specify` first (do not create a new spec here).
 - Never exceed 5 total asked questions (clarification retries for a single question do not count as new questions).
 - Avoid speculative tech stack questions unless the absence blocks functional clarity.
 - Respect user early termination signals ("stop", "done", "proceed").
- - If no questions asked due to full coverage, output a compact coverage summary (all categories Clear) then suggest advancing.
- - If quota reached with unresolved high-impact categories remaining, explicitly flag them under Deferred with rationale.
+  - If no questions asked due to full coverage, output a compact coverage summary (all categories Clear) then suggest advancing.
+  - If quota reached with unresolved high-impact categories remaining, explicitly flag them under Deferred with rationale.
 
 Context for prioritization: $ARGUMENTS
