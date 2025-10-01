@@ -108,3 +108,4 @@ jobs:
           VALIDATE_YAML_PRETTIER: false
           VALIDATE_JSCPD: false
           VALIDATE_GITLEAKS: false
+          VALIDATE_BIOME_FORMATTER: false
