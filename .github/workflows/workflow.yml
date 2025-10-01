@@ -214,16 +214,11 @@ jobs:
 
                 Write-Host "Running BeforeAll setup script: $beforeAllScript"
                 try {
-                    Push-Location 'tests'
                     & $beforeAllScript
                     Write-Host "BeforeAll script completed successfully: $beforeAllScript"
-                }
-                catch {
+                } catch {
                     Write-Error "BeforeAll script failed: $beforeAllScript - $_"
                     throw
-                }
-                finally {
-                    Pop-Location
                 }
             }
 
@@ -287,16 +282,11 @@ jobs:
 
                 Write-Host "Running AfterAll teardown script: $afterAllScript"
                 try {
-                    Push-Location 'tests'
                     & $afterAllScript
                     Write-Host "AfterAll script completed successfully: $afterAllScript"
-                }
-                catch {
+                } catch {
                     Write-Warning "AfterAll script failed: $afterAllScript - $_"
                     # Don't throw for teardown scripts to ensure other cleanup scripts can run
-                }
-                finally {
-                    Pop-Location
                 }
             }
 
