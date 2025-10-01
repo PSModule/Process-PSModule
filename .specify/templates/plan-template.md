@@ -34,20 +34,58 @@
 [Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
 **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Project Type**: [single/web/mobile - determines source structure]
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### I. Workflow-First Design (NON-NEGOTIABLE)
+- [ ] Feature is implemented as reusable GitHub Actions workflow(s)
+- [ ] Workflows have clearly defined inputs and outputs
+- [ ] Workflows follow single responsibility principle
+- [ ] Matrix strategies used for parallel execution where appropriate
+- [ ] Workflows are independently testable via CI validation workflow
+- [ ] Logic delegated to reusable GitHub Actions (PSModule organization)
+- [ ] Inline PowerShell code avoided; action-based scripts used instead
+- [ ] Actions referenced by specific versions/tags
+
+### II. Test-Driven Development (NON-NEGOTIABLE)
+- [ ] Tests will be written before implementation
+- [ ] Initial tests will fail (Red phase documented)
+- [ ] Implementation plan includes making tests pass (Green phase)
+- [ ] Refactoring phase planned while maintaining tests
+- [ ] PSScriptAnalyzer validation included
+- [ ] Manual testing documented if needed
+- [ ] CI validation workflow tests included
+
+### III. Platform Independence with Modern PowerShell
+- [ ] PowerShell 7.4+ constructs used exclusively
+- [ ] Matrix testing across Linux, macOS, Windows included
+- [ ] Platform-specific behaviors documented
+- [ ] Skip mechanisms justified if platform-specific tests needed
+- [ ] No backward compatibility with PowerShell 5.1 required
+
+### IV. Quality Gates and Observability
+- [ ] Test results captured in structured JSON format
+- [ ] Code coverage measurement included
+- [ ] Linting results captured and enforced
+- [ ] Quality gate thresholds defined
+- [ ] Clear error messages planned
+- [ ] Debug mode support included
+
+### V. Continuous Delivery with Semantic Versioning
+- [ ] Version bump strategy documented (labels, SemVer)
+- [ ] Release automation compatible with existing workflow
+- [ ] Documentation updates included
+- [ ] GitHub Pages publishing considered if docs changes
 
 ## Project Structure
 
@@ -169,12 +207,12 @@ directories captured above]
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
 - Each contract → contract test task [P]
-- Each entity → model creation task [P] 
+- Each entity → model creation task [P]
 - Each user story → integration test task
 - Implementation tasks to make tests pass
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
+- TDD order: Tests before implementation
 - Dependency order: Models before services before UI
 - Mark [P] for parallel execution (independent files)
 
@@ -185,8 +223,8 @@ directories captured above]
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
 
-**Phase 3**: Task execution (/tasks command creates tasks.md)  
-**Phase 4**: Implementation (execute tasks.md following constitutional principles)  
+**Phase 3**: Task execution (/tasks command creates tasks.md)
+**Phase 4**: Implementation (execute tasks.md following constitutional principles)
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
@@ -216,4 +254,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.1.0 - See `.specify/memory/constitution.md`*
