@@ -5,6 +5,7 @@
 **Process-PSModule** is a **reusable workflow product** that provides an **opinionated flow and structure** for building PowerShell modules using GitHub Actions. It is NOT a library or toolkit; it is a complete CI/CD workflow framework designed to be consumed by PowerShell module repositories.
 
 ### Product Characteristics
+
 - **Opinionated Architecture**: Defines a specific workflow execution order and module structure
 - **Reusable Workflows**: Consuming repositories call Process-PSModule workflows via `uses:` syntax
 - **Configurable via Settings**: Behavior customized through `.github/PSModule.yml` (or JSON/PSD1) in consuming repos
@@ -12,6 +13,7 @@
 - **Not for Local Development**: Designed exclusively for GitHub Actions execution environment
 
 ### Consuming Repository Requirements
+
 Repositories that consume Process-PSModule workflows MUST:
 - Follow the module source structure documented in framework actions (see Required Module Structure below)
 - Provide configuration file (`.github/PSModule.yml`) with appropriate settings
@@ -26,7 +28,7 @@ Repositories that consume Process-PSModule workflows MUST:
 
 #### Complete Repository Structure
 
-```
+```plaintext
 <ModuleName>/                       # Repository root
 ├── .github/                        # GitHub Actions configuration
 │   ├── linters/                    # Linter configuration files
@@ -99,16 +101,19 @@ Repositories that consume Process-PSModule workflows MUST:
 The `src/` folder contains the module source code that Build-PSModule compiles into a production-ready module:
 
 **Required Files/Folders**:
+
 - At least one `.ps1` file in `functions/public/` to export functionality
 - `tests/` folder at repository root with at least one Pester test file
 
 **Optional Configuration Files**:
+
 - `manifest.psd1` - PowerShell module manifest (auto-generated if missing with GitHub metadata)
 - `header.ps1` - Code executed at module load start (before any other code)
 - `finally.ps1` - Code executed at module load end (after all other code)
 - `README.md` - Documentation pointer (typically references Build-PSModule for structure)
 
 **Source Folders** (all optional, include only what your module needs):
+
 - `assemblies/` - .NET assemblies (`.dll`) loaded into module session
 - `classes/private/` - Private PowerShell classes (not exported)
 - `classes/public/` - Public PowerShell classes (exported via TypeAccelerators)
@@ -126,6 +131,7 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 - `variables/public/` - Public variables (exported to module consumers)
 
 **Build Processing**:
+
 - Build-PSModule compiles `src/` into a single root module file (`<ModuleName>.psm1`)
 - Source folders are removed from output after processing (only compiled module remains)
 - Files processed in alphabetical order within each folder
@@ -134,6 +140,7 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 #### Repository Configuration Details
 
 **GitHub Actions Configuration** (`.github/` folder):
+
 - `PSModule.yml` (or `.json`/`.psd1`) - **REQUIRED** configuration file controlling Process-PSModule behavior
 - `workflows/Process-PSModule.yml` - **REQUIRED** workflow file calling reusable Process-PSModule workflow
 - `mkdocs.yml` - Material for MkDocs configuration for GitHub Pages documentation
@@ -141,12 +148,14 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 - Other workflows (Linter, Nightly-Run) are optional supplementary workflows
 
 **Documentation Assets**:
+
 - `LICENSE` - Referenced in module manifest `LicenseUri` property
 - `icon/icon.png` - Referenced in module manifest `IconUri` property (public URL)
 - `README.md` - Project documentation, referenced in GitHub repository metadata
 - `examples/` - Usage examples for module consumers
 
 **Testing Requirements**:
+
 - `tests/` folder at repository root (NOT inside `src/`)
 - Pester test files (`.Tests.ps1`) for module validation
 - Optional `BeforeAll.ps1` and `AfterAll.ps1` for test environment setup/teardown
@@ -154,6 +163,7 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 - See "Test-ModuleLocal workflow" section for matrix testing details
 
 **Key Points**:
+
 - **Private vs Public**: `private/` folders contain internal implementations; `public/` folders contain exported elements
 - **Optional Components**: Not all folders are required; include only what your module needs
 - **Function Organization**: Functions can be organized in subdirectories with optional category documentation
@@ -162,6 +172,7 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 - **Template Reference**: Use [Template-PSModule](https://github.com/PSModule/Template-PSModule) as starting point
 
 **Documentation References**:
+
 - [Build-PSModule README](https://github.com/PSModule/Build-PSModule) - Complete build process details
 - [Template-PSModule](https://github.com/PSModule/Template-PSModule) - Reference implementation
 - [Process-PSModule Configuration](#configuration) - Settings file documentation
@@ -186,6 +197,7 @@ jobs:
 ```
 
 **Configuration Requirements**:
+
 - Configuration file at `.github/PSModule.yml` (YAML, JSON, or PSD1 format supported)
 - Reference: [Process-PSModule Configuration Documentation](https://github.com/PSModule/Process-PSModule#configuration)
 - Use Template-PSModule as starting point: https://github.com/PSModule/Template-PSModule
@@ -202,12 +214,10 @@ jobs:
    - Allows custom pre-build logic (e.g., code generation, asset processing, configuration setup)
    - Example: `1-build.ps1` runs before `2-build.ps1` regardless of directory location
    - Custom scripts can modify source files before the build process continues
-
 2. **Copy Source Code**
    - All files from `src/` folder are copied to the output folder
    - Existing root module file (`<ModuleName>.psm1`) is **excluded** (recreated in step 4)
    - Creates a clean build environment for compilation
-
 3. **Build Module Manifest** (`<ModuleName>.psd1`)
    - Searches for existing `manifest.psd1` or `<ModuleName>.psd1` in source
    - If found, uses it as base (preserving specified properties)
@@ -245,7 +255,6 @@ jobs:
      - `ExternalModuleDependencies`, `HelpInfoURI`, `DefaultCommandPrefix`
      - `ReleaseNotes` (not automated - can be set via PR/release description)
      - `Prerelease` (managed by Publish-PSModule during release)
-
 4. **Build Root Module** (`<ModuleName>.psm1`)
    - Creates new root module file (ignoring any existing `.psm1` in source)
    - **Compilation Order**:
@@ -289,11 +298,9 @@ jobs:
         - Entire root module content is formatted using `Invoke-Formatter`
         - Uses PSScriptAnalyzer settings from `Build/PSScriptAnalyzer.Tests.psd1`
         - Ensures consistent code style and UTF-8 BOM encoding
-
 5. **Update Manifest Aliases**
    - Re-analyzes root module to extract actual aliases defined
    - Updates `AliasesToExport` in manifest with discovered aliases
-
 6. **Upload Module Artifact**
    - Built module is packaged and uploaded as workflow artifact
    - Artifact name defaults to `module` (configurable via action input)
@@ -318,6 +325,7 @@ jobs:
 ## Core Principles
 
 ### I. Workflow-First Design (NON-NEGOTIABLE)
+
 Every feature MUST be implemented as a reusable GitHub Actions workflow component. This is NOT a local development framework; it is designed for CI/CD execution. Workflows MUST:
 - Be composable and callable from other workflows using `uses:` syntax
 - Use clearly defined inputs and outputs with proper documentation
@@ -331,7 +339,9 @@ Every feature MUST be implemented as a reusable GitHub Actions workflow componen
 **Rationale**: Reusable workflow architecture enables maintainability, reduces duplication, and allows consuming repositories to leverage Process-PSModule capabilities consistently. Action-based scripts provide better testability, reusability, and version control than inline code.
 
 ### II. Test-Driven Development (NON-NEGOTIABLE)
+
 All code changes MUST follow strict TDD practices using Pester and PSScriptAnalyzer:
+
 - Tests MUST be written before implementation
 - Tests MUST fail initially (Red phase)
 - Implementation proceeds only after failing tests exist (Green phase)
@@ -344,6 +354,7 @@ All code changes MUST follow strict TDD practices using Pester and PSScriptAnaly
 **Rationale**: TDD ensures code quality, prevents regressions, and creates living documentation through tests. This is fundamental to project reliability. CI workflow validation ensures the entire framework functions correctly in real-world scenarios.
 
 ### III. Platform Independence with Modern PowerShell
+
 **Modules MUST be built to be cross-platform.** All workflows, features, and consuming modules MUST support cross-platform execution (Linux, macOS, Windows) using **PowerShell 7.4 or newer**:
 - Use platform-agnostic PowerShell Core 7.4+ constructs exclusively
 - **Modules MUST function identically** on Linux, macOS, and Windows
@@ -358,7 +369,9 @@ All code changes MUST follow strict TDD practices using Pester and PSScriptAnaly
 **Rationale**: PowerShell 7.4+ provides consistent cross-platform behavior and modern language features. Focusing on a single modern version reduces complexity and maintenance burden. Modules built with Process-PSModule framework must work seamlessly across all platforms, verified through automated matrix testing in Test-ModuleLocal, ensuring maximum compatibility for consuming projects on contemporary platforms.
 
 ### IV. Quality Gates and Observability
+
 Every workflow execution MUST produce verifiable quality metrics:
+
 - Test results MUST be captured in structured formats (JSON reports)
 - Code coverage MUST be measured and reported
 - Linting results MUST be captured and enforced
@@ -369,7 +382,9 @@ Every workflow execution MUST produce verifiable quality metrics:
 **Rationale**: Measurable quality gates prevent degradation over time and provide clear feedback. Observability enables rapid debugging and continuous improvement.
 
 ### V. Continuous Delivery with Semantic Versioning
+
 Release management MUST be automated and follow SemVer 2.0.0:
+
 - Version bumps MUST be determined by PR labels (major, minor, patch)
 - Releases MUST be automated on merge to main branch
 - PowerShell Gallery publishing MUST be automatic for labeled releases
@@ -388,6 +403,7 @@ Process-PSModule implements an **automated publishing workflow** triggered by pu
 Pull requests MUST use labels to determine release behavior:
 
 #### Version Increment Labels (SemVer)
+
 - **`major`** - Breaking changes, incompatible API changes
   - Increments major version: `1.2.3` → `2.0.0`
   - Resets minor and patch to zero
@@ -401,6 +417,7 @@ Pull requests MUST use labels to determine release behavior:
   - Applied by default when no version label specified (if AutoPatching enabled)
 
 #### Special Release Labels
+
 - **`prerelease`** - Creates prerelease version (unmerged PR publishing)
   - Publishes module to PowerShell Gallery with prerelease tag
   - Creates GitHub Release marked as prerelease
@@ -419,6 +436,7 @@ Pull requests MUST use labels to determine release behavior:
 The Process-PSModule workflow uses **dynamic conditions** to determine job execution:
 
 #### Always Execute (All PR States)
+
 - **Get-Settings** - Configuration loading
 - **Build-Module** - Module compilation
 - **Build-Docs** - Documentation generation
@@ -433,11 +451,13 @@ The Process-PSModule workflow uses **dynamic conditions** to determine job execu
 #### Conditional Execution (Based on PR State and Labels)
 
 **Publish-Site** (GitHub Pages deployment):
+
 - **Executes when**: PR is **merged** to default branch AND tests pass
 - **Skipped when**: PR is open/synchronized OR not merged OR scheduled run OR manual trigger
 - Condition: `github.event_name == 'pull_request' AND github.event.pull_request.merged == true`
 
 **Publish-Module** (PowerShell Gallery publishing):
+
 - **Executes when**:
   - PR is **merged** to default branch AND tests pass (normal release), OR
   - PR has **`prerelease` label** AND PR is **not merged** AND tests pass (prerelease)
@@ -474,30 +494,25 @@ The Publish-PSModule action determines the new version using this process:
    - Query PowerShell Gallery for latest published version
    - Query GitHub Releases for latest release version
    - Use the higher of the two as base version
-
 2. **Determine Version Increment**
    - Check PR labels for `major`, `minor`, or `patch`
    - If no version label and AutoPatching enabled, default to `patch`
    - If no version label and AutoPatching disabled, skip publishing
-
 3. **Calculate New Version**
    - Apply SemVer increment based on label
    - Major: `1.2.3` → `2.0.0`
    - Minor: `1.2.3` → `1.3.0`
    - Patch: `1.2.3` → `1.2.4`
-
 4. **Add Prerelease Tag** (if `prerelease` label present on unmerged PR)
    - Extract branch name, sanitize to alphanumeric only
    - Query existing prerelease versions with same branch name
    - Increment prerelease counter
    - Format: `<version>-<branchname><increment>`
    - Example: `1.3.0-featureauth001`, `1.3.0-featureauth002`
-
 5. **Publish to PowerShell Gallery**
    - Upload module with calculated version
    - Set prerelease flag if prerelease tag present
    - Validate publication success
-
 6. **Create GitHub Release**
    - Generate release notes from PR description and commits
    - Create release with version tag (e.g., `v1.3.0` or `v1.3.0-featureauth001`)
@@ -547,6 +562,7 @@ jobs:
 ```
 
 **Key Points**:
+
 - **`closed` event** with `github.event.pull_request.merged == true` triggers normal releases
 - **`labeled` event** allows immediate prerelease publishing when `prerelease` label added
 - **`synchronize` event** with `prerelease` label publishes new prerelease on each push
@@ -566,6 +582,7 @@ jobs:
 ## Quality Standards
 
 ### Technical Constraints
+
 - **PowerShell Version**: 7.4 or newer (no backward compatibility with 5.1 or older Core versions)
 - **Execution Environment**: GitHub Actions runners (not designed for local development)
 - **Code Organization**: Action-based scripts preferred over inline workflow code
@@ -573,6 +590,7 @@ jobs:
 - **Workflow Structure**: Reusable workflows in `.github/workflows/` using `workflow_call` trigger
 
 ### Code Quality
+
 - All PowerShell code MUST pass PSScriptAnalyzer with project-defined rules
 - Source code structure MUST follow PSModule framework conventions
 - Code coverage target MUST be configurable per repository (default 0% for flexibility)
@@ -581,12 +599,14 @@ jobs:
 - Inline code in workflows SHOULD be avoided; extract to action scripts
 
 ### Documentation
+
 - README MUST provide clear setup instructions and workflow usage examples
 - All workflows MUST include descriptive comments explaining inputs, outputs, and purpose
 - Changes MUST update relevant documentation in the same PR
 - GitHub Pages documentation MUST be generated automatically using Material for MkDocs
 
 ### Testing
+
 - Source code tests MUST validate framework compliance
 - Module tests MUST validate built module integrity
 - Local module tests (Pester) MUST validate functional behavior across all platforms
@@ -603,6 +623,7 @@ jobs:
 ## Development Workflow
 
 ### Branching and Pull Requests
+
 - Follow GitHub Flow: feature branches → PR → main
 - PR MUST be opened for all changes
 - CI workflows MUST execute on PR synchronize, open, reopen, label events
@@ -617,6 +638,7 @@ jobs:
 - See "Pull Request Workflow and Publishing Process" section for detailed behavior
 
 ### Workflow Execution Order
+
 The standard execution order for Process-PSModule workflows MUST be:
 1. **Get-Settings** - Reads configuration and prepares test matrices
 2. **Build-Module** - Compiles source into module
@@ -632,11 +654,13 @@ The standard execution order for Process-PSModule workflows MUST be:
 10. **Publish-Module** and **Publish-Site** - Automated publishing on release
 
 **Workflow Types**:
+
 - **Production Workflow** (`.github/workflows/workflow.yml`) - Main workflow for consuming repositories
 - **CI Validation Workflow** (`.github/workflows/ci.yml`) - Integration tests for framework development
 - Consuming repositories use production workflow for releases, CI workflow for nightly validation
 
 ### Configuration
+
 - Settings MUST be stored in `.github/PSModule.yml` (or JSON/PSD1 format) in consuming repositories
 - Skip flags MUST be available for all major workflow steps
 - OS-specific skip flags MUST be supported (Linux, macOS, Windows)
@@ -648,12 +672,15 @@ The standard execution order for Process-PSModule workflows MUST be:
 ## Governance
 
 ### Constitution Authority
+
 This constitution supersedes all other development practices **for Process-PSModule framework development**. When conflicts arise between this document and other guidance, the constitution takes precedence.
 
 **For Consuming Repositories**: This constitution defines how the Process-PSModule framework is built and maintained. Consuming repositories follow the opinionated structure and configuration documented in framework action README files.
 
 ### Amendments
+
 Changes to this constitution require:
+
 1. Documentation of the proposed change with clear rationale
 2. Review and approval by project maintainers
 3. Migration plan for existing code/workflows if applicable
@@ -663,6 +690,7 @@ Changes to this constitution require:
    - PATCH: Clarifications, wording fixes, non-semantic refinements
 
 ### Compliance
+
 - All PRs MUST be validated against constitutional principles **for framework development**
 - Workflow design MUST align with Workflow-First Design principle
 - Test-First principle compliance is NON-NEGOTIABLE and enforced by review
@@ -675,6 +703,7 @@ Changes to this constitution require:
 - **Consuming repositories** MUST follow the Required Module Structure documented in Product Overview
 
 ### Runtime Development Guidance
+
 For agent-specific runtime development guidance **when developing the framework**, agents should reference:
 - GitHub Copilot: `.github/copilot-instructions.md` (if exists)
 - Other agents: Check for `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or `QWEN.md`
