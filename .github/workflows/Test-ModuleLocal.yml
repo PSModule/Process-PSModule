@@ -96,62 +96,25 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             LogGroup "Running BeforeAll Setup Scripts" {
-                function Find-TestDirectories {
-                    param ([string]$Path)
+                $beforeAllScript = 'tests/BeforeAll.ps1'
 
-                    $directories = @()
-                    $childDirs = Get-ChildItem -Path $Path -Directory
-
-                    foreach ($dir in $childDirs) {
-                        $directories += $dir.FullName
-                        $directories += Find-TestDirectories -Path $dir.FullName
-                    }
-
-                    return $directories
-                }
-
-                # Locate the tests directory.
-                $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                if (-not $testsPath) {
-                    Write-Host 'No tests directory found - exiting successfully'
+                if (-not (Test-Path $beforeAllScript)) {
+                    Write-Host "No BeforeAll.ps1 script found at [$beforeAllScript] - exiting successfully"
                     exit 0
                 }
-                Write-Host "Tests found at [$testsPath]"
 
-                $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
-                $processedDirectories = @()
-
-                foreach ($folder in $allTestFolders) {
-                    $beforeAllScript = Join-Path $folder "BeforeAll.ps1"
-
-                    if (Test-Path $beforeAllScript -PathType Leaf) {
-                        # Get unique directory path to avoid duplicate execution
-                        $uniqueDirectory = Resolve-Path $folder -Relative
-                        if ($processedDirectories -notcontains $uniqueDirectory) {
-                            $processedDirectories += $uniqueDirectory
-
-                            Write-Host "Running BeforeAll setup script: $beforeAllScript"
-                            try {
-                                Push-Location $folder
-                                & $beforeAllScript
-                                Write-Host "BeforeAll script completed successfully: $beforeAllScript"
-                            }
-                            catch {
-                                Write-Error "BeforeAll script failed: $beforeAllScript - $_"
-                                throw
-                            }
-                            finally {
-                                Pop-Location
-                            }
-                        }
-                    }
+                Write-Host "Running BeforeAll setup script: $beforeAllScript"
+                try {
+                    Push-Location 'tests'
+                    & $beforeAllScript
+                    Write-Host "BeforeAll script completed successfully: $beforeAllScript"
                 }
-
-                if ($processedDirectories.Count -eq 0) {
-                    Write-Host "No BeforeAll.ps1 scripts found in test directories - exiting successfully"
-                } else {
-                    Write-Host "Processed BeforeAll scripts in $($processedDirectories.Count) directories:"
-                    $processedDirectories | ForEach-Object { Write-Host "  - $_" }
+                catch {
+                    Write-Error "BeforeAll script failed: $beforeAllScript - $_"
+                    throw
+                }
+                finally {
+                    Pop-Location
                 }
             }
 
@@ -236,61 +199,24 @@ jobs:
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Script: |
             LogGroup "Running AfterAll Teardown Scripts" {
-                function Find-TestDirectories {
-                    param ([string]$Path)
+                $afterAllScript = 'tests/AfterAll.ps1'
 
-                    $directories = @()
-                    $childDirs = Get-ChildItem -Path $Path -Directory
-
-                    foreach ($dir in $childDirs) {
-                        $directories += $dir.FullName
-                        $directories += Find-TestDirectories -Path $dir.FullName
-                    }
-
-                    return $directories
-                }
-
-                # Locate the tests directory.
-                $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                if (-not $testsPath) {
-                    Write-Host 'No tests directory found - exiting successfully'
+                if (-not (Test-Path $afterAllScript)) {
+                    Write-Host "No AfterAll.ps1 script found at [$afterAllScript] - exiting successfully"
                     exit 0
                 }
-                Write-Host "Tests found at [$testsPath]"
 
-                $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
-                $processedDirectories = @()
-
-                foreach ($folder in $allTestFolders) {
-                    $afterAllScript = Join-Path $folder "AfterAll.ps1"
-
-                    if (Test-Path $afterAllScript -PathType Leaf) {
-                        # Get unique directory path to avoid duplicate execution
-                        $uniqueDirectory = Resolve-Path $folder -Relative
-                        if ($processedDirectories -notcontains $uniqueDirectory) {
-                            $processedDirectories += $uniqueDirectory
-
-                            Write-Host "Running AfterAll teardown script: $afterAllScript"
-                            try {
-                                Push-Location $folder
-                                & $afterAllScript
-                                Write-Host "AfterAll script completed successfully: $afterAllScript"
-                            }
-                            catch {
-                                Write-Warning "AfterAll script failed: $afterAllScript - $_"
-                                # Don't throw for teardown scripts to ensure other cleanup scripts can run
-                            }
-                            finally {
-                                Pop-Location
-                            }
-                        }
-                    }
+                Write-Host "Running AfterAll teardown script: $afterAllScript"
+                try {
+                    Push-Location 'tests'
+                    & $afterAllScript
+                    Write-Host "AfterAll script completed successfully: $afterAllScript"
                 }
-
-                if ($processedDirectories.Count -eq 0) {
-                    Write-Host "No AfterAll.ps1 scripts found in test directories - exiting successfully"
-                } else {
-                    Write-Host "Processed AfterAll scripts in $($processedDirectories.Count) directories:"
-                    $processedDirectories | ForEach-Object { Write-Host "  - $_" }
+                catch {
+                    Write-Warning "AfterAll script failed: $afterAllScript - $_"
+                    # Don't throw for teardown scripts to ensure other cleanup scripts can run
+                }
+                finally {
+                    Pop-Location
                 }
             }

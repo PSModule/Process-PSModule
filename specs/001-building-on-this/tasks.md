@@ -163,7 +163,7 @@
   - Include DO examples: Azure/AWS deployment, external database initialization, SaaS test data creation
   - Include DON'T examples: OS-specific dependencies, platform-specific files, test-specific resources
   - Provide practical examples with Azure CLI and REST API calls
-  - Document when to use BeforeAll/AfterAll vs. in-test setup
+  - Document when to use BeforeAll/AfterAll vs. in-test setup:
 - [ ] T027 [P] Update Process-PSModule and Template-PSModule documentation
   - Update Process-PSModule README with composite action documentation
   - Update Template-PSModule with example BeforeAll/AfterAll scripts showing external resource management
