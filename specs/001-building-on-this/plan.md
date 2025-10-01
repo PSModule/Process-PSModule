@@ -5,7 +5,6 @@
 
 ## Execution Flow (/plan command scope)
 
-```plaintext
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
@@ -26,7 +25,6 @@
    → Update Progress Tracking: Post-Design Constitution Check
 8. Plan Phase 2 → Describe task generation approach (DO NOT create tasks.md)
 9. STOP - Ready for /tasks command
-```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
 
@@ -35,7 +33,13 @@
 
 ## Summary
 
-Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml into a reusable local composite action. This reduces workflow duplication, improves maintainability, and enables reuse across workflows. The single composite action will accept a mode parameter (before/after) to control which script to execute (BeforeAll.ps1 or AfterAll.ps1) and error handling behavior. The action will be located at `.github/actions/setup-test/action.yml` and will integrate with existing PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers actions. Documentation will clearly explain that BeforeAll/AfterAll scripts are intended for managing external test resources (cloud infrastructure, external databases, third-party services) that are independent of the test platform/OS, while test-specific resources should be created within the tests themselves.
+Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml into a reusable local composite action. This reduces workflow
+duplication, improves maintainability, and enables reuse across workflows. The single composite action will accept a mode parameter (before/after) to
+control which script to execute (BeforeAll.ps1 or AfterAll.ps1) and error handling behavior. The action will be located at
+`.github/actions/setup-test/action.yml` and will integrate with existing PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers actions.
+Documentation will clearly explain that BeforeAll/AfterAll scripts are intended for managing external test resources (cloud infrastructure, external
+databases, third-party services) that are independent of the test platform/OS, while test-specific resources should be created within the tests
+themselves.
 
 ## Technical Context
 
@@ -132,7 +136,7 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
 
 ### Documentation (this feature)
 
-```
+```plaintext
 specs/001-building-on-this/
 ├── spec.md              # Feature specification (already exists)
 ├── plan.md              # This file (/plan command output)
@@ -145,7 +149,7 @@ specs/001-building-on-this/
 
 ### Source Code (repository root)
 
-```
+```plaintext
 Process-PSModule/
 ├── .github/
 │   ├── actions/
@@ -172,13 +176,11 @@ Process-PSModule/
    - Best practices for mode-based behavior in actions
    - Integration patterns with existing PSModule actions
 2. **Generate and dispatch research agents**:
-   ```
-   Task 1: "Research GitHub composite action structure and syntax best practices"
-   Task 2: "Research error handling patterns in GitHub composite actions (continue-on-error, fail-fast)"
-   Task 3: "Research mode/parameter-based behavior patterns in reusable actions"
-   Task 4: "Research integration patterns for PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers"
-   Task 5: "Review current Test-ModuleLocal.yml BeforeAll/AfterAll implementation for exact behavior"
-   ```
+   - Task 1: "Research GitHub composite action structure and syntax best practices"
+   - Task 2: "Research error handling patterns in GitHub composite actions (continue-on-error, fail-fast)"
+   - Task 3: "Research mode/parameter-based behavior patterns in reusable actions"
+   - Task 4: "Research integration patterns for PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers"
+   - Task 5: "Review current Test-ModuleLocal.yml BeforeAll/AfterAll implementation for exact behavior"
 3. **Consolidate findings** in `research.md` using format:
    - Decision: [what was chosen]
    - Rationale: [why chosen]
