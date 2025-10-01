@@ -77,9 +77,102 @@ permissions:
   contents: read # to checkout the repo and create releases on the repo
 
 jobs:
+  BeforeAll-ModuleLocal:
+    name: BeforeAll-ModuleLocal
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@v1
+
+      - name: Run BeforeAll Setup Scripts
+        uses: PSModule/GitHub-Script@v1
+        env:
+          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          Name: BeforeAll-ModuleLocal
+          ShowInfo: false
+          ShowOutput: true
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Script: |
+            LogGroup "Running BeforeAll Setup Scripts" {
+                function Find-TestDirectories {
+                    param ([string]$Path)
+
+                    $directories = @()
+                    $childDirs = Get-ChildItem -Path $Path -Directory
+
+                    foreach ($dir in $childDirs) {
+                        $directories += $dir.FullName
+                        $directories += Find-TestDirectories -Path $dir.FullName
+                    }
+
+                    return $directories
+                }
+
+                # Locate the tests directory.
+                $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                if (-not $testsPath) {
+                    Write-Host 'No tests directory found - exiting successfully'
+                    exit 0
+                }
+                Write-Host "Tests found at [$testsPath]"
+
+                $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
+                $processedDirectories = @()
+
+                foreach ($folder in $allTestFolders) {
+                    $beforeAllScript = Join-Path $folder "BeforeAll.ps1"
+                    
+                    if (Test-Path $beforeAllScript -PathType Leaf) {
+                        # Get unique directory path to avoid duplicate execution
+                        $uniqueDirectory = Resolve-Path $folder -Relative
+                        if ($processedDirectories -notcontains $uniqueDirectory) {
+                            $processedDirectories += $uniqueDirectory
+                            
+                            Write-Host "Running BeforeAll setup script: $beforeAllScript"
+                            try {
+                                Push-Location $folder
+                                & $beforeAllScript
+                                Write-Host "BeforeAll script completed successfully: $beforeAllScript"
+                            }
+                            catch {
+                                Write-Error "BeforeAll script failed: $beforeAllScript - $_"
+                                throw
+                            }
+                            finally {
+                                Pop-Location
+                            }
+                        }
+                    }
+                }
+
+                if ($processedDirectories.Count -eq 0) {
+                    Write-Host "No BeforeAll.ps1 scripts found in test directories - exiting successfully"
+                } else {
+                    Write-Host "Processed BeforeAll scripts in $($processedDirectories.Count) directories:"
+                    $processedDirectories | ForEach-Object { Write-Host "  - $_" }
+                }
+            }
+
   Test-ModuleLocal:
     name: Test-${{ inputs.TestName }} (${{ inputs.RunsOn }})
     runs-on: ${{ inputs.RunsOn }}
+    needs:
+      - BeforeAll-ModuleLocal
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -133,3 +226,98 @@ jobs:
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
             Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
+
+  AfterAll-ModuleLocal:
+    name: AfterAll-ModuleLocal
+    runs-on: ubuntu-latest
+    needs:
+      - Test-ModuleLocal
+    if: always()
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@v1
+
+      - name: Run AfterAll Teardown Scripts
+        if: always()
+        uses: PSModule/GitHub-Script@v1
+        env:
+          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          Name: AfterAll-ModuleLocal
+          ShowInfo: false
+          ShowOutput: true
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Script: |
+            LogGroup "Running AfterAll Teardown Scripts" {
+                function Find-TestDirectories {
+                    param ([string]$Path)
+
+                    $directories = @()
+                    $childDirs = Get-ChildItem -Path $Path -Directory
+
+                    foreach ($dir in $childDirs) {
+                        $directories += $dir.FullName
+                        $directories += Find-TestDirectories -Path $dir.FullName
+                    }
+
+                    return $directories
+                }
+
+                # Locate the tests directory.
+                $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
+                if (-not $testsPath) {
+                    Write-Host 'No tests directory found - exiting successfully'
+                    exit 0
+                }
+                Write-Host "Tests found at [$testsPath]"
+
+                $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
+                $processedDirectories = @()
+
+                foreach ($folder in $allTestFolders) {
+                    $afterAllScript = Join-Path $folder "AfterAll.ps1"
+                    
+                    if (Test-Path $afterAllScript -PathType Leaf) {
+                        # Get unique directory path to avoid duplicate execution
+                        $uniqueDirectory = Resolve-Path $folder -Relative
+                        if ($processedDirectories -notcontains $uniqueDirectory) {
+                            $processedDirectories += $uniqueDirectory
+                            
+                            Write-Host "Running AfterAll teardown script: $afterAllScript"
+                            try {
+                                Push-Location $folder
+                                & $afterAllScript
+                                Write-Host "AfterAll script completed successfully: $afterAllScript"
+                            }
+                            catch {
+                                Write-Warning "AfterAll script failed: $afterAllScript - $_"
+                                # Don't throw for teardown scripts to ensure other cleanup scripts can run
+                            }
+                            finally {
+                                Pop-Location
+                            }
+                        }
+                    }
+                }
+
+                if ($processedDirectories.Count -eq 0) {
+                    Write-Host "No AfterAll.ps1 scripts found in test directories - exiting successfully"
+                } else {
+                    Write-Host "Processed AfterAll scripts in $($processedDirectories.Count) directories:"
+                    $processedDirectories | ForEach-Object { Write-Host "  - $_" }
+                }
+            }
