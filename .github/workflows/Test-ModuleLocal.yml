@@ -88,7 +88,7 @@ env:
 
 jobs:
   Test-ModuleLocal:
-    name: Test-${{ inputs.TestName }} (${{ inputs.OSName }})
+    name: Test-${{ inputs.TestName }} (${{ inputs.RunsOn }})
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
