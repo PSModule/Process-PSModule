@@ -63,7 +63,7 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Generates a static site using:
     - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 - [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentationto GitHub Pages.
+  - Publishes the static site with the module documentation to GitHub Pages.
 - [Publish module](./.github/workflows/Publish-Module.yml)
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
