@@ -86,8 +86,8 @@ Repositories that consume Process-PSModule workflows MUST:
 │   │   └── Environment.Tests.ps1
 │   ├── MyTests/                    # Optional: Additional test suites
 │   │   └── <ModuleName>.Tests.ps1
-│   ├── AfterAll.ps1                # Teardown script (optional, runs after all test matrix jobs)
-│   ├── BeforeAll.ps1               # Setup script (optional, runs before all test matrix jobs)
+│   ├── AfterAll.ps1                # Teardown script (optional, runs once after all test matrix jobs)
+│   ├── BeforeAll.ps1               # Setup script (optional, runs once before all test matrix jobs)
 │   ├── <ModuleName>.Tests.ps1      # Module functional tests (Pester)
 │   └── Environment.Tests.ps1       # Environment validation tests (optional)
 ├── .gitattributes                  # Git line ending configuration
@@ -120,8 +120,9 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 - `data/` - Configuration data files (`.psd1`) loaded as module variables
 - `formats/` - Format definition files (`.ps1xml`) for object display
 - `functions/private/` - Private functions (internal implementation)
+  - Supports subdirectories for grouping (e.g., `functions/public/CoponentA/`, `functions/public/ComponentB/`)
 - `functions/public/` - Public functions (exported to module consumers)
-  - Supports subdirectories for grouping (e.g., `functions/public/Get-/`, `functions/public/Set-/`)
+  - Supports subdirectories for grouping (e.g., `functions/public/CoponentA/`, `functions/public/ComponentB/`)
   - Optional category documentation files (e.g., `functions/public/PSModule/PSModule.md`)
 - `init/` - Initialization scripts (executed first during module load)
 - `modules/` - Nested PowerShell modules (`.psm1`) or additional assemblies
@@ -158,9 +159,32 @@ The `src/` folder contains the module source code that Build-PSModule compiles i
 
 - `tests/` folder at repository root (NOT inside `src/`)
 - Pester test files (`.Tests.ps1`) for module validation
-- Optional `BeforeAll.ps1` and `AfterAll.ps1` for test environment setup/teardown
+- Optional `BeforeAll.ps1` and `AfterAll.ps1` scripts for external test resource management (see below)
 - Tests executed by Test-ModuleLocal workflow across all platforms
-- See "Test-ModuleLocal workflow" section for matrix testing details
+- See "Workflow Execution Order" section for BeforeAll/AfterAll/Test workflow sequence
+
+**BeforeAll/AfterAll Test Scripts** (Optional):
+
+Process-PSModule supports optional test setup and teardown scripts that execute once per workflow run (not per platform):
+
+- **`tests/BeforeAll.ps1`** - Runs once before all Test-ModuleLocal matrix jobs
+  - **Purpose**: Setup external test resources independent of test platform/OS
+  - **Intended Use**: Deploy cloud infrastructure via APIs, create external database instances, initialize test data in third-party services
+  - **NOT Intended For**: OS-specific dependencies, platform-specific test files, test-specific resources for individual matrix combinations
+  - **Execution**: Runs in `tests/` directory on ubuntu-latest with full access to environment secrets
+  - **Error Handling**: Script failures halt the testing workflow (setup must succeed)
+  - **Example Use Cases**: Deploy Azure/AWS resources via APIs, create external PostgreSQL databases, initialize SaaS test accounts
+
+- **`tests/AfterAll.ps1`** - Runs once after all Test-ModuleLocal matrix jobs complete
+  - **Purpose**: Cleanup external test resources independent of test platform/OS
+  - **Intended Use**: Remove cloud infrastructure via APIs, delete external database instances, cleanup test data in third-party services
+  - **NOT Intended For**: OS-specific cleanup, platform-specific file removal, test-specific cleanup for individual matrix combinations
+  - **Execution**: Runs in `tests/` directory on ubuntu-latest with full access to environment secrets
+  - **Error Handling**: Script failures logged as warnings but don't halt workflow (cleanup is best-effort)
+  - **Always Executes**: Runs even if tests fail (via `if: always()` condition)
+  - **Example Use Cases**: Delete Azure/AWS resources via APIs, remove external databases, cleanup SaaS test accounts
+
+**Key Distinction**: BeforeAll/AfterAll are for managing **external resources via APIs** that exist outside GitHub Actions execution environment. Test-specific resources for individual OS/platform combinations should be created within the tests themselves using Pester `BeforeAll`/`AfterAll` blocks.
 
 **Key Points**:
 
@@ -360,6 +384,7 @@ All code changes MUST follow strict TDD practices using Pester and PSScriptAnaly
 - **Modules MUST function identically** on Linux, macOS, and Windows
 - Cross-platform compatibility is **verified through Test-ModuleLocal** workflow
 - Test-ModuleLocal executes module tests on: `ubuntu-latest`, `windows-latest`, `macos-latest`
+- **BeforeAll/AfterAll scripts** execute on `ubuntu-latest` only (external resource setup)
 - Implement matrix testing across all supported operating systems for all workflow components
 - Document any platform-specific behaviors or limitations explicitly
 - Test failures on any platform MUST block merging
@@ -645,13 +670,23 @@ The standard execution order for Process-PSModule workflows MUST be:
 3. **Test-SourceCode** - Parallel matrix testing of source code standards
 4. **Lint-SourceCode** - Parallel matrix linting of source code
 5. **Test-Module** - Framework validation and linting of built module
-6. **Test-ModuleLocal** - Runs Pester tests with BeforeAll/AfterAll support
-   - **Verifies cross-platform module compatibility** on ubuntu-latest, windows-latest, macos-latest
+6. **BeforeAll-ModuleLocal** - Optional: Execute tests/BeforeAll.ps1 setup script once before all test matrix jobs
+   - **Runs on ubuntu-latest only** (external resource setup via APIs)
+   - Script failures halt workflow execution
+   - Skipped if tests/BeforeAll.ps1 does not exist
+7. **Test-ModuleLocal** - Runs Pester tests across platform matrix (ubuntu-latest, windows-latest, macos-latest)
+   - **Verifies cross-platform module compatibility**
    - Tests module functionality across all supported platforms
-7. **Get-TestResults** - Aggregates and validates test results
-8. **Get-CodeCoverage** - Validates coverage thresholds
-9. **Build-Docs** and **Build-Site** - Generates documentation
-10. **Publish-Module** and **Publish-Site** - Automated publishing on release
+   - Depends on BeforeAll-ModuleLocal (waits for external resource setup)
+8. **AfterAll-ModuleLocal** - Optional: Execute tests/AfterAll.ps1 teardown script once after all test matrix jobs
+   - **Always runs even if tests fail** (via `if: always()` condition)
+   - **Runs on ubuntu-latest only** (external resource cleanup via APIs)
+   - Script failures logged as warnings but don't halt workflow
+   - Skipped if tests/AfterAll.ps1 does not exist
+9. **Get-TestResults** - Aggregates and validates test results
+10. **Get-CodeCoverage** - Validates coverage thresholds
+11. **Build-Docs** and **Build-Site** - Generates documentation
+12. **Publish-Module** and **Publish-Site** - Automated publishing on release
 
 **Workflow Types**:
 
@@ -710,4 +745,4 @@ For agent-specific runtime development guidance **when developing the framework*
 
 **For Consuming Repositories**: Follow the Required Module Structure and Workflow Integration Requirements documented in the Product Overview section. Start with [Template-PSModule](https://github.com/PSModule/Template-PSModule).
 
-**Version**: 1.5.1 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
+**Version**: 1.6.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
