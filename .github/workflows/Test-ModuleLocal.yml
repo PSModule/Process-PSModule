@@ -25,28 +25,14 @@ on:
         description: The classic personal access token for running tests.
         required: false
     inputs:
-      RunsOn:
+      ModuleTestSuites:
         type: string
-        description: The type of runner to use for the job.
-        required: true
-      OS:
-        type: string
-        description: The operating system name.
+        description: JSON array of module test suites to run (from Get-Settings output).
         required: true
       Name:
         type: string
         description: The name of the module to process. Scripts default to the repository name if nothing is specified.
         required: false
-      TestPath:
-        type: string
-        description: The path to the tests folder.
-        required: false
-        default: tests
-      TestName:
-        type: string
-        description: The path to the tests folder.
-        required: false
-        default: tests
       Debug:
         type: boolean
         description: Enable debug output.
@@ -169,10 +155,14 @@ jobs:
             }
 
   Test-ModuleLocal:
-    name: Test-${{ inputs.TestName }} (${{ inputs.RunsOn }})
-    runs-on: ${{ inputs.RunsOn }}
+    name: Test-${{ matrix.TestName }} (${{ matrix.OSName }})
+    runs-on: ${{ matrix.RunsOn }}
     needs:
       - BeforeAll-ModuleLocal
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.ModuleTestSuites) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -213,14 +203,14 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OS }}
+          TestResult_TestSuiteName: ${{ matrix.TestName }}-${{ matrix.OSName }}
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
           CodeCoverage_CoveragePercentTarget: 0
           Filter_ExcludeTag: Flaky
-          Path: ${{ inputs.TestPath }}
+          Path: ${{ matrix.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Prescript: | # This is to speed up module loading in Pester.

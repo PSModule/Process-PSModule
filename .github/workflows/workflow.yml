@@ -183,17 +183,10 @@ jobs:
     needs:
       - Build-Module
       - Get-Settings
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      TestPath: ${{ matrix.TestPath }}
-      TestName: ${{ matrix.TestName }}
+      ModuleTestSuites: ${{ needs.Get-Settings.outputs.ModuleTestSuites }}
       Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
