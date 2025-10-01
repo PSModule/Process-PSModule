@@ -307,17 +307,20 @@ Scripts (BeforeAll.ps1, AfterAll.ps1) can assume:
 ### Error Messages Contract
 
 **Invalid Mode**:
-```
+
+```plaintext
 Invalid mode '$mode'. Mode must be 'before' or 'after'.
 ```
 
 **Script Execution Error (before)**:
-```
+
+```plaintext
 BeforeAll script failed: [absolute-path] - [error-message]
 ```
 
 **Script Execution Error (after)**:
-```
+
+```plaintext
 WARNING: AfterAll script failed: [absolute-path] - [error-message]
 ```
 

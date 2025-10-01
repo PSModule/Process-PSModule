@@ -1,11 +1,11 @@
-
 # Implementation Plan: Local GitHub Composite Action for BeforeAll/AfterAll Test Scripts
 
 **Branch**: `001-building-on-this` | **Date**: October 1, 2025 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-building-on-this/spec.md`
 
 ## Execution Flow (/plan command scope)
-```
+
+```plaintext
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
@@ -18,7 +18,9 @@
    → Update Progress Tracking: Initial Constitution Check
 5. Execute Phase 0 → research.md
    → If NEEDS CLARIFICATION remain: ERROR "Resolve unknowns"
-6. Execute Phase 1 → contracts, data-model.md, quickstart.md, agent-specific template file (e.g., `CLAUDE.md` for Claude Code, `.github/copilot-instructions.md` for GitHub Copilot, `GEMINI.md` for Gemini CLI, `QWEN.md` for Qwen Code or `AGENTS.md` for opencode).
+6. Execute Phase 1 → contracts, data-model.md, quickstart.md, agent-specific template file
+   (e.g., `CLAUDE.md` for Claude Code, `.github/copilot-instructions.md` for GitHub Copilot,
+   `GEMINI.md` for Gemini CLI, `QWEN.md` for Qwen Code or `AGENTS.md` for opencode).
 7. Re-evaluate Constitution Check section
    → If new violations: Refactor design, return to Phase 1
    → Update Progress Tracking: Post-Design Constitution Check
@@ -27,13 +29,16 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
+
 Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml into a reusable local composite action. This reduces workflow duplication, improves maintainability, and enables reuse across workflows. The single composite action will accept a mode parameter (before/after) to control which script to execute (BeforeAll.ps1 or AfterAll.ps1) and error handling behavior. The action will be located at `.github/actions/setup-test/action.yml` and will integrate with existing PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers actions. Documentation will clearly explain that BeforeAll/AfterAll scripts are intended for managing external test resources (cloud infrastructure, external databases, third-party services) that are independent of the test platform/OS, while test-specific resources should be created within the tests themselves.
 
 ## Technical Context
+
 **Language/Version**: PowerShell 7.4+ (GitHub Actions composite actions)
 **Primary Dependencies**: PSModule/GitHub-Script@v1, PSModule/Install-PSModuleHelpers@v1
 **Storage**: N/A (stateless GitHub Actions workflow execution)
@@ -45,9 +50,11 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
 **Scale/Scope**: Single composite action with 2 modes, integration into 1 primary workflow (Test-ModuleLocal.yml)
 
 ## Constitution Check
+
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 ### I. Workflow-First Design (NON-NEGOTIABLE)
+
 - [x] Feature is implemented as reusable GitHub Actions workflow(s)
   - Composite action is a reusable GitHub Actions component
 - [x] Workflows have clearly defined inputs and outputs
@@ -66,6 +73,7 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
   - PSModule/GitHub-Script@v1, PSModule/Install-PSModuleHelpers@v1
 
 ### II. Test-Driven Development (NON-NEGOTIABLE)
+
 - [x] Tests will be written before implementation
   - Will create test scenarios in Test-ModuleLocal integration workflow
 - [x] Initial tests will fail (Red phase documented)
@@ -82,6 +90,7 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
   - Integration tests via Test-ModuleLocal.yml execution
 
 ### III. Platform Independence with Modern PowerShell
+
 - [x] PowerShell 7.4+ constructs used exclusively
   - Composite action uses GitHub-Script which runs PowerShell 7.4+
 - [x] Matrix testing across Linux, macOS, Windows included
@@ -94,6 +103,7 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
   - PowerShell 7.4+ only
 
 ### IV. Quality Gates and Observability
+
 - [x] Test results captured in structured JSON format
   - Integration test results via Test-ModuleLocal workflow
 - [x] Code coverage measurement included
@@ -108,6 +118,7 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
   - Debug input parameter specified in FR-012
 
 ### V. Continuous Delivery with Semantic Versioning
+
 - [x] Version bump strategy documented (labels, SemVer)
   - Follows Process-PSModule release workflow
 - [x] Release automation compatible with existing workflow
@@ -120,6 +131,7 @@ Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml i
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/001-building-on-this/
 ├── spec.md              # Feature specification (already exists)
@@ -132,6 +144,7 @@ specs/001-building-on-this/
 ```
 
 ### Source Code (repository root)
+
 ```
 Process-PSModule/
 ├── .github/
@@ -151,13 +164,13 @@ Process-PSModule/
 **Structure Decision**: This is a GitHub Actions workflow enhancement within the Process-PSModule framework. The structure follows the standard Process-PSModule repository layout with additions to `.github/actions/` for the new composite action and modifications to `.github/workflows/Test-ModuleLocal.yml` to consume the action. The composite action is a local action (not published separately) located within the Process-PSModule repository structure.
 
 ## Phase 0: Outline & Research
+
 1. **Extract unknowns from Technical Context** above:
    - All technical context items are resolved (no NEEDS CLARIFICATION)
    - Composite action structure and syntax patterns needed
    - Error handling patterns for composite actions
    - Best practices for mode-based behavior in actions
    - Integration patterns with existing PSModule actions
-
 2. **Generate and dispatch research agents**:
    ```
    Task 1: "Research GitHub composite action structure and syntax best practices"
@@ -166,7 +179,6 @@ Process-PSModule/
    Task 4: "Research integration patterns for PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers"
    Task 5: "Review current Test-ModuleLocal.yml BeforeAll/AfterAll implementation for exact behavior"
    ```
-
 3. **Consolidate findings** in `research.md` using format:
    - Decision: [what was chosen]
    - Rationale: [why chosen]
@@ -175,6 +187,7 @@ Process-PSModule/
 **Output**: research.md with all technical decisions documented
 
 ## Phase 1: Design & Contracts
+
 *Prerequisites: research.md complete*
 
 1. **Extract entities from feature spec** → `data-model.md`:
@@ -183,18 +196,15 @@ Process-PSModule/
    - Entity: Workflow integration contract (job dependencies, data flow)
    - Validation rules for inputs and runtime checks
    - State transitions for execution flow
-
 2. **Generate API contracts** from functional requirements:
    - action.yml contract: Composite action definition with inputs/outputs
    - script-implementation.md contract: Embedded PowerShell script specification
    - workflow-integration.md contract: Test-ModuleLocal.yml integration changes
    - Output to `/contracts/` directory
-
 3. **Generate contract tests** from contracts:
    - Test scenarios defined in quickstart.md
    - Integration tests via Test-ModuleLocal.yml execution
    - Validation checklist for each scenario
-
 4. **Extract test scenarios** from user stories:
    - Scenario 1: Happy path (all scripts present and succeed)
    - Scenario 2: No tests directory
@@ -203,7 +213,6 @@ Process-PSModule/
    - Scenario 5: BeforeAll.ps1 fails
    - Scenario 6: AfterAll.ps1 fails
    - Scenario 7: Test-ModuleLocal fails but AfterAll runs
-
 5. **Update agent file incrementally** (O(1) operation):
    - Executed: `.specify/scripts/powershell/update-agent-context.ps1 -AgentType copilot`
    - Created: `.github/copilot-instructions.md`
@@ -212,18 +221,22 @@ Process-PSModule/
 **Output**: ✅ data-model.md, /contracts/*, quickstart.md, .github/copilot-instructions.md created
 
 ## Phase 2: Task Planning Approach
+
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
+
 The /tasks command will load `.specify/templates/tasks-template.md` and generate ordered tasks from Phase 1 design artifacts:
 
 **From data-model.md**:
+
 - Task: Create `.github/actions/setup-test/` directory structure
 - Task: Define composite action inputs/outputs structure
 - Task: Implement mode parameter validation logic
 - Task: Implement environment variable pass-through mechanism
 
 **From contracts/action.yml.md**:
+
 - Task: Create `.github/actions/setup-test/action.yml` file [P]
 - Task: Define action metadata (name, description, author)
 - Task: Define inputs section with all required/optional inputs [P]
@@ -231,6 +244,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 - Task: Embed PowerShell script from script-implementation.md contract
 
 **From contracts/script-implementation.md**:
+
 - Task: Implement mode validation (before/after) in PowerShell script [P]
 - Task: Implement tests directory discovery logic [P]
 - Task: Implement script file discovery (BeforeAll.ps1/AfterAll.ps1) [P]
@@ -240,6 +254,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 - Task: Implement LogGroup output formatting
 
 **From contracts/workflow-integration.md**:
+
 - Task: Update BeforeAll-ModuleLocal job in Test-ModuleLocal.yml
 - Task: Update AfterAll-ModuleLocal job in Test-ModuleLocal.yml
 - Task: Verify job dependency chain preserved (BeforeAll → Test → AfterAll)
@@ -247,6 +262,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 - Task: Verify secrets pass-through preserved
 
 **From quickstart.md**:
+
 - Task: Create test repository with tests/ directory for validation
 - Task: Create BeforeAll.ps1 test script that succeeds
 - Task: Create AfterAll.ps1 test script that succeeds
@@ -259,6 +275,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 - Task: Validate Scenario 7: Test-ModuleLocal fails but AfterAll runs [Integration Test]
 
 **From documentation requirements**:
+
 - Task: Update Process-PSModule README with composite action documentation
 - Task: Create comprehensive BeforeAll/AfterAll usage documentation explaining:
   * Intended purpose: external test resource setup (cloud infrastructure, external databases, third-party services via APIs)
@@ -270,6 +287,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 - Task: Update .github/copilot-instructions.md (already done in Phase 1)
 
 **Ordering Strategy**:
+
 1. **TDD Order**: Tests/contracts before implementation
    - Create test repository structure first
    - Define contracts before implementing
@@ -280,6 +298,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
    - Different test scenarios can be validated in parallel
 
 **Estimated Task Count**: ~32-37 tasks
+
 - Setup: 2 tasks (directory structure, test repository)
 - Composite Action: 8-10 tasks (action.yml, script implementation)
 - Workflow Integration: 4 tasks (modify jobs, verify dependencies)
@@ -287,6 +306,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 - Documentation: 6 tasks (README, usage documentation, examples, migration guide, templates)
 
 **Task Priorities**:
+
 - P0 (Critical Path): Composite action implementation, workflow integration
 - P1 (High): Core test scenarios (1, 5, 6, 7)
 - P2 (Medium): Edge case scenarios (2, 3, 4)
@@ -295,6 +315,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
 ## Phase 3+: Future Implementation
+
 *These phases are beyond the scope of the /plan command*
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)
@@ -302,6 +323,7 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
+
 *Fill ONLY if Constitution Check has violations that must be justified*
 
 **Status**: ✅ No constitutional violations identified
@@ -311,17 +333,19 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 | None | N/A | N/A |
 
 All constitutional requirements are satisfied:
+
 - Workflow-first design: Composite action is a reusable GitHub Actions component
 - Test-driven development: Integration tests defined in quickstart.md
 - Platform independence: PowerShell 7.4+ on ubuntu-latest (per requirements)
 - Quality gates: Testing and validation strategies defined
 - Continuous delivery: Follows existing Process-PSModule release workflow
 
-
 ## Progress Tracking
+
 *This checklist is updated during execution flow*
 
 **Phase Status**:
+
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
 - [x] Phase 2: Task planning approach described (/plan command)
@@ -330,6 +354,7 @@ All constitutional requirements are satisfied:
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS (all requirements met)
 - [x] Post-Design Constitution Check: PASS (no new violations)
 - [x] All NEEDS CLARIFICATION resolved (none existed)

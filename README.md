@@ -302,8 +302,10 @@ Write-Host "Cleanup completed!"
 - If no scripts are found, the workflow continues normally
 
 **Execution Order:**
+
 The workflow executes setup and teardown scripts using separate dedicated jobs with the following order:
-```
+
+```plaintext
 BeforeAll-ModuleLocal → Test-ModuleLocal (matrix) → AfterAll-ModuleLocal → Get-TestResults/Get-CodeCoverage
 ```
 

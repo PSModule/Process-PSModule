@@ -64,6 +64,7 @@ BeforeAll-ModuleLocal:
 - ~92 lines of code
 
 **New Implementation**:
+
 ```yaml
 AfterAll-ModuleLocal:
   name: AfterAll-ModuleLocal
@@ -97,6 +98,7 @@ AfterAll-ModuleLocal:
 ```
 
 **Key Changes**:
+
 - Remove Install-PSModuleHelpers step (moved to composite action)
 - Remove GitHub-Script step with inline script
 - Add setup-test composite action call with mode: after
@@ -116,7 +118,8 @@ AfterAll-ModuleLocal:
 ## Workflow Structure Contract
 
 ### File Organization
-```
+
+```plaintext
 Test-ModuleLocal.yml (314 lines → ~176 lines)
 ├── on: workflow_call
 │   ├── secrets: [8 test secrets]
@@ -172,7 +175,7 @@ Test-ModuleLocal.yml (314 lines → ~176 lines)
 
 ## Job Dependency Contract
 
-```
+```plaintext
 BeforeAll-ModuleLocal (no dependencies)
         ↓
 Test-ModuleLocal (needs: BeforeAll-ModuleLocal)
@@ -325,6 +328,7 @@ AfterAll-ModuleLocal (needs: Test-ModuleLocal, if: always())
 | Maintenance burden | High (duplicated code) | Low (single action) | Significant improvement |
 
 **Execution Time Breakdown**:
+
 - Current: Checkout + Install-PSModuleHelpers + GitHub-Script + Script execution
 - New: Checkout + setup-test (Install-PSModuleHelpers + GitHub-Script) + Script execution
 - Difference: Composite action invocation overhead (~1-2 seconds)
@@ -340,6 +344,7 @@ If issues are discovered post-integration:
 5. **Re-deploy**: Apply fix and re-test in production
 
 **Rollback steps**:
+
 ```bash
 git revert <commit-hash>  # Revert workflow changes
 git push origin main      # Deploy rollback

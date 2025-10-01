@@ -67,6 +67,7 @@ This document defines the data structures, contracts, and entities for the setup
    - All environment variables accessible to scripts
 
 **Dependencies**:
+
 - PSModule/Install-PSModuleHelpers@v1 (installs PSModule helper functions)
 - PSModule/GitHub-Script@v1 (provides PowerShell execution environment with LogGroup)
 
@@ -82,6 +83,7 @@ This document defines the data structures, contracts, and entities for the setup
 ### 2. Test Script Files
 
 **BeforeAll.ps1**:
+
 - **Location**: `tests/BeforeAll.ps1` (root tests folder only)
 - **Purpose**: Setup external test resources before all test matrix jobs - resources that are independent of test platform/OS
 - **Intended Use**: Deploy cloud infrastructure via APIs, create external database instances, initialize test data in third-party services
@@ -91,6 +93,7 @@ This document defines the data structures, contracts, and entities for the setup
 - **Example Use Cases**: Deploy Azure/AWS resources via APIs, create external PostgreSQL databases, initialize SaaS test accounts
 
 **AfterAll.ps1**:
+
 - **Location**: `tests/AfterAll.ps1` (root tests folder only)
 - **Purpose**: Cleanup external test resources after all test matrix jobs - resources that are independent of test platform/OS
 - **Intended Use**: Remove cloud infrastructure via APIs, delete external database instances, cleanup test data in third-party services
@@ -100,6 +103,7 @@ This document defines the data structures, contracts, and entities for the setup
 - **Example Use Cases**: Delete Azure/AWS resources via APIs, remove external databases, cleanup SaaS test accounts
 
 **Script Contract**:
+
 - Scripts can access all environment variables (secrets)
 - Scripts execute in tests directory (via Push-Location)
 - Scripts should use Write-Host for output (not Write-Verbose)
@@ -110,6 +114,7 @@ This document defines the data structures, contracts, and entities for the setup
 ### 3. Workflow Integration Contract
 
 **BeforeAll-ModuleLocal Job**:
+
 ```yaml
 BeforeAll-ModuleLocal:
   name: BeforeAll-ModuleLocal
@@ -139,6 +144,7 @@ BeforeAll-ModuleLocal:
 ```
 
 **AfterAll-ModuleLocal Job**:
+
 ```yaml
 AfterAll-ModuleLocal:
   name: AfterAll-ModuleLocal
@@ -172,6 +178,7 @@ AfterAll-ModuleLocal:
 ```
 
 **Job Dependencies**:
+
 - BeforeAll-ModuleLocal: No dependencies (runs first)
 - Test-ModuleLocal: Depends on BeforeAll-ModuleLocal
 - AfterAll-ModuleLocal: Depends on Test-ModuleLocal, always runs (if: always())
@@ -180,7 +187,7 @@ AfterAll-ModuleLocal:
 
 Since this is a stateless action, state transitions describe the execution flow:
 
-```
+```plaintext
 [Start]
   → Check inputs.mode validation
   → mode = "before" or "after"
@@ -258,6 +265,7 @@ Since this is a stateless action, state transitions describe the execution flow:
 ### Output Contract
 
 The action provides output via:
+
 1. **Exit Code**: 0 for success, non-zero for failure (mode="before" only)
 2. **Console Output**: Formatted messages via LogGroup
 3. **GitHub Actions Status**: Job success/failure reflected in workflow UI
@@ -265,10 +273,12 @@ The action provides output via:
 ### Log Output Format
 
 All output wrapped in LogGroup with title based on mode:
+
 - mode="before": "Running BeforeAll Setup Scripts"
 - mode="after": "Running AfterAll Teardown Scripts"
 
 Standard messages:
+
 - No tests directory: "No tests directory found - exiting successfully"
 - No script found: "No [BeforeAll|AfterAll].ps1 script found - exiting successfully"
 - Script execution start: "Running [BeforeAll|AfterAll] setup/teardown script: [path]"
@@ -279,23 +289,27 @@ Standard messages:
 ## Non-Functional Requirements
 
 ### Performance
+
 - Action invocation overhead: <2 seconds (Install-PSModuleHelpers + GitHub-Script startup)
 - Script discovery: <100ms (single file check)
 - Total execution time: Script runtime + overhead
 
 ### Reliability
+
 - Action must handle missing directories/files gracefully
 - Action must always restore working directory (via finally block)
 - Action must propagate errors correctly based on mode
 - AfterAll mode must ensure cleanup always runs (if: always())
 
 ### Maintainability
+
 - Single source of truth for setup/teardown logic
 - Clear separation of concerns (action vs scripts)
 - Reusable across workflows
 - Documented inputs and behavior
 
 ### Security
+
 - Secrets passed as environment variables (not in action inputs)
 - Scripts run in isolated job context
 - No secret values logged (use Write-Host for non-sensitive output)
