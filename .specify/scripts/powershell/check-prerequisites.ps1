@@ -25,6 +25,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Source common functions
+. "$PSScriptRoot/common.ps1"
+
 # Show help if requested
 if ($Help) {
     Write-Output @'
@@ -52,9 +55,6 @@ EXAMPLES:
 '@
     exit 0
 }
-
-# Source common functions
-. "$PSScriptRoot/common.ps1"
 
 # Get feature paths and validate branch
 $paths = Get-FeaturePathsEnv

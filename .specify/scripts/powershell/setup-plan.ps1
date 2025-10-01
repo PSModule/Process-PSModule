@@ -9,6 +9,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Load common functions
+. "$PSScriptRoot/common.ps1"
+
 # Show help if requested
 if ($Help) {
     Write-Output 'Usage: ./setup-plan.ps1 [-Json] [-Help]'
@@ -16,9 +19,6 @@ if ($Help) {
     Write-Output '  -Help     Show this help message'
     exit 0
 }
-
-# Load common functions
-. "$PSScriptRoot/common.ps1"
 
 # Get all paths and variables from common functions
 $paths = Get-FeaturePathsEnv

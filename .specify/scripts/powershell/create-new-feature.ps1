@@ -8,35 +8,15 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
+# Source common functions
+. "$PSScriptRoot/common.ps1"
+
 if (-not $FeatureDescription -or $FeatureDescription.Count -eq 0) {
     Write-Error 'Usage: ./create-new-feature.ps1 [-Json] <feature description>'
     exit 1
 }
 $featureDesc = ($FeatureDescription -join ' ').Trim()
 
-# Resolve repository root. Prefer git information when available, but fall back
-# to searching for repository markers so the workflow still functions in repositories that
-# were initialised with --no-git.
-function Find-RepositoryRoot {
-    param(
-        [string]$StartDir,
-        [string[]]$Markers = @('.git', '.specify')
-    )
-    $current = Resolve-Path $StartDir
-    while ($true) {
-        foreach ($marker in $Markers) {
-            if (Test-Path (Join-Path $current $marker)) {
-                return $current
-            }
-        }
-        $parent = Split-Path $current -Parent
-        if ($parent -eq $current) {
-            # Reached filesystem root without finding markers
-            return $null
-        }
-        $current = $parent
-    }
-}
 $fallbackRoot = (Find-RepositoryRoot -StartDir $PSScriptRoot)
 if (-not $fallbackRoot) {
     Write-Error 'Error: Could not determine repository root. Please run this script from within the repository.'
