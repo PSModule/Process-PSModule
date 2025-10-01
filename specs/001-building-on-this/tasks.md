@@ -24,7 +24,7 @@
    → Different files = mark [P] for parallel
    → Same file = sequential (no [P])
    → Tests before implementation (TDD)
-5. Number tasks sequentially (T001-T026)
+5. Number tasks sequentially (T001-T028)
 6. Dependencies: Setup → Tests → Core → Integration → Polish
 ```
 
@@ -165,15 +165,26 @@
   - Create test repository with BeforeAll.ps1 and AfterAll.ps1
   - Trigger workflow and verify execution
 
-- [ ] T025 [P] Update documentation in `specs/001-building-on-this/README.md`
-  - Document composite action usage
-  - Document integration steps
-  - Document testing approach
+- [ ] T025 [P] Create comprehensive BeforeAll/AfterAll usage documentation (FR-021)
+  - Create new documentation file explaining intended use case
+  - Document: BeforeAll/AfterAll are for external test resources (cloud infrastructure, external databases, third-party services via APIs)
+  - Document: Test-specific resources for individual OS/platform combinations should be created within tests
+  - Include ✅ DO examples: Azure/AWS deployment, external database initialization, SaaS test data creation
+  - Include ❌ DON'T examples: OS-specific dependencies, platform-specific files, test-specific resources
+  - Provide practical examples with Azure CLI and REST API calls
+  - Document when to use BeforeAll/AfterAll vs. in-test setup
 
-- [ ] T026 Compare before/after behavior in `.github/workflows/Test-ModuleLocal.yml`
+- [ ] T027 [P] Update Process-PSModule and Template-PSModule documentation
+  - Update Process-PSModule README with composite action documentation
+  - Update Template-PSModule with example BeforeAll/AfterAll scripts showing external resource management
+  - Document integration steps for consuming repositories
+  - Create migration guide for nested script consolidation
+
+- [ ] T028 Compare before/after behavior in `.github/workflows/Test-ModuleLocal.yml`
   - Verify line count reduction (~130 lines removed)
   - Verify identical behavior (no functional changes)
   - Verify all environment variables passed correctly
+  - Verify FR-021 documentation is complete and clear
   - Remove backup file after validation
 
 ## Dependencies
@@ -185,12 +196,12 @@
 - T017, T018 → T019 (same file, adds LogGroup wrapper)
 - T019 (Core Complete) → T020, T021, T022 (Integration)
 - T020 → T021, T022 (backup before modification)
-- T021, T022 (Integration Complete) → T023, T024, T025, T026 (Polish)
+- T021, T022 (Integration Complete) → T023, T024, T025, T027, T028 (Polish)
 
 ### Parallel Opportunities
 - T004, T005, T006, T007 can run in parallel (different test files)
 - T008, T009, T010, T011 can run in parallel (different fixture files)
-- T023, T024, T025 can run in parallel (different files)
+- T023, T024, T025, T027 can run in parallel (different files/different documentation)
 - T017 and T018 can be implemented in parallel (different logic branches in same file, but use branches to test independently)
 
 ## Parallel Execution Examples
@@ -215,10 +226,11 @@ Task: "Create failing AfterAll.ps1 fixture in tests/srcTestRepo/tests/AfterAll-F
 
 ### Polish Tasks (after T022)
 ```powershell
-# Launch T023-T025 together:
+# Launch T023-T025, T027 together:
 Task: "Run PSScriptAnalyzer on composite action YAML in tests/001-lint-action.Tests.ps1"
 Task: "Execute quickstart validation steps from specs/001-building-on-this/quickstart.md"
-Task: "Update documentation in specs/001-building-on-this/README.md"
+Task: "Create comprehensive BeforeAll/AfterAll usage documentation (FR-021)"
+Task: "Update Process-PSModule and Template-PSModule documentation"
 ```
 
 ## Notes
@@ -246,7 +258,7 @@ Task: "Update documentation in specs/001-building-on-this/README.md"
    - Integration scenarios → T008-T011 (test fixtures for scenarios)
 
 4. **Ordering Applied**:
-   - Setup (T001-T003) → Tests (T004-T011) → Core (T012-T019) → Integration (T020-T022) → Polish (T023-T026)
+   - Setup (T001-T003) → Tests (T004-T011) → Core (T012-T019) → Integration (T020-T022) → Polish (T023-T028)
    - Dependencies enforced via sequential task ordering
 
 ## Validation Checklist
@@ -291,9 +303,9 @@ Execute T020-T022 sequentially:
 - T022: Replace AfterAll job
 
 ### Phase 5: Validation (Polish & Verify)
-Execute T023-T025 in parallel, then T026:
-- T023-T025: Linting, quickstart, documentation (parallel)
-- T026: Final comparison and cleanup (sequential)
+Execute T023-T025, T027 in parallel, then T028:
+- T023-T025, T027: Linting, quickstart, FR-021 documentation, repository documentation (parallel)
+- T028: Final comparison, FR-021 verification, and cleanup (sequential)
 
 ## Success Criteria
 
