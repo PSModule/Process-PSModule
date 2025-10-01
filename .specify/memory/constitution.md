@@ -1,40 +1,3 @@
-<!--
-Sync Impact Report - Constitution v1.3.0
-========================================
-Version Change: 1.2.0 → 1.3.0 (MINOR - expanded build process documentation)
-Date: 2025-10-01
-
-Modified Principles: None
-
-Added Sections:
-- Build Process Requirements (comprehensive build execution flow documentation)
-  - Custom build scripts support
-  - Module manifest generation details
-  - Root module compilation process
-  - Data loading mechanism
-  - Class/enum export mechanism
-  - Source file processing order
-
-Removed Sections: None
-
-Templates Status:
-✅ plan-template.md - No changes needed (constitution check references general principles)
-✅ spec-template.md - No changes needed (no constitution-specific requirements)
-✅ tasks-template.md - No changes needed (general task structure applies)
-
-Follow-up TODOs:
-- TODO(RATIFICATION_DATE): Determine original constitution adoption date
-
-Rationale for MINOR bump:
-- Added materially expanded guidance on Build-PSModule action execution flow
-- Documented custom build script (*build.ps1) support and execution order
-- Detailed manifest generation process including derived vs. preserved properties
-- Documented root module compilation with specific folder processing order
-- Added data loader and class/enum export mechanism documentation
-- Material expansion that provides actionable build process requirements
-- Consuming repositories now understand complete build automation
--->
-
 # Process-PSModule Constitution
 
 ## Product Overview
@@ -59,39 +22,149 @@ Repositories that consume Process-PSModule workflows MUST:
 
 ### Required Module Structure
 
-**Process-PSModule enforces an opinionated module structure.** Consuming repositories MUST organize their PowerShell module source code in the following structure within the `src/` folder:
+**Process-PSModule enforces an opinionated module structure.** Consuming repositories MUST organize their PowerShell module following this complete structure:
+
+#### Complete Repository Structure
 
 ```
-src/
-├── manifest.psd1          # PowerShell module manifest (optional, auto-generated if missing)
-├── header.ps1             # Code executed at module load start
-├── finally.ps1            # Code executed at module load end
-├── README.md              # Documentation reference (points to Build-PSModule)
-├── assemblies/            # .NET assemblies (.dll) to load
-├── classes/
-│   ├── private/           # Private PowerShell classes
-│   └── public/            # Public PowerShell classes (exported)
-├── data/                  # Configuration data files (.psd1)
-├── formats/               # Format definition files (.ps1xml)
-├── functions/
-│   ├── private/           # Private functions (not exported)
-│   └── public/            # Public functions (exported to module)
-├── init/                  # Initialization scripts
-├── modules/               # Nested PowerShell modules (.psm1)
-├── scripts/               # Script files (.ps1)
-├── types/                 # Type definition files (.ps1xml)
-└── variables/
-    ├── private/           # Private variables
-    └── public/            # Public variables (exported)
+<ModuleName>/                       # Repository root
+├── .github/                        # GitHub Actions configuration
+│   ├── linters/                    # Linter configuration files
+│   │   ├── .jscpd.json             # Copy/paste detector settings
+│   │   ├── .markdown-lint.yml      # Markdown linter settings
+│   │   ├── .powershell-psscriptanalyzer.psd1  # PSScriptAnalyzer rules
+│   │   └── .textlintrc             # Text linter settings
+│   ├── workflows/                  # GitHub Actions workflows
+│   │   ├── Linter.yml              # Linting workflow (optional)
+│   │   ├── Nightly-Run.yml         # Scheduled validation (optional)
+│   │   └── Process-PSModule.yml    # Main workflow (REQUIRED)
+│   ├── CODEOWNERS                  # Code ownership and review assignments
+│   ├── dependabot.yml              # Dependency update automation
+│   ├── mkdocs.yml                  # Material for MkDocs site configuration
+│   ├── PSModule.yml                # Process-PSModule settings (YAML/JSON/PSD1 supported)
+│   └── release.yml                 # GitHub release configuration
+├── examples/                       # Usage examples (optional)
+│   └── General.ps1                 # Example script
+├── icon/                           # Module icon (optional, referenced in manifest)
+│   └── icon.png                    # PNG icon file
+├── src/                            # MODULE SOURCE CODE (REQUIRED)
+│   ├── assemblies/                 # .NET assemblies (.dll) to load
+│   ├── classes/                    # PowerShell classes and enums
+│   │   ├── private/                # Private (not exported)
+│   │   └── public/                 # Public (exported)
+│   ├── data/                       # Configuration data files loaded as private variables (.psd1)
+│   │   ├── Config.psd1             # Example configuration file
+│   │   └── Settings.psd1           # Example settings file
+│   ├── formats/                    # Format definition files (.ps1xml)
+│   ├── functions/                  # The functions for the PowerShell module
+│   │   ├── private/                # Private (not exported)
+│   │   └── public/                 # Public (exported)
+│   │       └── <SubFolder>/        # Optional: Group functions by category
+│   │           ├── <SubFolder>.md  # Optional: Category documentation
+│   │           └── Get-*.ps1       # Example: Get commands
+│   ├── init/                       # Initialization scripts
+│   │   └── initializer.ps1         # Example initialization script
+│   ├── modules/                    # Nested PowerShell modules (.psm1)
+│   ├── scripts/                    # Script files that are loaded to the users runtime on import (.ps1)
+│   │   └── loader.ps1              # Example script file
+│   ├── types/                      # Type definition files (.ps1xml)
+│   ├── variables/                  # Variables for the PowerShell module
+│   │   ├── private/                # Private (not exported)
+│   │   │   └── PrivateVariables.ps1
+│   │   └── public/                 # Public (exported)
+│   │       ├── Moons.ps1
+│   │       ├── Planets.ps1
+│   │       └── SolarSystems.ps1
+│   ├── finally.ps1                 # Code executed at module load end (optional)
+│   ├── header.ps1                  # Code executed at module load start (optional)
+│   ├── manifest.psd1               # PowerShell module manifest (optional, auto-generated if missing)
+│   └── README.md                   # Documentation reference (points to Build-PSModule)
+├── tests/                          # Module tests (REQUIRED for Test-ModuleLocal)
+│   ├── Environments/               # Optional: Test environment configurations
+│   │   └── Environment.Tests.ps1
+│   ├── MyTests/                    # Optional: Additional test suites
+│   │   └── <ModuleName>.Tests.ps1
+│   ├── AfterAll.ps1                # Teardown script (optional, runs after all test matrix jobs)
+│   ├── BeforeAll.ps1               # Setup script (optional, runs before all test matrix jobs)
+│   ├── <ModuleName>.Tests.ps1      # Module functional tests (Pester)
+│   └── Environment.Tests.ps1       # Environment validation tests (optional)
+├── .gitattributes                  # Git line ending configuration
+├── .gitignore                      # Git ignore patterns
+├── LICENSE                         # License file (referenced in manifest)
+└── README.md                       # Module documentation and usage
 ```
 
-**Structure Details**:
-- **Build-PSModule** action processes this structure and compiles it into a module
+#### Module Source Structure Details (`src/` folder)
+
+The `src/` folder contains the module source code that Build-PSModule compiles into a production-ready module:
+
+**Required Files/Folders**:
+- At least one `.ps1` file in `functions/public/` to export functionality
+- `tests/` folder at repository root with at least one Pester test file
+
+**Optional Configuration Files**:
+- `manifest.psd1` - PowerShell module manifest (auto-generated if missing with GitHub metadata)
+- `header.ps1` - Code executed at module load start (before any other code)
+- `finally.ps1` - Code executed at module load end (after all other code)
+- `README.md` - Documentation pointer (typically references Build-PSModule for structure)
+
+**Source Folders** (all optional, include only what your module needs):
+- `assemblies/` - .NET assemblies (`.dll`) loaded into module session
+- `classes/private/` - Private PowerShell classes (not exported)
+- `classes/public/` - Public PowerShell classes (exported via TypeAccelerators)
+- `data/` - Configuration data files (`.psd1`) loaded as module variables
+- `formats/` - Format definition files (`.ps1xml`) for object display
+- `functions/private/` - Private functions (internal implementation)
+- `functions/public/` - Public functions (exported to module consumers)
+  - Supports subdirectories for grouping (e.g., `functions/public/Get-/`, `functions/public/Set-/`)
+  - Optional category documentation files (e.g., `functions/public/PSModule/PSModule.md`)
+- `init/` - Initialization scripts (executed first during module load)
+- `modules/` - Nested PowerShell modules (`.psm1`) or additional assemblies
+- `scripts/` - Script files (`.ps1`) to process in caller's scope
+- `types/` - Type definition files (`.ps1xml`) for custom type extensions
+- `variables/private/` - Private variables (module scope only)
+- `variables/public/` - Public variables (exported to module consumers)
+
+**Build Processing**:
+- Build-PSModule compiles `src/` into a single root module file (`<ModuleName>.psm1`)
+- Source folders are removed from output after processing (only compiled module remains)
+- Files processed in alphabetical order within each folder
+- See "Build Process Requirements" section for detailed compilation flow
+
+#### Repository Configuration Details
+
+**GitHub Actions Configuration** (`.github/` folder):
+- `PSModule.yml` (or `.json`/`.psd1`) - **REQUIRED** configuration file controlling Process-PSModule behavior
+- `workflows/Process-PSModule.yml` - **REQUIRED** workflow file calling reusable Process-PSModule workflow
+- `mkdocs.yml` - Material for MkDocs configuration for GitHub Pages documentation
+- `linters/` - Linter configuration files (optional, uses framework defaults if missing)
+- Other workflows (Linter, Nightly-Run) are optional supplementary workflows
+
+**Documentation Assets**:
+- `LICENSE` - Referenced in module manifest `LicenseUri` property
+- `icon/icon.png` - Referenced in module manifest `IconUri` property (public URL)
+- `README.md` - Project documentation, referenced in GitHub repository metadata
+- `examples/` - Usage examples for module consumers
+
+**Testing Requirements**:
+- `tests/` folder at repository root (NOT inside `src/`)
+- Pester test files (`.Tests.ps1`) for module validation
+- Optional `BeforeAll.ps1` and `AfterAll.ps1` for test environment setup/teardown
+- Tests executed by Test-ModuleLocal workflow across all platforms
+- See "Test-ModuleLocal workflow" section for matrix testing details
+
+**Key Points**:
 - **Private vs Public**: `private/` folders contain internal implementations; `public/` folders contain exported elements
 - **Optional Components**: Not all folders are required; include only what your module needs
-- **Function Organization**: Functions can be organized in subdirectories (e.g., `functions/public/Get-/Get-Item.ps1`)
-- **Manifest**: If `manifest.psd1` is not provided, Build-PSModule generates one automatically
-- **Documentation**: See [Build-PSModule README](https://github.com/PSModule/Build-PSModule) for complete structure details
+- **Function Organization**: Functions can be organized in subdirectories with optional category documentation
+- **Manifest Generation**: If `manifest.psd1` is not provided, Build-PSModule auto-generates with GitHub metadata
+- **Minimal Structure**: At minimum, provide `src/functions/public/<Function>.ps1` and `tests/<ModuleName>.Tests.ps1`
+- **Template Reference**: Use [Template-PSModule](https://github.com/PSModule/Template-PSModule) as starting point
+
+**Documentation References**:
+- [Build-PSModule README](https://github.com/PSModule/Build-PSModule) - Complete build process details
+- [Template-PSModule](https://github.com/PSModule/Template-PSModule) - Reference implementation
+- [Process-PSModule Configuration](#configuration) - Settings file documentation
 
 ### Workflow Integration Requirements
 
@@ -306,6 +379,190 @@ Release management MUST be automated and follow SemVer 2.0.0:
 
 **Rationale**: Automated releases reduce human error, ensure consistency, and enable rapid iteration while maintaining clear version semantics.
 
+## Pull Request Workflow and Publishing Process
+
+Process-PSModule implements an **automated publishing workflow** triggered by pull request events. The workflow behavior is controlled by PR labels following Semantic Versioning (SemVer 2.0.0) conventions.
+
+### PR Label-Based Release Types
+
+Pull requests MUST use labels to determine release behavior:
+
+#### Version Increment Labels (SemVer)
+- **`major`** - Breaking changes, incompatible API changes
+  - Increments major version: `1.2.3` → `2.0.0`
+  - Resets minor and patch to zero
+
+- **`minor`** - New features, backward-compatible functionality additions
+  - Increments minor version: `1.2.3` → `1.3.0`
+  - Resets patch to zero
+
+- **`patch`** - Bug fixes, backward-compatible patches (default)
+  - Increments patch version: `1.2.3` → `1.2.4`
+  - Applied by default when no version label specified (if AutoPatching enabled)
+
+#### Special Release Labels
+- **`prerelease`** - Creates prerelease version (unmerged PR publishing)
+  - Publishes module to PowerShell Gallery with prerelease tag
+  - Creates GitHub Release marked as prerelease
+  - Prerelease tag format: `<version>-<branchname><increment>`
+  - Example: `1.2.4-featureauth001` for branch `feature/auth`
+  - Only applies to **unmerged PRs** (opened, reopened, synchronized, labeled)
+  - When merged to main, normal release takes precedence (prerelease label ignored)
+
+- **`NoRelease`** - Skips all publishing
+  - Workflow runs build and test jobs
+  - Publishing jobs (Publish-Module, Publish-Site) are skipped
+  - Used for documentation-only changes or work-in-progress validation
+
+### Workflow Conditional Execution
+
+The Process-PSModule workflow uses **dynamic conditions** to determine job execution:
+
+#### Always Execute (All PR States)
+- **Get-Settings** - Configuration loading
+- **Build-Module** - Module compilation
+- **Build-Docs** - Documentation generation
+- **Build-Site** - Static site generation
+- **Test-SourceCode** - Source code validation
+- **Lint-SourceCode** - Code quality checks
+- **Test-Module** - Built module validation
+- **Test-ModuleLocal** - Pester tests across platforms
+- **Get-TestResults** - Test aggregation
+- **Get-CodeCoverage** - Coverage analysis
+
+#### Conditional Execution (Based on PR State and Labels)
+
+**Publish-Site** (GitHub Pages deployment):
+- **Executes when**: PR is **merged** to default branch AND tests pass
+- **Skipped when**: PR is open/synchronized OR not merged OR scheduled run OR manual trigger
+- Condition: `github.event_name == 'pull_request' AND github.event.pull_request.merged == true`
+
+**Publish-Module** (PowerShell Gallery publishing):
+- **Executes when**:
+  - PR is **merged** to default branch AND tests pass (normal release), OR
+  - PR has **`prerelease` label** AND PR is **not merged** AND tests pass (prerelease)
+- **Skipped when**:
+  - PR has `NoRelease` label, OR
+  - Scheduled run (cron trigger), OR
+  - Manual run (workflow_dispatch), OR
+  - Tests fail
+- Condition: `(github.event_name == 'pull_request' AND github.event.pull_request.merged == true) OR (labels contains 'prerelease' AND NOT merged)`
+
+### Publishing Behavior Examples
+
+| PR State | Labels | Build/Test | Publish-Module | Publish-Site | Version |
+|----------|--------|------------|----------------|--------------|---------|
+| Opened | `minor` | ✅ Yes | ❌ No | ❌ No | N/A (not published) |
+| Opened | `prerelease` | ✅ Yes | ✅ Yes (prerelease) | ❌ No | `1.3.0-branchname001` |
+| Opened | `prerelease`, `minor` | ✅ Yes | ✅ Yes (prerelease) | ❌ No | `1.3.0-branchname001` |
+| Synchronized | `major` | ✅ Yes | ❌ No | ❌ No | N/A (not published) |
+| Synchronized | `prerelease` | ✅ Yes | ✅ Yes (prerelease) | ❌ No | `1.3.0-branchname002` |
+| Merged | `minor` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.3.0` |
+| Merged | `major` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `2.0.0` |
+| Merged | `patch` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.2.4` |
+| Merged | (no label) | ✅ Yes | ✅ Yes (if AutoPatching) | ✅ Yes | `1.2.4` (patch) |
+| Merged | `NoRelease` | ✅ Yes | ❌ No | ❌ No | N/A (skipped) |
+| Merged | `prerelease`, `minor` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.3.0` (prerelease ignored) |
+| Scheduled (cron) | N/A | ✅ Yes | ❌ No | ❌ No | N/A (validation only) |
+| Manual (workflow_dispatch) | N/A | ✅ Yes | ❌ No | ❌ No | N/A (validation only) |
+
+### Version Calculation Process
+
+The Publish-PSModule action determines the new version using this process:
+
+1. **Get Latest Version**
+   - Query PowerShell Gallery for latest published version
+   - Query GitHub Releases for latest release version
+   - Use the higher of the two as base version
+
+2. **Determine Version Increment**
+   - Check PR labels for `major`, `minor`, or `patch`
+   - If no version label and AutoPatching enabled, default to `patch`
+   - If no version label and AutoPatching disabled, skip publishing
+
+3. **Calculate New Version**
+   - Apply SemVer increment based on label
+   - Major: `1.2.3` → `2.0.0`
+   - Minor: `1.2.3` → `1.3.0`
+   - Patch: `1.2.3` → `1.2.4`
+
+4. **Add Prerelease Tag** (if `prerelease` label present on unmerged PR)
+   - Extract branch name, sanitize to alphanumeric only
+   - Query existing prerelease versions with same branch name
+   - Increment prerelease counter
+   - Format: `<version>-<branchname><increment>`
+   - Example: `1.3.0-featureauth001`, `1.3.0-featureauth002`
+
+5. **Publish to PowerShell Gallery**
+   - Upload module with calculated version
+   - Set prerelease flag if prerelease tag present
+   - Validate publication success
+
+6. **Create GitHub Release**
+   - Generate release notes from PR description and commits
+   - Create release with version tag (e.g., `v1.3.0` or `v1.3.0-featureauth001`)
+   - Mark as prerelease if prerelease tag present
+   - Attach module artifact
+
+### Configuration Options
+
+Repositories can configure publishing behavior in `.github/PSModule.yml`:
+
+```yaml
+Publish:
+  Module:
+    AutoPatching: true                    # Auto-apply patch when no label
+    AutoCleanup: false                    # Remove old prereleases
+    IncrementalPrerelease: true           # Use incremental prerelease counter
+    DatePrereleaseFormat: ''              # Alternative: date-based prerelease (yyyyMMddHHmmss)
+    VersionPrefix: 'v'                    # Prefix for git tags (e.g., v1.2.3)
+    MajorLabels: ['major', 'breaking']    # Labels that trigger major bump
+    MinorLabels: ['minor', 'feature']     # Labels that trigger minor bump
+    PatchLabels: ['patch', 'fix', 'bug']  # Labels that trigger patch bump
+    IgnoreLabels: ['NoRelease', 'skip']   # Labels that skip publishing
+```
+
+### Workflow Integration Requirements
+
+Consuming repositories MUST configure their workflow file to trigger on appropriate PR events:
+
+```yaml
+name: Process-PSModule
+
+on:
+  pull_request:
+    branches: [main]
+    types:
+      - closed      # Detect merged PRs
+      - opened      # Initial PR creation
+      - reopened    # Reopened PR
+      - synchronize # New commits pushed
+      - labeled     # Label added/changed
+
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v4
+    secrets:
+      APIKEY: ${{ secrets.APIKEY }}  # Required for publishing
+```
+
+**Key Points**:
+- **`closed` event** with `github.event.pull_request.merged == true` triggers normal releases
+- **`labeled` event** allows immediate prerelease publishing when `prerelease` label added
+- **`synchronize` event** with `prerelease` label publishes new prerelease on each push
+- **Secrets** MUST include `APIKEY` for PowerShell Gallery publishing (optional for CI-only runs)
+
+### Publishing Constraints
+
+- **API Key Required**: PowerShell Gallery publishing requires valid API key in secrets
+- **Test Pass Requirement**: Publishing jobs only execute if all tests pass
+- **Branch Protection**: Recommended to protect main branch and require PR reviews
+- **Label Discipline**: Teams MUST follow label conventions for predictable versioning
+- **Prerelease Cleanup**: Consider enabling AutoCleanup to remove old prerelease versions
+- **Version Conflicts**: Publishing fails if version already exists in PowerShell Gallery
+- **Incremental Prereleases**: Each push to prerelease PR increments counter (001, 002, 003...)
+- **Branch Name Sanitization**: Prerelease tags use alphanumeric-only branch names
+
 ## Quality Standards
 
 ### Technical Constraints
@@ -349,7 +606,15 @@ Release management MUST be automated and follow SemVer 2.0.0:
 - Follow GitHub Flow: feature branches → PR → main
 - PR MUST be opened for all changes
 - CI workflows MUST execute on PR synchronize, open, reopen, label events
-- PR labels determine release behavior (major, minor, patch, NoRelease)
+- **PR labels determine release behavior**: `major`, `minor`, `patch`, `prerelease`, `NoRelease`
+- **`prerelease` label** enables publishing of prerelease versions from unmerged PRs
+- **Merged PRs** trigger normal releases (major/minor/patch based on labels)
+- **Unmerged PRs with `prerelease` label** trigger prerelease publishing with incremental tags
+- **`NoRelease` label** skips publishing but runs all build and test jobs
+- **AutoPatching** (if enabled) applies patch increment when no version label present
+- **Prerelease tags** format: `<version>-<branchname><increment>` (e.g., `1.3.0-featureauth001`)
+- **Version labels** follow SemVer: `major` (breaking), `minor` (features), `patch` (fixes)
+- See "Pull Request Workflow and Publishing Process" section for detailed behavior
 
 ### Workflow Execution Order
 The standard execution order for Process-PSModule workflows MUST be:
@@ -416,4 +681,4 @@ For agent-specific runtime development guidance **when developing the framework*
 
 **For Consuming Repositories**: Follow the Required Module Structure and Workflow Integration Requirements documented in the Product Overview section. Start with [Template-PSModule](https://github.com/PSModule/Template-PSModule).
 
-**Version**: 1.3.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
+**Version**: 1.5.1 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
