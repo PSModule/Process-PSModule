@@ -83,17 +83,21 @@ This document defines the data structures, contracts, and entities for the setup
 
 **BeforeAll.ps1**:
 - **Location**: `tests/BeforeAll.ps1` (root tests folder only)
-- **Purpose**: Setup test environment before all test matrix jobs
+- **Purpose**: Setup external test resources before all test matrix jobs - resources that are independent of test platform/OS
+- **Intended Use**: Deploy cloud infrastructure via APIs, create external database instances, initialize test data in third-party services
+- **NOT Intended For**: OS-specific dependencies, platform-specific test files, test-specific resources for individual matrix combinations
 - **Execution Context**: Runs in tests directory with full access to environment secrets
 - **Error Handling**: Failures halt testing workflow
-- **Example Use Cases**: Deploy test infrastructure, initialize test data, configure test environment
+- **Example Use Cases**: Deploy Azure/AWS resources via APIs, create external PostgreSQL databases, initialize SaaS test accounts
 
 **AfterAll.ps1**:
 - **Location**: `tests/AfterAll.ps1` (root tests folder only)
-- **Purpose**: Cleanup test environment after all test matrix jobs
+- **Purpose**: Cleanup external test resources after all test matrix jobs - resources that are independent of test platform/OS
+- **Intended Use**: Remove cloud infrastructure via APIs, delete external database instances, cleanup test data in third-party services
+- **NOT Intended For**: OS-specific cleanup, platform-specific file removal, test-specific cleanup for individual matrix combinations
 - **Execution Context**: Runs in tests directory with full access to environment secrets
 - **Error Handling**: Failures logged but don't halt workflow
-- **Example Use Cases**: Remove test resources, cleanup databases, tear down test infrastructure
+- **Example Use Cases**: Delete Azure/AWS resources via APIs, remove external databases, cleanup SaaS test accounts
 
 **Script Contract**:
 - Scripts can access all environment variables (secrets)

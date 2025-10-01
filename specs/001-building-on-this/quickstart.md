@@ -8,6 +8,45 @@
 
 This quickstart provides a minimal integration path and validation steps for the setup-test composite action. Follow these steps to verify the feature works as expected.
 
+## Intended Use Case (FR-021)
+
+**BeforeAll/AfterAll scripts are designed for managing external test resources** that are independent of the test platform/OS. These scripts should:
+
+✅ **DO use for**:
+- Deploying cloud infrastructure via APIs (Azure, AWS, GCP)
+- Creating external database instances or schemas
+- Initializing test data in third-party SaaS platforms
+- Setting up API test environments
+- Configuring external services that all tests will use
+
+❌ **DON'T use for**:
+- Installing OS-specific dependencies (do this in test setup)
+- Creating platform-specific test files (do this within tests)
+- Test-specific resources for individual matrix combinations (do this in tests)
+
+**Example BeforeAll.ps1** (External Resources):
+```powershell
+# Deploy Azure resources for testing
+Write-Host "Creating Azure test resources..."
+az group create --name "test-rg-$env:GITHUB_RUN_ID" --location eastus
+az storage account create --name "teststorage$env:GITHUB_RUN_ID" --resource-group "test-rg-$env:GITHUB_RUN_ID"
+
+# Initialize external database
+Write-Host "Creating test database..."
+Invoke-RestMethod -Uri "https://api.example.com/databases" -Method POST -Body @{name="test-db-$env:GITHUB_RUN_ID"}
+```
+
+**Example AfterAll.ps1** (Cleanup External Resources):
+```powershell
+# Remove Azure resources
+Write-Host "Cleaning up Azure test resources..."
+az group delete --name "test-rg-$env:GITHUB_RUN_ID" --yes --no-wait
+
+# Delete external database
+Write-Host "Removing test database..."
+Invoke-RestMethod -Uri "https://api.example.com/databases/test-db-$env:GITHUB_RUN_ID" -Method DELETE
+```
+
 ## Prerequisites
 
 - Process-PSModule repository checked out on branch `001-building-on-this`

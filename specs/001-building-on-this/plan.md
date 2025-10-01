@@ -31,7 +31,7 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml into a reusable local composite action. This reduces workflow duplication, improves maintainability, and enables reuse across workflows. The single composite action will accept a mode parameter (before/after) to control which script to execute (BeforeAll.ps1 or AfterAll.ps1) and error handling behavior. The action will be located at `.github/actions/setup-test/action.yml` and will integrate with existing PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers actions.
+Extract BeforeAll/AfterAll test setup/teardown logic from Test-ModuleLocal.yml into a reusable local composite action. This reduces workflow duplication, improves maintainability, and enables reuse across workflows. The single composite action will accept a mode parameter (before/after) to control which script to execute (BeforeAll.ps1 or AfterAll.ps1) and error handling behavior. The action will be located at `.github/actions/setup-test/action.yml` and will integrate with existing PSModule/GitHub-Script and PSModule/Install-PSModuleHelpers actions. Documentation will clearly explain that BeforeAll/AfterAll scripts are intended for managing external test resources (cloud infrastructure, external databases, third-party services) that are independent of the test platform/OS, while test-specific resources should be created within the tests themselves.
 
 ## Technical Context
 **Language/Version**: PowerShell 7.4+ (GitHub Actions composite actions)
@@ -260,7 +260,12 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
 
 **From documentation requirements**:
 - Task: Update Process-PSModule README with composite action documentation
-- Task: Update Template-PSModule with example usage
+- Task: Create comprehensive BeforeAll/AfterAll usage documentation explaining:
+  * Intended purpose: external test resource setup (cloud infrastructure, external databases, third-party services via APIs)
+  * Clear distinction: external resources in BeforeAll/AfterAll vs. test-specific resources within tests
+  * Examples: deploying Azure resources, initializing external databases, creating test data in SaaS platforms
+  * Guidance on when to use BeforeAll/AfterAll vs. in-test setup for OS/platform-specific resources
+- Task: Update Template-PSModule with example BeforeAll/AfterAll scripts showing external resource management
 - Task: Create migration guide for nested script consolidation
 - Task: Update .github/copilot-instructions.md (already done in Phase 1)
 
@@ -274,12 +279,12 @@ The /tasks command will load `.specify/templates/tasks-template.md` and generate
    - action.yml structure and script logic can be developed in parallel
    - Different test scenarios can be validated in parallel
 
-**Estimated Task Count**: ~30-35 tasks
+**Estimated Task Count**: ~32-37 tasks
 - Setup: 2 tasks (directory structure, test repository)
 - Composite Action: 8-10 tasks (action.yml, script implementation)
 - Workflow Integration: 4 tasks (modify jobs, verify dependencies)
 - Testing: 7 tasks (integration test scenarios)
-- Documentation: 4 tasks (README, migration guide, templates)
+- Documentation: 6 tasks (README, usage documentation, examples, migration guide, templates)
 
 **Task Priorities**:
 - P0 (Critical Path): Composite action implementation, workflow integration
