@@ -240,8 +240,8 @@ jobs:
     with:
       RunsOn: ${{ matrix.RunsOn }}
       OSName: ${{ matrix.OSName }}
-      TestName: ${{ matrix.TestName }}
       TestPath: ${{ matrix.TestPath }}
+      TestName: ${{ matrix.TestName }}
       Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
