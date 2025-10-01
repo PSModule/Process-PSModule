@@ -1,36 +1,54 @@
 <!--
-Sync Impact Report - Constitution v1.1.0
+Sync Impact Report - Constitution v1.1.2
 ========================================
-Version Change: 1.0.0 → 1.1.0 (MINOR - expanded guidance)
+Version Change: 1.1.1 → 1.1.2 (PATCH - product clarification)
 Date: 2025-10-01
 
 Modified Principles:
-- Expanded Principle I (Workflow-First Design) with action script requirements
-- Enhanced Principle III (Platform Independence) with PowerShell 7.4+ requirement
-- Added CI validation workflow requirement to Principle II
+- Added preamble clarifying Process-PSModule as an opinionated reusable workflow product
+- Enhanced configuration guidance for consuming repositories
+- Clarified relationship between framework and consuming repos
 
 Added Sections:
-- Technical Constraints (PowerShell version, action-based implementation)
-- Workflow Testing Standards (CI vs production workflow distinction)
+- Product Overview (new section before Core Principles)
 
 Removed Sections: None
 
 Templates Status:
-✅ plan-template.md - Already aligned with constitution checks
+✅ plan-template.md - Updated to reference v1.1.2
 ✅ spec-template.md - No changes needed (no constitution-specific requirements)
 ✅ tasks-template.md - No changes needed (general task structure applies)
 
 Follow-up TODOs:
 - TODO(RATIFICATION_DATE): Determine original constitution adoption date
 
-Rationale for MINOR bump:
-- Added specific technical requirements (PowerShell 7.4+, action scripts over inline)
-- Expanded workflow-first principle with implementation details
-- Added CI validation workflow as required testing standard
-- Material expansion of existing principles without breaking compatibility
+Rationale for PATCH bump:
+- Clarification of product nature and scope without new requirements
+- Added context about opinionated flow and structure
+- Explained configuration mechanism and consuming repo requirements
+- Non-semantic refinement that improves understanding of product purpose
 -->
 
 # Process-PSModule Constitution
+
+## Product Overview
+
+**Process-PSModule** is a **reusable workflow product** that provides an **opinionated flow and structure** for building PowerShell modules using GitHub Actions. It is NOT a library or toolkit; it is a complete CI/CD workflow framework designed to be consumed by PowerShell module repositories.
+
+### Product Characteristics
+- **Opinionated Architecture**: Defines a specific workflow execution order and module structure
+- **Reusable Workflows**: Consuming repositories call Process-PSModule workflows via `uses:` syntax
+- **Configurable via Settings**: Behavior customized through `.github/PSModule.yml` (or JSON/PSD1) in consuming repos
+- **Structure Requirements**: Consuming repos MUST follow documented structure in GitHub Actions README files
+- **Not for Local Development**: Designed exclusively for GitHub Actions execution environment
+
+### Consuming Repository Requirements
+Repositories that consume Process-PSModule workflows MUST:
+- Follow the module source structure documented in framework actions
+- Provide configuration file (`.github/PSModule.yml`) with appropriate settings
+- Adhere to the opinionated workflow execution order
+- Reference Process-PSModule workflows using stable version tags
+- Review action README documentation for structure and configuration requirements
 
 ## Core Principles
 
@@ -61,15 +79,18 @@ All code changes MUST follow strict TDD practices using Pester and PSScriptAnaly
 **Rationale**: TDD ensures code quality, prevents regressions, and creates living documentation through tests. This is fundamental to project reliability. CI workflow validation ensures the entire framework functions correctly in real-world scenarios.
 
 ### III. Platform Independence with Modern PowerShell
-All workflows and features MUST support cross-platform execution (Linux, macOS, Windows) using **PowerShell 7.4 or newer**:
+**Modules MUST be built to be cross-platform.** All workflows, features, and consuming modules MUST support cross-platform execution (Linux, macOS, Windows) using **PowerShell 7.4 or newer**:
 - Use platform-agnostic PowerShell Core 7.4+ constructs exclusively
-- Implement matrix testing across all supported operating systems
-- Document any platform-specific behaviors or limitations
+- **Modules MUST function identically** on Linux, macOS, and Windows
+- Cross-platform compatibility is **verified through Test-ModuleLocal** workflow
+- Test-ModuleLocal executes module tests on: `ubuntu-latest`, `windows-latest`, `macos-latest`
+- Implement matrix testing across all supported operating systems for all workflow components
+- Document any platform-specific behaviors or limitations explicitly
 - Test failures on any platform MUST block merging
-- Provide skip mechanisms for platform-specific tests when justified
+- Provide skip mechanisms for platform-specific tests when justified (with clear rationale)
 - **No backward compatibility** required for Windows PowerShell 5.1 or earlier PowerShell Core versions
 
-**Rationale**: PowerShell 7.4+ provides consistent cross-platform behavior and modern language features. Focusing on a single modern version reduces complexity and maintenance burden while ensuring maximum compatibility for consuming projects on contemporary platforms.
+**Rationale**: PowerShell 7.4+ provides consistent cross-platform behavior and modern language features. Focusing on a single modern version reduces complexity and maintenance burden. Modules built with Process-PSModule framework must work seamlessly across all platforms, verified through automated matrix testing in Test-ModuleLocal, ensuring maximum compatibility for consuming projects on contemporary platforms.
 
 ### IV. Quality Gates and Observability
 Every workflow execution MUST produce verifiable quality metrics:
@@ -119,7 +140,11 @@ Release management MUST be automated and follow SemVer 2.0.0:
 ### Testing
 - Source code tests MUST validate framework compliance
 - Module tests MUST validate built module integrity
-- Local module tests (Pester) MUST validate functional behavior
+- Local module tests (Pester) MUST validate functional behavior across all platforms
+- **Test-ModuleLocal workflow** verifies cross-platform module compatibility on:
+  - `ubuntu-latest` (Linux)
+  - `windows-latest` (Windows)
+  - `macos-latest` (macOS)
 - BeforeAll/AfterAll setup and teardown scripts MUST be supported for test environments
 - Test matrices MUST be configurable via repository settings
 - **CI validation workflow** (`.github/workflows/ci.yml`) MUST be maintained for integration testing
@@ -142,6 +167,8 @@ The standard execution order for Process-PSModule workflows MUST be:
 4. **Lint-SourceCode** - Parallel matrix linting of source code
 5. **Test-Module** - Framework validation and linting of built module
 6. **Test-ModuleLocal** - Runs Pester tests with BeforeAll/AfterAll support
+   - **Verifies cross-platform module compatibility** on ubuntu-latest, windows-latest, macos-latest
+   - Tests module functionality across all supported platforms
 7. **Get-TestResults** - Aggregates and validates test results
 8. **Get-CodeCoverage** - Validates coverage thresholds
 9. **Build-Docs** and **Build-Site** - Generates documentation
@@ -153,15 +180,20 @@ The standard execution order for Process-PSModule workflows MUST be:
 - Consuming repositories use production workflow for releases, CI workflow for nightly validation
 
 ### Configuration
-- Settings MUST be stored in `.github/PSModule.yml` (or JSON/PSD1 format)
+- Settings MUST be stored in `.github/PSModule.yml` (or JSON/PSD1 format) in consuming repositories
 - Skip flags MUST be available for all major workflow steps
 - OS-specific skip flags MUST be supported (Linux, macOS, Windows)
 - Settings MUST support test configuration, build options, and publish behavior
+- **Consuming repositories** configure behavior through settings file (opinionated defaults provided)
+- **Structure requirements** documented in GitHub Actions README files MUST be followed by consumers
+- Configuration options MUST be backward compatible within major versions
 
 ## Governance
 
 ### Constitution Authority
-This constitution supersedes all other development practices. When conflicts arise between this document and other guidance, the constitution takes precedence.
+This constitution supersedes all other development practices **for Process-PSModule framework development**. When conflicts arise between this document and other guidance, the constitution takes precedence.
+
+**For Consuming Repositories**: This constitution defines how the Process-PSModule framework is built and maintained. Consuming repositories follow the opinionated structure and configuration documented in framework action README files.
 
 ### Amendments
 Changes to this constitution require:
@@ -174,18 +206,22 @@ Changes to this constitution require:
    - PATCH: Clarifications, wording fixes, non-semantic refinements
 
 ### Compliance
-- All PRs MUST be validated against constitutional principles
+- All PRs MUST be validated against constitutional principles **for framework development**
 - Workflow design MUST align with Workflow-First Design principle
 - Test-First principle compliance is NON-NEGOTIABLE and enforced by review
-- Platform Independence MUST be verified through matrix testing results
+- **Platform Independence MUST be verified** through Test-ModuleLocal matrix testing (ubuntu-latest, windows-latest, macos-latest)
+- **Modules MUST function identically** across all platforms
 - Quality Gates MUST be enforced by workflow automation
 - PowerShell 7.4+ compatibility MUST be verified
 - Action-based implementation preferred over inline workflow code
 - CI validation workflow MUST pass before merging changes to core workflows
+- **Consuming repositories** MUST follow structure requirements in action README documentation
 
 ### Runtime Development Guidance
-For agent-specific runtime development guidance, agents should reference:
+For agent-specific runtime development guidance **when developing the framework**, agents should reference:
 - GitHub Copilot: `.github/copilot-instructions.md` (if exists)
 - Other agents: Check for `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or `QWEN.md`
 
-**Version**: 1.1.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
+**For Consuming Repositories**: Follow the opinionated structure and configuration documented in the README files of the GitHub Actions this framework provides.
+
+**Version**: 1.1.2 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
