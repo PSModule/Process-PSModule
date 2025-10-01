@@ -200,7 +200,7 @@ jobs:
 
 - Configuration file at `.github/PSModule.yml` (YAML, JSON, or PSD1 format supported)
 - Reference: [Process-PSModule Configuration Documentation](https://github.com/PSModule/Process-PSModule#configuration)
-- Use Template-PSModule as starting point: https://github.com/PSModule/Template-PSModule
+- Use Template-PSModule as starting point: [Template-PSModule](https://github.com/PSModule/Template-PSModule)
 
 ### Build Process Requirements
 
@@ -537,7 +537,7 @@ Publish:
     IgnoreLabels: ['NoRelease', 'skip']   # Labels that skip publishing
 ```
 
-### Workflow Integration Requirements
+### Workflow Trigger Configuration
 
 Consuming repositories MUST configure their workflow file to trigger on appropriate PR events:
 
