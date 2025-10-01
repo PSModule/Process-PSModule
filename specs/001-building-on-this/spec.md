@@ -3,7 +3,7 @@
 **Feature Branch**: `001-building-on-this`
 **Created**: October 1, 2025
 **Status**: Draft
-**Input**: User description: "Building on this branch, we want to add a local github action (composite) to run the BeforeAll and AfterAll
+**Input**: User description: "Building on this branch, we want to add a local GitHub action (composite) to run the BeforeAll and AfterAll
 scripts and call this from the workflows ci.yml and workflow (via Test-ModuleLocal)."
 
 ## Execution Flow (main)
