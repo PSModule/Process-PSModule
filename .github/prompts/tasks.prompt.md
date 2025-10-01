@@ -17,7 +17,7 @@ $ARGUMENTS
    - IF EXISTS: Read quickstart.md for test scenarios
 
    Note: Not all projects have all documents. For example:
-   - CLI tools might not have contracts/
+   - Command-line tools might not have contracts/
    - Simple libraries might not need data-model.md
    - Generate tasks based on what's available
 

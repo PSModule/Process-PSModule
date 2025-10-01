@@ -396,7 +396,7 @@ Pull requests MUST use labels to determine release behavior:
   - Increments minor version: `1.2.3` → `1.3.0`
   - Resets patch to zero
 
-- **`patch`** - Bug fixes, backward-compatible patches (default)
+- **`patch`** - bugfixes, backward-compatible patches (default)
   - Increments patch version: `1.2.3` → `1.2.4`
   - Applied by default when no version label specified (if AutoPatching enabled)
 
