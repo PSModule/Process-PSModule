@@ -25,9 +25,21 @@ on:
         description: The classic personal access token for running tests.
         required: false
     inputs:
-      ModuleTestSuites:
+      RunsOn:
         type: string
-        description: JSON array of module test suites to run (from Get-Settings output).
+        description: The type of runner to use for the job.
+        required: true
+      OSName:
+        type: string
+        description: The operating system name.
+        required: true
+      TestName:
+        type: string
+        description: The name of the test suite.
+        required: true
+      TestPath:
+        type: string
+        description: The path to the test files.
         required: true
       Name:
         type: string
@@ -73,60 +85,9 @@ env:
   GITHUB_TOKEN: ${{ github.token }}
 
 jobs:
-  BeforeAll-ModuleLocal:
-    name: BeforeAll-ModuleLocal
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v5
-
-      - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@v1
-
-      - name: Run BeforeAll Setup Scripts
-        uses: PSModule/GitHub-Script@v1
-        with:
-          Name: BeforeAll-ModuleLocal
-          ShowInfo: false
-          ShowOutput: true
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Script: |
-            LogGroup "Running BeforeAll Setup Scripts" {
-                $beforeAllScript = 'tests/BeforeAll.ps1'
-
-                if (-not (Test-Path $beforeAllScript)) {
-                    Write-Host "No BeforeAll.ps1 script found at [$beforeAllScript] - exiting successfully"
-                    exit 0
-                }
-
-                Write-Host "Running BeforeAll setup script: $beforeAllScript"
-                try {
-                    Push-Location 'tests'
-                    & $beforeAllScript
-                    Write-Host "BeforeAll script completed successfully: $beforeAllScript"
-                }
-                catch {
-                    Write-Error "BeforeAll script failed: $beforeAllScript - $_"
-                    throw
-                }
-                finally {
-                    Pop-Location
-                }
-            }
-
   Test-ModuleLocal:
-    name: Test-${{ matrix.TestName }} (${{ matrix.OSName }})
-    runs-on: ${{ matrix.RunsOn }}
-    needs:
-      - BeforeAll-ModuleLocal
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(inputs.ModuleTestSuites) }}
+    name: Test-${{ inputs.TestName }} (${{ inputs.OSName }})
+    runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -158,65 +119,16 @@ jobs:
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          TestResult_TestSuiteName: ${{ matrix.TestName }}-${{ matrix.OSName }}
+          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OSName }}
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
           CodeCoverage_CoveragePercentTarget: 0
           Filter_ExcludeTag: Flaky
-          Path: ${{ matrix.TestPath }}
+          Path: ${{ inputs.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
             Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
-
-  AfterAll-ModuleLocal:
-    name: AfterAll-ModuleLocal
-    runs-on: ubuntu-latest
-    needs:
-      - Test-ModuleLocal
-    if: always()
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v5
-
-      - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@v1
-
-      - name: Run AfterAll Teardown Scripts
-        if: always()
-        uses: PSModule/GitHub-Script@v1
-        with:
-          Name: AfterAll-ModuleLocal
-          ShowInfo: false
-          ShowOutput: true
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Script: |
-            LogGroup "Running AfterAll Teardown Scripts" {
-                $afterAllScript = 'tests/AfterAll.ps1'
-
-                if (-not (Test-Path $afterAllScript)) {
-                    Write-Host "No AfterAll.ps1 script found at [$afterAllScript] - exiting successfully"
-                    exit 0
-                }
-
-                Write-Host "Running AfterAll teardown script: $afterAllScript"
-                try {
-                    Push-Location 'tests'
-                    & $afterAllScript
-                    Write-Host "AfterAll script completed successfully: $afterAllScript"
-                }
-                catch {
-                    Write-Warning "AfterAll script failed: $afterAllScript - $_"
-                    # Don't throw for teardown scripts to ensure other cleanup scripts can run
-                }
-                finally {
-                    Pop-Location
-                }
-            }
