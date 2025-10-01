@@ -10,9 +10,9 @@ function Get-RepoRoot {
     } catch {
         # Git command failed
     }
-    
+
     # Fall back to script location for non-git repos
-    return (Resolve-Path (Join-Path $PSScriptRoot "../../..")).Path
+    return (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 }
 
 function Get-CurrentBranch {
@@ -20,7 +20,7 @@ function Get-CurrentBranch {
     if ($env:SPECIFY_FEATURE) {
         return $env:SPECIFY_FEATURE
     }
-    
+
     # Then check git if available
     try {
         $result = git rev-parse --abbrev-ref HEAD 2>$null
@@ -30,15 +30,15 @@ function Get-CurrentBranch {
     } catch {
         # Git command failed
     }
-    
+
     # For non-git repos, try to find the latest feature directory
     $repoRoot = Get-RepoRoot
-    $specsDir = Join-Path $repoRoot "specs"
-    
+    $specsDir = Join-Path $repoRoot 'specs'
+
     if (Test-Path $specsDir) {
-        $latestFeature = ""
+        $latestFeature = ''
         $highest = 0
-        
+
         Get-ChildItem -Path $specsDir -Directory | ForEach-Object {
             if ($_.Name -match '^(\d{3})-') {
                 $num = [int]$matches[1]
@@ -48,14 +48,14 @@ function Get-CurrentBranch {
                 }
             }
         }
-        
+
         if ($latestFeature) {
             return $latestFeature
         }
     }
-    
+
     # Final fallback
-    return "main"
+    return 'main'
 }
 
 function Test-HasGit {
@@ -72,16 +72,16 @@ function Test-FeatureBranch {
         [string]$Branch,
         [bool]$HasGit = $true
     )
-    
+
     # For non-git repos, we can't enforce branch naming but still provide output
     if (-not $HasGit) {
-        Write-Warning "[specify] Warning: Git repository not detected; skipped branch validation"
+        Write-Warning '[specify] Warning: Git repository not detected; skipped branch validation'
         return $true
     }
-    
+
     if ($Branch -notmatch '^[0-9]{3}-') {
         Write-Output "ERROR: Not on a feature branch. Current branch: $Branch"
-        Write-Output "Feature branches should be named like: 001-feature-name"
+        Write-Output 'Feature branches should be named like: 001-feature-name'
         return $false
     }
     return $true
@@ -97,19 +97,19 @@ function Get-FeaturePathsEnv {
     $currentBranch = Get-CurrentBranch
     $hasGit = Test-HasGit
     $featureDir = Get-FeatureDir -RepoRoot $repoRoot -Branch $currentBranch
-    
+
     [PSCustomObject]@{
-        REPO_ROOT     = $repoRoot
+        REPO_ROOT      = $repoRoot
         CURRENT_BRANCH = $currentBranch
-        HAS_GIT       = $hasGit
-        FEATURE_DIR   = $featureDir
-        FEATURE_SPEC  = Join-Path $featureDir 'spec.md'
-        IMPL_PLAN     = Join-Path $featureDir 'plan.md'
-        TASKS         = Join-Path $featureDir 'tasks.md'
-        RESEARCH      = Join-Path $featureDir 'research.md'
-        DATA_MODEL    = Join-Path $featureDir 'data-model.md'
-        QUICKSTART    = Join-Path $featureDir 'quickstart.md'
-        CONTRACTS_DIR = Join-Path $featureDir 'contracts'
+        HAS_GIT        = $hasGit
+        FEATURE_DIR    = $featureDir
+        FEATURE_SPEC   = Join-Path $featureDir 'spec.md'
+        IMPL_PLAN      = Join-Path $featureDir 'plan.md'
+        TASKS          = Join-Path $featureDir 'tasks.md'
+        RESEARCH       = Join-Path $featureDir 'research.md'
+        DATA_MODEL     = Join-Path $featureDir 'data-model.md'
+        QUICKSTART     = Join-Path $featureDir 'quickstart.md'
+        CONTRACTS_DIR  = Join-Path $featureDir 'contracts'
     }
 }
 
