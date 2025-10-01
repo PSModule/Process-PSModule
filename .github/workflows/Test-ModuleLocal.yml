@@ -29,7 +29,7 @@ on:
         type: string
         description: The type of runner to use for the job.
         required: true
-      OS:
+      OSName:
         type: string
         description: The operating system name.
         required: true
@@ -44,7 +44,7 @@ on:
         default: tests
       TestName:
         type: string
-        description: The path to the tests folder.
+        description: The name of the test suite.
         required: false
         default: tests
       Debug:
@@ -76,6 +76,16 @@ on:
 permissions:
   contents: read # to checkout the repo and create releases on the repo
 
+env:
+  TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+  TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+  TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+  TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+  TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+  TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+  TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+  GITHUB_TOKEN: ${{ github.token }}
+
 jobs:
   Test-ModuleLocal:
     name: Test-${{ inputs.TestName }} (${{ inputs.RunsOn }})
@@ -106,21 +116,12 @@ jobs:
 
       - name: Test-ModuleLocal
         uses: PSModule/Invoke-Pester@v4
-        env:
-          TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-          TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-          TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-          TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-          TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-          TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-          TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
-          GITHUB_TOKEN: ${{ github.token }} # Used in tests!
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
-          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OS }}
+          TestResult_TestSuiteName: ${{ inputs.TestName }}-${{ inputs.OSName }}
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed

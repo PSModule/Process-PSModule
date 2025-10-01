@@ -103,8 +103,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: true
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_GITLEAKS: false
+          VALIDATE_JSCPD: false
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
-          VALIDATE_JSCPD: false
-          VALIDATE_GITLEAKS: false

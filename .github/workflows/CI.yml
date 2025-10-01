@@ -176,11 +176,56 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
+  BeforeAll-ModuleLocal:
+    if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
+    name: BeforeAll-ModuleLocal
+    runs-on: ubuntu-latest
+    needs:
+      - Build-Module
+      - Get-Settings
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@v1
+
+      - name: Run BeforeAll Setup Scripts
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Name: BeforeAll-ModuleLocal
+          ShowInfo: false
+          ShowOutput: true
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Script: |
+            LogGroup "Running BeforeAll Setup Scripts" {
+                $beforeAllScript = 'tests/BeforeAll.ps1'
+
+                if (-not (Test-Path $beforeAllScript)) {
+                    Write-Host "No BeforeAll.ps1 script found at [$beforeAllScript] - exiting successfully"
+                    exit 0
+                }
+
+                Write-Host "Running BeforeAll setup script: $beforeAllScript"
+                try {
+                    & $beforeAllScript
+                    Write-Host "BeforeAll script completed successfully: $beforeAllScript"
+                } catch {
+                    Write-Error "BeforeAll script failed: $beforeAllScript - $_"
+                    throw
+                }
+            }
+
   Test-ModuleLocal:
     if: ${{ needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
       - Build-Module
       - Get-Settings
+      - BeforeAll-ModuleLocal
     strategy:
       fail-fast: false
       matrix:
@@ -189,7 +234,7 @@ jobs:
     secrets: inherit
     with:
       RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
+      OSName: ${{ matrix.OSName }}
       TestPath: ${{ matrix.TestPath }}
       TestName: ${{ matrix.TestName }}
       Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
@@ -198,6 +243,50 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  AfterAll-ModuleLocal:
+    if: ${{ needs.Test-ModuleLocal.result != 'skipped' && always() }}
+    name: AfterAll-ModuleLocal
+    runs-on: ubuntu-latest
+    needs:
+      - Test-ModuleLocal
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@v1
+
+      - name: Run AfterAll Teardown Scripts
+        if: always()
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Name: AfterAll-ModuleLocal
+          ShowInfo: false
+          ShowOutput: true
+          Debug: ${{ inputs.Debug }}
+          Prerelease: ${{ inputs.Prerelease }}
+          Verbose: ${{ inputs.Verbose }}
+          Version: ${{ inputs.Version }}
+          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          Script: |
+            LogGroup "Running AfterAll Teardown Scripts" {
+                $afterAllScript = 'tests/AfterAll.ps1'
+
+                if (-not (Test-Path $afterAllScript)) {
+                    Write-Host "No AfterAll.ps1 script found at [$afterAllScript] - exiting successfully"
+                    exit 0
+                }
+
+                Write-Host "Running AfterAll teardown script: $afterAllScript"
+                try {
+                    & $afterAllScript
+                    Write-Host "AfterAll script completed successfully: $afterAllScript"
+                } catch {
+                    Write-Warning "AfterAll script failed: $afterAllScript - $_"
+                    # Don't throw for teardown scripts to ensure other cleanup scripts can run
+                }
+            }
 
   Get-TestResults:
     if: needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled())
