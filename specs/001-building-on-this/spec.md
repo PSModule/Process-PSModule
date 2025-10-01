@@ -140,6 +140,8 @@ This logic should be extracted into a single local composite action with a mode 
 
 - **FR-020**: The composite action MUST maintain the same functional behavior as the current inline implementation in Test-ModuleLocal.yml for root-level scripts.
 
+- **FR-021**: Documentation MUST clearly explain the intended purpose of BeforeAll.ps1 and AfterAll.ps1 scripts: to setup requirements for tests that are typically external to GitHub Actions (e.g., using APIs to create test resources in external solutions like cloud infrastructure, databases, or third-party services). Documentation MUST clarify that test-specific resources for individual OS/platform combinations can still be created within the tests themselves.
+
 ### Key Entities
 
 - **Local Composite Action (Setup-Test)**: A reusable GitHub Actions composite action that encapsulates the logic for discovering and executing either BeforeAll.ps1 or AfterAll.ps1 scripts based on a mode parameter. Located at `.github/actions/setup-test/action.yml`. Accepts a required mode input ("before" or "after"), along with configuration and secrets inputs. Uses GitHub-Script action for PowerShell execution. Behavior changes based on mode: "before" mode fails on script errors, "after" mode continues on errors.
@@ -148,9 +150,9 @@ This logic should be extracted into a single local composite action with a mode 
 
 - **Test Directory**: The root 'tests' folder in the repository that may contain optional BeforeAll.ps1 or AfterAll.ps1 scripts. Nested subdirectories are not searched for these scripts.
 
-- **BeforeAll.ps1 Script**: An optional PowerShell script located at tests/BeforeAll.ps1 that runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, initialize test data). Executed when the composite action is called with mode="before". Executed with full access to environment secrets. Failures halt the testing workflow.
+- **BeforeAll.ps1 Script**: An optional PowerShell script located at tests/BeforeAll.ps1 that runs once before all test matrix jobs to set up external test resources that are independent of the test platform/OS (e.g., deploy cloud infrastructure via APIs, initialize external databases, create test data in third-party services). This script is intended for test environment setup that is external to GitHub Actions execution. Test-specific resources for individual OS/platform combinations should be created within the tests themselves. Executed when the composite action is called with mode="before". Executed with full access to environment secrets. Failures halt the testing workflow.
 
-- **AfterAll.ps1 Script**: An optional PowerShell script located at tests/AfterAll.ps1 that runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, cleanup databases). Executed when the composite action is called with mode="after". Executed with full access to environment secrets. Failures are logged but do not prevent workflow completion.
+- **AfterAll.ps1 Script**: An optional PowerShell script located at tests/AfterAll.ps1 that runs once after all test matrix jobs complete to clean up external test resources (e.g., remove cloud infrastructure, cleanup external databases, delete test data from third-party services). This script is intended for teardown of external test environment resources. Test-specific cleanup for individual OS/platform combinations should be handled within the tests themselves. Executed when the composite action is called with mode="after". Executed with full access to environment secrets. Failures are logged but do not prevent workflow completion.
 
 ---
 
@@ -195,6 +197,8 @@ This logic should be extracted into a single local composite action with a mode 
 - Composite action files will follow GitHub Actions composite action specification
 - The current inline logic in Test-ModuleLocal.yml is correct and complete
 - No changes to the behavior of BeforeAll/AfterAll script execution are desired, only encapsulation
+- BeforeAll/AfterAll scripts are intended for external test resource setup (cloud infrastructure, external databases, third-party services)
+- Test-specific resources for individual OS/platform test combinations should be created within the tests themselves
 
 ### Success Criteria
 - Test-ModuleLocal workflow is cleaner with reduced duplication
@@ -202,3 +206,4 @@ This logic should be extracted into a single local composite action with a mode 
 - All existing tests continue to pass with identical behavior
 - Workflow execution time remains the same or improves
 - Other workflows can reuse these composite actions if needed in the future
+- Documentation clearly explains the intended use case: external test resource management vs. in-test resource creation
