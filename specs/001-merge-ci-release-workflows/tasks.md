@@ -59,51 +59,49 @@ This is a GitHub Actions workflow project at repository root:
 - [ ] T007 [P] Update .github/workflows/Workflow-Test-Default.yml to test unified workflow
 - [ ] T008 [P] Update .github/workflows/Workflow-Test-WithManifest.yml to test unified workflow
 - [ ] T009 Create validation script to verify conditional job execution in tests/Validate-ConditionalExecution.Tests.ps1
+- [ ] T010 [P] Create test to validate PR status checks are reported correctly in .github/workflows/Test-Workflow-StatusChecks.yml
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
-- [ ] T010 Add conditional execution logic to Publish-Module job in .github/workflows/workflow.yml
-- [ ] T011 Add conditional execution logic to Publish-Site job in .github/workflows/workflow.yml
-- [ ] T012 Update workflow triggers in .github/workflows/workflow.yml to handle all events
-- [ ] T013 Update workflow permissions in .github/workflows/workflow.yml for both modes
-- [ ] T014 Add workflow comments documenting CI-Only vs CI+Release execution paths in .github/workflows/workflow.yml
-- [ ] T015 Verify all job dependencies correctly chain CI before Release jobs in .github/workflows/workflow.yml
+- [ ] T011 Add conditional execution logic to Publish-Module job in .github/workflows/workflow.yml
+- [ ] T012 Add conditional execution logic to Publish-Site job in .github/workflows/workflow.yml
+- [ ] T013 Update workflow triggers in .github/workflows/workflow.yml to handle all events
+- [ ] T014 Update workflow permissions in .github/workflows/workflow.yml for both modes
+- [ ] T015 Add workflow comments documenting CI-Only vs CI+Release execution paths in .github/workflows/workflow.yml
+- [ ] T016 Verify job dependencies chain CI before Release jobs and validate fail-fast behavior when CI tests fail in .github/workflows/workflow.yml
 
 ## Phase 3.4: Integration
 
-- [ ] T016 Add deprecation warning to .github/workflows/CI.yml with migration instructions
-- [ ] T017 [P] Remove .github/workflows/Publish-Module.yml (logic now in workflow.yml)
-- [ ] T018 [P] Remove .github/workflows/Publish-Site.yml (logic now in workflow.yml)
-- [ ] T019 [P] Mark .github/workflows/Workflow-Test-Default-CI.yml as deprecated
-- [ ] T020 [P] Mark .github/workflows/Workflow-Test-WithManifest-CI.yml as deprecated
-- [ ] T021 Update workflow version references from v4 to v5 in test workflows
+- [ ] T017 Add deprecation warning to .github/workflows/CI.yml with migration instructions
+- [ ] T018 [P] Mark .github/workflows/Workflow-Test-Default-CI.yml as deprecated
+- [ ] T019 [P] Mark .github/workflows/Workflow-Test-WithManifest-CI.yml as deprecated
+- [ ] T020 Update workflow version references from v4 to v5 in test workflows
 
 ## Phase 3.5: Polish
 
 - [ ] T022 [P] Create migration guide docs/migration/v5-unified-workflow.md with all three scenarios
 - [ ] T023 [P] Update README.md with unified workflow documentation and breaking change notice
 - [ ] T024 [P] Update .github/copilot-instructions.md with unified workflow as active technology
-- [ ] T025 [P] Create manual test checklist docs/migration/manual-testing.md for consuming repositories
-- [ ] T026 Run manual validation of all three migration scenarios from quickstart.md
-- [ ] T027 Verify workflow execution time has no regression compared to separate workflows
-- [ ] T028 [P] Add CHANGELOG.md entry for v5.0.0 breaking change
+- [ ] T021 [P] Create manual test checklist docs/migration/manual-testing.md for consuming repositories
+- [ ] T022 Run manual validation of all three migration scenarios from quickstart.md
+- [ ] T023 Verify workflow execution time has no regression compared to separate workflows
+- [ ] T024 [P] Add CHANGELOG.md entry for v5.0.0 breaking change
 
 ## Dependencies
 
 ### Phase Dependencies
 - Setup (T001-T003) before all other phases
-- Tests (T004-T009) before Core implementation (T010-T015)
-- Core (T010-T015) before Integration (T016-T021)
-- Integration (T016-T021) before Polish (T022-T028)
+- Tests (T004-T010) before Core implementation (T011-T016)
+- Core (T011-T016) before Integration (T017-T020)
+- Integration (T017-T020) before Polish (T021-T024)
 
 ### Specific Task Dependencies
-- T004, T005, T006 must fail before T010, T011 implemented
+- T004, T005, T006 must fail before T011, T012 implemented
 - T007, T008 depend on T004, T005, T006 being written
-- T010 blocks T016, T017, T018 (workflow.yml must have publish logic before removing separate files)
-- T015 depends on T010, T011, T012, T013, T014 (all workflow changes complete)
-- T021 depends on T010-T015 (v5 workflow ready)
-- T022 depends on T016-T021 (migration scenarios finalized)
-- T026 depends on T022 (migration guide complete)
+- T011 blocks T017 (workflow.yml must have conditional logic before adding deprecation warnings)
+- T016 depends on T011, T012, T013, T014, T015 (all workflow changes complete)
+- T020 depends on T011-T016 (v5 workflow ready)
+- T022 depends on T017-T020 (migration scenarios finalized)
 
 ## Parallel Execution Examples
 
@@ -113,15 +111,15 @@ This is a GitHub Actions workflow project at repository root:
 Task: "Create test workflow for CI-only mode (unmerged PR) in .github/workflows/Test-Workflow-CI-Only.yml"
 Task: "Create test workflow for CI+Release mode (merged PR) in .github/workflows/Test-Workflow-Release.yml"
 Task: "Create test workflow for manual trigger behavior in .github/workflows/Test-Workflow-Manual.yml"
+Task: "Create test to validate PR status checks are reported correctly in .github/workflows/Test-Workflow-StatusChecks.yml"
 Task: "Update .github/workflows/Workflow-Test-Default.yml to test unified workflow"
 Task: "Update .github/workflows/Workflow-Test-WithManifest.yml to test unified workflow"
+Task: "Create test scenario in tests/Workflow-FailFast.Tests.ps1 to validate PR check failures"
 ```
 
-### Phase 3.4: Integration (File Removals/Deprecations Parallel)
+### Phase 3.4: Integration (Deprecations Parallel)
 ```plaintext
 # Launch deprecation tasks together (different files):
-Task: "Remove .github/workflows/Publish-Module.yml (logic now in workflow.yml)"
-Task: "Remove .github/workflows/Publish-Site.yml (logic now in workflow.yml)"
 Task: "Mark .github/workflows/Workflow-Test-Default-CI.yml as deprecated"
 Task: "Mark .github/workflows/Workflow-Test-WithManifest-CI.yml as deprecated"
 ```
@@ -143,7 +141,7 @@ Task: "Add CHANGELOG.md entry for v5.0.0 breaking change"
 - Verify all test workflows FAIL before implementing conditional logic (TDD Red phase)
 - Commit after each task to enable rollback if needed
 - Test workflow execution locally where possible using `act` or GitHub CLI
-- Avoid: modifying workflow.yml in multiple parallel tasks (sequential T010-T015)
+- Avoid: modifying workflow.yml in multiple parallel tasks (sequential T011-T016)
 
 ## Task Generation Rules
 
@@ -173,22 +171,24 @@ Task: "Add CHANGELOG.md entry for v5.0.0 breaking change"
    - Manual testing steps → manual validation task
 
 5. **Ordering**:
-   - Setup → Tests → Core (workflow.yml mods) → Integration (file removals) → Polish (docs)
+   - Setup → Tests → Core (workflow.yml mods) → Integration (deprecations) → Polish (docs)
    - All tests before implementation (strict TDD)
-   - Sequential tasks within workflow.yml (T010-T015)
+   - Sequential tasks within workflow.yml (T011-T016)
    - Parallel tasks for different files (tests, docs, deprecations)
 
 ## Validation Checklist
 
 *GATE: Checked by main() before returning*
 
-- [x] All contracts have corresponding tests (workflow-api.md → T004-T008)
-- [x] All entities have tasks (TriggerContext → T010, JobExecutionPlan → T015)
-- [x] All tests come before implementation (T004-T009 before T010-T015)
+- [x] All contracts have corresponding tests (workflow-api.md → T004-T010)
+- [x] All entities have tasks (TriggerContext → T011, JobExecutionPlan → T016)
+- [x] All tests come before implementation (T004-T010 before T011-T016)
 - [x] Parallel tasks truly independent (different files: [P] marked correctly)
 - [x] Each task specifies exact file path (all tasks include file paths)
-- [x] No task modifies same file as another [P] task (workflow.yml tasks sequential T010-T015)
-- [x] Migration scenarios covered (T022 creates migration guide, T026 validates)
-- [x] Breaking change documented (T023 README, T024 copilot-instructions, T028 CHANGELOG)
+- [x] No task modifies same file as another [P] task (workflow.yml tasks sequential T011-T016)
+- [x] Migration scenarios covered (T022 validates migration guide from quickstart.md)
+- [x] Breaking change documented (T019 README via quickstart.md, T020 copilot-instructions, T024 CHANGELOG)
 - [x] Both execution modes tested (T004 CI-only, T005 CI+Release)
 - [x] Backward compatibility maintained (workflow API unchanged per contracts/)
+- [x] PR status checks validated (T010 tests FR-006)
+- [x] Fail-fast behavior validated (T016 includes FR-007 validation)
