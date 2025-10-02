@@ -347,6 +347,25 @@ permissions:
 
 For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
 
+## Breaking Changes
+
+### v4.0.0 - Unified CI/CD Workflow (2025-10-02)
+
+**Breaking Change**: The `CI.yml` workflow has been removed and consolidated into the main `workflow.yml` file.
+
+**Impact**: Consuming repositories referencing `CI.yml` directly will need to update their workflow calls.
+
+**Migration Required**: If your repository references `.github/workflows/CI.yml` in any workflow files or documentation, update those references to `.github/workflows/workflow.yml`.
+
+**Migration Guide**: See [docs/unified-workflow-migration.md](./docs/unified-workflow-migration.md) for detailed migration instructions.
+
+**Key Changes**:
+- All CI/CD functionality now in single `workflow.yml` file
+- Conditional publishing based on PR merge state
+- Concurrency groups prevent duplicate workflow runs
+- Test execution remains unchanged
+- Publishing only occurs when PR is merged
+
 ## Specifications and practices
 
 Process-PSModule follows:
