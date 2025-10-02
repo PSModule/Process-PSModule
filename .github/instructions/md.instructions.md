@@ -5,7 +5,7 @@ description: Markdown style guidelines for consistency across documentation.
 
 # Markdown Style Guidelines
 
-This document defines the Markdown style guidelines for all Markdown files in this repository. These rules follow common markdown linter best practices and ensure consistency across documentation.
+This document defines the Markdown style guidelines for all Markdown files in this repository. These rules follow common Markdown linter best practices and ensure consistency across documentation.
 
 ## Headings
 
