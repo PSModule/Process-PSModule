@@ -5,7 +5,7 @@ description: Markdown style guidelines for consistency across documentation.
 
 # Markdown Style Guidelines
 
-This document defines the markdown style guidelines for all markdown files in this repository. These rules follow common markdown linter best practices and ensure consistency across documentation.
+This document defines the Markdown style guidelines for all Markdown files in this repository. These rules follow common Markdown linter best practices and ensure consistency across documentation.
 
 ## Headings
 
@@ -110,7 +110,7 @@ No blank lines before/after code blocks.
 - Always provide link text in square brackets: `[text](url)`
 - Do not use bare URLs (wrap them: `<https://example.com>`)
 - For internal repository links, use relative paths starting with `./` or `../`
-- Use `.md` extension for links to markdown files
+- Use `.md` extension for links to Markdown files
 
 **Good:**
 
@@ -252,13 +252,13 @@ See the [logo][logo-img] above.
 
 ### HTML
 
-- Avoid HTML in markdown when possible
-- Use HTML only for features not supported by markdown
+- Avoid HTML in Markdown when possible
+- Use HTML only for features not supported by Markdown
 - Close all HTML tags properly
 
-### File Names
+### Filenames
 
-- Use lowercase for markdown file names
+- Use lowercase for Markdown filenames
 - Use hyphens (`-`) not underscores (`_`) to separate words
 - Use `.md` extension (not `.markdown`)
 
@@ -269,7 +269,7 @@ See the [logo][logo-img] above.
 
 ## Linting
 
-To validate markdown files against these guidelines, use a markdown linter such as:
+To validate Markdown files against these guidelines, use a Markdown linter such as:
 
 - [markdownlint](https://github.com/DavidAnson/markdownlint)
 - [remark-lint](https://github.com/remarkjs/remark-lint)

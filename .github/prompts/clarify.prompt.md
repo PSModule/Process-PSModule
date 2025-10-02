@@ -142,7 +142,24 @@ Execution steps:
 
 7. Write the updated spec back to `FEATURE_SPEC`.
 
-8. Report completion (after questioning loop ends or early termination):
+8. **Post issue comment** with clarification summary (only if questions were asked and answered):
+   - Post a comment to the GitHub issue summarizing the clarifications
+   - Format the comment as:
+     ```markdown
+     ## Clarification Session (YYYY-MM-DD)
+
+     | # | Question | Answer |
+     |---|----------|--------|
+     | 1 | <question text> | <answer text> |
+     | 2 | <question text> | <answer text> |
+     | ... | ... | ... |
+
+     _All clarifications have been integrated into the specification._
+     ```
+   - Keep the table concise and readable
+   - Include all questions asked and answers received during this session (up to 5)
+
+9. Report completion (after questioning loop ends or early termination):
    - Number of questions asked & answered.
    - Path to updated spec.
    - Sections touched (list names).
