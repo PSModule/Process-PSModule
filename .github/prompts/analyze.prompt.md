@@ -94,7 +94,46 @@ Execution steps:
      * Duplication Count
      * Critical Issues Count
 
-7. At end of report, output a concise Next Actions block:
+7. **Post issue comment** with analysis results organized by severity:
+   - Post a comment to the GitHub issue with the analysis findings
+   - Format the comment with separate tables for each severity level (only include levels that have findings):
+     ```markdown
+     ## Analysis Report
+
+     ### Summary
+     - Total Requirements: X
+     - Total Tasks: Y
+     - Coverage: Z%
+     - Issues Found: N (A critical, B high, C medium, D low)
+
+     ### Critical Issues
+     | ID | Category | Location(s) | Summary | Recommendation |
+     |----|----------|-------------|---------|----------------|
+     | C1 | ... | ... | ... | ... |
+
+     ### High Priority Issues
+     | ID | Category | Location(s) | Summary | Recommendation |
+     |----|----------|-------------|---------|----------------|
+     | H1 | ... | ... | ... | ... |
+
+     ### Medium Priority Issues
+     | ID | Category | Location(s) | Summary | Recommendation |
+     |----|----------|-------------|---------|----------------|
+     | M1 | ... | ... | ... | ... |
+
+     ### Low Priority Issues
+     | ID | Category | Location(s) | Summary | Recommendation |
+     |----|----------|-------------|---------|----------------|
+     | L1 | ... | ... | ... | ... |
+
+     ### Next Actions
+     - [Recommendation based on findings]
+     ```
+   - Keep tables concise, limit to 20 findings per severity level
+   - If more than 20 findings in a category, add a note: "_(Additional N issues not shown - see full report)_"
+   - Include the complete "Next Actions" block with specific recommendations
+
+8. At end of report, output a concise Next Actions block:
    - If CRITICAL issues exist: Recommend resolving them before `/implement`.
    - If only LOW/MEDIUM issues: User may proceed, but provide improvement suggestions.
    - Provide explicit command suggestions: e.g., "Run /specify with refinement", "Run /plan to adjust architecture", or "Manually edit tasks.md to add coverage for 'performance-metrics'".

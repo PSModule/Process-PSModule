@@ -23,6 +23,7 @@ Given the implementation details provided as an argument, do this:
      - **If exists**: You are ITERATING on an existing plan. User input should guide refinements/additions to the existing plan content.
      - **If not exists**: You are CREATING a new plan from scratch.
    - BEFORE proceeding, inspect FEATURE_SPEC for a `## Clarifications` section with at least one `Session` subheading. If missing or clearly ambiguous areas remain (vague adjectives, unresolved critical choices), PAUSE and instruct the user to run `/clarify` first to reduce rework. Only continue if: (a) Clarifications exist OR (b) an explicit user override is provided (e.g., "proceed without clarification"). Do not attempt to fabricate clarifications yourself.
+
 2. Read and analyze the feature specification to understand:
    - The feature requirements and user stories
    - Functional and non-functional requirements
@@ -138,6 +139,8 @@ Given the implementation details provided as an argument, do this:
    gh issue edit <issue-number> --remove-label "Specification" --add-label "Plan"
    ```
 
-9. Report results with branch name, PR URL, file paths, and generated artifacts.
+9. **Post final status comment**: "✅ Planning complete. Ready for task generation with `/tasks` or analysis with `/analyze`."
+
+10. Report results with branch name, PR URL, file paths, and generated artifacts.
 
 Use absolute paths with the repository root for all file operations to avoid path issues.

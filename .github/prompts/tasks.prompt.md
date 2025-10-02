@@ -109,7 +109,9 @@ $ARGUMENTS
    rm temp_body.md
    ```
 
-9. Report completion with task count, file path, and PR update status.
+9. **Post final status comment**: "✅ Task list ready. Run `/analyze` for quality check or `/implement` to begin execution."
+
+10. Report completion with task count, file path, and PR update status.
 
 Context for task generation: $ARGUMENTS
 

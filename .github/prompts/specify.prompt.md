@@ -137,6 +137,8 @@ Given that feature description, do this:
    gh issue edit <issue-number> --body-file <SPEC_FILE>
    ```
 
-8. Report completion with branch name, spec file path, whether it's a new or updated feature, issue number, target repository (if fork), and readiness for the next phase.
+8. **Post final status comment**: "✅ Specification complete. Ready for clarification with `/clarify` or planning with `/plan`."
+
+9. Report completion with branch name, spec file path, whether it's a new or updated feature, issue number, target repository (if fork), and readiness for the next phase.
 
 Note: The script handles branch creation/reuse and initializes the spec file before writing.
