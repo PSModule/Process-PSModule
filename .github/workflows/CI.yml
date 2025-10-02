@@ -1,4 +1,4 @@
-name: Process-PSModule
+name: Process-PSModule - CI
 
 on:
   workflow_call:
@@ -63,16 +63,10 @@ on:
         required: false
         default: '.'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
-
 permissions:
-  contents: write      # to checkout the repo and create releases on the repo
+  contents: read       # to checkout the repository
   pull-requests: write # to write comments to PRs
   statuses: write      # to update the status of the workflow from linter
-  pages: write         # to deploy to Pages
-  id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
   Get-Settings:
@@ -328,67 +322,3 @@ jobs:
       Prerelease: ${{ inputs.Prerelease }}
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
-
-  Publish-Site:
-    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-    needs:
-      - Get-Settings
-      - Get-TestResults
-      - Get-CodeCoverage
-      - Build-Site
-    permissions:
-      pages: write    # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/configure-pages@v5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  Publish-Module:
-    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-    needs:
-      - Get-Settings
-      - Get-TestResults
-      - Get-CodeCoverage
-      - Build-Site
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v5
-
-      - name: Download module artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: module
-          path: ${{ inputs.WorkingDirectory }}/outputs/module
-
-      - name: Update Microsoft.PowerShell.PSResourceGet
-        shell: pwsh
-        run: |
-          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
-
-      - name: Publish module
-        uses: PSModule/Publish-PSModule@v2
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-          ModulePath: outputs/module
-          APIKey: ${{ secrets.APIKEY }}
-          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
-          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoCleanup }}
-          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoPatching }}
-          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.DatePrereleaseFormat }}
-          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IgnoreLabels }}
-          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IncrementalPrerelease }}
-          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MajorLabels }}
-          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MinorLabels }}
-          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.PatchLabels }}
-          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
