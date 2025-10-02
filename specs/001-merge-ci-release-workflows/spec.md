@@ -36,17 +36,17 @@ As a PowerShell module maintainer managing multiple repositories, I need a singl
 | **FR-005** | Workflow MUST skip release operations when running on pull request events |
 | **FR-006** | Workflow MUST report test results as PR status checks |
 | **FR-007** | Workflow MUST fail fast and halt execution if CI tests fail |
-| **FR-008** | Workflow MUST publish module releases to [NEEDS CLARIFICATION: target registry not specified - PowerShell Gallery, private feed, both?] |
-| **FR-009** | Workflow MUST create GitHub releases with [NEEDS CLARIFICATION: versioning strategy not specified - semantic versioning, date-based, manual tags?] |
+| **FR-008** | Workflow MUST publish module releases to PowerShell Gallery |
+| **FR-009** | Workflow MUST create GitHub releases with semantic versioning based on PR labels (major, minor, patch) |
 | **FR-010** | Workflow MUST be compatible with existing repository structures used in PSModule repositories |
-| **FR-011** | Workflow MUST support manual triggering (workflow_dispatch) with [NEEDS CLARIFICATION: should manual triggers allow release operations, or tests only?] |
-| **FR-012** | Workflow MUST handle authentication for [NEEDS CLARIFICATION: authentication targets not specified - PowerShell Gallery API keys, GitHub tokens, other credentials?] |
+| **FR-011** | Workflow MUST support manual triggering (workflow_dispatch) with tests-only execution (no release operations) |
+| **FR-012** | Workflow MUST handle authentication for PowerShell Gallery publishing via secrets.APIKEY and GitHub Releases via GITHUB_TOKEN |
 
 ### Non-Functional Requirements
 
 | ID | Requirement |
 |----|-------------|
-| **NFR-001** | Workflow MUST complete CI test phase within reasonable time limits [NEEDS CLARIFICATION: acceptable time limits not specified] |
+| **NFR-001** | Workflow MUST complete CI test phase using GitHub Actions default timeouts (6 hours per job, 72 hours per workflow; typical completion in 5-15 minutes) |
 | **NFR-002** | Workflow MUST be maintainable as a single source of truth across multiple repositories |
 | **NFR-003** | Workflow MUST provide clear logging to distinguish CI and release phases |
 | **NFR-004** | Workflow MUST be idempotent for release operations (safe to re-run without duplicate publishes) |
@@ -81,6 +81,16 @@ As a PowerShell module maintainer managing multiple repositories, I need a singl
 | **Trigger Context** | Runtime information determining whether workflow runs in PR mode or release mode |
 | **Test Results** | Output from CI phase determining whether release phase can proceed |
 
+## Clarifications
+
+### Session 2025-10-02
+
+- Q: What is the target registry for module publishing? → A: PowerShell Gallery
+- Q: What versioning strategy should be used for releases? → A: Semantic versioning with PR labels (major, minor, patch)
+- Q: Should manual triggers allow release operations? → A: No, tests only
+- Q: What authentication targets are required? → A: PowerShell Gallery API key via secrets.APIKEY
+- Q: What are acceptable CI time limits? → A: GitHub Actions default timeouts (6 hours per job, 72 hours per workflow)
+
 ---
 
 **Feature Branch**: `001-merge-ci-release-workflows`
@@ -101,7 +111,7 @@ As a PowerShell module maintainer managing multiple repositories, I need a singl
 
 ### Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Scope is clearly bounded
