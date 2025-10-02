@@ -163,6 +163,32 @@ Using list when table is better:
 - Feature C: Partial - Beta feature
 ```
 
+## Requirement Number Formatting
+
+When writing or referencing requirement numbers (NFR and FR) in documentation:
+- **Always use bold formatting** for requirement numbers
+- **Replace hyphens with non-breaking hyphens** (`&#8209;`) between letters and numbers
+- This prevents line breaks within requirement numbers and ensures consistent formatting
+- This applies to all specification documents, plans, and tables
+
+Examples:
+```markdown
+# Correct formatting
+**NFR&#8209;001**: The system must respond within 200ms
+**FR&#8209;042**: User authentication shall support OAuth 2.0
+
+# In tables
+| ID | Description |
+|----|-------------|
+| **NFR&#8209;001** | Performance requirement |
+| **FR&#8209;042** | Authentication feature |
+
+# Incorrect formatting (do not use)
+NFR-001: Without bold or non-breaking hyphen
+**NFR-001**: Bold but with regular hyphen (can break across lines)
+NFR&#8209;001: Non-breaking hyphen but not bold
+```
+
 ## Emphasis
 
 - Use `*` or `_` for emphasis (italic), `**` or `__` for strong emphasis (bold)

@@ -118,6 +118,7 @@ Given that feature description, do this:
    - **If IS_EXISTING_BRANCH is true**:
      - Update the existing issue associated with this feature branch (if one exists) with the refined specification
      - **Evaluate if the title needs updating**: If the feature scope has changed significantly (e.g., from patch to feature, or major functionality changes), update the issue title. For minor refinements or clarifications, keep the existing title.
+     - **Ensure Specification label**: Verify the issue has the 'Specification' label (indicates current phase)
    - **If IS_EXISTING_BRANCH is false** (new branch): Create a new GitHub issue with:
      - Title: Use the generated title format above
      - Body: The complete content of the SPEC_FILE (spec.md). Remove the first H1 (#) header and the first H2 (##) header if they exist. We want the PR description to start with the "Primary user story" section.

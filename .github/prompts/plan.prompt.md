@@ -18,21 +18,39 @@ $ARGUMENTS
 
 Given the implementation details provided as an argument, do this:
 
-1. Run [`.specify/scripts/powershell/setup-plan.ps1 -Json`](../../.specify/scripts/powershell/setup-plan.ps1) from the repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. All future file paths must be absolute.
+1. **Set Planning label immediately**:
+   - **Determine target repository**:
+     - Check if `.fork-info.json` exists in the feature directory
+     - If it exists:
+       - Validate required fields: `is_fork` (true), `upstream_owner` (non-empty), `upstream_repo` (non-empty)
+       - Use `upstream_owner/upstream_repo` for all GitHub operations
+     - If it doesn't exist, use the current repository (origin)
+   - Get the issue number associated with the current feature branch
+   - **Add 'Planning' label** to the issue immediately in the target repository
+   - **Remove 'Specification' label** from the issue
+
+   **GitHub Integration**: If GitHub tools are available, update labels automatically in the target repository. If not available, use:
+   ```bash
+   # If fork: gh issue edit <issue-number> --repo <upstream_owner>/<upstream_repo> --remove-label "Specification" --add-label "Planning"
+   # If local: gh issue edit <issue-number> --remove-label "Specification" --add-label "Planning"
+   gh issue edit <issue-number> --remove-label "Specification" --add-label "Planning"
+   ```
+
+2. Run [`.specify/scripts/powershell/setup-plan.ps1 -Json`](../../.specify/scripts/powershell/setup-plan.ps1) from the repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. All future file paths must be absolute.
    - **Detect iteration mode**: Check if IMPL_PLAN (plan.md) already exists:
      - **If exists**: You are ITERATING on an existing plan. User input should guide refinements/additions to the existing plan content.
      - **If not exists**: You are CREATING a new plan from scratch.
    - BEFORE proceeding, inspect FEATURE_SPEC for a `## Clarifications` section with at least one `Session` subheading. If missing or clearly ambiguous areas remain (vague adjectives, unresolved critical choices), PAUSE and instruct the user to run `/clarify` first to reduce rework. Only continue if: (a) Clarifications exist OR (b) an explicit user override is provided (e.g., "proceed without clarification"). Do not attempt to fabricate clarifications yourself.
 
-2. Read and analyze the feature specification to understand:
+3. Read and analyze the feature specification to understand:
    - The feature requirements and user stories
    - Functional and non-functional requirements
    - Success criteria and acceptance criteria
    - Any technical constraints or dependencies mentioned
 
-3. Read the constitution at [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) to understand constitutional requirements.
+4. Read the constitution at [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) to understand constitutional requirements.
 
-4. Execute the implementation plan template:
+5. Execute the implementation plan template:
    - Load [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md) (already copied to IMPL_PLAN path)
    - Set Input path to FEATURE_SPEC
    - **If ITERATING** (plan.md exists):
@@ -52,17 +70,17 @@ Given the implementation details provided as an argument, do this:
    - Incorporate user-provided details from arguments into Technical Context: $ARGUMENTS
    - Update Progress Tracking as you complete each phase
 
-5. Verify execution completed:
+6. Verify execution completed:
    - Check Progress Tracking shows all phases complete
    - Ensure all required artifacts were generated
    - Confirm no ERROR states in execution
 
-6. Commit and push the changes:
+7. Commit and push the changes:
    - Stage all generated artifacts and modified files
    - Create a commit with a descriptive message summarizing the plan
    - Push the branch (BRANCH) to remote
 
-7. Create or update a Pull Request:
+8. Create or update a Pull Request:
    - **Determine workflow mode and target repository**:
      - Check if `.fork-info.json` exists in the feature directory (same directory as spec.md)
      - **If exists** (fork mode):
@@ -97,7 +115,9 @@ Given the implementation details provided as an argument, do this:
      * Follow with additional details answering Why, How, and What
      * Avoid superfluous headers or sections
      * We do not need details, we need to add what changes for the user of the code
-   - Apply appropriate label(s) based on the type of change
+   - **Apply appropriate labels to the PR**:
+     * **Version/change level label**: Based on the type of change: `Major`, `Minor`, `Patch`, `Fix`, or `Docs`
+     * **Phase label**: `Planning` (to indicate current phase)
    - Link the PR to the associated issue
    - **After PR creation**: Update `.fork-info.json` (if it exists) with the PR number:
      ```json
@@ -114,29 +134,13 @@ Given the implementation details provided as an argument, do this:
 
    **GitHub Integration**: If GitHub tools or integrations are available (such as GitHub MCP Server or other GitHub integrations), use them to create/update the PR and manage labels automatically in the target repository. If not available, provide these fallback commands with the correct repository:
    ```bash
-   # Create draft PR
-   # If fork: gh pr create --repo <upstream_owner>/<upstream_repo> --draft ...
-   # If local: gh pr create --draft ...
-   gh pr create --draft --title "<Icon> [Type]: <Description>" --body "<PR description>" --label "<Type>"
+   # Create draft PR with both version/change level label and Planning label
+   # If fork: gh pr create --repo <upstream_owner>/<upstream_repo> --draft --title "<Icon> [Type]: <Description>" --body "<PR description>" --label "<Version-Label>,Planning"
+   # If local: gh pr create --draft --title "<Icon> [Type]: <Description>" --body "<PR description>" --label "<Version-Label>,Planning"
+   gh pr create --draft --title "<Icon> [Type]: <Description>" --body "<PR description>" --label "<Version-Label>,Planning"
 
    # Link to issue (if not using "Fixes #<issue>" in body)
-   gh pr edit <PR-number> --add-label "<Type>"
-   ```
-
-8. Update issue labels:
-   - **Determine target repository** (same logic as step 7):
-     - Check if `.fork-info.json` exists in the feature directory
-     - If it exists and validated, use `upstream_owner/upstream_repo`
-     - If it doesn't exist, use the current repository (origin)
-   - Remove 'specification' label from the linked issue in the target repository
-   - Add 'plan' label to the linked issue
-   - **After updating labels**: Update `.fork-info.json` (if it exists) with the issue number if not already present
-
-   **GitHub Integration**: If GitHub tools are available, update labels automatically in the target repository. If not available, use:
-   ```bash
-   # If fork: gh issue edit <issue-number> --repo <upstream_owner>/<upstream_repo> ...
-   # If local: gh issue edit <issue-number> ...
-   gh issue edit <issue-number> --remove-label "Specification" --add-label "Plan"
+   gh pr edit <PR-number> --add-label "<Version-Label>,Planning"
    ```
 
 9. **Post final status comment**: "✅ Planning complete. Ready for task generation with `/tasks` or analysis with `/analyze`."
