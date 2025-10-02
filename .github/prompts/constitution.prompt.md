@@ -64,12 +64,12 @@ Follow this execution flow:
 
 3. Draft / Merge updated constitution content:
     - In Iteration Mode, integrate new principles/sections with minimal disruption:
-       * Retain stable identifiers (e.g., keep existing principle numbering unless renumbering is explicitly required or gaps introduced by removals).
-       * When replacing, either (a) fully substitute content if user confirmed or (b) append revised content and mark old with `DEPRECATED:` prefix plus TODO for removal in a future major version.
-   - Replace every placeholder with concrete text (no bracketed tokens left except intentionally retained template slots that the project has chosen not to define yet—explicitly justify any left).
-   - Preserve heading hierarchy and comments can be removed once replaced unless they still add clarifying guidance.
-   - Ensure each Principle section: succinct name line, paragraph (or bullet list) capturing non‑negotiable rules, explicit rationale if not obvious.
-   - Ensure Governance section lists amendment procedure, versioning policy, and compliance review expectations.
+      * Retain stable identifiers (e.g., keep existing principle numbering unless renumbering is explicitly required or gaps introduced by removals).
+      * When replacing, either (a) fully substitute content if user confirmed or (b) append revised content and mark old with `DEPRECATED:` prefix plus TODO for removal in a future major version.
+    - Replace every placeholder with concrete text (no bracketed tokens left except intentionally retained template slots that the project has chosen not to define yet—explicitly justify any left).
+    - Preserve heading hierarchy and comments can be removed once replaced unless they still add clarifying guidance.
+    - Ensure each Principle section: succinct name line, paragraph (or bullet list) capturing non‑negotiable rules, explicit rationale if not obvious.
+    - Ensure Governance section lists amendment procedure, versioning policy, and compliance review expectations.
 
 4. Consistency propagation checklist (convert prior checklist into active validations):
    - Read [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md) and ensure any "Constitution Check" or rules align with updated principles.

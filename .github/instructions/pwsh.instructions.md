@@ -629,7 +629,7 @@ Get-ChildItem -Path 'C:\Temp' -Filter '*.txt' -Recurse $true -ErrorAction 'Stop'
 
 - Use PowerShell comparison operators (`-eq`, `-ne`, `-gt`, `-lt`, `-ge`, `-le`)
 - Don't use C-style operators (`==`, `!=`, `>`, `<`)
-- Use `-like` for wildcard matching, `-match` for regex
+- Use `-like` for wildcard matching, `-match` for regular expression
 - Use `-contains` for collection membership, not `-eq`
 - Add `-i` prefix for case-insensitive (default) or `-c` for case-sensitive
 - Caution with $null comparisons. Comparison order is important depending if the variable is a single item or a collection.

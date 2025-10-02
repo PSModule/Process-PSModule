@@ -30,7 +30,8 @@ Given that feature description, do this:
    If detected, extract the upstream repository information (owner/repo).
 
    **If fork contribution is detected but information is incomplete**, prompt the user:
-   ```
+
+   ```text
    Fork contribution detected. Please provide the following information:
    - Upstream organization/owner name (e.g., "microsoft", "PSModule")
    - Upstream repository name (e.g., "vscode", "PSModule")
@@ -51,12 +52,15 @@ Given that feature description, do this:
    - Examples: "user-authentication", "merge-workflows", "api-rate-limiting", "fix-memory-leak"
 
 3. Run the script [`.specify/scripts/powershell/create-new-feature.ps1 -Json -FeatureDescription "$ARGUMENTS" -BranchName "<your-generated-name>"`](../../.specify/scripts/powershell/create-new-feature.ps1) from repo root and parse its JSON output for BRANCH_NAME, SPEC_FILE, and IS_EXISTING_BRANCH. All file paths must be absolute.
-  **IMPORTANT** You must only ever run this script once. The JSON is provided in the terminal as output - always refer to it to get the actual content you're looking for.
-  **NOTE**
-  - The script will prepend an auto-incremented feature number (e.g., `003-`) to your branch name.
-  - If you're currently on `main` branch, a new feature branch will be created.
-  - If you're already on a feature branch (starts with 3 digits like `001-`, `002-`, etc.), you'll stay on that branch to iterate on the existing feature.
-  - This allows you to refine specifications without creating multiple branches for the same feature.
+
+**IMPORTANT** You must only ever run this script once. The JSON is provided in the terminal as output - always refer to it to get the actual content you're looking for.
+
+**NOTE**
+
+- The script will prepend an auto-incremented feature number (e.g., `003-`) to your branch name.
+- If you're currently on `main` branch, a new feature branch will be created.
+- If you're already on a feature branch (starts with 3 digits like `001-`, `002-`, etc.), you'll stay on that branch to iterate on the existing feature.
+- This allows you to refine specifications without creating multiple branches for the same feature.
 
 4. **Store fork information (if detected in step 1)**:
    - If the user indicated this is a fork contribution, create a `.fork-info.json` file in the feature directory (same location as SPEC_FILE)
