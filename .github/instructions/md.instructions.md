@@ -252,13 +252,13 @@ See the [logo][logo-img] above.
 
 ### HTML
 
-- Avoid HTML in markdown when possible
-- Use HTML only for features not supported by markdown
+- Avoid HTML in Markdown when possible
+- Use HTML only for features not supported by Markdown
 - Close all HTML tags properly
 
-### File Names
+### Filenames
 
-- Use lowercase for markdown file names
+- Use lowercase for Markdown filenames
 - Use hyphens (`-`) not underscores (`_`) to separate words
 - Use `.md` extension (not `.markdown`)
 
@@ -269,7 +269,7 @@ See the [logo][logo-img] above.
 
 ## Linting
 
-To validate markdown files against these guidelines, use a markdown linter such as:
+To validate Markdown files against these guidelines, use a Markdown linter such as:
 
 - [markdownlint](https://github.com/DavidAnson/markdownlint)
 - [remark-lint](https://github.com/remarkjs/remark-lint)
