@@ -76,7 +76,13 @@ $ARGUMENTS
    - For parallel tasks [P], continue with successful tasks and report failed ones
    - Provide clear error messages with context for debugging
    - Suggest next steps if implementation cannot proceed
-   - **IMPORTANT**: For completed tasks, make sure to mark the task as [X] in the tasks file.
+   - **CRITICAL - Update task status immediately after completion**:
+     * After completing each task, mark it as [X] in tasks.md
+     * Update the PR description to mark the corresponding task checkbox from `- [ ] T###:` to `- [X] T###:`
+     * This MUST be done task-by-task as you progress, not at the end
+     * If GitHub tools are available, use them to update the PR description
+     * If not available, use: `gh pr edit <PR-number> --body "<updated-description>"`
+     * Ensure task progress is visible in real-time to users watching the PR
 
 8. Completion validation:
    - Verify all required tasks are completed
@@ -152,7 +158,9 @@ $ARGUMENTS
      | Breaking change | 🌟 | Major |
 
    - Fallback PR title format (if issue title unavailable): `<Icon> [Type of change]: <Short description>`
-   - **Write PR description as a release note**:
+   - **REPLACE the entire PR description with release notes**:
+     * **IMPORTANT**: Clear the existing PR description completely (including task list) and replace it with the release notes
+     * This ensures the PR description is ready to be used as GitHub Release notes when merged to main
      * **Opening summary** (1-2 paragraphs):
        - Start with what was accomplished in user-focused language
        - Write in past tense: "Added...", "Improved...", "Fixed..."
@@ -186,7 +194,7 @@ $ARGUMENTS
 
    **GitHub Integration**: If GitHub tools or integrations are available (such as GitHub MCP Server or other GitHub integrations), use them to update the PR description in the target repository. If not available, provide this fallback command:
    ```bash
-   # Update PR description
+   # Replace PR description with release notes
    # If fork: gh pr edit <PR-number> --repo <upstream_owner>/<upstream_repo> --body "<release-note-description>"
    # If local: gh pr edit <PR-number> --body "<release-note-description>"
    gh pr edit <PR-number> --body "<release-note-description>"
