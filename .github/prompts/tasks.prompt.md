@@ -76,6 +76,10 @@ $ARGUMENTS
    - Clear file paths for each task
    - Dependency notes
    - Parallel execution guidance
+   - **IMPORTANT**: After each task in the task list, add a sub-step to update the PR description:
+     * Add: "After completing this task, update the PR description to mark this task as complete by changing `- [ ] T###:` to `- [X] T###:` in the Implementation Tasks section"
+     * This ensures that the PR description stays synchronized with actual progress
+     * Each task should have this update step included in its description or as a final action item
 
 8. Update the Pull Request description:
    - **Determine workflow mode and target repository**:
