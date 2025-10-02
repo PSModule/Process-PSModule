@@ -85,6 +85,7 @@ jobs:
   Lint-Repository:
     name: Lint code base
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged != true
     needs:
       - Get-Settings
     steps:
@@ -211,9 +212,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
-
-      - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@v1
 
       - name: Run BeforeAll Setup Scripts
         uses: PSModule/GitHub-Script@v1
