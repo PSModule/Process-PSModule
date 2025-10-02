@@ -55,4 +55,40 @@ $ARGUMENTS
    - Confirm the implementation follows the technical plan
    - Report final status with summary of completed work
 
+8. Create or update Pull Request:
+   - **Target branch**: The PR must be against the default branch
+   - **PR status**: The PR must not be draft, it should be ready for review
+   - **Determine PR type and icon** based on the changes:
+
+     | Type of change | Icon | Label |
+     |-|-|-|
+     | Docs | 📖 | Docs |
+     | Fix | 🪲 | Fix, Patch |
+     | Security fix | ⚠️ | Fix |
+     | Patch | 🩹 | Patch |
+     | Feature | 🚀 | Minor |
+     | Breaking change | 🌟 | Major |
+
+   - **PR title format**: `<Icon> [Type of change]: <Short description>`
+   - **PR description structure**:
+     * Start with a summary paragraph describing the key outcome and changes for user
+     * DO NOT add a title before the leading paragraph
+     * At the end of the PR paragraph, add a "- Fixes #<issue-number>" line to link the PR to the issue
+     * Follow with additional details answering Why, How, and What
+     * Avoid superfluous headers or sections
+     * We do not need details, we need to add what changes for the user of the code
+   - **Apply appropriate label(s)** based on the type of change
+   - **Link the PR** to the associated issue
+
+9. Update issue labels:
+   - Remove 'plan' label from the linked issue
+   - Add 'implement' label to the linked issue
+
+10. Update the constitution:
+    - Read the [Constitution](../../.specify/memory/constitution.md) file.
+    - Read the [constitution prompt](./constitution.prompt.md) for guidance on how to update the constitution.
+    - Update the constitution file with details on what has been implemented in this PR
+    - Document the functionality that was added or changed, remove the sections that are no longer relevant
+    - Ensure the constitution reflects the current state of the codebase
+
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/tasks` first to regenerate the task list.

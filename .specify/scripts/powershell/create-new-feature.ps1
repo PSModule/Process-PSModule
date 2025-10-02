@@ -4,7 +4,9 @@
 param(
     [switch]$Json,
     [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$FeatureDescription
+    [string[]]$FeatureDescription,
+    [Parameter()]
+    [string]$BranchName
 )
 $ErrorActionPreference = 'Stop'
 
@@ -52,9 +54,18 @@ if (Test-Path $specsDir) {
 $next = $highest + 1
 $featureNum = ('{0:000}' -f $next)
 
-$branchName = $featureDesc.ToLower() -replace '[^a-z0-9]', '-' -replace '-{2,}', '-' -replace '^-', '' -replace '-$', ''
-$words = ($branchName -split '-') | Where-Object { $_ } | Select-Object -First 3
-$branchName = "$featureNum-$([string]::Join('-', $words))"
+# Use provided BranchName if available, otherwise generate from feature description
+if ($BranchName) {
+    # Sanitize the provided branch name
+    $branchSuffix = $BranchName.ToLower() -replace '[^a-z0-9]', '-' -replace '-{2,}', '-' -replace '^-', '' -replace '-$', ''
+} else {
+    # Fallback: Generate from feature description (first 3 words)
+    $branchSuffix = $featureDesc.ToLower() -replace '[^a-z0-9]', '-' -replace '-{2,}', '-' -replace '^-', '' -replace '-$', ''
+    $words = ($branchSuffix -split '-') | Where-Object { $_ } | Select-Object -First 3
+    $branchSuffix = [string]::Join('-', $words)
+}
+
+$branchName = "$featureNum-$branchSuffix"
 
 if ($hasGit) {
     try {
