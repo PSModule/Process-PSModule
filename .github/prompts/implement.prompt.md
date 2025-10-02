@@ -26,16 +26,13 @@ $ARGUMENTS
    - Get the issue number associated with the current feature branch
    - **Add 'Implementing' label** to the issue and PR immediately in the target repository
    - **Remove 'Planning' label** from the issue and PR
-
    **GitHub Integration**: If GitHub tools are available, update labels automatically in the target repository. If not available, use:
    ```bash
    # If fork: gh issue edit <issue-number> --repo <upstream_owner>/<upstream_repo> --remove-label "Planning" --add-label "Implementing"
    # If local: gh issue edit <issue-number> --remove-label "Planning" --add-label "Implementing"
    gh issue edit <issue-number> --remove-label "Planning" --add-label "Implementing"
    ```
-
 2. Run [`.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks`](../../.specify/scripts/powershell/check-prerequisites.ps1) from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute.
-
 3. Load and analyze the implementation context:
    - **REQUIRED**: Read tasks.md for the complete task list and execution plan
    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
@@ -43,7 +40,6 @@ $ARGUMENTS
    - **IF EXISTS**: Read contracts/ for API specifications and test requirements
    - **IF EXISTS**: Read research.md for technical decisions and constraints
    - **IF EXISTS**: Read quickstart.md for integration scenarios
-
 4. Parse tasks.md structure and extract:
    - **Detect iteration state**: Check task completion markers
      - Tasks marked [X] are complete - skip unless user requests changes
@@ -53,7 +49,6 @@ $ARGUMENTS
    - **Task dependencies**: Sequential vs parallel execution rules
    - **Task details**: ID, description, file paths, parallel markers [P]
    - **Execution flow**: Order and dependency requirements
-
 5. Execute implementation following the task plan:
    - **Skip completed tasks**: Don't re-implement tasks marked [X] unless explicitly requested
    - **Resume from last incomplete task**: Start with first [ ] task found
@@ -62,36 +57,37 @@ $ARGUMENTS
    - **Follow TDD approach**: Execute test tasks before their corresponding implementation tasks
    - **File-based coordination**: Tasks affecting the same files must run sequentially
    - **Validation checkpoints**: Verify each phase completion before proceeding
-
 6. Implementation execution rules:
    - **Setup first**: Initialize project structure, dependencies, and configuration
    - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
    - **Core development**: Implement models, services, CLI commands, and endpoints
    - **Integration work**: Database connections, middleware, logging, and external services
    - **Polish and validation**: Unit tests, performance optimization, and documentation
-
 7. Progress tracking and error handling:
    - Report progress after each completed task
    - Halt execution if any non-parallel task fails
    - For parallel tasks [P], continue with successful tasks and report failed ones
    - Provide clear error messages with context for debugging
    - Suggest next steps if implementation cannot proceed
-   - **IMPORTANT**: For completed tasks, make sure to mark the task as [X] in the tasks file.
-
+   - **CRITICAL - Update task status immediately after completion**:
+     * After completing each task, mark it as [X] in tasks.md
+     * Update the PR description to mark the corresponding task checkbox from `- [ ] T###:` to `- [X] T###:`
+     * This MUST be done task-by-task as you progress, not at the end
+     * If GitHub tools are available, use them to update the PR description
+     * If not available, use: `gh pr edit <PR-number> --body "<updated-description>"`
+     * Ensure task progress is visible in real-time to users watching the PR
 8. Completion validation:
    - Verify all required tasks are completed
    - Check that implemented features match the original specification
    - Validate that tests pass and coverage meets requirements
    - Confirm the implementation follows the technical plan
    - Report final status with summary of completed work
-
 9. Update the constitution:
    - Read the [Constitution](../../.specify/memory/constitution.md) file.
    - Read the [constitution prompt](./constitution.prompt.md) for guidance on how to update the constitution.
    - Update the constitution file with details on what has been implemented in this PR
    - Document the functionality that was added or changed, remove the sections that are no longer relevant
    - Ensure the constitution reflects the current state of the codebase
-
 10. Update the CHANGELOG:
    - **Locate or create CHANGELOG.md** in the repository root
    - **Add a new entry** for this feature/change following the Keep a Changelog format
@@ -109,7 +105,6 @@ $ARGUMENTS
      * Include brief usage examples where helpful
      * Link to the PR or issue: `[#<issue-number>]`
    - **Keep it concise**: Focus on user-impacting changes, not internal refactoring details
-
 11. Final commit and push:
     - **Stage all implemented changes** including:
       * All source code files created or modified
@@ -123,7 +118,6 @@ $ARGUMENTS
       * Include reference to issue: `Fixes #<issue-number>`
     - **Push the branch** to remote
     - Verify the push completed successfully
-
 12. Update PR description with release notes:
    - **Determine workflow mode and target repository**:
      - Check if `.fork-info.json` exists in the feature directory (same directory as spec.md)
@@ -141,7 +135,6 @@ $ARGUMENTS
    - **Retrieve the issue title**: Get the title from the linked GitHub issue (created in `/specify`) from the target repository
    - **Use the same title for the PR**: Verify the PR title matches the issue title exactly. If they differ, update the PR title to match the issue.
    - If unable to retrieve the issue title, determine the PR type and icon based on the changes:
-
      | Type of change | Icon | Label |
      |-|-|-|
      | Docs | 📖 | Docs |
@@ -150,9 +143,10 @@ $ARGUMENTS
      | Patch | 🩹 | Patch |
      | Feature | 🚀 | Minor |
      | Breaking change | 🌟 | Major |
-
    - Fallback PR title format (if issue title unavailable): `<Icon> [Type of change]: <Short description>`
-   - **Write PR description as a release note**:
+   - **REPLACE the entire PR description with release notes**:
+     * **IMPORTANT**: Clear the existing PR description completely (including task list) and replace it with the release notes
+     * This ensures the PR description is ready to be used as GitHub Release notes when merged to main
      * **Opening summary** (1-2 paragraphs):
        - Start with what was accomplished in user-focused language
        - Write in past tense: "Added...", "Improved...", "Fixed..."
@@ -183,15 +177,13 @@ $ARGUMENTS
    - **Apply appropriate label(s)** based on the type of change
    - **Link the PR** to the associated issue
    - **Update `.fork-info.json`** (if it exists) with the latest PR number (if not already present)
-
    **GitHub Integration**: If GitHub tools or integrations are available (such as GitHub MCP Server or other GitHub integrations), use them to update the PR description in the target repository. If not available, provide this fallback command:
    ```bash
-   # Update PR description
+   # Replace PR description with release notes
    # If fork: gh pr edit <PR-number> --repo <upstream_owner>/<upstream_repo> --body "<release-note-description>"
    # If local: gh pr edit <PR-number> --body "<release-note-description>"
    gh pr edit <PR-number> --body "<release-note-description>"
    ```
-
 13. Mark PR as ready for review:
     - **Determine target repository** (same logic as step 12):
       - Check if `.fork-info.json` exists in the feature directory
@@ -200,7 +192,6 @@ $ARGUMENTS
     - **Remove 'Implementing' label** from the linked issue and the PR in the target repository
     - **Mark PR as ready for review** (no longer draft)
     - **After updates**: Ensure `.fork-info.json` (if it exists) has both issue and PR numbers stored
-
     **GitHub Integration**: If GitHub tools are available, update labels and PR status automatically in the target repository. If not available, use:
     ```bash
     # Mark PR as ready for review
