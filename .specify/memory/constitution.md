@@ -1,3 +1,45 @@
+<!--
+Sync Impact Report - Constitution Amendment v1.6.0 → v1.6.1
+Date: 2025-01-21
+
+Version Change: 1.6.0 → 1.6.1 (PATCH - clarifications and expanded guidance)
+
+Modified Sections:
+- "Pull Request Workflow and Publishing Process" → Updated conditional execution section
+  - Added "Workflow Operating Modes (v5.0.0+)" subsection documenting CI-Only vs CI+Release modes
+  - Updated Publish-Site condition to include push to default branch support
+  - Updated Publish-Module condition to include push to default branch support
+  - Added new row to Publishing Behavior Examples table for "Push to default branch" trigger
+  - Updated Key Points to document push event triggering normal releases
+
+Added Sections:
+- Workflow Operating Modes (v5.0.0+): CI-Only Mode and CI+Release Mode descriptions
+
+Removed Sections:
+- None
+
+Deprecated Sections:
+- None
+
+Templates Requiring Updates:
+- ✅ .specify/templates/plan-template.md - No changes needed (Constitution Check section remains valid)
+- ✅ .specify/templates/spec-template.md - No changes needed (scope/requirements alignment unchanged)
+- ✅ .specify/templates/tasks-template.md - No changes needed (task categorization unchanged)
+- ✅ .github/prompts/constitution.prompt.md - No changes needed (process remains valid)
+
+Follow-up TODOs:
+- None
+
+Replacement Items Needing Confirmation:
+- None
+
+Rationale:
+Expanded the "Pull Request Workflow and Publishing Process" section to document the unified CI/Release
+workflow implementation (feature 001-merge-ci-release-workflows). Added clarity on the two operating modes
+(CI-Only for validation, CI+Release for publishing) and documented push to default branch support for
+releases. This is a PATCH increment as it clarifies existing functionality without changing core principles.
+-->
+
 # Process-PSModule Constitution
 
 ## Product Overview
@@ -475,23 +517,41 @@ The Process-PSModule workflow uses **dynamic conditions** to determine job execu
 
 #### Conditional Execution (Based on PR State and Labels)
 
+**Workflow Operating Modes** (v5.0.0+):
+
+The unified workflow.yml operates in two modes:
+
+1. **CI-Only Mode**: Executes all build and test jobs without publishing
+   - Triggered by: unmerged PRs, scheduled runs, manual triggers
+   - Validates code quality and functionality
+   - Publishing jobs (Publish-Module, Publish-Site) are skipped
+
+2. **CI + Release Mode**: Executes all build/test jobs AND publishes artifacts
+   - Triggered by: merged PRs to default branch, direct pushes to default branch
+   - Publishes module to PowerShell Gallery
+   - Deploys documentation to GitHub Pages
+   - Creates GitHub Release with version tag
+
 **Publish-Site** (GitHub Pages deployment):
 
-- **Executes when**: PR is **merged** to default branch AND tests pass
+- **Executes when**:
+  - PR is **merged** to default branch AND tests pass, OR
+  - Direct **push to default branch** AND tests pass
 - **Skipped when**: PR is open/synchronized OR not merged OR scheduled run OR manual trigger
-- Condition: `github.event_name == 'pull_request' AND github.event.pull_request.merged == true`
+- Condition: `((github.event_name == 'pull_request' AND github.event.pull_request.merged == true) OR (github.event_name == 'push' AND github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) AND tests pass`
 
 **Publish-Module** (PowerShell Gallery publishing):
 
 - **Executes when**:
   - PR is **merged** to default branch AND tests pass (normal release), OR
+  - Direct **push to default branch** AND tests pass (normal release), OR
   - PR has **`prerelease` label** AND PR is **not merged** AND tests pass (prerelease)
 - **Skipped when**:
   - PR has `NoRelease` label, OR
   - Scheduled run (cron trigger), OR
   - Manual run (workflow_dispatch), OR
   - Tests fail
-- Condition: `(github.event_name == 'pull_request' AND github.event.pull_request.merged == true) OR (labels contains 'prerelease' AND NOT merged)`
+- Condition: `((github.event_name == 'pull_request' AND github.event.pull_request.merged == true) OR (github.event_name == 'push' AND github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) OR (labels contains 'prerelease' AND NOT merged)`
 
 ### Publishing Behavior Examples
 
@@ -508,6 +568,7 @@ The Process-PSModule workflow uses **dynamic conditions** to determine job execu
 | Merged | (no label) | ✅ Yes | ✅ Yes (if AutoPatching) | ✅ Yes | `1.2.4` (patch) |
 | Merged | `NoRelease` | ✅ Yes | ❌ No | ❌ No | N/A (skipped) |
 | Merged | `prerelease`, `minor` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.3.0` (prerelease ignored) |
+| Push to default branch | N/A | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.2.4` (patch) |
 | Scheduled (cron) | N/A | ✅ Yes | ❌ No | ❌ No | N/A (validation only) |
 | Manual (workflow_dispatch) | N/A | ✅ Yes | ❌ No | ❌ No | N/A (validation only) |
 
@@ -589,6 +650,7 @@ jobs:
 **Key Points**:
 
 - **`closed` event** with `github.event.pull_request.merged == true` triggers normal releases
+- **`push` event** to default branch triggers normal releases (supports direct pushes and branch protection bypass)
 - **`labeled` event** allows immediate prerelease publishing when `prerelease` label added
 - **`synchronize` event** with `prerelease` label publishes new prerelease on each push
 - **Secrets** MUST include `APIKEY` for PowerShell Gallery publishing (optional for CI-only runs)
@@ -745,4 +807,4 @@ For agent-specific runtime development guidance **when developing the framework*
 
 **For Consuming Repositories**: Follow the Required Module Structure and Workflow Integration Requirements documented in the Product Overview section. Start with [Template-PSModule](https://github.com/PSModule/Template-PSModule).
 
-**Version**: 1.6.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
+**Version**: 1.6.1 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-01-21

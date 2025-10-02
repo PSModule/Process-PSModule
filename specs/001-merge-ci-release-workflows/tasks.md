@@ -45,9 +45,9 @@ This is a GitHub Actions workflow project at repository root:
 
 ## Phase 3.1: Setup
 
-- [ ] T001 Validate current workflow structure in .github/workflows/
-- [ ] T002 Create migration documentation directory docs/migration/
-- [ ] T003 Add deprecation notice to .github/workflows/CI.yml header
+- [X] T001 Validate current workflow structure in .github/workflows/
+- [X] T002 Create migration documentation directory docs/migration/
+- [X] T003 Add deprecation notice to .github/workflows/CI.yml header
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
@@ -63,29 +63,29 @@ This is a GitHub Actions workflow project at repository root:
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
-- [ ] T011 Add conditional execution logic to Publish-Module job in .github/workflows/workflow.yml
-- [ ] T012 Add conditional execution logic to Publish-Site job in .github/workflows/workflow.yml
+- [X] T011 Add conditional execution logic to Publish-Module job in .github/workflows/workflow.yml
+- [X] T012 Add conditional execution logic to Publish-Site job in .github/workflows/workflow.yml
 - [ ] T013 Update workflow triggers in .github/workflows/workflow.yml to handle all events
 - [ ] T014 Update workflow permissions in .github/workflows/workflow.yml for both modes
-- [ ] T015 Add workflow comments documenting CI-Only vs CI+Release execution paths in .github/workflows/workflow.yml
-- [ ] T016 Verify job dependencies chain CI before Release jobs and validate fail-fast behavior when CI tests fail in .github/workflows/workflow.yml
+- [X] T015 Add workflow comments documenting CI-Only vs CI+Release execution paths in .github/workflows/workflow.yml
+- [X] T016 Verify job dependencies chain CI before Release jobs and validate fail-fast behavior when CI tests fail in .github/workflows/workflow.yml
 
 ## Phase 3.4: Integration
 
-- [ ] T017 Add deprecation warning to .github/workflows/CI.yml with migration instructions
+- [X] T017 Add deprecation warning to .github/workflows/CI.yml with migration instructions
 - [ ] T018 [P] Mark .github/workflows/Workflow-Test-Default-CI.yml as deprecated
 - [ ] T019 [P] Mark .github/workflows/Workflow-Test-WithManifest-CI.yml as deprecated
 - [ ] T020 Update workflow version references from v4 to v5 in test workflows
 
 ## Phase 3.5: Polish
 
-- [ ] T022 [P] Create migration guide docs/migration/v5-unified-workflow.md with all three scenarios
-- [ ] T023 [P] Update README.md with unified workflow documentation and breaking change notice
-- [ ] T024 [P] Update .github/copilot-instructions.md with unified workflow as active technology
+- [X] T022 [P] Create migration guide docs/migration/v5-unified-workflow.md with all three scenarios
+- [X] T023 [P] Update README.md with unified workflow documentation and breaking change notice
+- [X] T024 [P] Update .github/copilot-instructions.md with unified workflow as active technology
 - [ ] T021 [P] Create manual test checklist docs/migration/manual-testing.md for consuming repositories
 - [ ] T022 Run manual validation of all three migration scenarios from quickstart.md
 - [ ] T023 Verify workflow execution time has no regression compared to separate workflows
-- [ ] T024 [P] Add CHANGELOG.md entry for v5.0.0 breaking change
+- [X] T024 [P] Add CHANGELOG.md entry for v5.0.0 breaking change
 
 ## Dependencies
 

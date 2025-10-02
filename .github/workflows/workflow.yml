@@ -325,8 +325,30 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
 
+  # ============================================================================
+  # CONDITIONAL PUBLISHING JOBS (CI + Release Mode Only)
+  # ============================================================================
+  # The following jobs execute ONLY when changes are merged to the default branch
+  # or pushed directly to the default branch. They are SKIPPED in CI-Only mode.
+  #
+  # CI-Only Mode (Tests Without Publishing):
+  #   - Triggered by: Unmerged PRs, manual triggers, scheduled runs, non-default branch pushes
+  #   - Behavior: All CI tests execute; publish jobs are skipped
+  #   - Use Cases: PR validation, nightly testing, feature branch testing
+  #
+  # CI + Release Mode (Tests With Publishing):
+  #   - Triggered by: Merged PRs to default branch, direct pushes to default branch
+  #   - Behavior: All CI tests execute; if tests pass, publish jobs execute
+  #   - Use Cases: Production releases, hotfix deployments
+  #
+  # Conditional Logic:
+  #   - Tests must pass (Get-TestResults, Get-CodeCoverage success)
+  #   - Workflow must not be cancelled
+  #   - Trigger must be EITHER merged PR OR push to default branch
+  # ============================================================================
+
   Publish-Site:
-    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: ${{ needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && ((github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) }}
     needs:
       - Get-Settings
       - Get-TestResults
@@ -347,7 +369,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   Publish-Module:
-    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' }}
+    if: ${{ needs.Get-Settings.result == 'success' && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && ((github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) }}
     needs:
       - Get-Settings
       - Get-TestResults

@@ -16,7 +16,45 @@ Gallery and produces documentation that is published to GitHub Pages. The workfl
    1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
 1. Create a branch, make your changes, create a PR and let the workflow run.
 
+## ⚠️ Breaking Changes in v5.0.0
+
+**Unified Workflow**: Process-PSModule v5.0.0 consolidates CI and release operations into a single `workflow.yml` file.
+
+### What Changed
+
+- **CI.yml is deprecated**: The separate `CI.yml` workflow is now deprecated and will be removed in v6.0.0
+- **Single workflow for all operations**: `workflow.yml` now handles both CI testing (unmerged PRs) and release operations (merged PRs)
+- **Intelligent conditional execution**: The workflow automatically determines whether to run tests only or tests + release based on trigger context
+
+### Migration Required?
+
+- ✅ **Already using workflow.yml only**: No changes required, your setup continues working
+- ⚠️ **Using CI.yml**: Migration recommended during v5.x; see [migration guide](./docs/migration/v5-unified-workflow.md)
+
+### Why This Change?
+
+- Reduces maintenance burden across all PSModule repositories
+- Eliminates configuration drift between separate workflow files
+- Provides single source of truth for entire CI/CD pipeline
+- Simplifies onboarding for new repositories
+
+For detailed migration instructions, see the [v5.0.0 Migration Guide](./docs/migration/v5-unified-workflow.md).
+
 ## How it works
+
+The unified workflow (`workflow.yml`) intelligently handles both continuous integration testing and automated release publishing based on trigger context.
+
+**CI-Only Mode** (unmerged PRs, manual triggers, scheduled runs):
+- Executes all build and test jobs
+- Skips publish operations
+- Reports test results as PR status checks
+
+**CI + Release Mode** (merged PRs, direct pushes to main):
+- Executes all build and test jobs
+- If tests pass, executes publish operations
+- Publishes module to PowerShell Gallery
+- Deploys documentation to GitHub Pages
+- Creates GitHub release
 
 The workflow is designed to be triggered on pull requests to the repository's default branch.
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
@@ -97,7 +135,7 @@ permissions:
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v2
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKEY: ${{ secrets.APIKEY }}
 

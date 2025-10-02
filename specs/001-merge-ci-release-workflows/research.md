@@ -144,7 +144,7 @@ Jobs:
 1. **Update Publish-Module condition**:
    - Current: `github.event_name == 'pull_request'`
    - New: `(github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'push' && github.ref == default_branch)`
-   
+
 2. **Update Publish-Site condition**:
    - Current: `github.event_name == 'pull_request' && github.event.pull_request.merged == true`
    - New: Same as Publish-Module (add push trigger support)

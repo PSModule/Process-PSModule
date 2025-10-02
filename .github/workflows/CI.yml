@@ -1,3 +1,8 @@
+# ⚠️ DEPRECATED: This workflow is deprecated as of Process-PSModule v5.0.0
+# Please migrate to using workflow.yml which now handles both CI and Release operations.
+# Migration guide: https://github.com/PSModule/Process-PSModule/blob/main/docs/migration/v5-unified-workflow.md
+# This file will be removed in v6.0.0
+
 name: Process-PSModule - CI
 
 on:
