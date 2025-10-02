@@ -1,5 +1,75 @@
 # Feature Specification: [FEATURE NAME]
 
+## User Scenarios & Testing *(mandatory)*
+
+### Primary User Story
+
+[Describe the main user journey in plain language]
+
+### Acceptance Scenarios
+
+1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+2. **Given** [initial state], **When** [action], **Then** [expected outcome]
+
+### Edge Cases
+
+- What happens when [boundary condition]?
+- How does system handle [error scenario]?
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+| ID | Requirement |
+|----|-------------|
+| **FR-001** | System MUST [specific capability, e.g., "allow users to create accounts"] |
+| **FR-002** | System MUST [specific capability, e.g., "validate email addresses"] |
+| **FR-003** | Users MUST be able to [key interaction, e.g., "reset their password"] |
+| **FR-004** | System MUST [data requirement, e.g., "persist user preferences"] |
+| **FR-005** | System MUST [behavior, e.g., "log all security events"] |
+| **FR-006** | System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?] |
+| **FR-007** | System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified] |
+
+### Non-Functional Requirements
+
+| ID | Requirement |
+|----|-------------|
+| **NFR-001** | System MUST respond within [specific time, e.g., "500ms for 95th percentile"] |
+| **NFR-002** | System MUST handle [specific load, e.g., "1000 concurrent users"] |
+| **NFR-003** | System MUST maintain [availability target, e.g., "99.9% uptime"] |
+| **NFR-004** | System MUST scale to [capacity limit, e.g., "10,000 transactions per second"] |
+| **NFR-005** | System MUST recover within [time period, e.g., "5 minutes after failure"] |
+| **NFR-006** | System MUST encrypt data [NEEDS CLARIFICATION: encryption scope not specified - at rest, in transit, both?] |
+| **NFR-007** | System MUST maintain audit logs for [NEEDS CLARIFICATION: retention period not specified] |
+
+### Quality Attributes Addressed
+
+| Attribute | Target Metric |
+|-----------|---------------|
+| **Performance** | [e.g., "Response time < 200ms", "Throughput > 5000 TPS"] |
+| **Scalability** | [e.g., "Support 100,000 concurrent users", "Linear scaling to 10 nodes"] |
+| **Availability** | [e.g., "99.95% uptime", "Max 4 hours downtime per year"] |
+| **Reliability** | [e.g., "MTBF > 720 hours", "Error rate < 0.01%"] |
+| **Security** | [e.g., "OWASP Top 10 compliant", "SOC 2 Type II certified"] |
+| **Maintainability** | [e.g., "Code coverage > 80%", "Cyclomatic complexity < 10"] |
+| **Usability** | [e.g., "Task completion time < 2 minutes", "User satisfaction > 4.5/5"] |
+
+### Constraints *(include if applicable)*
+
+| Constraint | Description |
+|------------|-------------|
+| **[Constraint 1]** | [Limitation or restriction, e.g., "Must run on Windows Server 2019+"] |
+| **[Constraint 2]** | [Compliance requirement, e.g., "Must comply with GDPR"] |
+
+### Key Entities *(include if feature involves data)*
+
+| Entity | Description |
+|--------|-------------|
+| **[Entity 1]** | [What it represents, key attributes without implementation] |
+| **[Entity 2]** | [What it represents, relationships to other entities] |
+
+---
+
 **Feature Branch**: `[###-feature-name]`
 **Created**: [DATE]
 **Status**: Draft
@@ -52,44 +122,6 @@ When creating this spec from a user prompt:
    - Error handling behaviors
    - Integration requirements
    - Security/compliance needs
-
----
-
-## User Scenarios & Testing *(mandatory)*
-
-### Primary User Story
-
-[Describe the main user journey in plain language]
-
-### Acceptance Scenarios
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
-### Edge Cases
-
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
-
-## Requirements *(mandatory)*
-
-### Functional Requirements
-
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
-
-Example of marking unclear requirements:
-
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
-
-### Key Entities *(include if feature involves data)*
-
-- **[Entity 1]**: [What it represents, key attributes without implementation details]
-- **[Entity 2]**: [What it represents, relationships to other entities]
 
 ---
 
