@@ -68,6 +68,32 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
 
+### Scenario Matrix
+
+This table shows when each job runs based on the trigger scenario:
+
+| Job | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
+|-----|-----------------|-----------|--------------|------------|
+| **Get-Settings** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
+| **Lint-Repository** | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Build-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Build-Docs** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Build-Site** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Test-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Lint-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Test-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **BeforeAll-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Test-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **AfterAll-ModuleLocal** | ✅ Yes | ✅ Yes | ✅ Yes* | ✅ Yes |
+| **Get-TestResults** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Get-CodeCoverage** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Publish-Site** | ❌ No | ✅ Yes | ❌ No | ❌ No |
+| **Publish-Module** | ✅ Yes** | ✅ Yes** | ✅ Yes*** | ✅ Yes** |
+
+\* Runs for cleanup if tests were started
+\*\* Only when all tests/coverage/build succeed
+\*\*\* Publishes cleanup/retraction version
+
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
 
 <details>
