@@ -49,4 +49,11 @@ pwsh -Command "ls -Recurse"
 gh issue create --title "Feature" --body "Description"
 ```
 
+## Other instructions
+
+| Tech | Instruction file |
+|------|------------------|
+| PowerShell | [pwsh.instructions.md](./instructions/pwsh.instructions.md) |
+| Markdown | [md.instructions.md](./instructions/md.instructions.md) |
+
 <!-- MANUAL ADDITIONS END -->
