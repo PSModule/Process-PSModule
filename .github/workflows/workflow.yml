@@ -72,10 +72,10 @@ permissions:
 
 jobs:
   # Runs on:
-  #   - ✅ Open/Updated PR - Always runs to load configuration
-  #   - ✅ Merged PR       - Always runs to load configuration
-  #   - ✅ Abandoned PR    - Always runs to load configuration
-  #   - ✅ Manual run      - Always runs to load configuration
+  # - ✅ Open/Updated PR - Always runs to load configuration
+  # - ✅ Merged PR       - Always runs to load configuration
+  # - ✅ Abandoned PR    - Always runs to load configuration
+  # - ✅ Manual run      - Always runs to load configuration
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
@@ -88,10 +88,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Lints code changes in active PRs
-  #   - ❌ Merged PR       - No need to lint after merge + its a merge commit that causes issues with super-linter
-  #   - ❌ Abandoned PR    - No need to lint abandoned changes
-  #   - ❌ Manual run      - Only runs for PR events
+  # - ✅ Open/Updated PR - Lints code changes in active PRs
+  # - ❌ Merged PR       - No need to lint after merge + its a merge commit that causes issues with super-linter
+  # - ❌ Abandoned PR    - No need to lint abandoned changes
+  # - ❌ Manual run      - Only runs for PR events
   Lint-Repository:
     name: Lint code base
     runs-on: ubuntu-latest
@@ -117,10 +117,10 @@ jobs:
           VALIDATE_YAML_PRETTIER: false
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Builds module for testing
-  #   - ✅ Merged PR       - Builds module for publishing
-  #   - ❌ Abandoned PR    - Skips building abandoned changes
-  #   - ✅ Manual run      - Builds module when manually triggered
+  # - ✅ Open/Updated PR - Builds module for testing
+  # - ✅ Merged PR       - Builds module for publishing
+  # - ❌ Abandoned PR    - Skips building abandoned changes
+  # - ✅ Manual run      - Builds module when manually triggered
   Build-Module:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Module.Skip != true }}
     uses: ./.github/workflows/Build-Module.yml
@@ -131,10 +131,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Builds documentation for review
-  #   - ✅ Merged PR       - Builds documentation for publishing
-  #   - ❌ Abandoned PR    - Skips building docs for abandoned changes
-  #   - ✅ Manual run      - Builds documentation when manually triggered
+  # - ✅ Open/Updated PR - Builds documentation for review
+  # - ✅ Merged PR       - Builds documentation for publishing
+  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
+  # - ✅ Manual run      - Builds documentation when manually triggered
   Build-Docs:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.Skip != true }}
     needs:
@@ -150,10 +150,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Builds site for preview
-  #   - ✅ Merged PR       - Builds site for publishing
-  #   - ❌ Abandoned PR    - Skips building site for abandoned changes
-  #   - ✅ Manual run      - Builds site when manually triggered
+  # - ✅ Open/Updated PR - Builds site for preview
+  # - ✅ Merged PR       - Builds site for publishing
+  # - ❌ Abandoned PR    - Skips building site for abandoned changes
+  # - ✅ Manual run      - Builds site when manually triggered
   Build-Site:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Site.Skip != true }}
     needs:
@@ -169,10 +169,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Tests source code changes
-  #   - ✅ Merged PR       - Tests source code before publishing
-  #   - ❌ Abandoned PR    - Skips testing abandoned changes
-  #   - ✅ Manual run      - Tests source code when manually triggered
+  # - ✅ Open/Updated PR - Tests source code changes
+  # - ✅ Merged PR       - Tests source code before publishing
+  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Manual run      - Tests source code when manually triggered
   Test-SourceCode:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
     needs:
@@ -193,10 +193,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Lints source code changes
-  #   - ✅ Merged PR       - Lints source code before publishing
-  #   - ❌ Abandoned PR    - Skips linting abandoned changes
-  #   - ✅ Manual run      - Lints source code when manually triggered
+  # - ✅ Open/Updated PR - Lints source code changes
+  # - ✅ Merged PR       - Lints source code before publishing
+  # - ❌ Abandoned PR    - Skips linting abandoned changes
+  # - ✅ Manual run      - Lints source code when manually triggered
   Lint-SourceCode:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
     needs:
@@ -217,10 +217,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Tests built module
-  #   - ✅ Merged PR       - Tests built module before publishing
-  #   - ❌ Abandoned PR    - Skips testing abandoned changes
-  #   - ✅ Manual run      - Tests built module when manually triggered
+  # - ✅ Open/Updated PR - Tests built module
+  # - ✅ Merged PR       - Tests built module before publishing
+  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Manual run      - Tests built module when manually triggered
   Test-Module:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' }}
     needs:
@@ -243,10 +243,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Runs setup scripts before local module tests
-  #   - ✅ Merged PR       - Runs setup scripts before local module tests
-  #   - ❌ Abandoned PR    - Skips setup for abandoned changes
-  #   - ✅ Manual run      - Runs setup scripts when manually triggered
+  # - ✅ Open/Updated PR - Runs setup scripts before local module tests
+  # - ✅ Merged PR       - Runs setup scripts before local module tests
+  # - ❌ Abandoned PR    - Skips setup for abandoned changes
+  # - ✅ Manual run      - Runs setup scripts when manually triggered
   BeforeAll-ModuleLocal:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     name: BeforeAll-ModuleLocal
@@ -292,10 +292,10 @@ jobs:
             }
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Tests module in local environment
-  #   - ✅ Merged PR       - Tests module in local environment before publishing
-  #   - ❌ Abandoned PR    - Skips testing abandoned changes
-  #   - ✅ Manual run      - Tests module in local environment when manually triggered
+  # - ✅ Open/Updated PR - Tests module in local environment
+  # - ✅ Merged PR       - Tests module in local environment before publishing
+  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Manual run      - Tests module in local environment when manually triggered
   Test-ModuleLocal:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
     needs:
@@ -321,10 +321,10 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Runs teardown scripts after local module tests
-  #   - ✅ Merged PR       - Runs teardown scripts after local module tests
-  #   - ✅ Abandoned PR    - Runs teardown if tests were started (cleanup)
-  #   - ✅ Manual run      - Runs teardown scripts after local module tests
+  # - ✅ Open/Updated PR - Runs teardown scripts after local module tests
+  # - ✅ Merged PR       - Runs teardown scripts after local module tests
+  # - ✅ Abandoned PR    - Runs teardown if tests were started (cleanup)
+  # - ✅ Manual run      - Runs teardown scripts after local module tests
   AfterAll-ModuleLocal:
     if: ${{ needs.Test-ModuleLocal.result != 'skipped' && always() }}
     name: AfterAll-ModuleLocal
@@ -370,10 +370,10 @@ jobs:
             }
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Collects and reports test results
-  #   - ✅ Merged PR       - Collects and reports test results before publishing
-  #   - ❌ Abandoned PR    - Skips collecting results for abandoned changes
-  #   - ✅ Manual run      - Collects and reports test results when manually triggered
+  # - ✅ Open/Updated PR - Collects and reports test results
+  # - ✅ Merged PR       - Collects and reports test results before publishing
+  # - ❌ Abandoned PR    - Skips collecting results for abandoned changes
+  # - ✅ Manual run      - Collects and reports test results when manually triggered
   Get-TestResults:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled()) }}
     needs:
@@ -394,10 +394,10 @@ jobs:
       Version: ${{ inputs.Version }}
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Calculates and reports code coverage
-  #   - ✅ Merged PR       - Calculates and reports code coverage before publishing
-  #   - ❌ Abandoned PR    - Skips coverage for abandoned changes
-  #   - ✅ Manual run      - Calculates and reports code coverage when manually triggered
+  # - ✅ Open/Updated PR - Calculates and reports code coverage
+  # - ✅ Merged PR       - Calculates and reports code coverage before publishing
+  # - ❌ Abandoned PR    - Skips coverage for abandoned changes
+  # - ✅ Manual run      - Calculates and reports code coverage when manually triggered
   Get-CodeCoverage:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.Skip && (needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled()) }}
     needs:
@@ -415,10 +415,10 @@ jobs:
       Version: ${{ inputs.Version }}
 
   # Runs on:
-  #   - ❌ Open/Updated PR - Site not published for PRs in progress
-  #   - ✅ Merged PR       - Deploys site to GitHub Pages after successful merge
-  #   - ❌ Abandoned PR    - Site not published for abandoned changes
-  #   - ❌ Manual run      - Only publishes on merged PRs, not manual runs
+  # - ❌ Open/Updated PR - Site not published for PRs in progress
+  # - ✅ Merged PR       - Deploys site to GitHub Pages after successful merge
+  # - ❌ Abandoned PR    - Site not published for abandoned changes
+  # - ❌ Manual run      - Only publishes on merged PRs, not manual runs
   Publish-Site:
     if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
     needs:
@@ -441,10 +441,10 @@ jobs:
         uses: actions/deploy-pages@v4
 
   # Runs on:
-  #   - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
-  #   - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
-  #   - ✅ Abandoned PR    - Publishes cleanup/retraction version
-  #   - ✅ Manual run      - Publishes when all tests/coverage/build succeed
+  # - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
+  # - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
+  # - ✅ Abandoned PR    - Publishes cleanup/retraction version
+  # - ✅ Manual run      - Publishes when all tests/coverage/build succeed
   #
   Publish-Module:
     if: |
