@@ -68,31 +68,7 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
 
-### Scenario Matrix
-
-This table shows when each job runs based on the trigger scenario:
-
-| Job | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
-|-----|-----------------|-----------|--------------|------------|
-| **Get-Settings** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
-| **Lint-Repository** | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Build-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Build-Docs** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Build-Site** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Test-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Lint-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Test-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **BeforeAll-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Test-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **AfterAll-ModuleLocal** | ✅ Yes | ✅ Yes | ✅ Yes* | ✅ Yes |
-| **Get-TestResults** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Get-CodeCoverage** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Publish-Site** | ❌ No | ✅ Yes | ❌ No | ❌ No |
-| **Publish-Module** | ✅ Yes** | ✅ Yes** | ✅ Yes*** | ✅ Yes** |
-
-\* Runs for cleanup if tests were started
-\*\* Only when all tests/coverage/build succeed
-\*\*\* Publishes cleanup/retraction version
+## Usage
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
 
@@ -129,6 +105,116 @@ jobs:
 
 ```
 </details>
+
+### Inputs
+
+| Name | Type | Description | Required | Default |
+| ---- | ---- | ----------- | -------- | ------- |
+| `Name` | `string` | The name of the module to process. This defaults to the repository name if nothing is specified. | `false` | N/A |
+| `SettingsPath` | `string` | The path to the settings file. Settings in the settings file take precedence over the action inputs. | `false` | `.github/PSModule.yml` |
+| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
+| `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
+| `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
+| `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
+| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
+
+### Setup and Teardown Scripts
+
+The workflow supports automatic execution of setup and teardown scripts for module tests:
+
+- Scripts are automatically detected and executed if present
+- If no scripts are found, the workflow continues normally
+
+#### Setup - `BeforeAll.ps1`
+
+- Place in your test directories (`tests/BeforeAll.ps1`)
+- Runs once before all test matrix jobs to prepare the test environment
+- Deploy test infrastructure, download test data, initialize databases, or configure services
+- Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
+
+##### Example - `BeforeAll.ps1`
+
+```powershell
+Write-Host "Setting up test environment..."
+# Deploy test infrastructure
+# Download test data
+# Initialize test databases
+Write-Host "Test environment ready!"
+```
+
+#### Teardown - `AfterAll.ps1`
+
+- Place in your test directories (`tests/AfterAll.ps1`)
+- Runs once after all test matrix jobs complete to clean up the test environment
+- Remove test resources, clean up databases, stop services, or upload artifacts
+- Has access to the same environment variables as your tests
+
+##### Example - `AfterAll.ps1`
+
+```powershell
+Write-Host "Cleaning up test environment..."
+# Remove test resources
+# Cleanup databases
+# Stop services
+Write-Host "Cleanup completed!"
+```
+
+### Secrets
+
+The following secrets are used by the workflow. They can be automatically provided (if available) by setting the `secrets: inherit`
+in the workflow file.
+
+| Name | Location | Description | Default |
+| ---- | -------- | ----------- | ------- |
+| `APIKEY` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
+| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests. | N/A |
+| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests. | N/A |
+| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests. | N/A |
+| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests. | N/A |
+| `TEST_USER_ORG_FG_PAT` | GitHub secrets | The fine-grained personal access token with org access for running tests. | N/A |
+| `TEST_USER_USER_FG_PAT` | GitHub secrets | The fine-grained personal access token with user account access for running tests. | N/A |
+| `TEST_USER_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
+
+### Permissions
+
+The following permissions are needed for the workflow to be able to perform all tasks.
+
+```yaml
+permissions:
+  contents: write      # to checkout the repo and create releases on the repo
+  pull-requests: write # to write comments to PRs
+  statuses: write      # to update the status of the workflow from linter
+  pages: write         # to deploy to Pages
+  id-token: write      # to verify the Pages deployment originates from an appropriate source
+```
+
+For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
+
+### Scenario Matrix
+
+This table shows when each job runs based on the trigger scenario:
+
+| Job | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
+|-----|-----------------|-----------|--------------|------------|
+| **Get-Settings** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
+| **Lint-Repository** | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Build-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Build-Docs** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Build-Site** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Test-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Lint-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Test-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **BeforeAll-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Test-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **AfterAll-ModuleLocal** | ✅ Yes | ✅ Yes | ✅ Yes* | ✅ Yes |
+| **Get-TestResults** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Get-CodeCoverage** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Publish-Site** | ❌ No | ✅ Yes | ❌ No | ❌ No |
+| **Publish-Module** | ✅ Yes** | ✅ Yes** | ✅ Yes*** | ✅ Yes** |
+
+\* Runs for cleanup if tests were started
+\*\* Only when all tests/coverage/build succeed
+\*\*\* Publishes cleanup/retraction version
 
 ## Configuration
 
@@ -279,103 +365,9 @@ Build:
     Skip: true
 ```
 
-## Usage
-
-### Inputs
-
-| Name | Type | Description | Required | Default |
-| ---- | ---- | ----------- | -------- | ------- |
-| `Name` | `string` | The name of the module to process. This defaults to the repository name if nothing is specified. | `false` | N/A |
-| `SettingsPath` | `string` | The path to the settings file. Settings in the settings file take precedence over the action inputs. | `false` | `.github/PSModule.yml` |
-| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
-| `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
-| `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
-| `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
-| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
-
-### Setup and Teardown Scripts
-
-The workflow supports automatic execution of setup and teardown scripts for module tests:
-
-- Scripts are automatically detected and executed if present
-- If no scripts are found, the workflow continues normally
-
-#### Setup - `BeforeAll.ps1`
-
-- Place in your test directories (`tests/BeforeAll.ps1`)
-- Runs once before all test matrix jobs to prepare the test environment
-- Deploy test infrastructure, download test data, initialize databases, or configure services
-- Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
-
-##### Example - `BeforeAll.ps1`
-
-```powershell
-Write-Host "Setting up test environment..."
-# Deploy test infrastructure
-# Download test data
-# Initialize test databases
-Write-Host "Test environment ready!"
-```
-
-#### Teardown - `AfterAll.ps1`
-
-- Place in your test directories (`tests/AfterAll.ps1`)
-- Runs once after all test matrix jobs complete to clean up the test environment
-- Remove test resources, clean up databases, stop services, or upload artifacts
-- Has access to the same environment variables as your tests
-
-##### Example - `AfterAll.ps1`
-
-```powershell
-Write-Host "Cleaning up test environment..."
-# Remove test resources
-# Cleanup databases
-# Stop services
-Write-Host "Cleanup completed!"
-```
-
-### Secrets
-
-The following secrets are used by the workflow. They can be automatically provided (if available) by setting the `secrets: inherit`
-in the workflow file.
-
-| Name | Location | Description | Default |
-| ---- | -------- | ----------- | ------- |
-| `APIKEY` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
-| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests. | N/A |
-| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests. | N/A |
-| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests. | N/A |
-| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests. | N/A |
-| `TEST_USER_ORG_FG_PAT` | GitHub secrets | The fine-grained personal access token with org access for running tests. | N/A |
-| `TEST_USER_USER_FG_PAT` | GitHub secrets | The fine-grained personal access token with user account access for running tests. | N/A |
-| `TEST_USER_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
-
-## Permissions
-
-If running the action in a restrictive mode, the following permissions need to be granted to the action:
-
-```yaml
-permissions:
-  contents: write      # Create releases
-  pull-requests: write # Create comments on the PRs
-  statuses: write      # Update the status of the PRs from the linter
-```
-
-### Publishing to GitHub Pages
-
-To publish the documentation to GitHub Pages, the action requires the following permissions:
-
-```yaml
-permissions:
-  pages: write    # Deploy to Pages
-  id-token: write # Verify the deployment originates from an appropriate source
-```
-
-For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
-
 ## Specifications and practices
 
-Process-PSModule follows:
+The process is compatible with:
 
 - [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
