@@ -76,7 +76,7 @@ I need a single workflow configuration file that intelligently handles both cont
 | **GitHub Actions Runtime** | Must execute within GitHub Actions environment using existing runner configurations |
 | **Backward Compatibility** | Must support all features currently provided by separate CI.yml and workflow.yml files |
 | **PowerShell Gallery API** | Must authenticate and publish using existing API key management approach |
-| **Semantic Versioning** | Must follow semver conventions for version bumping (major.minor.patch) |
+| **Semantic Versioning** | Must follow SemVer conventions for version bumping (major.minor.patch) |
 | **Existing Composite Actions** | Must continue using PSModule/GitHub-Script@v1 and PSModule/Install-PSModuleHelpers@v1 |
 
 ### Key Entities *(include if feature involves data)*
