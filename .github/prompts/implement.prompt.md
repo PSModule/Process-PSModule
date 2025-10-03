@@ -8,11 +8,7 @@ The user input can be provided directly by the agent or as a command argument â€
 
 **User input:**
 
-```
-
 $ARGUMENTS
-
-````
 
 ---
 
