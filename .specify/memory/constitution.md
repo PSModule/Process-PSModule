@@ -622,6 +622,8 @@ jobs:
 - All workflow YAML MUST be valid and pass linting
 - Action scripts MUST be testable and maintainable
 - Inline code in workflows SHOULD be avoided; extract to action scripts
+- **Git credential handling**: Workflows MUST use `persist-credentials: false` for checkout actions to prevent credential leakage
+- **Repository depth**: Workflows SHOULD use `fetch-depth: 0` for full git history when needed for versioning or changelog generation
 
 ### Documentation
 
@@ -641,9 +643,9 @@ jobs:
   - `macos-latest` (macOS)
 - BeforeAll/AfterAll setup and teardown scripts MUST be supported for test environments
 - Test matrices MUST be configurable via repository settings
-- **CI validation workflow** (`.github/workflows/ci.yml`) MUST be maintained for integration testing
-- **Production workflow** (`.github/workflows/workflow.yml`) is the primary consumer-facing workflow
-- Consuming repositories SHOULD use CI workflow for nightly regression testing
+- **CI validation workflows** (`.github/workflows/Workflow-Test-*.yml`) MUST be maintained for integration testing
+- **Unified production workflow** (`.github/workflows/workflow.yml`) is the primary consumer-facing workflow
+- Consuming repositories SHOULD use CI validation workflows for nightly regression testing
 
 ## Development Workflow
 
@@ -690,9 +692,12 @@ The standard execution order for Process-PSModule workflows MUST be:
 
 **Workflow Types**:
 
-- **Production Workflow** (`.github/workflows/workflow.yml`) - Main workflow for consuming repositories
-- **CI Validation Workflow** (`.github/workflows/ci.yml`) - Integration tests for framework development
-- Consuming repositories use production workflow for releases, CI workflow for nightly validation
+- **Unified Production Workflow** (`.github/workflows/workflow.yml`) - Single workflow handling both CI and CD for consuming repositories
+  - Intelligently executes appropriate jobs based on PR state (open/merged/abandoned)
+  - Eliminates need for separate CI and release workflows
+  - Uses conditional execution to optimize for different scenarios
+- **CI Validation Workflows** (`.github/workflows/Workflow-Test-*.yml`) - Integration tests for framework development
+- Consuming repositories use the unified production workflow for all scenarios
 
 ### Configuration
 
@@ -745,4 +750,4 @@ For agent-specific runtime development guidance **when developing the framework*
 
 **For Consuming Repositories**: Follow the Required Module Structure and Workflow Integration Requirements documented in the Product Overview section. Start with [Template-PSModule](https://github.com/PSModule/Template-PSModule).
 
-**Version**: 1.6.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-01
+**Version**: 1.6.1 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2025-10-03
