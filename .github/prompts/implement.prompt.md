@@ -130,7 +130,7 @@ $ARGUMENTS
     * Stage all changes (`tasks.md`, `CHANGELOG.md`, `constitution.md`, code, configs).
     * Commit using Conventional Commit format:
 
-      ```
+      ```markdown
       <type>(<scope>): <description>
       Fixes #<issue-number>
       ```
