@@ -40,7 +40,7 @@ $ARGUMENTS
    # If fork: gh issue edit <issue-number> --repo <upstream_owner>/<upstream_repo> --remove-label "Planning" --add-label "Implementing"
    # If local: gh issue edit <issue-number> --remove-label "Planning" --add-label "Implementing"
    gh issue edit <issue-number> --remove-label "Planning" --add-label "Implementing"
-````
+   ```
 
 2. **Run prerequisites**
    Run [`check-prerequisites.ps1`](../../.specify/scripts/powershell/check-prerequisites.ps1) from repo root:
