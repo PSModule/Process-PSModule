@@ -66,6 +66,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Get-Settings
         uses: PSModule/GitHub-Script@v1

@@ -257,6 +257,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Run BeforeAll Setup Scripts
         uses: PSModule/GitHub-Script@v1
@@ -331,6 +334,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Install-PSModuleHelpers
         uses: PSModule/Install-PSModuleHelpers@v1
@@ -457,6 +463,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Download module artifact
         uses: actions/download-artifact@v5

@@ -51,6 +51,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Test-SourceCode
         uses: PSModule/Test-PSModule@v3
