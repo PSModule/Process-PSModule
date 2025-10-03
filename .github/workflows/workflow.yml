@@ -446,9 +446,6 @@ jobs:
   #   - ✅ Abandoned PR    - Publishes cleanup/retraction version
   #   - ✅ Manual run      - Publishes when all tests/coverage/build succeed
   #
-  # Conditional Logic:
-  #   - Abandoned PR check: (github.event.action == 'closed' && github.event.pull_request.merged != true)
-  #   - Success check: All tests/coverage/build must succeed
   Publish-Module:
     if: |
       needs.Get-Settings.result == 'success' && !cancelled() && github.event_name == 'pull_request' && (
