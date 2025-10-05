@@ -13,7 +13,7 @@ Publish:
   AutoCleanup: false
 Linter:
   env:
-    VALIDATE_BIOME_FORMAT: 'false'
+    VALIDATE_BIOME_FORMAT: false
     VALIDATE_BIOME_LINT: 'false'
     VALIDATE_GITHUB_ACTIONS_ZIZMOR: 'false'
     VALIDATE_JSCPD: 'false'
