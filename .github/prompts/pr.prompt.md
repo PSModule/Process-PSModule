@@ -48,10 +48,14 @@ $ARGUMENTS
       - **Important**: If the branch contains BOTH code changes AND documentation changes, classify based on the code changes, not the documentation
       - **Important**: Check the entire branch diff, not just uncommitted changes or the last commit
 
-3. **Get current branch information**:
-   - Determine the current branch name
-   - Verify there are changes to commit (if uncommitted changes exist, stage and commit them first)
-   - Push the branch to `origin` remote if not already pushed (always push to origin, even in fork mode).
+3. **Stage, commit, and push all changes**:
+   - **ALWAYS run these commands before creating/updating the PR**:
+     1. `git add .` - Stage all changes (tracked and untracked files)
+     2. Check if there are staged changes with `git diff --cached --quiet`
+     3. If there are staged changes, commit with: `git commit -m "Update for PR"`
+     4. `git push origin <branch-name>` - Push to origin remote (even in fork mode)
+   - This ensures the PR reflects all local changes
+   - Get the current branch name for the push command
 
 4. **Retrieve linked issue information** (if available):
    - Attempt to find the GitHub issue number associated with the current branch
@@ -121,10 +125,10 @@ $ARGUMENTS
 - `/PR Patch` - Create a PR for small improvements
 
 **Notes**:
+- **This command always stages all changes (`git add .`), commits if needed, and pushes to origin before creating/updating the PR**
 - Changes are always pushed to `origin` remote
 - In fork mode, PRs and Issue operations are performed on the `upstream` repository
 - In origin mode, all operations use the `origin` repository
-- This command commits and pushes changes if there are uncommitted changes
 - The PR is always created as a draft to allow for review before marking as ready
 - Labels can be manually adjusted after PR creation if needed
 - The description should be written from the user's perspective, focusing on impact not implementation
