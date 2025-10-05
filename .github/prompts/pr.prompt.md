@@ -33,12 +33,17 @@ $ARGUMENTS
 
 2. **Determine the change type**:
    1. Parse the user input to identify the change type (Major, Minor, Patch, Fix, or Docs)
-   2. If nothing is provided, evaluate the code changes to infer the type:
-     - **Major**: Changes that break backward compatibility (e.g., removing public APIs, changing method signatures)
-     - **Minor**: New features or enhancements that do not break existing functionality
-     - **Patch**: Bug fixes or small improvements that do not add new features
-     - **Fix**: Specifically for bug fixes
-     - **Docs**: Only documentation changes
+   2. If nothing is provided, **analyze ALL changes in the branch** to infer the type:
+      - Run `git diff origin/main...HEAD --name-only` to get all changed files in the branch
+      - Read the diff content using `git diff origin/main...HEAD` to understand the nature of changes
+      - Categorize based on ALL changes combined, not just recent commits:
+        * **Docs**: ONLY if ALL changes are to documentation files (*.md, docs/, .github/prompts/, etc.) with no code/functionality changes
+        * **Fix**: If changes specifically fix bugs without adding new features
+        * **Patch**: Small fixes or improvements that do not add new features
+        * **Minor**: New features or enhancements that do not break existing functionality
+        * **Major**: Changes that break backward compatibility (e.g., removing public APIs, changing method signatures)
+      - **Important**: If the branch contains BOTH code changes AND documentation changes, classify based on the code changes, not the documentation
+      - **Important**: Check the entire branch diff, not just uncommitted changes or the last commit
 
 3. **Get current branch information**:
    - Determine the current branch name
