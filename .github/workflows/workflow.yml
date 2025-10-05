@@ -132,7 +132,7 @@ jobs:
       - name: Lint code base
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
