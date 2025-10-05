@@ -373,18 +373,26 @@ Build:
 
 ### Example 3 - Configuring the Repository Linter
 
-This example shows how to configure the repository linter to skip certain validations or disable the linter entirely.
+The workflow uses [super-linter](https://github.com/super-linter/super-linter) to lint your repository code.
+The linter runs on pull requests and provides status updates directly in the PR.
+
+#### Disabling the Linter
+
+You can skip repository linting entirely:
 
 ```yaml
-# Skip the linter entirely
 Linter:
   Skip: true
 ```
 
+#### Configuring Linter Validation Rules
+
+The workflow supports all environment variables that super-linter provides. You can configure these through the `Linter.env` object:
+
 ```yaml
-# Disable specific linter validations
 Linter:
   env:
+    # Disable specific validations
     VALIDATE_BIOME_FORMAT: false
     VALIDATE_BIOME_LINT: false
     VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
@@ -392,9 +400,29 @@ Linter:
     VALIDATE_JSON_PRETTIER: false
     VALIDATE_MARKDOWN_PRETTIER: false
     VALIDATE_YAML_PRETTIER: false
+
+    # Or enable only specific validations
+    VALIDATE_YAML: true
+    VALIDATE_JSON: true
+    VALIDATE_MARKDOWN: true
 ```
 
-For a complete list of available linter environment variables, see the [super-linter documentation](https://github.com/super-linter/super-linter#environment-variables).
+#### Additional Configuration
+
+Any super-linter environment variable can be set through the `Linter.env` object:
+
+```yaml
+Linter:
+  env:
+    LOG_LEVEL: DEBUG
+    FILTER_REGEX_EXCLUDE: '.*test.*'
+    VALIDATE_ALL_CODEBASE: false
+```
+
+**Note:** The `GITHUB_TOKEN` is automatically provided by the workflow to enable status updates in pull requests.
+
+For a complete list of available environment variables and configuration options, see the
+[super-linter environment variables documentation](https://github.com/super-linter/super-linter#environment-variables).
 
 ## Specifications and practices
 

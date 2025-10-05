@@ -12,7 +12,7 @@ $ARGUMENTS
 
 **Workflow Modes**: This command supports two modes:
 - **Local (default)**: Work with the current repository (origin). No special configuration needed.
-- **Fork**: Contribute to an upstream repository. Requires explicit declaration with upstream owner/repo information.
+- **Fork**: Contribute to an upstream repository. Automatically detected via `git remote -v`.
 
 **Iteration Support**: This command detects whether you're creating a new feature or refining an existing one based on your current branch.
 
@@ -20,30 +20,15 @@ The text the user typed after `/specify` in the triggering message **is** the fe
 
 Given that feature description, do this:
 
-1. **Check for fork contribution**: Analyze the user input for mentions of contributing to a fork or upstream repository. Look for phrases like:
-   - "fork contribution"
-   - "contributing to upstream"
-   - "fork of [owner/repo]"
-   - "upstream repo [owner/repo]"
-   - Any explicit mention of working on a fork
-
-   If detected, extract the upstream repository information (owner/repo).
-
-   **If fork contribution is detected but information is incomplete**, prompt the user:
-
-   ```text
-   Fork contribution detected. Please provide the following information:
-   - Upstream organization/owner name (e.g., "microsoft", "PSModule")
-   - Upstream repository name (e.g., "vscode", "PSModule")
-   - Git remote name for upstream (optional, defaults to "upstream")
-
-   Example: "upstream owner: PSModule, upstream repo: Utilities"
-   ```
-
-   Wait for user response and re-parse the input before proceeding. Required fields:
-   - `upstream_owner` (string, non-empty)
-   - `upstream_repo` (string, non-empty)
-   - `upstream_remote` (string, optional, defaults to "upstream")
+1. **Detect repository mode**:
+   - Run `git remote -v` to check configured remotes
+   - **If `upstream` remote exists**: Fork mode detected
+     - Parse the upstream URL to extract owner and repo name
+     - Example: `upstream https://github.com/PSModule/Utilities.git` → owner: `PSModule`, repo: `Utilities`
+     - Inform user: "Fork contribution detected. Issues and PRs will target `<upstream_owner>/<upstream_repo>`"
+   - **If only `origin` remote exists**: Origin mode (default)
+     - Parse the origin URL to extract owner and repo name
+     - Use `origin_owner/origin_repo` for all GitHub operations
 
 2. Analyze the feature description and generate a concise, descriptive branch name:
    - Extract the core concept/action from the description (2-4 words maximum)
@@ -62,29 +47,9 @@ Given that feature description, do this:
 - If you're already on a feature branch (starts with 3 digits like `001-`, `002-`, etc.), you'll stay on that branch to iterate on the existing feature.
 - This allows you to refine specifications without creating multiple branches for the same feature.
 
-4. **Store fork information (if detected in step 1)**:
-   - If the user indicated this is a fork contribution, create a `.fork-info.json` file in the feature directory (same location as SPEC_FILE)
-   - **Validate required fields before creating**:
-     - `upstream_owner` must be non-empty string
-     - `upstream_repo` must be non-empty string
-     - If validation fails, return to step 1 for clarification
-   - The file should contain:
-     ```json
-     {
-       "is_fork": true,
-       "upstream_owner": "<extracted-owner>",
-       "upstream_repo": "<extracted-repo>",
-       "upstream_remote": "<extracted-remote-or-upstream>",
-       "detected_from": "user_input",
-       "created_at": "<ISO8601-timestamp>"
-     }
-     ```
-   - This file will be used by `/plan` and `/implement` commands to create issues and PRs in the correct repository
-   - If fork information was detected, inform the user: "Fork contribution detected. Issues and PRs will target `<upstream_owner>/<upstream_repo>`"
+4. Load [`.specify/templates/spec-template.md`](../../.specify/templates/spec-template.md) to understand required sections.
 
-5. Load [`.specify/templates/spec-template.md`](../../.specify/templates/spec-template.md) to understand required sections.
-
-6. **Write or update the specification**:
+5. **Write or update the specification**:
    - **If IS_EXISTING_BRANCH is false** (new feature on main branch):
      - Write a new specification to SPEC_FILE using the template structure
      - Replace placeholders with concrete details derived from the feature description
@@ -102,14 +67,10 @@ Given that feature description, do this:
        - Maintain the template structure and section order
      - The goal is evolution, not replacement - build upon the existing spec rather than starting over
 
-7. Create or update a GitHub issue for this feature:
-   - **Determine target repository**:
-     - Check if `.fork-info.json` exists in the feature directory
-     - If it exists:
-       - Validate required fields: `is_fork` (true), `upstream_owner` (non-empty), `upstream_repo` (non-empty)
-       - If validation fails, prompt user for correct information (see step 1)
-       - Use `upstream_owner/upstream_repo` for all GitHub operations
-     - If it doesn't exist, use the current repository (origin)
+6. Create or update a GitHub issue for this feature:
+   - **Use target repository determined in step 1**:
+     - If fork mode: Use `upstream_owner/upstream_repo` for all GitHub operations
+     - If origin mode: Use `origin_owner/origin_repo` for all GitHub operations
    - **Generate the issue title** in format `<Icon> [Type]: <Feature name>` where:
      - Icon: 📖 (Docs), 🪲 (Fix), ⚠️ (Security fix), 🩹 (Patch), 🚀 (Feature/Minor), 🌟 (Breaking change/Major)
      - Type: Docs, Fix, Patch, Feature, or Breaking change
@@ -142,8 +103,8 @@ Given that feature description, do this:
    gh issue edit <issue-number> --body-file <SPEC_FILE>
    ```
 
-8. **Post final status comment**: "✅ Specification complete. Ready for clarification with `/clarify` or planning with `/plan`."
+7. **Post final status comment**: "✅ Specification complete. Ready for clarification with `/clarify` or planning with `/plan`."
 
-9. Report completion with branch name, spec file path, whether it's a new or updated feature, issue number, target repository (if fork), and readiness for the next phase.
+8. Report completion with branch name, spec file path, whether it's a new or updated feature, issue number, target repository (if fork), and readiness for the next phase.
 
 Note: The script handles branch creation/reuse and initializes the spec file before writing.

@@ -12,7 +12,7 @@ $ARGUMENTS
 
 **Workflow Modes**: This command supports two modes:
 - **Local (default)**: Work with the current repository (origin). No special configuration needed.
-- **Fork**: Contribute to an upstream repository. Reads `.fork-info.json` created by `/specify`.
+- **Fork**: Contribute to an upstream repository. Detected via `git remote -v`.
 
 **Iteration Support**: This command detects whether you're creating new tasks or updating existing ones based on the presence of tasks.md in the feature directory.
 
@@ -83,13 +83,14 @@ $ARGUMENTS
 
 8. Update the Pull Request description:
    - **Determine workflow mode and target repository**:
-     - Check if `.fork-info.json` exists in the feature directory (same location as plan.md)
-     - **If exists** (fork mode):
-       - Validate required fields: `is_fork` (true), `upstream_owner` (non-empty), `upstream_repo` (non-empty)
-       - If validation fails, halt and instruct user: "Invalid fork configuration in `.fork-info.json`. Please run `/specify` again with complete fork information: upstream owner, upstream repo."
+     - Run `git remote -v` to check configured remotes
+     - **If `upstream` remote exists** (fork mode):
+       - Parse the upstream URL to extract owner and repo name
+       - Example: `upstream https://github.com/PSModule/Utilities.git` → owner: `PSModule`, repo: `Utilities`
        - Use `upstream_owner/upstream_repo` for all GitHub operations
-     - **If not exists** (local mode - default):
-       - Use the current repository (origin) for all GitHub operations
+     - **If only `origin` remote exists** (local mode - default):
+       - Parse the origin URL to extract owner and repo name
+       - Use `origin_owner/origin_repo` for all GitHub operations
    - Append or update the tasks.md content in the existing PR description
    - Format tasks with checkboxes for each task phase:
      * Setup: `- [ ] T001: Task description`
