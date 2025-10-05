@@ -111,9 +111,12 @@ jobs:
 
       - name: Load dynamic envs
         env:
-          RAW_JSON: ${{ toJson(fromJson(needs.Get-Settings.outputs.Settings).Linter.env) }}
+          RAW_JSON: ${{ toJson(fromJson(needs.Get-Settings.outputs.Settings).Linter) }}
         run: |
-          $map = $env:RAW_JSON | ConvertFrom-Json -AsHashtable
+          $env:RAW_JSON
+          $linter = $env:RAW_JSON | ConvertFrom-Json -AsHashtable
+          $env = $linter.env
+          Write-Host "$($env | Format-Table -AutoSize | Out-String)"
 
           foreach ($key in $map.Keys) {
             $value = $map[$key]
@@ -121,6 +124,8 @@ jobs:
             if ($value -is [bool]) {
                 $value = $value.ToString().ToLower()
             }
+
+            Write-Host "$key = $value"
 
             # Persist for following steps in this job
             "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
