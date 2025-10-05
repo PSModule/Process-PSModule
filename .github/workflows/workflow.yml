@@ -126,10 +126,6 @@ jobs:
             "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           }
 
-      - name: List all envs
-        run: |
-          Get-ChildItem env: | Format-Table -AutoSize
-
       - name: Lint code base
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
