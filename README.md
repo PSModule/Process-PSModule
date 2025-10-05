@@ -260,6 +260,8 @@ The following settings are available in the settings file:
 | `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                   | `'minor, feature'`  |
 | `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                   | `'patch, fix'`      |
 | `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                             | `'NoRelease'`       |
+| `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                                  | `false`             |
+| `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                     | `{}`                |
 
 <details>
 <summary>`PSModule.yml` with all defaults</summary>
@@ -328,6 +330,10 @@ Publish:
     PatchLabels: 'patch, fix'
     IgnoreLabels: 'NoRelease'
 
+Linter:
+  Skip: false
+  env: {}
+
 ```
 </details>
 
@@ -364,6 +370,31 @@ Build:
   Docs:
     Skip: true
 ```
+
+### Example 3 - Configuring the Repository Linter
+
+This example shows how to configure the repository linter to skip certain validations or disable the linter entirely.
+
+```yaml
+# Skip the linter entirely
+Linter:
+  Skip: true
+```
+
+```yaml
+# Disable specific linter validations
+Linter:
+  env:
+    VALIDATE_BIOME_FORMAT: false
+    VALIDATE_BIOME_LINT: false
+    VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
+    VALIDATE_JSCPD: false
+    VALIDATE_JSON_PRETTIER: false
+    VALIDATE_MARKDOWN_PRETTIER: false
+    VALIDATE_YAML_PRETTIER: false
+```
+
+For a complete list of available linter environment variables, see the [super-linter documentation](https://github.com/super-linter/super-linter#environment-variables).
 
 ## Specifications and practices
 
