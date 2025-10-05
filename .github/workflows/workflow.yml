@@ -111,12 +111,13 @@ jobs:
 
       - name: Load dynamic envs
         env:
-          RAW_JSON: ${{ toJson(fromJson(needs.Get-Settings.outputs.Settings).Linter) }}
+          SETTINGS: ${{ needs.Get-Settings.outputs.Settings }}
         run: |
-          $env:RAW_JSON
-          $linter = $env:RAW_JSON | ConvertFrom-Json -AsHashtable
+          $env:SETTINGS
+          $settings = $env:SETTINGS | ConvertFrom-Json -AsHashtable
+          $linter = $settings.Linter
           $env = $linter.env
-          Write-Host "$($env | Format-Table -AutoSize | Out-String)"
+          $env
 
           foreach ($key in $env.Keys) {
             $value = $env[$key]
