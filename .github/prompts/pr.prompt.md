@@ -19,7 +19,7 @@ $ARGUMENTS
 | Major | 🌟 | `Major` | Breaking changes that affect compatibility |
 | Minor | 🚀 | `Minor` | New features or enhancements |
 | Patch | 🩹 | `Patch` | Small fixes or improvements |
-| Fix | 🪲 | `Fix`, `Patch` | Bug fixes |
+| Fix | 🪲 | `Fix`, `Patch` | Bugfixes |
 | Docs | 📖 | `Docs` | Documentation changes only |
 
 ## Execution Steps
@@ -132,16 +132,9 @@ $ARGUMENTS
    - Set PR to target the default branch (main/master) of the target repository
    - Open as a **draft PR** (or keep as draft if updating)
    - **Use GitHub MCP tools** to perform these operations in the **target repository**:
-     ```
-     # Create PR (if not exists) - owner/repo should be target repository
-     mcp_github_github_create_pull_request
-
-     # Update PR (if exists) - owner/repo should be target repository
-     mcp_github_github_update_pull_request
-
-     # Add labels to PR - owner/repo should be target repository
-     mcp_github_github_add_labels_to_issue (PRs are issues in GitHub API)
-     ```
+     - Create PR (if not exists) - owner/repo should be target repository, use `mcp_github_github_create_pull_request`
+     - Update PR (if exists) - owner/repo should be target repository, use `mcp_github_github_update_pull_request`
+     - Add labels to PR - owner/repo should be target repository, use `mcp_github_github_add_labels_to_issue` (PRs are issues in GitHub API)
 
 8. **Apply labels to the PR**:
    - Add the **change type label** based on the type specified (Major, Minor, Patch, Fix, or Docs)
@@ -154,15 +147,17 @@ $ARGUMENTS
    - Summarize the PR title, type, and labels applied
    - If in fork mode, remind the user that the PR was created in the upstream repository
 
-**Example Usage**:
+## Example usage
+
 - `/PR` - Create a PR for the current changes
 - `/PR Minor` - Create a PR for a new feature
-- `/PR Fix` - Create a PR for a bug fix
+- `/PR Fix` - Create a PR for a bugfix
 - `/PR Docs` - Create a PR for documentation changes
 - `/PR Major` - Create a PR for breaking changes
 - `/PR Patch` - Create a PR for small improvements
 
-**Notes**:
+## Notes
+
 - **This command always stages all changes (`git add .`), commits if needed, and pushes to origin before creating/updating the PR**
 - Changes are always pushed to `origin` remote
 - In fork mode, PRs and Issue operations are performed on the `upstream` repository
