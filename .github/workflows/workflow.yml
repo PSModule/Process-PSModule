@@ -111,7 +111,7 @@ jobs:
 
       - name: Load dynamic envs
         env:
-          RAW_JSON: ${{ fromJson(needs.Get-Settings.outputs.Settings).Linter.env }}
+          RAW_JSON: ${{ toJson(fromJson(needs.Get-Settings.outputs.Settings).Linter.env) }}
         run: |
           $map = $env:RAW_JSON | ConvertFrom-Json -AsHashtable
 
