@@ -114,9 +114,11 @@ jobs:
           SETTINGS: ${{ needs.Get-Settings.outputs.Settings }}
         run: |
           Write-Host "Loading settings for super-linter:"
+          $env:SETTINGS
           $settings = $env:SETTINGS | ConvertFrom-Json -AsHashtable
           $linter = $settings.Linter
           $env = $linter.env
+          $env
 
           foreach ($key in $env.Keys) {
             $value = $env[$key]
