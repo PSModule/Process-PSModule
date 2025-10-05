@@ -116,7 +116,11 @@ jobs:
           $map = $env:RAW_JSON | ConvertFrom-Json -AsHashtable
 
           foreach ($key in $map.Keys) {
-            $value = ($map[$key]).ToString().ToLower()
+            $value = $map[$key]
+
+            if ($value -is [bool]) {
+                $value = $value.ToString().ToLower()
+            }
 
             # Persist for following steps in this job
             "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
