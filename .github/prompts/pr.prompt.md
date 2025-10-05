@@ -69,22 +69,60 @@ $ARGUMENTS
 5. **Generate PR title**:
    - **If issue title retrieved**: Use format `<Icon> <Issue Title>`
    - Examples:
-     - `🚀 Add support for custom module templates`
+     - `🚀 [Feature]: Add support for custom module templates`
      - `🪲 [Fix]: Resolve null reference in parameter validation`
      - `📖 [Docs]: Update installation guide with prerequisites`
 
 6. **Generate release note style description**:
-   - Start with a concise summary paragraph describing **what changes for the user** of the code
-   - Focus on user-facing impact, not implementation details
+   - The PR description will be used automatically as the release note in an automated release
+   - Use this exact structure (ordered list format):
+
+   **1. Leading Paragraph (Summary)**
+   - Write a concise paragraph describing **what changes for the user** of the solution
+   - Focus on user-facing value and impact, not implementation details
    - Use present tense and active voice
-   - Structure:
-     * **Leading paragraph**: Clear summary of the change and its benefit to users
-     * **If issue linked**: Add `- Fixes #<issue-number>` after the leading paragraph
-     * **Optional additional context**: Briefly explain why this change was needed
-     * **What's Changed**: Bullet points of key changes (user-facing)
-   - Keep it concise - this should read like a release note entry
-   - DO NOT add a title or heading before the leading paragraph
-   - Avoid implementation details unless necessary for understanding
+   - Audience: Users of the solution (not developers)
+
+   **2. Issue Links (Unordered List)**
+   - Add one or more issue links as unordered list items
+   - Format: `- Fixes #<issue-number>`
+   - If multiple issues: `- Fixes #<issue-1>`, `- Fixes #<issue-2>`
+
+   **3. Details (Sections with Headers)**
+   - For each significant change, add a header (e.g., `## Configuration`, `## Breaking Changes`, `## Usage`)
+   - Under each header, provide:
+     * Details of what changed
+     * What the user needs to change or do differently (if anything)
+     * Examples or code snippets if helpful for understanding
+   - Keep sections concise and user-focused
+   - Avoid implementation details unless necessary for user understanding
+
+   **Example Structure:**
+   ````markdown
+   The workflow now provides fine-grained control over repository linting behavior through simple configuration options. You can disable the linter entirely or customize which validations run by configuring super-linter environment variables directly in your settings file.
+
+   - Fixes #218
+
+   ## Configure settings for repository linting
+
+   You can now control the linter behavior via the `Linter` section in your `.settings.yml` file. This allows you to skip linting altogether or customize which validations are performed.
+
+   Added `Linter.Skip` and `Linter.env` settings to control linter behavior. You can now disable the linter entirely or customize which validations run.
+
+   To disable the linter:
+   ```yaml
+   Linter:
+     Skip: true
+   ```
+
+   To customize validations:
+   ```yaml
+   Linter:
+     env:
+       VALIDATE_JSCPD: false
+   ```
+
+   ````
 
 7. **Create or update the pull request**:
    - **Check if PR already exists** for this branch in the **target repository** (upstream in fork mode, origin otherwise)
@@ -131,4 +169,7 @@ $ARGUMENTS
 - In origin mode, all operations use the `origin` repository
 - The PR is always created as a draft to allow for review before marking as ready
 - Labels can be manually adjusted after PR creation if needed
-- The description should be written from the user's perspective, focusing on impact not implementation
+- **The PR description uses a structured format designed for automated release notes**:
+  1. Leading paragraph (user-focused summary)
+  2. Issue links (unordered list)
+  3. Details (sections with headers explaining changes and user actions needed)
