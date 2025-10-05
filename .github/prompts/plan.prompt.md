@@ -20,14 +20,14 @@ Given the implementation details provided as an argument, do this:
 
 1. **Set Planning label immediately**:
    - **Determine target repository**:
-     - Run `git remote -v` to check configured remotes
+     - Run `git remote -v` to check configured remotes.
      - **If `upstream` remote exists**: Fork mode
-       - Parse the upstream URL to extract owner and repo name
-       - Example: `upstream https://github.com/PSModule/Utilities.git` → owner: `PSModule`, repo: `Utilities`
-       - Use `upstream_owner/upstream_repo` for all GitHub operations
+       - Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+       - Use `origin` for all git operations (push, fetch)
      - **If only `origin` remote exists**: Origin mode
-       - Parse the origin URL to extract owner and repo name
-       - Use `origin_owner/origin_repo` for all GitHub operations
+       - Use `origin` owner/repo for all operations (both git push and GitHub operations)
+     - Parse the URLs to extract owner and repo name: `https://github.com/<owner>/<repository>.git`.
+     - If in doubt, ask the user to clarify which repository to target.
    - Get the issue number associated with the current feature branch
    - **Add 'Planning' label** to the issue immediately in the target repository
    - **Remove 'Specification' label** from the issue
@@ -85,14 +85,14 @@ Given the implementation details provided as an argument, do this:
 
 8. Create or update a Pull Request:
    - **Determine workflow mode and target repository**:
-     - Run `git remote -v` to check configured remotes
-     - **If `upstream` remote exists** (fork mode):
-       - Parse the upstream URL to extract owner and repo name
-       - Example: `upstream https://github.com/PSModule/Utilities.git` → owner: `PSModule`, repo: `Utilities`
-       - Use `upstream_owner/upstream_repo` for all GitHub operations
-     - **If only `origin` remote exists** (local mode - default):
-       - Parse the origin URL to extract owner and repo name
-       - Use `origin_owner/origin_repo` for all GitHub operations
+     - Run `git remote -v` to check configured remotes.
+     - **If `upstream` remote exists**: Fork mode
+       - Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+       - Use `origin` for all git operations (push, fetch)
+     - **If only `origin` remote exists**: Origin mode
+       - Use `origin` owner/repo for all operations (both git push and GitHub operations)
+     - Parse the URLs to extract owner and repo name: `https://github.com/<owner>/<repository>.git`.
+     - If in doubt, ask the user to clarify which repository to target.
    - **Determine PR operation** (create vs update):
      - If PR already exists for this branch, UPDATE it
      - If no PR exists, CREATE a new one

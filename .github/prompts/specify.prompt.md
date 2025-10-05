@@ -21,14 +21,14 @@ The text the user typed after `/specify` in the triggering message **is** the fe
 Given that feature description, do this:
 
 1. **Detect repository mode**:
-   - Run `git remote -v` to check configured remotes
-   - **If `upstream` remote exists**: Fork mode detected
-     - Parse the upstream URL to extract owner and repo name
-     - Example: `upstream https://github.com/PSModule/Utilities.git` → owner: `PSModule`, repo: `Utilities`
-     - Inform user: "Fork contribution detected. Issues and PRs will target `<upstream_owner>/<upstream_repo>`"
-   - **If only `origin` remote exists**: Origin mode (default)
-     - Parse the origin URL to extract owner and repo name
-     - Use `origin_owner/origin_repo` for all GitHub operations
+   - Run `git remote -v` to check configured remotes.
+   - **If `upstream` remote exists**: Fork mode
+     - Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+     - Use `origin` for all git operations (push, fetch)
+   - **If only `origin` remote exists**: Origin mode
+     - Use `origin` owner/repo for all operations (both git push and GitHub operations)
+   - Parse the URLs to extract owner and repo name: `https://github.com/<owner>/<repository>.git`.
+   - If in doubt, ask the user to clarify which repository to target.
 
 2. Analyze the feature description and generate a concise, descriptive branch name:
    - Extract the core concept/action from the description (2-4 words maximum)
@@ -69,8 +69,8 @@ Given that feature description, do this:
 
 6. Create or update a GitHub issue for this feature:
    - **Use target repository determined in step 1**:
-     - If fork mode: Use `upstream_owner/upstream_repo` for all GitHub operations
-     - If origin mode: Use `origin_owner/origin_repo` for all GitHub operations
+     - If fork mode: Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+     - If origin mode: Use `origin` owner/repo for all operations (both git push and GitHub operations)
    - **Generate the issue title** in format `<Icon> [Type]: <Feature name>` where:
      - Icon: 📖 (Docs), 🪲 (Fix), ⚠️ (Security fix), 🩹 (Patch), 🚀 (Feature/Minor), 🌟 (Breaking change/Major)
      - Type: Docs, Fix, Patch, Feature, or Breaking change
