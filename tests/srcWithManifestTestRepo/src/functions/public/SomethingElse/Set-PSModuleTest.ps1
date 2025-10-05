@@ -9,9 +9,16 @@
         "Hello, World!"
 
         .NOTES
-        - Author: Your Name
-        - Date: 2024-06-10
-        - Version:q! 1.0.0
+        Controls:
+        - i       : Enter INSERT mode
+        - Esc     : Enter NORMAL mode
+        - y       : Yank (copy) line
+        - dd      : Delete line
+        - p       : Paste line
+        - :w      : Save file
+        - :q      : Quit
+        - :q!     : Quit without saving
+        - :wq     : Save and quit
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
         'PSUseShouldProcessForStateChangingFunctions', '', Scope = 'Function',
