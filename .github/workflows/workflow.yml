@@ -118,8 +118,8 @@ jobs:
           $env = $linter.env
           Write-Host "$($env | Format-Table -AutoSize | Out-String)"
 
-          foreach ($key in $map.Keys) {
-            $value = $map[$key]
+          foreach ($key in $env.Keys) {
+            $value = $env[$key]
 
             if ($value -is [bool]) {
                 $value = $value.ToString().ToLower()
