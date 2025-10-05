@@ -70,6 +70,10 @@ permissions:
   pages: write         # to deploy to Pages
   id-token: write      # to verify the deployment originates from an appropriate source
 
+defaults:
+  run:
+    shell: pwsh
+
 jobs:
   # Runs on:
   # - ✅ Open/Updated PR - Always runs to load configuration
@@ -105,17 +109,25 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Load dynamic envs
+        env:
+          RAW_JSON: ${{ fromJson(needs.Get-Settings.outputs.Settings).Linter.env }}
+        run: |
+          $map = $env:RAW_JSON | ConvertFrom-Json -AsHashtable
+
+          foreach ($key in $map.Keys) {
+            $value = $map[$key]
+
+            Write-Host "$key = $value"
+
+            # Persist for following steps in this job
+            "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
       - name: Lint code base
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_BIOME_FORMAT: false
-          VALIDATE_BIOME_LINT: false
-          VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
-          VALIDATE_JSCPD: false
-          VALIDATE_JSON_PRETTIER: false
-          VALIDATE_MARKDOWN_PRETTIER: false
-          VALIDATE_YAML_PRETTIER: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
