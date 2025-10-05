@@ -12,7 +12,6 @@ Test:
 Publish:
   AutoCleanup: false
 Linter:
-  Skip: true
   env:
     VALIDATE_BIOME_FORMAT: false
     VALIDATE_BIOME_LINT: false
