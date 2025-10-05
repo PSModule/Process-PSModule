@@ -230,6 +230,10 @@ jobs:
                     }
 
                 }
+                Linter  = [pscustomobject]@{
+                    Skip = $settings.Linter.Skip ?? $false
+                    env  = $settings.Linter.env ?? @{}
+                }
             }
             LogGroup "Final settings" {
                 switch -Regex ($settingsFile.Extension) {

@@ -70,6 +70,10 @@ permissions:
   pages: write         # to deploy to Pages
   id-token: write      # to verify the deployment originates from an appropriate source
 
+defaults:
+  run:
+    shell: pwsh
+
 jobs:
   # Runs on:
   # - ✅ Open/Updated PR - Always runs to load configuration
@@ -95,7 +99,7 @@ jobs:
   Lint-Repository:
     name: Lint code base
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged != true && github.event.action != 'closed'
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged != true && github.event.action != 'closed' && fromJson(needs.Get-Settings.outputs.Settings).Linter.Skip != true
     needs:
       - Get-Settings
     steps:
@@ -105,17 +109,32 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Load dynamic envs
+        env:
+          SETTINGS: ${{ needs.Get-Settings.outputs.Settings }}
+        run: |
+          Write-Host "Loading settings for super-linter:"
+          $settings = $env:SETTINGS | ConvertFrom-Json -AsHashtable
+          $linter = $settings.Linter
+          $env = $linter.env
+
+          foreach ($key in $env.Keys) {
+            $value = $env[$key]
+
+            if ($value -is [bool]) {
+                $value = $value.ToString().ToLower()
+            }
+
+            Write-Host "$key = $value"
+
+            # Persist for following steps in this job
+            "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
       - name: Lint code base
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_BIOME_FORMAT: false
-          VALIDATE_BIOME_LINT: false
-          VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
-          VALIDATE_JSCPD: false
-          VALIDATE_JSON_PRETTIER: false
-          VALIDATE_MARKDOWN_PRETTIER: false
-          VALIDATE_YAML_PRETTIER: false
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing

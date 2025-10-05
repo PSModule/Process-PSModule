@@ -15,7 +15,7 @@ $ARGUMENTS
 **Workflow Modes**: This command supports two modes:
 
 - **Local (default)**: Work with the current repository (origin). No special configuration needed.
-- **Fork**: Contribute to an upstream repository. Reads `.fork-info.json` created by `/specify`.
+- **Fork**: Contribute to an upstream repository. Detected via `git remote -v`.
 
 **Iteration Support**: This command supports iterative implementation — you can run it multiple times to complete remaining tasks, fix issues, or add refinements. Task completion state is tracked in `tasks.md` with `[X]` markers.
 
@@ -25,11 +25,14 @@ $ARGUMENTS
 
 1. **Set Implementing label immediately**
    - **Determine target repository**:
-     - Check if `.fork-info.json` exists in the feature directory.
-     - If it exists:
-       - Validate required fields: `is_fork` (true), `upstream_owner` (non-empty), `upstream_repo` (non-empty).
-       - Use `upstream_owner/upstream_repo` for all GitHub operations.
-     - If it doesn't exist, use the current repository (origin).
+     - Run `git remote -v` to check configured remotes.
+     - **If `upstream` remote exists**: Fork mode
+       - Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+       - Use `origin` for all git operations (push, fetch)
+     - **If only `origin` remote exists**: Origin mode
+       - Use `origin` owner/repo for all operations (both git push and GitHub operations)
+     - Parse the URLs to extract owner and repo name: `https://github.com/<owner>/<repository>.git`.
+     - If in doubt, ask the user to clarify which repository to target.
    - Get the issue number associated with the current feature branch.
    - **Add `Implementing` label** to the issue and PR immediately in the target repository.
    - **Remove `Planning` label** from the issue and PR.
@@ -158,7 +161,6 @@ $ARGUMENTS
 
     * Remove `Implementing` label.
     * Ensure PR is not draft.
-    * Sync `.fork-info.json` with issue + PR numbers.
 
     **Fallback commands:**
 

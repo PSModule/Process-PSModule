@@ -11,3 +11,12 @@ Test:
     PercentTarget: 1
 Publish:
   AutoCleanup: false
+Linter:
+  env:
+    VALIDATE_BIOME_FORMAT: false
+    VALIDATE_BIOME_LINT: false
+    VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
+    VALIDATE_JSCPD: false
+    VALIDATE_JSON_PRETTIER: false
+    VALIDATE_MARKDOWN_PRETTIER: false
+    VALIDATE_YAML_PRETTIER: false

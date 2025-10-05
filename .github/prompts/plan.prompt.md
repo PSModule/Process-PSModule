@@ -12,7 +12,7 @@ $ARGUMENTS
 
 **Workflow Modes**: This command supports two modes:
 - **Local (default)**: Work with the current repository (origin). No special configuration needed.
-- **Fork**: Contribute to an upstream repository. Reads `.fork-info.json` created by `/specify`.
+- **Fork**: Contribute to an upstream repository. Detected via `git remote -v`.
 
 **Iteration Support**: This command detects whether you're creating a new plan or updating an existing one based on the presence of plan.md in the feature directory.
 
@@ -20,11 +20,14 @@ Given the implementation details provided as an argument, do this:
 
 1. **Set Planning label immediately**:
    - **Determine target repository**:
-     - Check if `.fork-info.json` exists in the feature directory
-     - If it exists:
-       - Validate required fields: `is_fork` (true), `upstream_owner` (non-empty), `upstream_repo` (non-empty)
-       - Use `upstream_owner/upstream_repo` for all GitHub operations
-     - If it doesn't exist, use the current repository (origin)
+     - Run `git remote -v` to check configured remotes.
+     - **If `upstream` remote exists**: Fork mode
+       - Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+       - Use `origin` for all git operations (push, fetch)
+     - **If only `origin` remote exists**: Origin mode
+       - Use `origin` owner/repo for all operations (both git push and GitHub operations)
+     - Parse the URLs to extract owner and repo name: `https://github.com/<owner>/<repository>.git`.
+     - If in doubt, ask the user to clarify which repository to target.
    - Get the issue number associated with the current feature branch
    - **Add 'Planning' label** to the issue immediately in the target repository
    - **Remove 'Specification' label** from the issue
@@ -82,13 +85,14 @@ Given the implementation details provided as an argument, do this:
 
 8. Create or update a Pull Request:
    - **Determine workflow mode and target repository**:
-     - Check if `.fork-info.json` exists in the feature directory (same directory as spec.md)
-     - **If exists** (fork mode):
-       - Validate required fields: `is_fork` (true), `upstream_owner` (non-empty), `upstream_repo` (non-empty)
-       - If validation fails, halt and instruct user: "Invalid fork configuration in `.fork-info.json`. Please run `/specify` again with complete fork information: upstream owner, upstream repo."
-       - Use `upstream_owner/upstream_repo` for all GitHub operations
-     - **If not exists** (local mode - default):
-       - Use the current repository (origin) for all GitHub operations
+     - Run `git remote -v` to check configured remotes.
+     - **If `upstream` remote exists**: Fork mode
+       - Use `upstream` owner/repo for all GitHub operations (PRs, Issues, labels)
+       - Use `origin` for all git operations (push, fetch)
+     - **If only `origin` remote exists**: Origin mode
+       - Use `origin` owner/repo for all operations (both git push and GitHub operations)
+     - Parse the URLs to extract owner and repo name: `https://github.com/<owner>/<repository>.git`.
+     - If in doubt, ask the user to clarify which repository to target.
    - **Determine PR operation** (create vs update):
      - If PR already exists for this branch, UPDATE it
      - If no PR exists, CREATE a new one
@@ -119,18 +123,6 @@ Given the implementation details provided as an argument, do this:
      * **Version/change level label**: Based on the type of change: `Major`, `Minor`, `Patch`, `Fix`, or `Docs`
      * **Phase label**: `Planning` (to indicate current phase)
    - Link the PR to the associated issue
-   - **After PR creation**: Update `.fork-info.json` (if it exists) with the PR number:
-     ```json
-     {
-       "is_fork": true,
-       "upstream_owner": "...",
-       "upstream_repo": "...",
-       "detected_from": "user_input",
-       "created_at": "...",
-       "issue_number": <issue-number>,
-       "pr_number": <pr-number>
-     }
-     ```
 
    **GitHub Integration**: If GitHub tools or integrations are available (such as GitHub MCP Server or other GitHub integrations), use them to create/update the PR and manage labels automatically in the target repository. If not available, provide these fallback commands with the correct repository:
    ```bash
