@@ -115,15 +115,17 @@ jobs:
         run: |
           Write-Host "Loading settings for super-linter:"
           $settings = $env:SETTINGS | ConvertFrom-Json -AsHashtable
+          $linter = $settings.Linter
+          $env = $linter.env
 
-          foreach ($key in $settings.Linter.env.Keys) {
-            $value = $settings.Linter.env[$key]
+          foreach ($key in $env.Keys) {
+            $value = $env[$key]
 
             if ($value -is [bool]) {
                 $value = $value.ToString().ToLower()
             }
 
-            Write-Host "  $key = $value"
+            Write-Host "$key = $value"
 
             # Persist for following steps in this job
             "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -132,7 +134,7 @@ jobs:
       - name: Lint code base
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
