@@ -35,6 +35,7 @@ on:
 
 permissions:
   contents: read # to checkout the repo
+  statuses: write # to create commit status
 
 jobs:
   Build-Docs:
