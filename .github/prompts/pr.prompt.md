@@ -24,6 +24,7 @@ $ARGUMENTS
 
 ## Execution Steps
 
+0. Change directory to the repository root if not already there.
 1. **Detect repository mode**:
    - Run `git remote -v` to check configured remotes.
    - **If `upstream` remote exists**: Fork mode
