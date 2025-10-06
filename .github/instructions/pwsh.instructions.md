@@ -515,6 +515,36 @@ function Get-ProcessedData {
 }
 ```
 
+## Suppressing Output
+
+- Use `$null =` to suppress unwanted output from commands
+- Avoid using `| Out-Null` as it is significantly slower
+- Use `[void]` for method calls that return values you want to discard
+- This is especially important in loops or performance-critical code
+
+**Good:**
+
+```powershell
+# Suppress output from .NET method calls
+$null = $list.Add($item)
+$null = $collection.Remove($item)
+
+# Alternative for methods
+[void]$list.Add($item)
+
+# Suppress output from cmdlets
+$null = New-Item -Path $path -ItemType Directory
+```
+
+**Bad:**
+
+```powershell
+# Slower performance with Out-Null
+$list.Add($item) | Out-Null
+$collection.Remove($item) | Out-Null
+New-Item -Path $path -ItemType Directory | Out-Null
+```
+
 ## Pipeline
 
 - Design functions to accept pipeline input when appropriate
