@@ -137,8 +137,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Clear super-linter summary
-        run: |
-          '' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Force -Encoding utf8
+        run: Remove-Item -Path $env:GITHUB_STEP_SUMMARY
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
