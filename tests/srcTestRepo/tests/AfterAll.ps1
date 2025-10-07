@@ -1,5 +1,5 @@
-Write-Host "=== AFTERALL TEARDOWN SCRIPT EXECUTING ==="
-Write-Host "Tearing down test environment..."
+Write-Warning "=== AFTERALL TEARDOWN SCRIPT EXECUTING ==="
+Write-Warning "Tearing down test environment..."
 
 # Example teardown tasks:
 # - Clean up test infrastructure
@@ -8,5 +8,5 @@ Write-Host "Tearing down test environment..."
 # - Drop test databases
 # - Stop test services
 
-Write-Host "Test environment teardown completed successfully!"
-Write-Host "=== AFTERALL TEARDOWN SCRIPT COMPLETED ==="
+Write-Warning "Test environment teardown completed successfully!"
+Write-Warning "=== AFTERALL TEARDOWN SCRIPT COMPLETED ==="
