@@ -96,6 +96,7 @@ jobs:
             }
 
       - name: Lint documentation
+        id: super-linter
         uses: super-linter/super-linter/slim@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
           FILTER_REGEX_INCLUDE: outputs/docs
@@ -113,3 +114,18 @@ jobs:
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
+          SAVE_SUPER_LINTER_SUMMARY: true
+
+      - name: Post super-linter summary on failure
+        if: steps.super-linter.outcome == 'failure'
+        run: |
+          Write-Host "Super-linter found issues. Generating summary..."
+          $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
+          if (Test-Path $summaryPath) {
+            Get-Content $summaryPath | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          } else {
+            Write-Host "::warning::Super-linter failed but summary file not found at: $summaryPath"
+          }
+          Write-Host "::error::Super-linter found issues. Please review the summary above."
+          exit 1
