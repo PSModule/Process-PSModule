@@ -1,0 +1,1 @@
+If a folder is **explicitly attached to this chat** (“references”), you **must** change directory to the root of the git folder it is in. If there are no git folders you can change to the provided folder.
