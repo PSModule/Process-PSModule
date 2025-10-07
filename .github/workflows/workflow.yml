@@ -137,7 +137,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Clear super-linter summary
-        if: success()
         run: Set-Content -Path $env:GITHUB_STEP_SUMMARY -Value '' -Encoding utf8
 
   # Runs on:
