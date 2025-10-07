@@ -119,6 +119,7 @@ jobs:
 
       - name: Post super-linter summary on failure
         if: steps.super-linter.outcome == 'failure'
+        shell: pwsh
         run: |
           Write-Host "Super-linter found issues. Generating summary..."
           $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
