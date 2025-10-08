@@ -161,7 +161,6 @@ Write-Host "Cleanup completed!"
 
 ### Secrets
 
-
 The following secrets are used by the workflow. They can be automatically provided (if available) by setting the `secrets: inherit`
 in the workflow file.
 
