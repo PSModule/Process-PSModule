@@ -104,12 +104,12 @@ jobs:
         id: super-linter
         uses: super-linter/super-linter/slim@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
-          FILTER_REGEX_INCLUDE: outputs/docs
+          RUN_LOCAL: true
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ inputs.WorkingDirectory }}
+          FILTER_REGEX_INCLUDE: ${{ inputs.WorkingDirectory }}/outputs/docs
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
-          RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
