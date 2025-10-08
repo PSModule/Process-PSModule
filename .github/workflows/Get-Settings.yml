@@ -209,7 +209,8 @@ jobs:
                         Skip = $settings.Build.Module.Skip ?? $false
                     }
                     Docs   = [pscustomobject]@{
-                        Skip = $settings.Build.Docs.Skip ?? $false
+                        Skip                 = $settings.Build.Docs.Skip ?? $false
+                        ShowSummaryOnSuccess = $settings.Build.Docs.ShowSummaryOnSuccess ?? $false
                     }
                     Site = [pscustomobject]@{
                         Skip = $settings.Build.Site.Skip ?? $false
@@ -231,8 +232,9 @@ jobs:
 
                 }
                 Linter  = [pscustomobject]@{
-                    Skip = $settings.Linter.Skip ?? $false
-                    env  = $settings.Linter.env ?? @{}
+                    Skip                 = $settings.Linter.Skip ?? $false
+                    ShowSummaryOnSuccess = $settings.Linter.ShowSummaryOnSuccess ?? $false
+                    env                  = $settings.Linter.env ?? @{}
                 }
             }
             LogGroup "Final settings" {
