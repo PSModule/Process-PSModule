@@ -79,6 +79,9 @@ To use the workflow, create a new file in the `.github/workflows` directory of t
 name: Process-PSModule
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
   pull_request:
     branches:
       - main
@@ -96,10 +99,13 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
+  pages: write
+  id-token: write
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v2
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKEY: ${{ secrets.APIKEY }}
 
