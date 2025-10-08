@@ -137,7 +137,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEFAULT_WORKSPACE: ${{ inputs.WorkingDirectory }}
-          FILTER_REGEX_INCLUDE: ${{ inputs.WorkingDirectory }}/outputs/docs
+          FILTER_REGEX_INCLUDE: ${{ inputs.WorkingDirectory }}
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
           SAVE_SUPER_LINTER_SUMMARY: true
 
