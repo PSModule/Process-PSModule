@@ -1,6 +1,2 @@
 Linter:
-  # Skip: true
-  ShowSummaryOnSuccess: true
-Build:
-  Docs:
-    ShowSummaryOnSuccess: true
+  Skip: true
