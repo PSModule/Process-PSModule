@@ -3,6 +3,9 @@
         .SYNOPSIS
         Performs tests on a module.
 
+        .DESCRIPTION
+        Performs tests on a module. bug fix
+
         .EXAMPLE
         Test-PSModule -Name 'World'
 

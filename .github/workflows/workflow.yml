@@ -134,7 +134,6 @@ jobs:
       - name: Lint code base
         id: super-linter
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
