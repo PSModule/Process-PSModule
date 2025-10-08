@@ -103,7 +103,6 @@ jobs:
       - name: Lint documentation
         id: super-linter
         uses: super-linter/super-linter/slim@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
-        continue-on-error: true
         env:
           FILTER_REGEX_INCLUDE: outputs/docs
           DEFAULT_BRANCH: main
