@@ -24,7 +24,8 @@ $ARGUMENTS
 
 ## Execution Steps
 
-0. Change directory to the repository root if not already there.
+0. If a folder is **explicitly attached to this chat** (“references”), you **must** change directory to the root of the git folder it is in. If there are no git folders you can change to the provided folder.
+
 1. **Detect repository mode**:
    - Run `git remote -v` to check configured remotes.
    - **If `upstream` remote exists**: Fork mode
@@ -133,9 +134,9 @@ $ARGUMENTS
    - Set PR to target the default branch (main/master) of the target repository
    - Open as a **draft PR** (or keep as draft if updating)
    - **Use GitHub MCP tools** to perform these operations in the **target repository**:
-     - Create PR (if not exists) - owner/repo should be target repository, use `mcp_github_github_create_pull_request`
-     - Update PR (if exists) - owner/repo should be target repository, use `mcp_github_github_update_pull_request`
-     - Add labels to PR - owner/repo should be target repository, use `mcp_github_github_add_labels_to_issue` (PRs are issues in GitHub API)
+     - Create PR (if not exists) - owner/repo should be target repository, use `create_pull_request`
+     - Update PR (if exists) - owner/repo should be target repository, use `update_pull_request`
+     - Add labels to PR - owner/repo should be target repository, use `update_issue` (PRs are issues in GitHub API)
 
 8. **Apply labels to the PR**:
    - Add the **change type label** based on the type specified (Major, Minor, Patch, Fix, or Docs)

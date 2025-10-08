@@ -249,6 +249,7 @@ The following settings are available in the settings file:
 | `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                     | `false`             |
 | `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                        | `false`             |
 | `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                                 | `false`             |
+| `Build.Docs.ShowSummaryOnSuccess`      | `Boolean` | Show super-linter summary on success for documentation linting                                           | `false`             |
 | `Build.Site.Skip`                      | `Boolean` | Skip site build                                                                                          | `false`             |
 | `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                   | `false`             |
 | `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old prerelease module versions                                                     | `true`              |
@@ -261,6 +262,7 @@ The following settings are available in the settings file:
 | `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                   | `'patch, fix'`      |
 | `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                             | `'NoRelease'`       |
 | `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                                  | `false`             |
+| `Linter.ShowSummaryOnSuccess`          | `Boolean` | Show super-linter summary on success for repository linting                                              | `false`             |
 | `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                     | `{}`                |
 
 <details>
@@ -275,6 +277,7 @@ Build:
     Skip: false
   Docs:
     Skip: false
+    ShowSummaryOnSuccess: false
   Site:
     Skip: false
 
@@ -332,6 +335,7 @@ Publish:
 
 Linter:
   Skip: false
+  ShowSummaryOnSuccess: false
   env: {}
 
 ```
@@ -418,6 +422,17 @@ Linter:
     FILTER_REGEX_EXCLUDE: '.*test.*'
     VALIDATE_ALL_CODEBASE: false
 ```
+
+#### Showing Linter Summary on Success
+
+By default, the linter only shows a summary when it finds issues. You can enable summary display on successful runs:
+
+```yaml
+Linter:
+  ShowSummaryOnSuccess: true
+```
+
+This is useful for reviewing what was checked even when no issues are found.
 
 **Note:** The `GITHUB_TOKEN` is automatically provided by the workflow to enable status updates in pull requests.
 

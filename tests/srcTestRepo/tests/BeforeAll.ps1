@@ -1,5 +1,5 @@
-Write-Host "=== BEFOREALL SETUP SCRIPT EXECUTING ==="
-Write-Host "Setting up test environment..."
+Write-Warning "=== BEFOREALL SETUP SCRIPT EXECUTING ==="
+Write-Warning "Setting up test environment..."
 
 # Example setup tasks:
 # - Deploy test infrastructure
@@ -8,5 +8,5 @@ Write-Host "Setting up test environment..."
 # - Set up test databases
 # - Configure test services
 
-Write-Host "Test environment setup completed successfully!"
-Write-Host "=== BEFOREALL SETUP SCRIPT COMPLETED ==="
+Write-Warning "Test environment setup completed successfully!"
+Write-Warning "=== BEFOREALL SETUP SCRIPT COMPLETED ==="

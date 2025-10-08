@@ -132,9 +132,27 @@ jobs:
           }
 
       - name: Lint code base
+        id: super-linter
         uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_WORKSPACE: ${{ inputs.WorkingDirectory }}
+          FILTER_REGEX_INCLUDE: ${{ inputs.WorkingDirectory }}
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
+          SAVE_SUPER_LINTER_SUMMARY: true
+
+      - name: Post super-linter summary
+        if: failure() || fromJson(needs.Get-Settings.outputs.Settings).Linter.ShowSummaryOnSuccess == true
+        shell: pwsh
+        run: |
+          $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
+          Get-Content $summaryPath | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+          $failed = '${{ steps.super-linter.outcome }}' -eq 'failure'
+          if ($failed) {
+              Write-Host "::error::Super-linter found issues. Please review the summary above."
+              exit 1
+          }
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
@@ -168,6 +186,7 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      ShowSummaryOnSuccess: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.ShowSummaryOnSuccess }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds site for preview

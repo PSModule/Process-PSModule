@@ -32,6 +32,11 @@ on:
         description: The working directory where the script will run from.
         required: false
         default: '.'
+      ShowSummaryOnSuccess:
+        type: boolean
+        description: Whether to show the super-linter summary on success.
+        required: false
+        default: false
 
 permissions:
   contents: read # to checkout the repo
@@ -96,14 +101,15 @@ jobs:
             }
 
       - name: Lint documentation
+        id: super-linter
         uses: super-linter/super-linter/slim@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
-          FILTER_REGEX_INCLUDE: outputs/docs
+          RUN_LOCAL: true
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ inputs.WorkingDirectory }}
+          FILTER_REGEX_INCLUDE: ${{ inputs.WorkingDirectory }}/outputs/docs
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
-          RUN_LOCAL: true
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
@@ -113,3 +119,18 @@ jobs:
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
+          SAVE_SUPER_LINTER_SUMMARY: true
+
+      - name: Post super-linter summary
+        if: failure() || inputs.ShowSummaryOnSuccess == true
+        shell: pwsh
+        run: |
+          $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
+          Get-Content $summaryPath | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+          $failed = '${{ steps.super-linter.outcome }}' -eq 'failure'
+          if ($failed) {
+              Write-Host "::error::Super-linter found issues. Please review the summary above."
+              exit 1
+          }

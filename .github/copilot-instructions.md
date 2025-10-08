@@ -1,3 +1,5 @@
+# GitHub Copilot Instructions for Process-PSModule
+
 ## Terminal Commands
 
 When executing terminal commands (using `run_in_terminal` or similar tools):

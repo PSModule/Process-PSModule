@@ -1,8 +1,8 @@
-Write-Host "=== BEFOREALL SETUP SCRIPT EXECUTING ==="
-Write-Host "Setting up test environment..."
+Write-Warning "=== BEFOREALL SETUP SCRIPT EXECUTING ==="
+Write-Warning "Setting up test environment..."
 
 # Example setup tasks for test environment:
-Write-Host "Initializing test environment..."
+Write-Warning "Initializing test environment..."
 
-Write-Host "Test environment setup completed successfully!"
-Write-Host "=== BEFOREALL SETUP SCRIPT COMPLETED ==="
+Write-Warning "Test environment setup completed successfully!"
+Write-Warning "=== BEFOREALL SETUP SCRIPT COMPLETED ==="
