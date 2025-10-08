@@ -61,7 +61,7 @@ on:
         type: string
         description: The path to the root of the repo.
         required: false
-        default: '.'
+        default: ${{ github.workspace }}
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
