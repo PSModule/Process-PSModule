@@ -56,7 +56,7 @@ jobs:
           fetch-depth: 0
 
       - name: Lint-SourceCode
-        uses: PSModule/Invoke-ScriptAnalyzer@v4
+        uses: PSModule/Invoke-ScriptAnalyzer@debugPath #v4
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
