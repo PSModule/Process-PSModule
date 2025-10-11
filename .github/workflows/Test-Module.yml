@@ -114,7 +114,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Lint-Module
-        uses: PSModule/Invoke-ScriptAnalyzer@v3
+        uses: PSModule/Invoke-ScriptAnalyzer@v4
         with:
           Path: outputs/module
           Debug: ${{ inputs.Debug }}
@@ -122,6 +122,5 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Settings: Module
           TestResult_Enabled: true
           TestResult_TestSuiteName: PSModuleLint-Module-${{ runner.os }}

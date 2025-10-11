@@ -56,14 +56,13 @@ jobs:
           fetch-depth: 0
 
       - name: Lint-SourceCode
-        uses: PSModule/Invoke-ScriptAnalyzer@v3
+        uses: PSModule/Invoke-ScriptAnalyzer@v4
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           Path: src
-          Settings: SourceCode
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
           TestResult_Enabled: true
           TestResult_TestSuiteName: PSModuleLint-SourceCode-${{ runner.os }}
