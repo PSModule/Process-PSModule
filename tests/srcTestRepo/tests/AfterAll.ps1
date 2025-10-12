@@ -1,4 +1,4 @@
-Write-Warning "=== AFTERALL TEARDOWN SCRIPT EXECUTING ==="
+﻿Write-Warning "=== AFTERALL TEARDOWN SCRIPT EXECUTING ==="
 Write-Warning "Tearing down test environment..."
 
 # Example teardown tasks:
