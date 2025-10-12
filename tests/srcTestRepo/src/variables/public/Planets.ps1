@@ -1,4 +1,4 @@
-$script:Planets = @(
+﻿$script:Planets = @(
     @{
         Name      = 'Mercury'
         Mass      = 0.330

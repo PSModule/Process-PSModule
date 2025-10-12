@@ -1,4 +1,4 @@
-Write-Warning "=== BEFOREALL SETUP SCRIPT EXECUTING ==="
+﻿Write-Warning "=== BEFOREALL SETUP SCRIPT EXECUTING ==="
 Write-Warning "Setting up test environment..."
 
 # Example setup tasks:
