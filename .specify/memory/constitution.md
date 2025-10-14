@@ -458,11 +458,23 @@ Pull requests MUST use labels to determine release behavior:
 
 ### Workflow Conditional Execution
 
-The Process-PSModule workflow uses **dynamic conditions** to determine job execution:
+The Process-PSModule workflow uses **dynamic conditions** to determine job execution, controlled by the **Get-Settings** phase.
+
+#### Get-Settings Phase: Workflow Orchestration
+
+The **Get-Settings** phase serves as the orchestration layer that:
+
+- **Collects Configuration**: Loads settings from `.github/PSModule.yml` (or JSON/PSD1)
+- **Analyzes Context**: Examines GitHub event type, PR state, labels, and repository structure
+- **Makes Smart Decisions**: Determines which workflow jobs should execute based on collected data
+- **Prepares Test Matrices**: Generates dynamic test suite configurations for parallel execution
+- **Optimizes Execution**: Skips unnecessary jobs to reduce CI/CD runtime and resource usage
+
+The Get-Settings phase embodies the principle of **context-aware workflow execution**, ensuring that each workflow run performs only the necessary tasks based on the current state and configuration.
 
 #### Always Execute (All PR States)
 
-- **Get-Settings** - Configuration loading
+- **Get-Settings** - Configuration loading and workflow orchestration
 - **Build-Module** - Module compilation
 - **Build-Docs** - Documentation generation
 - **Build-Site** - Static site generation
@@ -667,7 +679,12 @@ jobs:
 ### Workflow Execution Order
 
 The standard execution order for Process-PSModule workflows MUST be:
-1. **Get-Settings** - Reads configuration and prepares test matrices
+1. **Gather** - Reads configuration, analyzes context, and prepares workflow execution plan
+   - Loads settings from `.github/PSModule.yml` (or JSON/PSD1)
+   - Examines GitHub event type, PR state, and labels
+   - Generates dynamic test matrices for parallel execution
+   - Determines which jobs should execute based on configuration and context
+   - Provides intelligent deployment orchestration for CI/CD workflows
 2. **Build-Module** - Compiles source into module
 3. **Test-SourceCode** - Parallel matrix testing of source code standards
 4. **Lint-SourceCode** - Parallel matrix linting of source code

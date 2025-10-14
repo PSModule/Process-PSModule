@@ -24,10 +24,14 @@ Depending on the labels in the pull requests, the workflow will result in differ
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get settings](./.github/workflows/Get-Settings.yml)
-  - Reads the settings file from a file in the module repository to configure the workflow.
-  - Gathers tests and creates test configuration based on the settings and the tests available in the module repository.
-  - This includes the selection of what OSes to run the tests on.
+- [Get-Settings](./.github/workflows/Get-Settings.yml)
+  - **Workflow orchestration phase** that analyzes context and makes smart execution decisions
+  - **Collects Configuration**: Reads the settings file from `.github/PSModule.yml` (or JSON/PSD1) to configure the workflow
+  - **Analyzes Context**: Examines GitHub event type, PR state, labels, and repository structure
+  - **Makes Smart Decisions**: Determines which workflow jobs should execute based on collected data
+  - **Prepares Test Matrices**: Generates dynamic test suite configurations for parallel execution across OSes
+  - **Optimizes Execution**: Skips unnecessary jobs to reduce CI/CD runtime and resource usage
+  - This phase embodies context-aware workflow execution, ensuring each run performs only necessary tasks
 - [Build module](./.github/workflows/Build-Module.yml)
   - Compiles the module source code into a PowerShell module.
 - [Test source code](./.github/workflows/Test-SourceCode.yml)
@@ -67,6 +71,44 @@ Depending on the labels in the pull requests, the workflow will result in differ
 - [Publish module](./.github/workflows/Publish-Module.yml)
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
+
+## Gather Phase: Workflow Orchestration
+
+The **Gather** phase is the cornerstone of Process-PSModule's workflow execution, providing context-aware orchestration for CI/CD pipelines.
+
+### Philosophy
+
+The Gather phase embodies the principle of **deployment orchestration**:
+
+- **Discovers the Environment**: Analyzes the GitHub context (event type, PR state, labels, branch)
+- **Loads Configuration**: Reads settings from `.github/PSModule.yml` (or JSON/PSD1 format)
+- **Makes Context-Aware Decisions**: Determines which jobs should execute based on collected data
+- **Optimizes Resource Usage**: Skips unnecessary steps to reduce CI/CD runtime and costs
+- **Prepares Execution Plan**: Generates dynamic test matrices for parallel execution across platforms
+
+### What Gather Does
+
+1. **Configuration Loading**: Imports settings with fallback to defaults
+2. **Context Analysis**: Examines whether the workflow is running on:
+   - Open/Updated PR (build and test for validation)
+   - Merged PR (publish release and deploy site)
+   - Abandoned PR (cleanup only)
+   - Manual/Scheduled run (validation only)
+3. **Test Matrix Generation**: Creates OS-specific test configurations based on:
+   - Available test files in the repository
+   - Skip flags in settings
+   - Test type requirements (SourceCode, PSModule, Module)
+4. **Decision Output**: Produces structured outputs that control downstream job execution
+
+### Key Benefits
+
+- **Consistency**: Same logic across all consuming repositories
+- **Efficiency**: Only runs necessary jobs for each scenario
+- **Flexibility**: Easy to customize via settings file
+- **Transparency**: Clear decision-making visible in workflow logs
+- **Maintainability**: Centralized orchestration logic
+
+This approach ensures that each workflow run is optimized for its specific context, reducing unnecessary work while maintaining comprehensive validation when needed.
 
 ## Usage
 
@@ -202,7 +244,7 @@ This table shows when each job runs based on the trigger scenario:
 
 | Job | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
 |-----|-----------------|-----------|--------------|------------|
-| **Get-Settings** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
+| **Gather** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
 | **Lint-Repository** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Build-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
 | **Build-Docs** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
