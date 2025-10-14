@@ -3,7 +3,7 @@
 An opinionated, end-to-end GitHub Actions workflow that builds, tests, documents, and publishes PowerShell modules with
 minimal setup.
 
-## Quickstart
+## Getting started
 
 1. [Create a repository from Template-PSModule](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule).
 2. Enable GitHub Pages with deployment source set to `GitHub Actions`.
