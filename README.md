@@ -24,9 +24,9 @@ Depending on the labels in the pull requests, the workflow will result in differ
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get-Settings](./.github/workflows/Get-Settings.yml)
+- [Get Settings](./.github/workflows/Get-Settings.yml)
   - **Workflow orchestration phase** that analyzes context and makes smart execution decisions
-  - **Collects Configuration**: Reads the settings file from `.github/PSModule.yml` (or JSON/PSD1) to configure the workflow
+  - **Collects Configuration**: Reads the settings file from `.github/PSModule.yml` to configure the workflow
   - **Analyzes Context**: Examines GitHub event type, PR state, labels, and repository structure
   - **Makes Smart Decisions**: Determines which workflow jobs should execute based on collected data
   - **Prepares Test Matrices**: Generates dynamic test suite configurations for parallel execution across OSes
@@ -72,41 +72,23 @@ Depending on the labels in the pull requests, the workflow will result in differ
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
 
-## Gather Phase: Workflow Orchestration
+## Workflow Orchestration
 
-The **Gather** phase is the cornerstone of Process-PSModule's workflow execution, providing context-aware orchestration for CI/CD pipelines.
-
-### Philosophy
-
-The Gather phase embodies the principle of **deployment orchestration**:
+The **Get-Settings** phase is the cornerstone of Process-PSModule's workflow execution, providing context-aware orchestration for CI/CD pipelines.
 
 - **Discovers the Environment**: Analyzes the GitHub context (event type, PR state, labels, branch)
-- **Loads Configuration**: Reads settings from `.github/PSModule.yml` (or JSON/PSD1 format)
-- **Makes Context-Aware Decisions**: Determines which jobs should execute based on collected data
+- **Loads Configuration**: Reads settings from `.github/PSModule.yml` with fallback to defaults
+- **Context Analysis**: Examines whether the workflow is running on:
+  - Open/Updated PR (build and test for validation)
+  - Merged PR (publish release and deploy site)
+  - Abandoned PR (cleanup only)
+  - Manual/Scheduled run (validation only)
+- **Test Matrix Generation**: Creates OS-specific test configurations based on:
+  - Available test files in the repository
+  - Skip flags in settings
+  - Test type requirements (SourceCode, PSModule, Module)
 - **Optimizes Resource Usage**: Skips unnecessary steps to reduce CI/CD runtime and costs
-- **Prepares Execution Plan**: Generates dynamic test matrices for parallel execution across platforms
-
-### What Gather Does
-
-1. **Configuration Loading**: Imports settings with fallback to defaults
-2. **Context Analysis**: Examines whether the workflow is running on:
-   - Open/Updated PR (build and test for validation)
-   - Merged PR (publish release and deploy site)
-   - Abandoned PR (cleanup only)
-   - Manual/Scheduled run (validation only)
-3. **Test Matrix Generation**: Creates OS-specific test configurations based on:
-   - Available test files in the repository
-   - Skip flags in settings
-   - Test type requirements (SourceCode, PSModule, Module)
-4. **Decision Output**: Produces structured outputs that control downstream job execution
-
-### Key Benefits
-
-- **Consistency**: Same logic across all consuming repositories
-- **Efficiency**: Only runs necessary jobs for each scenario
-- **Flexibility**: Easy to customize via settings file
-- **Transparency**: Clear decision-making visible in workflow logs
-- **Maintainability**: Centralized orchestration logic
+- **Decision and settings output**: Produces structured outputs that control downstream job execution
 
 This approach ensures that each workflow run is optimized for its specific context, reducing unnecessary work while maintaining comprehensive validation when needed.
 
