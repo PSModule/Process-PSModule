@@ -1,232 +1,66 @@
 # Process-PSModule
 
-A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell
-Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
+Process-PSModule provides an opinionated, end-to-end GitHub Actions workflow that builds, tests, documents, and publishes PowerShell modules with minimal setup. It is the production workflow used across the PSModule organization and is designed for repositories created from the [Template-PSModule](https://github.com/PSModule/Template-PSModule) starter.
 
-## How to get started
+## Why Process-PSModule
 
-1. [Create a repository from the Template-Module](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
-1. Configure the repository:
-   1. Enable GitHub Pages in the repository settings. Set it to deploy from `GitHub Actions`.
-   1. This will create an environment called `github-pages` that GitHub deploys your site to.
-      <details><summary>Within the environment, remove the branch protection for <code>main</code>.</summary>
-      <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
-      </details>
-   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it enough permission to manage the module you are working on.
-   1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
-1. Create a branch, make your changes, create a PR and let the workflow run.
+- Streamlines CI/CD: a single workflow orchestrates build, validation, documentation, and release.
+- Context aware: adapts execution automatically based on pull request state, labels, and settings.
+- Quality focused: enforces testing, coverage, linting, and publishing gates.
+- Configurable: behavior is shaped through `.github/PSModule` settings without editing workflow YAML.
+- Opinionated by design: keeps module structure, tooling, and release automation consistent across repos.
 
-## How it works
+## End-to-end flow
 
-The workflow is designed to be triggered on pull requests to the repository's default branch.
-When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
-Depending on the labels in the pull requests, the workflow will result in different outcomes.
+The workflow monitors pull requests to the default branch as well as manual and scheduled runs. It reacts to open, synchronize, reopen, label, and close events, then decides which jobs to run based on repository configuration and labels.
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get Settings](./.github/workflows/Get-Settings.yml)
-  - **Workflow orchestration phase** that analyzes context and makes smart execution decisions
-  - **Collects Configuration**: Reads the settings file from `.github/PSModule.yml` to configure the workflow
-  - **Analyzes Context**: Examines GitHub event type, PR state, labels, and repository structure
-  - **Makes Smart Decisions**: Determines which workflow jobs should execute based on collected data
-  - **Prepares Test Matrices**: Generates dynamic test suite configurations for parallel execution across OSes
-  - **Optimizes Execution**: Skips unnecessary jobs to reduce CI/CD runtime and resource usage
-  - This phase embodies context-aware workflow execution, ensuring each run performs only necessary tasks
-- [Build module](./.github/workflows/Build-Module.yml)
-  - Compiles the module source code into a PowerShell module.
-- [Test source code](./.github/workflows/Test-SourceCode.yml)
-  - Tests the source code in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
-  - This produces a json based report that is used to later evaluate the results of the tests.
-- [Lint source code](./.github/workflows/Lint-SourceCode.yml)
-  - Lints the source code in parallel (matrix) using:
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
-  - This produces a json based report that is used to later evaluate the results of the linter.
-- [Framework test](./.github/workflows/Test-Module.yml)
-  - Tests and lints the module in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
-  - This produces a json based report that is used to later evaluate the results of the tests.
-- [Test module](./.github/workflows/Test-ModuleLocal.yml)
-  - Import and tests the module in parallel (matrix) using Pester tests from the module repository.
-  - Supports setup and teardown scripts executed via separate dedicated jobs:
-    - `BeforeAll`: Runs once before all test matrix jobs to set up test environment (e.g., deploy infrastructure, download test data)
-    - `AfterAll`: Runs once after all test matrix jobs complete to clean up test environment (e.g., remove test resources, cleanup databases)
-  - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as tests
-  - This produces a json based report that is used to later evaluate the results of the tests.
-- [Get test results](./.github/workflows/Get-TestResults.yml)
-  - Gathers the test results from the previous steps and creates a summary of the results.
-  - If any tests have failed, the workflow will fail here.
-- [Get code coverage](./.github/workflows/Get-CodeCoverage.yml)
-  - Gathers the code coverage from the previous steps and creates a summary of the results.
-  - If the code coverage is below the target, the workflow will fail here.
-- [Build docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation and lints the documentation using:
-    - [super-linter](https://github.com/super-linter/super-linter).
-- [Build site](./.github/workflows/Build-Site.yml)
-  - Generates a static site using:
-    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
-- [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentation to GitHub Pages.
-- [Publish module](./.github/workflows/Publish-Module.yml)
-  - Publishes the module to the PowerShell Gallery.
-  - Creates a release on the GitHub repository.
+### Phase 1: Discover and plan
 
-## Workflow Orchestration
+- **Get Settings** (`./.github/workflows/Get-Settings.yml`)
+  - Reads configuration from `.github/PSModule.yml` (YAML, JSON, or PSD1 supported).
+  - Evaluates GitHub context (event type, branch, labels, repo structure).
+  - Builds dynamic matrices for OS-specific testing and determines which jobs are required.
+  - Outputs a single source of truth for later jobs so they only run when needed.
 
-The **Get-Settings** phase is the cornerstone of Process-PSModule's workflow execution, providing context-aware orchestration for CI/CD pipelines.
+### Phase 2: Build module and docs
 
-- **Discovers the Environment**: Analyzes the GitHub context (event type, PR state, labels, branch)
-- **Loads Configuration**: Reads settings from `.github/PSModule.yml` with fallback to defaults
-- **Context Analysis**: Examines whether the workflow is running on:
-  - Open/Updated PR (build and test for validation)
-  - Merged PR (publish release and deploy site)
-  - Abandoned PR (cleanup only)
-  - Manual/Scheduled run (validation only)
-- **Test Matrix Generation**: Creates OS-specific test configurations based on:
-  - Available test files in the repository
-  - Skip flags in settings
-  - Test type requirements (SourceCode, PSModule, Module)
-- **Optimizes Resource Usage**: Skips unnecessary steps to reduce CI/CD runtime and costs
-- **Decision and settings output**: Produces structured outputs that control downstream job execution
+- **Build Module** (`./.github/workflows/Build-Module.yml`)
+  - Compiles `src/` into a distributable module using the Build-PSModule action.
+- **Build Docs** (`./.github/workflows/Build-Docs.yml`)
+  - Generates and lints documentation with [super-linter](https://github.com/super-linter/super-linter).
+- **Build Site** (`./.github/workflows/Build-Site.yml`)
+  - Creates the MkDocs site via [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
-This approach ensures that each workflow run is optimized for its specific context, reducing unnecessary work while maintaining comprehensive validation when needed.
+### Phase 3: Validate quality
 
-## Usage
+- **Test Source Code** (`./.github/workflows/Test-SourceCode.yml`)
+  - Runs style and static tests defined by [Test-PSModule](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests).
+- **Lint Source Code** (`./.github/workflows/Lint-SourceCode.yml`)
+  - Executes [PSScriptAnalyzer](https://github.com/PSModule/Invoke-ScriptAnalyzer) rules in parallel matrices.
+- **Test Module (Framework)** (`./.github/workflows/Test-Module.yml`)
+  - Validates the module using framework tests plus PSScriptAnalyzer coverage.
+- **Test Module Local** (`./.github/workflows/Test-ModuleLocal.yml`)
+  - Imports the compiled module and runs repository Pester tests across Linux, macOS, and Windows.
+  - Supports optional `BeforeAll.ps1` and `AfterAll.ps1` jobs for shared setup and teardown.
+- **Get Test Results** (`./.github/workflows/Get-TestResults.yml`)
+  - Aggregates JSON test reports and fails fast when issues remain.
+- **Get Code Coverage** (`./.github/workflows/Get-CodeCoverage.yml`)
+  - Summarizes coverage and stops the workflow when configured targets are missed.
 
-To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
+### Phase 4: Publish and close out
 
-<details>
-<summary>Workflow suggestion</summary>
+- **Publish Site** (`./.github/workflows/Publish-Site.yml`)
+  - Deploys the generated documentation site to GitHub Pages.
+- **Publish Module** (`./.github/workflows/Publish-Module.yml`)
+  - Publishes to the PowerShell Gallery and creates the GitHub release when gates pass.
 
-```yaml
-name: Process-PSModule
+### Scenario matrix
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
-      - opened
-      - reopened
-      - synchronize
-      - labeled
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
-  pages: write
-  id-token: write
-
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
-    secrets:
-      APIKEY: ${{ secrets.APIKEY }}
-
-```
-</details>
-
-### Inputs
-
-| Name | Type | Description | Required | Default |
-| ---- | ---- | ----------- | -------- | ------- |
-| `Name` | `string` | The name of the module to process. This defaults to the repository name if nothing is specified. | `false` | N/A |
-| `SettingsPath` | `string` | The path to the settings file. Settings in the settings file take precedence over the action inputs. | `false` | `.github/PSModule.yml` |
-| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
-| `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
-| `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
-| `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
-| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
-
-### Setup and Teardown Scripts
-
-The workflow supports automatic execution of setup and teardown scripts for module tests:
-
-- Scripts are automatically detected and executed if present
-- If no scripts are found, the workflow continues normally
-
-#### Setup - `BeforeAll.ps1`
-
-- Place in your test directories (`tests/BeforeAll.ps1`)
-- Runs once before all test matrix jobs to prepare the test environment
-- Deploy test infrastructure, download test data, initialize databases, or configure services
-- Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
-
-##### Example - `BeforeAll.ps1`
-
-```powershell
-Write-Host "Setting up test environment..."
-# Deploy test infrastructure
-# Download test data
-# Initialize test databases
-Write-Host "Test environment ready!"
-```
-
-#### Teardown - `AfterAll.ps1`
-
-- Place in your test directories (`tests/AfterAll.ps1`)
-- Runs once after all test matrix jobs complete to clean up the test environment
-- Remove test resources, clean up databases, stop services, or upload artifacts
-- Has access to the same environment variables as your tests
-
-##### Example - `AfterAll.ps1`
-
-```powershell
-Write-Host "Cleaning up test environment..."
-# Remove test resources
-# Cleanup databases
-# Stop services
-Write-Host "Cleanup completed!"
-```
-
-### Secrets
-
-The following secrets are used by the workflow. They can be automatically provided (if available) by setting the `secrets: inherit`
-in the workflow file.
-
-| Name | Location | Description | Default |
-| ---- | -------- | ----------- | ------- |
-| `APIKEY` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
-| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests. | N/A |
-| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests. | N/A |
-| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests. | N/A |
-| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests. | N/A |
-| `TEST_USER_ORG_FG_PAT` | GitHub secrets | The fine-grained personal access token with org access for running tests. | N/A |
-| `TEST_USER_USER_FG_PAT` | GitHub secrets | The fine-grained personal access token with user account access for running tests. | N/A |
-| `TEST_USER_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
-
-### Permissions
-
-The following permissions are needed for the workflow to be able to perform all tasks.
-
-```yaml
-permissions:
-  contents: write      # to checkout the repo and create releases on the repo
-  pull-requests: write # to write comments to PRs
-  statuses: write      # to update the status of the workflow from linter
-  pages: write         # to deploy to Pages
-  id-token: write      # to verify the Pages deployment originates from an appropriate source
-```
-
-For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
-
-### Scenario Matrix
-
-This table shows when each job runs based on the trigger scenario:
-
-| Job | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
+| Job | Open/updated PR | Merged PR | Abandoned PR | Manual run |
 |-----|-----------------|-----------|--------------|------------|
-| **Gather** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
+| **Gather (Get-Settings)** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
 | **Lint-Repository** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Build-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
 | **Build-Docs** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
@@ -242,63 +76,121 @@ This table shows when each job runs based on the trigger scenario:
 | **Publish-Site** | ❌ No | ✅ Yes | ❌ No | ❌ No |
 | **Publish-Module** | ✅ Yes** | ✅ Yes** | ✅ Yes*** | ✅ Yes** |
 
-\* Runs for cleanup if tests were started
-\*\* Only when all tests/coverage/build succeed
-\*\*\* Publishes cleanup/retraction version
+\* Runs for cleanup if tests were started.
 
-## Configuration
+\*\* Only when build, test, and coverage gates succeed.
 
-The workflow is configured using a settings file in the module repository.
-The file can be a `JSON`, `YAML`, or `PSD1` file. By default, it will look for `.github/PSModule.yml`.
+\*\*\* Publishes a cleanup or retraction version when required.
 
-The following settings are available in the settings file:
+## Repository setup
 
-| Name                                   | Type      | Description                                                                                              | Default             |
-|----------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|---------------------|
-| `Name`                                 | `String`  | Name of the module to publish. Defaults to repository name.                                              | `null`              |
-| `Test.Skip`                            | `Boolean` | Skip all tests                                                                                           | `false`             |
-| `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                                                                                      | `false`             |
-| `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                                                                                      | `false`             |
-| `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                                                                                    | `false`             |
-| `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                                                                                   | `false`             |
-| `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux                                                                          | `false`             |
-| `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS                                                                          | `false`             |
-| `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows                                                                        | `false`             |
-| `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests                                                                            | `false`             |
-| `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux                                                                   | `false`             |
-| `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS                                                                   | `false`             |
-| `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows                                                                 | `false`             |
-| `Test.Module.Skip`                     | `Boolean` | Skip module tests                                                                                        | `false`             |
-| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                                                                               | `false`             |
-| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                                                                               | `false`             |
-| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                                                                             | `false`             |
-| `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                                                                              | `false`             |
-| `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                                                                                 | `false`             |
-| `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage                                                                          | `0`                 |
-| `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports                                                              | `'Missed, Files'`   |
-| `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                     | `false`             |
-| `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                        | `false`             |
-| `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                                 | `false`             |
-| `Build.Docs.ShowSummaryOnSuccess`      | `Boolean` | Show super-linter summary on success for documentation linting                                           | `false`             |
-| `Build.Site.Skip`                      | `Boolean` | Skip site build                                                                                          | `false`             |
-| `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                   | `false`             |
-| `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old prerelease module versions                                                     | `true`              |
-| `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                       | `true`              |
-| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning                                                                    | `true`              |
-| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease ([.NET DateTime](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
-| `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                                                                                  | `'v'`               |
-| `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump                                                                   | `'major, breaking'` |
-| `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                   | `'minor, feature'`  |
-| `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                   | `'patch, fix'`      |
-| `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                             | `'NoRelease'`       |
-| `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                                  | `false`             |
-| `Linter.ShowSummaryOnSuccess`          | `Boolean` | Show super-linter summary on success for repository linting                                              | `false`             |
-| `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                     | `{}`                |
+1. [Create a repository from the template](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
+1. Enable GitHub Pages for the repo, set deployment source to `GitHub Actions`, and remove the default `main` branch protection inside the `github-pages` environment.
+1. [Create a PowerShell Gallery API key](https://www.powershellgallery.com/account/apikeys) with rights to publish your module.
+1. Add a repository secret named `APIKEY` containing the gallery key.
+1. Develop on a feature branch, open a pull request, and allow Process-PSModule to validate the changes.
+
+## Module structure requirements
+
+Process-PSModule expects repositories to follow the staged layout produced by Template-PSModule.
+
+```plaintext
+<ModuleName>/
+├── .github/
+│   ├── workflows/Process-PSModule.yml
+│   ├── PSModule.yml
+│   └── ...
+├── src/
+│   ├── functions/
+│   │   ├── public/
+│   │   └── private/
+│   ├── classes/
+│   ├── data/
+│   ├── init/
+│   ├── modules/
+│   ├── scripts/
+│   ├── variables/
+│   ├── manifest.psd1 (optional)
+│   ├── header.ps1
+│   └── finally.ps1
+├── tests/
+│   ├── <ModuleName>.Tests.ps1
+│   ├── BeforeAll.ps1 (optional)
+│   └── AfterAll.ps1 (optional)
+└── ...
+```
+
+Key expectations:
+
+- Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/`.
+- Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
+- The build step compiles `src/` into a root module file and prunes the original structure from the output artifact.
+
+### Build execution flow
+
+The Build-PSModule action powers the build job and runs the following pipeline:
+
+1. Execute optional custom scripts that match `*build.ps1` (alphabetical order).
+1. Copy the contents of `src/` to the staging folder, skipping any existing root module.
+1. Generate or update the module manifest (`<ModuleName>.psd1`) using repository metadata.
+1. Emit a new root module (`<ModuleName>.psm1`) by compiling source folders in a defined order.
+1. Refresh manifest aliases based on the compiled module.
+1. Upload the build artifact for downstream jobs.
+
+Constraints to keep in mind: the build always targets PowerShell 7.4+, processes files alphabetically, and rewrites the root module in UTF-8 with BOM encoding.
+
+## Workflow configuration file
+
+Behavior is controlled through `.github/PSModule.yml` (or `.json`/`.psd1`). Settings cascade into the Get-Settings job, which then toggles downstream jobs and matrices.
+
+### Settings catalog
+
+| Name | Type | Description | Default |
+|------|------|-------------|---------|
+| `Name` | `String` | Overrides the module name (otherwise the repo name is used). | `null` |
+| `Test.Skip` | `Boolean` | Bypass every test job. | `false` |
+| `Test.Linux.Skip` | `Boolean` | Skip all Linux matrix runs. | `false` |
+| `Test.MacOS.Skip` | `Boolean` | Skip all macOS matrix runs. | `false` |
+| `Test.Windows.Skip` | `Boolean` | Skip all Windows matrix runs. | `false` |
+| `Test.SourceCode.Skip` | `Boolean` | Skip source code tests. | `false` |
+| `Test.SourceCode.Linux.Skip` | `Boolean` | Skip source code tests on Linux. | `false` |
+| `Test.SourceCode.MacOS.Skip` | `Boolean` | Skip source code tests on macOS. | `false` |
+| `Test.SourceCode.Windows.Skip` | `Boolean` | Skip source code tests on Windows. | `false` |
+| `Test.PSModule.Skip` | `Boolean` | Skip framework-level module tests. | `false` |
+| `Test.PSModule.Linux.Skip` | `Boolean` | Skip framework tests on Linux. | `false` |
+| `Test.PSModule.MacOS.Skip` | `Boolean` | Skip framework tests on macOS. | `false` |
+| `Test.PSModule.Windows.Skip` | `Boolean` | Skip framework tests on Windows. | `false` |
+| `Test.Module.Skip` | `Boolean` | Skip repository module tests. | `false` |
+| `Test.Module.Linux.Skip` | `Boolean` | Skip module tests on Linux. | `false` |
+| `Test.Module.MacOS.Skip` | `Boolean` | Skip module tests on macOS. | `false` |
+| `Test.Module.Windows.Skip` | `Boolean` | Skip module tests on Windows. | `false` |
+| `Test.TestResults.Skip` | `Boolean` | Skip the consolidated results job. | `false` |
+| `Test.CodeCoverage.Skip` | `Boolean` | Skip code coverage calculation. | `false` |
+| `Test.CodeCoverage.PercentTarget` | `Integer` | Required coverage percentage before publishing. | `0` |
+| `Test.CodeCoverage.StepSummaryMode` | `String` | Display mode for coverage summaries. | `Missed, Files` |
+| `Build.Skip` | `Boolean` | Disable every build job. | `false` |
+| `Build.Module.Skip` | `Boolean` | Skip module compilation. | `false` |
+| `Build.Docs.Skip` | `Boolean` | Skip documentation linting. | `false` |
+| `Build.Docs.ShowSummaryOnSuccess` | `Boolean` | Show super-linter summary even when linting succeeds. | `false` |
+| `Build.Site.Skip` | `Boolean` | Skip site generation. | `false` |
+| `Publish.Module.Skip` | `Boolean` | Skip module publishing. | `false` |
+| `Publish.Module.AutoCleanup` | `Boolean` | Remove stale prerelease versions automatically. | `true` |
+| `Publish.Module.AutoPatching` | `Boolean` | Auto-increment patch versions during release. | `true` |
+| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease tagging. | `true` |
+| `Publish.Module.DatePrereleaseFormat` | `String` | Date format for prerelease tags (uses .NET format strings). | `''` |
+| `Publish.Module.VersionPrefix` | `String` | Prefix prepended to release tags. | `v` |
+| `Publish.Module.MajorLabels` | `String` | Labels that trigger a major release. | `major, breaking` |
+| `Publish.Module.MinorLabels` | `String` | Labels that trigger a minor release. | `minor, feature` |
+| `Publish.Module.PatchLabels` | `String` | Labels that trigger a patch release. | `patch, fix` |
+| `Publish.Module.IgnoreLabels` | `String` | Labels that skip releasing entirely. | `NoRelease` |
+| `Linter.Skip` | `Boolean` | Skip repository linting. | `false` |
+| `Linter.ShowSummaryOnSuccess` | `Boolean` | Show linter summary on success. | `false` |
+| `Linter.env` | `Object` | Key/value pairs forwarded to super-linter. | `{}` |
 
 <details>
-<summary>`PSModule.yml` with all defaults</summary>
+<summary>Default configuration (`PSModule.yml`)</summary>
 
-```yml
+```yaml
 Name: null
 
 Build:
@@ -367,13 +259,12 @@ Linter:
   Skip: false
   ShowSummaryOnSuccess: false
   env: {}
-
 ```
 </details>
 
-### Example 1 - Defaults with Code Coverage target
+### Configuration patterns
 
-This example runs all steps and will require that code coverage is 80% before passing.
+**Enforce coverage targets**
 
 ```yaml
 Test:
@@ -381,9 +272,7 @@ Test:
     PercentTarget: 80
 ```
 
-### Example 2 - Rapid testing
-
-This example ends up running Get-Settings, Build-Module and Test-Module (tests from the module repo) on ubuntu-latest.
+**Fast local validation (Linux only)**
 
 ```yaml
 Test:
@@ -405,75 +294,132 @@ Build:
     Skip: true
 ```
 
-### Example 3 - Configuring the Repository Linter
-
-The workflow uses [super-linter](https://github.com/super-linter/super-linter) to lint your repository code.
-The linter runs on pull requests and provides status updates directly in the PR.
-
-#### Disabling the Linter
-
-You can skip repository linting entirely:
-
-```yaml
-Linter:
-  Skip: true
-```
-
-#### Configuring Linter Validation Rules
-
-The workflow supports all environment variables that super-linter provides. You can configure these through the `Linter.env` object:
-
-```yaml
-Linter:
-  env:
-    # Disable specific validations
-    VALIDATE_BIOME_FORMAT: false
-    VALIDATE_BIOME_LINT: false
-    VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
-    VALIDATE_JSCPD: false
-    VALIDATE_JSON_PRETTIER: false
-    VALIDATE_MARKDOWN_PRETTIER: false
-    VALIDATE_YAML_PRETTIER: false
-
-    # Or enable only specific validations
-    VALIDATE_YAML: true
-    VALIDATE_JSON: true
-    VALIDATE_MARKDOWN: true
-```
-
-#### Additional Configuration
-
-Any super-linter environment variable can be set through the `Linter.env` object:
+**Tune repository linting**
 
 ```yaml
 Linter:
   env:
     LOG_LEVEL: DEBUG
-    FILTER_REGEX_EXCLUDE: '.*test.*'
-    VALIDATE_ALL_CODEBASE: false
+    VALIDATE_JSON: true
+    VALIDATE_YAML: true
+    VALIDATE_MARKDOWN: true
 ```
 
-#### Showing Linter Summary on Success
+## Workflow usage in consuming repos
 
-By default, the linter only shows a summary when it finds issues. You can enable summary display on successful runs:
+Place the following workflow in `.github/workflows/Process-PSModule.yml`:
+
+<details>
+<summary>Reusable workflow reference</summary>
 
 ```yaml
-Linter:
-  ShowSummaryOnSuccess: true
+name: Process-PSModule
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - closed
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+  pages: write
+  id-token: write
+
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    secrets:
+      APIKEY: ${{ secrets.APIKEY }}
+```
+</details>
+
+### Workflow inputs
+
+| Name | Type | Description | Required | Default |
+|------|------|-------------|----------|---------|
+| `Name` | `string` | Overrides the module name; defaults to repository name. | `false` | N/A |
+| `SettingsPath` | `string` | Path to the settings file. | `false` | `.github/PSModule.yml` |
+| `Version` | `string` | Exact version of the `GitHub` PowerShell module to install. | `false` | `''` |
+| `Prerelease` | `boolean` | Install a prerelease of the `GitHub` module. | `false` | `false` |
+| `Debug` | `boolean` | Emit debug steps in every job. | `false` | `false` |
+| `Verbose` | `boolean` | Enable verbose logging. | `false` | `false` |
+| `WorkingDirectory` | `string` | Repository root path. | `false` | `.` |
+
+### Setup and teardown scripts
+
+`Test-ModuleLocal` automatically detects optional scripts to prepare and clean up shared test environments:
+
+- `tests/BeforeAll.ps1` runs once before the matrix executes. Use it to deploy resources or download test data.
+- `tests/AfterAll.ps1` runs once after the matrix completes. Use it for cleanup or artifact uploads.
+
+```powershell
+# tests/BeforeAll.ps1
+Write-Host "Setting up test environment..."
 ```
 
-This is useful for reviewing what was checked even when no issues are found.
+```powershell
+# tests/AfterAll.ps1
+Write-Host "Cleaning up test environment..."
+```
 
-**Note:** The `GITHUB_TOKEN` is automatically provided by the workflow to enable status updates in pull requests.
+These scripts run with the same environment variables and secrets defined for your workflow jobs.
 
-For a complete list of available environment variables and configuration options, see the
-[super-linter environment variables documentation](https://github.com/super-linter/super-linter#environment-variables).
+### Secrets
 
-## Specifications and practices
+| Name | Location | Purpose |
+|------|----------|---------|
+| `APIKEY` | Repository secret | PowerShell Gallery publishing key. |
+| `TEST_APP_ENT_CLIENT_ID` | Repository secret | Enterprise GitHub App client ID for integration tests. |
+| `TEST_APP_ENT_PRIVATE_KEY` | Repository secret | Enterprise GitHub App private key for integration tests. |
+| `TEST_APP_ORG_CLIENT_ID` | Repository secret | Organization GitHub App client ID for integration tests. |
+| `TEST_APP_ORG_PRIVATE_KEY` | Repository secret | Organization GitHub App private key for integration tests. |
+| `TEST_USER_ORG_FG_PAT` | Repository secret | Fine-grained PAT with org scope for tests. |
+| `TEST_USER_USER_FG_PAT` | Repository secret | Fine-grained PAT with user scope for tests. |
+| `TEST_USER_PAT` | Repository secret | Classic PAT fallback for legacy tests. |
 
-The process is compatible with:
+To reuse organization secrets, configure `secrets: inherit` when referencing the workflow.
 
-- [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
-- [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
-- [SemVer 2.0.0 specifications](https://semver.org)
-- [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
+### Required permissions
+
+```yaml
+permissions:
+  contents: write      # checkout and release management
+  pull-requests: write # PR comments and status updates
+  statuses: write      # commit status notifications from lint/test jobs
+  pages: write         # publish GitHub Pages documentation
+  id-token: write      # OIDC token for Pages deployment verification
+```
+
+Refer to [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site) for details on `pages` and `id-token` requirements.
+
+## Operating principles
+
+Process-PSModule is guided by five non-negotiable practices:
+
+1. **Workflow-first design**: all logic lives in reusable GitHub Actions, not ad-hoc inline scripts.
+1. **Test-driven development**: Pester and PSScriptAnalyzer enforce red-green-refactor discipline for every change.
+1. **Cross-platform parity**: PowerShell 7.4+ across Linux, macOS, and Windows is the baseline expectation.
+1. **Quality gates and observability**: JSON reports, coverage metrics, and actionable errors surface every run.
+1. **Continuous delivery with SemVer**: release labels drive automatic versioning, gallery publishing, and GitHub releases.
+
+## Compatible practices and tooling
+
+- [Test-Driven Development](https://testdriven.io/test-driven-development/) with [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
+- [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow)
+- [Semantic Versioning 2.0.0](https://semver.org)
+- [Continuous Delivery](https://en.wikipedia.org/wiki/Continuous_delivery)

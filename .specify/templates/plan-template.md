@@ -10,7 +10,7 @@
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
    → Detect Project Type from file system structure or context (web=frontend+backend, mobile=app+API)
    → Set Structure Decision based on project type
-3. Fill the Constitution Check section based on the content of the constitution document.
+3. Fill the Constitution Check section based on the content of the main README.
 4. Evaluate Constitution Check section below
    → If violations exist: Document them in Complexity Tracking
    → If no justification is possible: ERROR "Simplify approach first"
@@ -269,4 +269,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution - See `.specify/memory/constitution.md`*
+*Based on Constitution - See `README.md` Principles and Architecture section*
