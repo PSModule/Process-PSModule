@@ -355,48 +355,78 @@ The workflow inspects this structure to decide what to compile, document, and pu
 
 ## Phase details
 
-### Discover and Plan
+### Get settings
 
+The Get-Settings job initializes the workflow by reading and processing configuration settings, determining the module name, and establishing
+the test execution matrix. This phase ensures all downstream jobs operate with consistent, repository-specific parameters.
 
+**What it does:**
+
+1. Gets settings from the `.github/PSModule.yml` (or equivalent JSON/PSD1 file).
+2. Determines the module name, defaulting to the repository name.
+3. Constructs test suites for PSModule framework tests, and module tests, filtering by operating system (Linux, macOS, Windows),
+   depending on settings.
+4. Outputs the processed settings as JSON for consumption by subsequent jobs, enabling dynamic workflow behavior.
+
+This phase provides the foundation for conditional job execution, ensuring that builds, tests, and publishing align with repository-specific
+requirements and event contexts.
+
+### Repository Linter
+
+Runs [super-linter](https://github.com/super-linter/super-linter) to enforce code quality and style guidelines.
+- Honors `.github/linters/` configurations for Markdown, PowerShell, and text linting.
+- Configurable settings via the `Linter.env` key in the `.github/PSModule.yml` file.
 
 ### Build Module
 
-Compiles each module by invoking [`PSModule/Build-PSModule`](https://github.com/PSModule/Build-PSModule). Supports
-script modules and manifest modules. Targets PowerShell 7.4+.
+Compiles each module by invoking [`PSModule/Build-PSModule`](https://github.com/PSModule/Build-PSModule).
+Supports script modules and manifest modules. Targets PowerShell 7.4+.
 
 **Pipeline steps:**
 
-1. Discovers module name (fallback: repository name) and stages `outputs/module/<ModuleName>`.
-2. Executes repository `*build.ps1` scripts alphabetically for preprocessing.
-3. Copies `src/` into staging, skipping any existing root module.
-4. Rebuilds module manifest from staged content plus repository metadata.
-5. Composes root module `.psm1` from staged scripts, classes, variables, and support files.
-6. Uploads `module` artifact and exposes `ModuleOutputFolderPath` for downstream jobs.
-
-**Root module composition:**
-
-1. Adds `header.ps1` (when present) to the top of `<ModuleName>.psm1`.
-2. Injects a data loader so resources in `data/` become `$script:`-scoped variables.
-3. Appends content from `init`, `classes/private`, `classes/public`, `functions/private`, `functions/public`,
-   `variables/private`, `variables/public`, and root-level `*.ps1` files in alphabetical order.
-4. Registers public classes and enums using type accelerators.
-5. Emits trailing `Export-ModuleMember` statement exporting only members from `public` folders.
+1. Executes `*build.ps1` scripts alphabetically for preprocessing in `src/`.
+2. Copies `src/` into staging, skipping any existing root module.
+3. Builds the module manifest from data in `src/`.
+   1. Uses the partial `src/manifest.psd1` if provided; otherwise creates new manifest.
+   2. Sets baseline metadata: `RootModule`, `ModuleVersion`, `Author`, `CompanyName`, `Description`.
+   3. Populates `FileList`, `ModuleList`, `RequiredAssemblies`, `NestedModules`, `ScriptsToProcess`, `TypesToProcess`,
+      `FormatsToProcess`, `DscResourcesToExport`, and export lists.
+   4. Gathers `#requires` statements to update `RequiredModules`, `PowerShellVersion`, `CompatiblePSEditions`.
+   5. Derives `Tags`, `LicenseUri`, `ProjectUri`, `IconUri` from repository data.
+   6. Preserves optional fields (`HelpInfoURI`, `ExternalModuleDependencies`, custom `PrivateData`).
+4. Composes root module `.psm1` from scripts, classes, variables, and support files.
+   1. Adds `header.ps1` (when present) to the top of `<ModuleName>.psm1`.
+   2. Injects a data loader so resources in `data/` become `$script:`-scoped variables.
+   3. Appends content from `init`, `classes/private`, `classes/public`, `functions/private`, `functions/public`,
+      `variables/private`, `variables/public`, and root-level `*.ps1` files in alphabetical order.
+   4. Registers public classes and enums using type accelerators.
+   5. Emits trailing `Export-ModuleMember` statement exporting only members from `public` folders.
+5.  Uploads `module` artifact and exposes `ModuleOutputFolderPath` for downstream jobs.
 
 **Module manifest enrichment:**
 
-- Reuses `manifest.psd1` when provided; otherwise creates new manifest.
-- Sets baseline metadata: `RootModule`, `ModuleVersion`, `Author`, `CompanyName`, `Description`.
-- Populates `FileList`, `ModuleList`, `RequiredAssemblies`, `NestedModules`, `ScriptsToProcess`, `TypesToProcess`,
-  `FormatsToProcess`, `DscResourcesToExport`, and export lists from staged file system.
-- Gathers `#requires` statements to update `RequiredModules`, `PowerShellVersion`, `CompatiblePSEditions`.
-- Derives `Tags`, `LicenseUri`, `ProjectUri`, `IconUri` from repository data when absent.
-- Preserves optional fields (`HelpInfoURI`, `ExternalModuleDependencies`, custom `PrivateData`).
 
 **References:**
 
 - [about_Module_Manifests](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_module_manifests)
 - [How to write a PowerShell module manifest](https://learn.microsoft.com/powershell/scripting/developer/module/how-to-write-a-powershell-module-manifest)
 - [PowerShellGallery publishing guidelines](https://learn.microsoft.com/powershell/gallery/concepts/publishing-guidelines)
+
+### Build Documentation
+
+Generates module documentation by invoking [`PSModule/Document-PSModule`](https://github.com/PSModule/Document-PSModule).
+
+- Produces Markdown-based help files from the built module using
+  [Microsoft.PowerShell.PlatyPS](https://github.com/PowerShell/platyPS).
+- Integrates conceptual documentation from `src/functions/public/` subfolders.
+
+### Build Site
+
+Creates a documentation website using [MkDocs](https://www.mkdocs.org/) and the
+[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme.
+
+- Consumes `docs/` for custom pages and `.github/mkdocs.yml` for site configuration.
+- Automatically generates navigation based on `src/functions/public/` structure.
 
 ### Test Module
 
@@ -453,12 +483,3 @@ through [`PSModule/Publish-PSModule`](https://github.com/PSModule/Publish-PSModu
 - Cleans up previous prereleases for the same branch when `Publish.Module.AutoCleanup` is `true` (default).
 - On merge to default branch, promotes staged module, creates GitHub release with `VersionPrefix`, removes temporary
   prereleases.
-
-## Contributing
-
-Contributions are welcome. Open an issue or pull request to discuss changes.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
