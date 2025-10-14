@@ -11,10 +11,13 @@ minimal setup.
 4. [Create a PowerShell Gallery API key](https://www.powershellgallery.com/account/apikeys) with publish rights.
 5. Add a repository secret named `APIKEY` containing your gallery key.
 6. Develop on a feature branch, open a pull request, and let Process-PSModule validate your changes.
+7. Optionally label the PR to control version bumping. The default being a patch bump, but add a label called `minor` or `major` to bump the version
+   accordingly.
+8. Merge the PR to trigger publishing: the built module is published to PowerShell Gallery and documentation is deployed to GitHub Pages.
 
 ## What you get
 
-- One workflow run manages build, validation, documentation, and publishing across Linux, macOS, and Windows.
+- One workflow run manages build, validation across Linux, macOS, and Windows, documentation, and publishing the module and documentation.
 - Dynamic behavior driven by repository metadata, GitHub event context, and settings via `.github/PSModule.yml`.
 - Consistent artifacts, logs, and gating so every environment observes the same result.
 - Label-driven version bumping: patch (default), minor (`minor`, `feature`), or major (`major`, `breaking`).
@@ -33,35 +36,34 @@ and PR labels.
 
 1. **Discover and plan** — Reads `.github/PSModule.yml` (YAML, JSON, or PSD1), inspects labels and event payloads,
    determines target operating systems, quality gates, and whether publishing is in scope.
-2. **Build and document** — Stages `src/` tree, honors `*build.ps1` hooks, composes root module, regenerates manifest,
-   and generates documentation from staged output.
-3. **Validate quality** — Executes source linting, module framework validation, and repository-specific tests against
+2. **Build and document** — Builds a module from the `src/` tree, runs `*build.ps1` scripts, composes root module, generates the +manifest,
+   and generates documentation based on the built module.
+3. **Validate quality** — Executes linting, module framework validation, and repository-specific tests against
    staged module. Optional `tests/BeforeAll.ps1` and `tests/AfterAll.ps1` scripts handle shared setup and teardown.
 4. **Publish and close out** — Promotes staged module to PowerShell Gallery, creates GitHub release, deploys
    documentation to Pages, and cleans up abandoned prereleases when configured.
 
 **Job lifecycle across GitHub events:**
 
-| Job                       | Open/updated PR | Merged PR | Abandoned PR | Manual run |
-|---------------------------|-----------------|-----------|--------------|------------|
-| Gather repo settings      | ✅ Always       | ✅ Always | ✅ Always    | ✅ Always  |
-| Repository lint           | ✅ Yes          | ❌ No     | ❌ No        | ❌ No      |
-| Module build              | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Documentation build       | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Site build                | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Source lint               | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Framework tests           | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Module-local tests        | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Module-local cleanup      | ✅ Yes          | ✅ Yes    | ✅ Yes*      | ✅ Yes     |
-| Results aggregation       | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Coverage summary          | ✅ Yes          | ✅ Yes    | ❌ No        | ✅ Yes     |
-| Site publish              | ❌ No           | ✅ Yes    | ❌ No        | ❌ No      |
-| Module publish            | ✅ Yes**        | ✅ Yes**  | ✅ Yes***    | ✅ Yes**   |
+| Job | Open/updated PR | Merged PR | Abandoned PR | Manual run |
+|-|-|-|-|-|
+| Get settings | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
+| Repository lint | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| Module build | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Documentation build | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Site build | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Source lint | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Framework tests | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Module-local tests | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Module-local cleanup| ✅ Yes | ✅ Yes | ✅ Yes* | ✅ Yes |
+| Results aggregation | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Coverage summary | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| Site publish | ❌ No | ✅ Yes | ❌ No | ❌ No |
+| Module publish | ✅ Yes** | ✅ Yes** | ✅ Yes*** | ✅ Yes** |
 
 \* Runs cleanup only if tests were started.
 \*\* Only when build, test, and coverage gates succeed.
 \*\*\* Publishes cleanup or retraction version when required.
-
 
 ## Configuration
 
@@ -78,7 +80,7 @@ Test:
 ```
 
 ```yaml
-# Fast Linux-only validation (skip macOS/Windows, disable coverage)
+# Fast Linux-only validation (skip macOS/Windows, disable test summary)
 Test:
   SourceCode:
     Skip: true
@@ -96,6 +98,8 @@ Test:
 Build:
   Docs:
     Skip: true
+Linter:
+  Skip: true
 ```
 
 ```yaml
@@ -264,81 +268,79 @@ Publish:
 
 ## Repository layout
 
-Process-PSModule expects repositories to follow the staged layout produced by
-[Template-PSModule](https://github.com/PSModule/Template-PSModule). The workflow inspects this structure to decide what
-to compile, document, and publish.
+Process-PSModule expects repositories to follow the staged layout produced by [Template-PSModule](https://github.com/PSModule/Template-PSModule).
+The workflow inspects this structure to decide what to compile, document, and publish.
 
 ```plaintext
 <ModuleName>/
 ├── .github/
-│   ├── linters/
-│   │   ├── .markdown-lint.yml                 # Markdown rules enforced via super-linter
-│   │   ├── .powershell-psscriptanalyzer.psd1  # Analyzer profile for test jobs
-│   │   └── .textlintrc                        # Text lint rules surfaced in build docs summaries
+│   ├── linters/                               # Linter configurations, align with super-linter
+│   │   ├── .markdown-lint.yml                 # Markdown rules
+│   │   ├── .powershell-psscriptanalyzer.psd1  # PSScriptAnalyzer rules
+│   │   └── .textlintrc                        # Text lint rules
 │   ├── workflows/
 │   │   └── Process-PSModule.yml               # Entry point for this reusable workflow
 │   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
-│   ├── dependabot.yml                         # Dependency update cadence
+│   ├── dependabot.yml                         # Dependabot settings
 │   ├── mkdocs.yml                             # MkDocs config consumed during site builds
-│   ├── PSModule.yml                           # Settings parsed to drive matrices
-│   └── release.yml                            # Release automation template invoked on publish
+│   ├── PSModule.yml                           # Settings used by the Process-PSModule.yml workflow
+│   └── release.yml                            # Release template when making GitHub releases
 ├── examples/
 │   └── General.ps1                            # Example script ingested by Document-PSModule
 ├── icon/
-│   └── icon.png                               # Default module icon (PNG format)
+│   └── icon.png                               # The icon automatically used in the manifest
 ├── src/
 │   ├── assemblies/                            # Bundled binaries copied into build artifact
-│   ├── classes/
+│   ├── classes/                               # Classes and enums added to the module
 │   │   ├── private/                           # Internal classes kept out of exports
 │   │   │   └── SecretWriter.ps1
 │   │   └── public/                            # Public classes exported via type accelerators
 │   │       └── Book.ps1
 │   ├── data/                                  # Configuration loaded into $script: scope at runtime
-│   │   ├── Config.psd1
-│   │   └── Settings.psd1
-│   ├── formats/                               # Formatting metadata registered during build
+│   │   ├── Config.psd1                        # Example: $script:Config - module internal variable
+│   │   └── Settings.psd1                      # Example: $script:Settings - module internal variable
+│   ├── formats/                               # View formats, added to the manifest as 'FormatsToProcess'
 │   │   ├── CultureInfo.Format.ps1xml
 │   │   └── Mygciview.Format.ps1xml
-│   ├── functions/
+│   ├── functions/                             # Functions added to the module
 │   │   ├── private/                           # Helper functions scoped to the module
 │   │   │   ├── Get-InternalPSModule.ps1
 │   │   │   └── Set-InternalPSModule.ps1
-│   │   └── public/                            # Public commands documented and tested
-│   │       ├── Category/                      # Optional: organize commands into categories
+│   │   └── public/                            # Functions that are documented, tested and exported
+│   │       ├── Category/                      # Optional: organize commands into folders. Docs mirror structure.
 │   │       │   ├── Get-CategoryCommand.ps1
-│   │       │   └── Category.md                # Category overview merged into docs output
+│   │       │   └── Category.md                # Markdown docs are added to the documentation
 │   │       ├── Get-PSModuleTest.ps1
 │   │       ├── New-PSModuleTest.ps1
 │   │       ├── Set-PSModuleTest.ps1
 │   │       └── Test-PSModuleTest.ps1
-│   ├── init/                                  # Initialization scripts executed during module load
+│   ├── init/                                  # Initialization scripts executed during module load, run in module context
 │   │   └── initializer.ps1
 │   ├── modules/                               # Nested modules packaged with compiled output
 │   │   └── OtherPSModule.psm1
-│   ├── scripts/                               # Scripts listed in 'ScriptsToProcess'
+│   ├── scripts/                               # Scripts listed in 'ScriptsToProcess', run in user context
 │   │   └── loader.ps1
-│   ├── types/                                 # Type data merged into manifest
+│   ├── types/                                 # Type extensions, added to the manifest as 'TypesToProcess'
 │   │   ├── DirectoryInfo.Types.ps1xml
 │   │   └── FileInfo.Types.ps1xml
-│   ├── variables/
-│   │   ├── private/                           # Internal variables scoped to the module
+│   ├── variables/                             # Module-level variables
+│   │   ├── private/                           # Variables scoped to the module, not exported
 │   │   │   └── PrivateVariables.ps1
-│   │   └── public/                            # Public variables exported and documented
+│   │   └── public/                            # Variables that are exported to the user context
 │   │       ├── Moons.ps1
 │   │       ├── Planets.ps1
 │   │       └── SolarSystems.ps1
-│   ├── finally.ps1                            # Cleanup script appended to root module
-│   ├── header.ps1                             # Optional header injected at top of module
-│   ├── manifest.psd1                          # (Optional) Source manifest reused when present
-│   └── README.md                              # Module-level docs ingested by Document-PSModule
+│   ├── finally.ps1                            # Script added at the end of the root module
+│   ├── header.ps1                             # Script added at the start of the root module
+│   └── manifest.psd1                          # If present, a manifest that is reused when building the module
 ├── tests/
-│   ├── AfterAll.ps1                           # (Optional) Cleanup script for module-local runs
-│   ├── BeforeAll.ps1                          # (Optional) Setup script for module-local runs
-│   └── <ModuleName>.Tests.ps1                 # Primary test entry point
+│   ├── AfterAll.ps1                           # Cleanup script for module-local runs
+│   ├── BeforeAll.ps1                          # Setup script for module-local runs
+│   └── <ModuleName>.Tests.ps1                 # Pester test that is run against the built module on Linux, macOS, and Windows
 ├── .gitattributes                             # Normalizes line endings across platforms
 ├── .gitignore                                 # Excludes build artifacts from source control
-├── LICENSE                                    # License text surfaced in manifest metadata
-└── README.md                                  # Repository overview rendered on GitHub and docs landing
+├── LICENSE                                    # License, added to the manifest
+└── README.md                                  # Repository overview rendered on GitHub and the landing for the docs
 ```
 
 **Key expectations:**
@@ -351,7 +353,11 @@ to compile, document, and publish.
 - The build step compiles `src/` into a root module file and removes the original project layout from the artifact.
 - Documentation generation mirrors the `src/functions/public` hierarchy so help content always aligns with source.
 
-## Pipeline jobs
+## Phase details
+
+### Discover and Plan
+
+
 
 ### Build Module
 
