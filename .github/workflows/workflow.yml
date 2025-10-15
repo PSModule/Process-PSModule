@@ -484,7 +484,6 @@ jobs:
   # - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
   # - ✅ Abandoned PR    - Publishes cleanup/retraction version
   # - ✅ Manual run      - Publishes when all tests/coverage/build succeed
-  #
   Publish-Module:
     if: |
       needs.Get-Settings.result == 'success' && !cancelled() && github.event_name == 'pull_request' && (

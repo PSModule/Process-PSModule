@@ -382,11 +382,10 @@ Runs [super-linter](https://github.com/super-linter/super-linter) to enforce cod
 Compiles each module by invoking [`PSModule/Build-PSModule`](https://github.com/PSModule/Build-PSModule).
 Supports script modules and manifest modules. Targets PowerShell 7.4+.
 
-**Pipeline steps:**
+**What it does:**
 
 1. Executes `*build.ps1` scripts alphabetically for preprocessing in `src/`.
-2. Copies `src/` into staging, skipping any existing root module.
-3. Builds the module manifest from data in `src/`.
+2. Builds the module manifest `<moduleName>.psd1` from data in `src/`.
    1. Uses the partial `src/manifest.psd1` if provided; otherwise creates new manifest.
    2. Sets baseline metadata: `RootModule`, `ModuleVersion`, `Author`, `CompanyName`, `Description`.
    3. Populates `FileList`, `ModuleList`, `RequiredAssemblies`, `NestedModules`, `ScriptsToProcess`, `TypesToProcess`,
@@ -394,17 +393,14 @@ Supports script modules and manifest modules. Targets PowerShell 7.4+.
    4. Gathers `#requires` statements to update `RequiredModules`, `PowerShellVersion`, `CompatiblePSEditions`.
    5. Derives `Tags`, `LicenseUri`, `ProjectUri`, `IconUri` from repository data.
    6. Preserves optional fields (`HelpInfoURI`, `ExternalModuleDependencies`, custom `PrivateData`).
-4. Composes root module `.psm1` from scripts, classes, variables, and support files.
-   1. Adds `header.ps1` (when present) to the top of `<ModuleName>.psm1`.
-   2. Injects a data loader so resources in `data/` become `$script:`-scoped variables.
+3. Composes root module `<moduleName>.psm1` from scripts, classes, variables, and support files in `src/`.
+   1. Adds `header.ps1` (when present) to the top.
+   2. Injects a data loader so `.psd1` files in `data/` become `$script:` scoped variables.
    3. Appends content from `init`, `classes/private`, `classes/public`, `functions/private`, `functions/public`,
       `variables/private`, `variables/public`, and root-level `*.ps1` files in alphabetical order.
    4. Registers public classes and enums using type accelerators.
    5. Emits trailing `Export-ModuleMember` statement exporting only members from `public` folders.
-5.  Uploads `module` artifact and exposes `ModuleOutputFolderPath` for downstream jobs.
-
-**Module manifest enrichment:**
-
+4.  Uploads `module` artifact and exposes `ModuleOutputFolderPath` for downstream jobs.
 
 **References:**
 
