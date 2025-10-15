@@ -6,14 +6,16 @@ A workflow for crafting PowerShell modules using the PSModule framework, which b
 
 1. [Create a repository from the Template-Module](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
 1. Configure the repository:
-   1. Enable GitHub Pages in the repository settings. Set it to deploy from `GitHub Actions`.
-   1. This will create an environment called `github-pages` that GitHub deploys your site to.
-      <details><summary>Within the environment, remove the branch protection for <code>main</code>.</summary>
+   1. Enable GitHub Pages in the repository settings. Set it to deploy from **GitHub Actions**.
+   1. This will create an environment called **github-pages** that GitHub deploys your site to.
+      <details><summary>Within the **github-pages** environment, remove the branch protection for <code>main</code>.</summary>
       <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
       </details>
-   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it enough permission to manage the module you are working on.
+   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you are working on.
    1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
 1. Create a branch, make your changes, create a PR and let the workflow run.
+1. **After merge:** The workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and updates the documentation on GitHub Pages.
+   By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on the PR to bump the version accordingly.
 
 ## How it works
 
