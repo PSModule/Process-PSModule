@@ -1,6 +1,7 @@
 # Process-PSModule
 
-A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
+A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell
+Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
 
 ## How to get started
 
@@ -11,11 +12,13 @@ A workflow for crafting PowerShell modules using the PSModule framework, which b
       <details><summary>Within the **github-pages** environment, remove the branch protection for <code>main</code>.</summary>
       <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
       </details>
-   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you are working on.
-   1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
-1. Create a branch, make your changes, create a PR and let the workflow run.
-1. **After merge:** The workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and updates the documentation on GitHub Pages.
-   By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on the PR to bump the version accordingly.
+   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
+      are working on.
+   2. Create a new secret in the repository (or organization) called `APIKEY` and set it to the API key for the PowerShell Gallery.
+2. Create a branch, make your changes, create a PR and let the workflow run.
+3. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and updates the documentation
+   on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on the PR to bump
+   the version accordingly.
 
 ## How it works
 
