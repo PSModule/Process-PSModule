@@ -1,7 +1,12 @@
 # Process-PSModule
 
-A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell
-Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
+Process-PSModule is an end-to-end GitHub Actions workflow that automates the entire lifecycle of a PowerShell module — from build and test to
+documentation and publication. It is part of the PSModule framework and provides a unified, standards-based process for developing PowerShell modules
+that adhere to consistent testing, linting, and release practices.
+
+The workflow builds the PowerShell module, runs multi-platform tests, enforces code quality and coverage requirements, generates documentation, and
+publishes both the module to the PowerShell Gallery and its documentation site to GitHub Pages. It is the core workflow used across all PowerShell
+modules in the [PSModule organization](https://github.com/PSModule), ensuring reliable, automated, and maintainable delivery of PowerShell projects.
 
 ## How to get started
 
