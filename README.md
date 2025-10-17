@@ -13,17 +13,18 @@ modules in the [PSModule organization](https://github.com/PSModule), ensuring re
 1. [Create a repository from the Template-Module](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
 1. Configure the repository:
    1. Enable GitHub Pages in the repository settings. Set it to deploy from **GitHub Actions**.
-   1. This will create an environment called **github-pages** that GitHub deploys your site to.
+   1. This will create an environment called `github-pages` that GitHub deploys your site to.
       <details><summary>Within the **github-pages** environment, remove the branch protection for <code>main</code>.</summary>
       <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
       </details>
    1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
       are working on.
-   2. Create a new secret in the repository (or organization) called `APIKEY` and set it to the API key for the PowerShell Gallery.
-2. Create a branch, make your changes, create a PR and let the workflow run.
-3. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and updates the documentation
-   on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on the PR to bump
-   the version accordingly.
+   1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
+   1. If you are planning on creating many modules, you could use a glob pattern for the API key permissions and store the secret on the organization.
+1. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
+1. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
+   documentation on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on
+   the PR to bump the version accordingly.
 
 ## How it works
 
