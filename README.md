@@ -39,45 +39,50 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Process-PSModule](#process-psmodule)
-  - [How to get started](#how-to-get-started)
-  - [How it works](#how-it-works)
-    - [Workflow overview](#workflow-overview)
-    - [Get-Settings](#get-settings)
-    - [Lint-Repository](#lint-repository)
-    - [Get settings](#get-settings-1)
-    - [Build module](#build-module)
-    - [Test source code](#test-source-code)
-    - [Lint source code](#lint-source-code)
-    - [Framework test](#framework-test)
-    - [Test module](#test-module)
-      - [Setup and Teardown Scripts](#setup-and-teardown-scripts)
-        - [Setup - `BeforeAll.ps1`](#setup---beforeallps1)
-          - [Example - `BeforeAll.ps1`](#example---beforeallps1)
-        - [Teardown - `AfterAll.ps1`](#teardown---afterallps1)
-          - [Example - `AfterAll.ps1`](#example---afterallps1)
-    - [Get test results](#get-test-results)
-    - [Get code coverage](#get-code-coverage)
-    - [Publish module](#publish-module)
-    - [Build docs](#build-docs)
-    - [Build site](#build-site)
-    - [Publish Docs](#publish-docs)
-  - [Usage](#usage)
-    - [Inputs](#inputs)
-    - [Secrets](#secrets)
-    - [Permissions](#permissions)
-    - [Scenario Matrix](#scenario-matrix)
-  - [Configuration](#configuration)
-    - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
-    - [Example 2 - Rapid testing](#example-2---rapid-testing)
-    - [Example 3 - Configuring the Repository Linter](#example-3---configuring-the-repository-linter)
-      - [Disabling the Linter](#disabling-the-linter)
-      - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
-      - [Additional Configuration](#additional-configuration)
-      - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
-  - [Repository structure](#repository-structure)
-  - [Module source code structure](#module-source-code-structure)
-  - [Principles and practices](#principles-and-practices)
+
+- [Get settings](#get-settings)
+  - Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
+  - Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
+    to setup testing infrastructure and what operating systems to run the tests on.
+- [Build module](./.github/workflows/Build-Module.yml)
+  - Compiles the module source code into a PowerShell module.
+- [Test source code](./.github/workflows/Test-SourceCode.yml)
+  - Tests the source code in parallel (matrix) using:
+    - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
+  - This produces a JSON-based report that is used to later evaluate the results of the tests.
+- [Lint source code](./.github/workflows/Lint-SourceCode.yml)
+  - Lints the source code in parallel (matrix) using:
+    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
+  - This produces a JSON-based report that is used to later evaluate the results of the linter.
+- [Framework test](./.github/workflows/Test-Module.yml)
+  - Tests and lints the module in parallel (matrix) using:
+    - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
+    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
+  - This produces a JSON-based report that is used to later evaluate the results of the tests.
+- [Test module](./.github/workflows/Test-ModuleLocal.yml)
+  - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
+  - Supports setup and teardown scripts executed via separate dedicated jobs:
+    - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
+    - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
+  - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as the tests.
+  - This produces a JSON-based report that is used to later evaluate the results of the tests.
+- [Get test results](./.github/workflows/Get-TestResults.yml)
+  - Gathers the test results from the previous steps and creates a summary of the results.
+  - If any tests have failed, the workflow will fail here.
+- [Get code coverage](./.github/workflows/Get-CodeCoverage.yml)
+  - Gathers the code coverage from the previous steps and creates a summary of the results.
+  - If the code coverage is below the target, the workflow will fail here.
+- [Build docs](./.github/workflows/Build-Docs.yml)
+  - Generates documentation and lints the documentation using:
+    - [super-linter](https://github.com/super-linter/super-linter).
+- [Build site](./.github/workflows/Build-Site.yml)
+  - Generates a static site using:
+    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+- [Publish site](./.github/workflows/Publish-Site.yml)
+  - Publishes the static site with the module documentation to GitHub Pages.
+- [Publish module](./.github/workflows/Publish-Module.yml)
+  - Publishes the module to the PowerShell Gallery.
+  - Creates a release on the GitHub repository.
 
 ### Get-Settings
 
@@ -544,11 +549,96 @@ For a complete list of available environment variables and configuration options
 
 ## Repository structure
 
-Repo highlevel
+Process-PSModule expects repositories to follow the staged layout produced by Template-PSModule. The workflow inspects this structure to decide what to compile, document, and publish.
+
+```plaintext
+<ModuleName>/
+├── .github/                                   # Workflow config, doc/site templates, automation policy
+│   ├── linters/                               # Rule sets applied by shared lint steps
+│   │   ├── .markdown-lint.yml                 # Markdown rules enforced via super-linter
+│   │   ├── .powershell-psscriptanalyzer.psd1  # Analyzer profile for test jobs
+│   │   └── .textlintrc                        # Text lint rules surfaced in Build Docs summaries
+│   ├── workflows/                             # Entry points for the reusable workflow
+│   │   └── Process-PSModule.yml               # Consumer hook into this workflow bundle
+│   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
+│   ├── dependabot.yml                         # Dependency update cadence handled by GitHub
+│   ├── mkdocs.yml                             # MkDocs config consumed during site builds
+│   ├── PSModule.yml                           # Settings parsed to drive matrices
+│   └── release.yml                            # Release automation template invoked on publish
+├── examples/                                  # Samples referenced in generated documentation
+│   └── General.ps1                            # Example script ingested by Document-PSModule
+├── icon/                                      # Icon assets linked from manifest and documentation
+│   └── icon.png                               # Default module icon (PNG format)
+├── src/                                       # Module source, see "Module source code structure" below
+├── tests/                                     # Pester suites executed during validation
+│   ├── AfterAll.ps1 (optional)                # Cleanup script for ModuleLocal runs
+│   ├── BeforeAll.ps1 (optional)               # Setup script for ModuleLocal runs
+│   └── <ModuleName>.Tests.ps1                 # Primary test entry point
+├── .gitattributes                             # Normalizes line endings across platforms
+├── .gitignore                                 # Excludes build artifacts from source control
+├── LICENSE                                    # License text surfaced in manifest metadata
+└── README.md                                  # Repository overview rendered on GitHub and docs landing
+```
+
+Key expectations:
+
+- Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/`.
+- Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
+- Markdown files in `src/functions/public` subfolders become documentation pages alongside generated help.
+- The build step compiles `src/` into a root module file and removes the original project layout from the artifact.
+- Documentation generation mirrors the `src/functions/public` hierarchy so help content always aligns with source.
 
 ## Module source code structure
 
 How the module is built.
+
+```
+├── src/                                    # Module source compiled and documented by the pipeline
+│   ├── assemblies/                         # Bundled binaries copied into the build artifact
+│   ├── classes/                            # Class scripts merged into the root module
+│   │   ├── private/                        # Internal classes kept out of exports
+│   │   │   └── SecretWriter.ps1            # Example internal class implementation
+│   │   └── public/                         # Public classes exported via type accelerators
+│   │       └── Book.ps1                    # Example public class documented for consumers
+│   ├── data/                               # Configuration loaded into `$script:` scope at runtime
+│   │   ├── Config.psd1                     # Example config surfaced in generated help
+│   │   └── Settings.psd1                   # Additional configuration consumed on import
+│   ├── formats/                            # Formatting metadata registered during build
+│   │   ├── CultureInfo.Format.ps1xml       # Example format included in manifest
+│   │   └── Mygciview.Format.ps1xml         # Additional format loaded at import
+│   ├── functions/                          # Function scripts exported by the module
+│   │   ├── private/                        # Helper functions scoped to the module
+│   │   │   ├── Get-InternalPSModule.ps1    # Sample internal helper
+│   │   │   └── Set-InternalPSModule.ps1    # Sample internal helper
+│   │   └── public/                         # Public commands documented and tested
+│   │       ├── Category/                   # Optional: organize commands into categories
+│   │       │   ├── Get-CategoryCommand.ps1 # Command file within category
+│   │       │   └── Category.md             # Category overview merged into docs output
+│   │       ├── Get-PSModuleTest.ps1        # Example command captured by Microsoft.PowerShell.PlatyPS
+│   │       ├── New-PSModuleTest.ps1        # Example command exported and tested
+│   │       ├── Set-PSModuleTest.ps1        # Example command exported and tested
+│   │       └── Test-PSModuleTest.ps1       # Example command exported and tested
+│   ├── init/                               # Initialization scripts executed during module load
+│   │   └── initializer.ps1                 # Example init script included in build output
+│   ├── modules/                            # Nested modules packaged with the compiled output
+│   │   └── OtherPSModule.psm1              # Example nested module staged for export
+│   ├── scripts/                            # Scripts listed in 'ScriptsToProcess'
+│   │   └── loader.ps1                      # Loader executed when the module imports
+│   ├── types/                              # Type data merged into the manifest
+│   │   ├── DirectoryInfo.Types.ps1xml      # Type definition registered on import
+│   │   └── FileInfo.Types.ps1xml           # Type definition registered on import
+│   ├── variables/                          # Variable scripts exported by the module
+│   │   ├── private/                        # Internal variables scoped to the module
+│   │   │   └── PrivateVariables.ps1        # Example private variable seed
+│   │   └── public/                         # Public variables exported and documented
+│   │       ├── Moons.ps1                   # Example variable surfaced in generated docs
+│   │       ├── Planets.ps1                 # Example variable surfaced in generated docs
+│   │       └── SolarSystems.ps1            # Example variable surfaced in generated docs
+│   ├── finally.ps1                         # Cleanup script appended to the root module
+│   ├── header.ps1                          # Optional header injected at the top of the module
+│   ├── manifest.psd1 (optional)            # Source manifest reused when present
+│   └── README.md                           # Module-level docs ingested by Document-PSModule
+```
 
 ## Principles and practices
 
