@@ -12,11 +12,9 @@ projects.
 2. Configure the repository:
    1. Enable GitHub Pages in the repository settings. Set it to deploy from **GitHub Actions**.
    2. This will create an environment called `github-pages` that GitHub deploys your site to.
-
       <details><summary>Within the <code>github-pages</code> environment, remove the branch protection for <code>main</code>.</summary>
         <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
       </details>
-
    3. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
       are working on.
    4. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
