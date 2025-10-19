@@ -39,53 +39,174 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get settings](#get-settings)
+- [Process-PSModule](#process-psmodule)
+  - [How to get started](#how-to-get-started)
+  - [How it works](#how-it-works)
+    - [Workflow overview](#workflow-overview)
+    - [Get-Settings](#get-settings)
+    - [Lint-Repository](#lint-repository)
+    - [Get settings](#get-settings-1)
+    - [Build module](#build-module)
+    - [Test source code](#test-source-code)
+    - [Lint source code](#lint-source-code)
+    - [Framework test](#framework-test)
+    - [Test module](#test-module)
+      - [Setup and Teardown Scripts](#setup-and-teardown-scripts)
+        - [Setup - `BeforeAll.ps1`](#setup---beforeallps1)
+          - [Example - `BeforeAll.ps1`](#example---beforeallps1)
+        - [Teardown - `AfterAll.ps1`](#teardown---afterallps1)
+          - [Example - `AfterAll.ps1`](#example---afterallps1)
+    - [Get test results](#get-test-results)
+    - [Get code coverage](#get-code-coverage)
+    - [Publish module](#publish-module)
+    - [Build docs](#build-docs)
+    - [Build site](#build-site)
+    - [Publish Docs](#publish-docs)
+  - [Usage](#usage)
+    - [Inputs](#inputs)
+    - [Secrets](#secrets)
+    - [Permissions](#permissions)
+    - [Scenario Matrix](#scenario-matrix)
+  - [Configuration](#configuration)
+    - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
+    - [Example 2 - Rapid testing](#example-2---rapid-testing)
+    - [Example 3 - Configuring the Repository Linter](#example-3---configuring-the-repository-linter)
+      - [Disabling the Linter](#disabling-the-linter)
+      - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
+      - [Additional Configuration](#additional-configuration)
+      - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
+  - [Repository structure](#repository-structure)
+  - [Module source code structure](#module-source-code-structure)
+  - [Principles and practices](#principles-and-practices)
+
+### Get-Settings
+
+[workflow](./.github/workflows/Get-Settings.yml)
+
+### Lint-Repository
+
+[workflow](./.github/workflows/Lint-Repository.yml)
+
+### Get settings
+
+[workflow](#get-settings)
   - Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
   - Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
     to setup testing infrastructure and what operating systems to run the tests on.
-- [Build module](./.github/workflows/Build-Module.yml)
+
+### Build module
+
+[workflow](./.github/workflows/Build-Module.yml)
   - Compiles the module source code into a PowerShell module.
-- [Test source code](./.github/workflows/Test-SourceCode.yml)
+
+### Test source code
+
+[workflow](./.github/workflows/Test-SourceCode.yml)
   - Tests the source code in parallel (matrix) using:
     - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
   - This produces a JSON-based report that is used to later evaluate the results of the tests.
-- [Lint source code](./.github/workflows/Lint-SourceCode.yml)
+
+### Lint source code
+
+[workflow](./.github/workflows/Lint-SourceCode.yml)
   - Lints the source code in parallel (matrix) using:
     - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
   - This produces a JSON-based report that is used to later evaluate the results of the linter.
-- [Framework test](./.github/workflows/Test-Module.yml)
+
+### Framework test
+
+[workflow](./.github/workflows/Test-Module.yml)
   - Tests and lints the module in parallel (matrix) using:
     - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
     - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
   - This produces a JSON-based report that is used to later evaluate the results of the tests.
-- [Test module](./.github/workflows/Test-ModuleLocal.yml)
+
+### Test module
+
+[workflow](./.github/workflows/Test-ModuleLocal.yml)
   - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
   - Supports setup and teardown scripts executed via separate dedicated jobs:
     - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
     - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
   - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as the tests.
   - This produces a JSON-based report that is used to later evaluate the results of the tests.
-- [Get test results](./.github/workflows/Get-TestResults.yml)
+
+
+#### Setup and Teardown Scripts
+
+The workflow supports automatic execution of setup and teardown scripts for module tests:
+
+- Scripts are automatically detected and executed if present.
+- If no scripts are found, the workflow continues normally.
+
+##### Setup - `BeforeAll.ps1`
+
+- Place in your test directories (`tests/BeforeAll.ps1`).
+- Runs once before all test matrix jobs to prepare the test environment.
+- Deploy test infrastructure, download test data, initialize databases, or configure services.
+- Has access to the same environment variables as your tests (secrets, GitHub token, etc.).
+
+###### Example - `BeforeAll.ps1`
+
+```powershell
+Write-Host "Setting up test environment..."
+# Deploy test infrastructure
+# Download test data
+# Initialize test databases
+Write-Host "Test environment ready!"
+```
+
+##### Teardown - `AfterAll.ps1`
+
+- Place in your test directories (`tests/AfterAll.ps1`).
+- Runs once after all test matrix jobs complete to clean up the test environment.
+- Remove test resources, clean up databases, stop services, or upload artifacts.
+- Has access to the same environment variables as your tests.
+
+###### Example - `AfterAll.ps1`
+
+```powershell
+Write-Host "Cleaning up test environment..."
+# Remove test resources
+# Clean up databases
+# Stop services
+Write-Host "Cleanup completed!"
+```
+
+
+### Get test results
+
+[workflow](./.github/workflows/Get-TestResults.yml)
   - Gathers the test results from the previous steps and creates a summary of the results.
   - If any tests have failed, the workflow will fail here.
-- [Get code coverage](./.github/workflows/Get-CodeCoverage.yml)
+
+### Get code coverage
+
+[workflow](./.github/workflows/Get-CodeCoverage.yml)
   - Gathers the code coverage from the previous steps and creates a summary of the results.
   - If the code coverage is below the target, the workflow will fail here.
-- [Build docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation and lints the documentation using:
-    - [super-linter](https://github.com/super-linter/super-linter).
-- [Build site](./.github/workflows/Build-Site.yml)
-  - Generates a static site using:
-    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
-- [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentation to GitHub Pages.
-- [Publish module](./.github/workflows/Publish-Module.yml)
+
+### Publish module
+
+[workflow](./.github/workflows/Publish-Module.yml)
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
 
-### Get-Settings
+### Build docs
 
-### Lint-Repository
+[workflow](./.github/workflows/Build-Docs.yml)
+  - Generates documentation and lints the documentation using:
+    - [super-linter](https://github.com/super-linter/super-linter).
+
+### Build site
+
+[workflow](./.github/workflows/Build-Site.yml)
+  - Generates a static site using:
+    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+
+### Publish Docs
+
+[workflow](./.github/workflows/Publish-Docs.yml)
 
 ## Usage
 
@@ -142,47 +263,6 @@ jobs:
 | `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
 | `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
 | `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
-
-### Setup and Teardown Scripts
-
-The workflow supports automatic execution of setup and teardown scripts for module tests:
-
-- Scripts are automatically detected and executed if present.
-- If no scripts are found, the workflow continues normally.
-
-#### Setup - `BeforeAll.ps1`
-
-- Place in your test directories (`tests/BeforeAll.ps1`).
-- Runs once before all test matrix jobs to prepare the test environment.
-- Deploy test infrastructure, download test data, initialize databases, or configure services.
-- Has access to the same environment variables as your tests (secrets, GitHub token, etc.).
-
-##### Example - `BeforeAll.ps1`
-
-```powershell
-Write-Host "Setting up test environment..."
-# Deploy test infrastructure
-# Download test data
-# Initialize test databases
-Write-Host "Test environment ready!"
-```
-
-#### Teardown - `AfterAll.ps1`
-
-- Place in your test directories (`tests/AfterAll.ps1`).
-- Runs once after all test matrix jobs complete to clean up the test environment.
-- Remove test resources, clean up databases, stop services, or upload artifacts.
-- Has access to the same environment variables as your tests.
-
-##### Example - `AfterAll.ps1`
-
-```powershell
-Write-Host "Cleaning up test environment..."
-# Remove test resources
-# Clean up databases
-# Stop services
-Write-Host "Cleanup completed!"
-```
 
 ### Secrets
 
