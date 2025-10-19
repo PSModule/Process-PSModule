@@ -9,9 +9,9 @@ projects.
 ## How to get started
 
 1. [Create a repository from the Template-Module](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
-1. Configure the repository:
+2. Configure the repository:
    1. Enable GitHub Pages in the repository settings. Set it to deploy from **GitHub Actions**.
-   1. This will create an environment called `github-pages` that GitHub deploys your site to.
+   2. This will create an environment called `github-pages` that GitHub deploys your site to.
 
       <details><summary>Within the <code>github-pages</code> environment, remove the branch protection for <code>main</code>.</summary>
         <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
