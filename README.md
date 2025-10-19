@@ -17,12 +17,12 @@ projects.
       > Within the **github-pages** environment, remove the branch protection for `main`
       > ![Remove the branch protection on main](./media/pagesEnvironment.png)
 
-   2. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
+   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
       are working on.
-   3. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
-   4. If you are planning on creating many modules, you could use a glob pattern for the API key permissions and store the secret on the organization.
-2. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
-3. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
+   1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
+   1. If you are planning on creating many modules, you could use a glob pattern for the API key permissions and store the secret on the organization.
+1. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
+1. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
    documentation on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on
    the PR to bump the version accordingly.
 
