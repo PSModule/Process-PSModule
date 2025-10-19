@@ -35,7 +35,7 @@ operations across all PowerShell module projects. A user can configure how it wo
 
 The workflow is designed to be triggered on pull requests to the repository's default branch.
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
-Depending on the labels in the pull requests, the workflow will result in different outcomes.
+Depending on the labels in the pull requests, the [workflow will result in different outcomes](#scenario-matrix).
 
 ![Process diagram](./media/Process-PSModule.png)
 
