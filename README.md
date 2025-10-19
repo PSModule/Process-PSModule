@@ -17,10 +17,12 @@ projects.
       </details>
    3. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
       are working on.
-   4. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
-   5. If you are planning on creating many modules, you could use a glob pattern for the API key permissions and store the secret on the organization.
-2. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
-3. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
+   4. Create a new secret called `APIKEY` in the repository and set the API key for the PowerShell Gallery as its value.
+   5. If you are planning on creating many modules, you could use a glob pattern for the API key permissions in PowerShell Gallery and store the
+      secret on the organization.
+3. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
+   - Adding a `Prerelease` label to the PR will create a prerelease version of the module.
+4. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
    documentation on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on
    the PR to bump the version accordingly.
 
