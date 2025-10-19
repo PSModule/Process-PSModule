@@ -169,45 +169,6 @@ jobs:
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
   # Runs on:
-  # - ✅ Open/Updated PR - Builds documentation for review
-  # - ✅ Merged PR       - Builds documentation for publishing
-  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
-  # - ✅ Manual run      - Builds documentation when manually triggered
-  Build-Docs:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.Skip != true }}
-    needs:
-      - Get-Settings
-      - Build-Module
-    uses: ./.github/workflows/Build-Docs.yml
-    with:
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-      ShowSummaryOnSuccess: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.ShowSummaryOnSuccess }}
-
-  # Runs on:
-  # - ✅ Open/Updated PR - Builds site for preview
-  # - ✅ Merged PR       - Builds site for publishing
-  # - ❌ Abandoned PR    - Skips building site for abandoned changes
-  # - ✅ Manual run      - Builds site when manually triggered
-  Build-Site:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Site.Skip != true }}
-    needs:
-      - Get-Settings
-      - Build-Docs
-    uses: ./.github/workflows/Build-Site.yml
-    with:
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
-  # Runs on:
   # - ✅ Open/Updated PR - Tests source code changes
   # - ✅ Merged PR       - Tests source code before publishing
   # - ❌ Abandoned PR    - Skips testing abandoned changes
@@ -454,32 +415,6 @@ jobs:
       Version: ${{ inputs.Version }}
 
   # Runs on:
-  # - ❌ Open/Updated PR - Site not published for PRs in progress
-  # - ✅ Merged PR       - Deploys site to GitHub Pages after successful merge
-  # - ❌ Abandoned PR    - Site not published for abandoned changes
-  # - ❌ Manual run      - Only publishes on merged PRs, not manual runs
-  Publish-Site:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-    needs:
-      - Get-Settings
-      - Get-TestResults
-      - Get-CodeCoverage
-      - Build-Site
-    permissions:
-      pages: write    # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/configure-pages@v5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  # Runs on:
   # - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
   # - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
   # - ✅ Abandoned PR    - Publishes cleanup/retraction version
@@ -533,3 +468,68 @@ jobs:
           PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.PatchLabels }}
           VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  # Runs on:
+  # - ✅ Open/Updated PR - Builds documentation for review
+  # - ✅ Merged PR       - Builds documentation for publishing
+  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
+  # - ✅ Manual run      - Builds documentation when manually triggered
+  Build-Docs:
+    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.Skip != true }}
+    needs:
+      - Get-Settings
+      - Build-Module
+    uses: ./.github/workflows/Build-Docs.yml
+    with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      ShowSummaryOnSuccess: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.ShowSummaryOnSuccess }}
+
+  # Runs on:
+  # - ✅ Open/Updated PR - Builds site for preview
+  # - ✅ Merged PR       - Builds site for publishing
+  # - ❌ Abandoned PR    - Skips building site for abandoned changes
+  # - ✅ Manual run      - Builds site when manually triggered
+  Build-Site:
+    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Site.Skip != true }}
+    needs:
+      - Get-Settings
+      - Build-Docs
+    uses: ./.github/workflows/Build-Site.yml
+    with:
+      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
+      Debug: ${{ inputs.Debug }}
+      Prerelease: ${{ inputs.Prerelease }}
+      Verbose: ${{ inputs.Verbose }}
+      Version: ${{ inputs.Version }}
+      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+  # Runs on:
+  # - ❌ Open/Updated PR - Site not published for PRs in progress
+  # - ✅ Merged PR       - Deploys site to GitHub Pages after successful merge
+  # - ❌ Abandoned PR    - Site not published for abandoned changes
+  # - ❌ Manual run      - Only publishes on merged PRs, not manual runs
+  Publish-Site:
+    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    needs:
+      - Get-Settings
+      - Get-TestResults
+      - Get-CodeCoverage
+      - Build-Site
+    permissions:
+      pages: write    # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,12 +1,10 @@
 # Process-PSModule
 
-Process-PSModule is an end-to-end GitHub Actions workflow that automates the entire lifecycle of a PowerShell module — from build and test to
-documentation and publication. It is part of the PSModule framework and provides a unified, standards-based process for developing PowerShell modules
-that adhere to consistent testing, linting, and release practices.
-
-The workflow builds the PowerShell module, runs multi-platform tests, enforces code quality and coverage requirements, generates documentation, and
-publishes both the module to the PowerShell Gallery and its documentation site to GitHub Pages. It is the core workflow used across all PowerShell
-modules in the [PSModule organization](https://github.com/PSModule), ensuring reliable, automated, and maintainable delivery of PowerShell projects.
+Process-PSModule is the corner-stone of the PSModule framework. It is an end-to-end GitHub Actions workflow that automates the entire lifecycle of a
+PowerShell module. The workflow builds the PowerShell module, runs cross-platform tests, enforces code quality and coverage requirements, generates
+documentation, and publishes module to the PowerShell Gallery and its documentation site to GitHub Pages. It is the core workflow used across all
+PowerShell modules in the [PSModule organization](https://github.com/PSModule), ensuring reliable, automated, and maintainable delivery of PowerShell
+projects.
 
 ## How to get started
 
@@ -14,19 +12,24 @@ modules in the [PSModule organization](https://github.com/PSModule), ensuring re
 1. Configure the repository:
    1. Enable GitHub Pages in the repository settings. Set it to deploy from **GitHub Actions**.
    1. This will create an environment called `github-pages` that GitHub deploys your site to.
-      <details><summary>Within the **github-pages** environment, remove the branch protection for <code>main</code>.</summary>
-      <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
-      </details>
-   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
+      > [!IMPORTANT]
+      > Within the **github-pages** environment, remove the branch protection for `main`
+      > ![Remove the branch protection on main](./media/pagesEnvironment.png)
+   2. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
       are working on.
-   1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
-   1. If you are planning on creating many modules, you could use a glob pattern for the API key permissions and store the secret on the organization.
-1. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
-1. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
+   3. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
+   4. If you are planning on creating many modules, you could use a glob pattern for the API key permissions and store the secret on the organization.
+2. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
+3. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
    documentation on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on
    the PR to bump the version accordingly.
 
 ## How it works
+
+Everything is packaged into this single workflow to simplify full configuration of the workflow via this repository. Simplifying management and
+operations across all PowerShell module projects. A user can configure how it works by simply configuring settings using a single file.
+
+### Workflow overview
 
 The workflow is designed to be triggered on pull requests to the repository's default branch.
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
@@ -34,10 +37,10 @@ Depending on the labels in the pull requests, the workflow will result in differ
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get settings](./.github/workflows/Get-Settings.yml)
-  - Reads the settings file from a file in the module repository to configure the workflow.
-  - Gathers tests and creates test configuration based on the settings and the tests available in the module repository.
-  - This includes the selection of what OSes to run the tests on.
+- [Get settings](#get-settings)
+  - Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
+  - Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
+    to setup testing infrastructure and what operating systems to run the tests on.
 - [Build module](./.github/workflows/Build-Module.yml)
   - Compiles the module source code into a PowerShell module.
 - [Test source code](./.github/workflows/Test-SourceCode.yml)
@@ -77,6 +80,10 @@ Depending on the labels in the pull requests, the workflow will result in differ
 - [Publish module](./.github/workflows/Publish-Module.yml)
   - Publishes the module to the PowerShell Gallery.
   - Creates a release on the GitHub repository.
+
+### Get-Settings
+
+### Lint-Repository
 
 ## Usage
 
@@ -453,7 +460,26 @@ This is useful for reviewing what was checked even when no issues are found.
 
 For a complete list of available environment variables and configuration options, see the [super-linter environment variables documentation](https://github.com/super-linter/super-linter#environment-variables).
 
-## Specifications and practices
+## Repository structure
+
+Repo highlevel
+
+## Module source code structure
+
+How the module is built.
+
+## Principles and practices
+
+The contribution and release process is based on the idea that a PR is a release, and we only maintain a single linear ancestry of versions, not going
+back to patch and update old versions of the modules. This means that if we are on version `2.1.3` of a module and there is a security issue, we only
+patch the latest version with a fix, not releasing new versions based on older versions of the module, i.e. not updating the latest 1.x with the
+patch.
+
+If you need to work forth a bigger release, create a branch representing the release (a release branch) and open a PR towards `main` for this branch.
+For each topic or feature to add to the release, open a new branch representing the feature (a feature branch) and open a PR towards the release
+branch. Optionally add the `Prerelease` label on the PR for the release branch, to release preview versions before merging and releasing a published
+version of the PowerShell module.
+
 
 The process is compatible with:
 
