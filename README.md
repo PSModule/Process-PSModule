@@ -50,7 +50,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
   - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 - [Lint source code](./.github/workflows/Lint-SourceCode.yml)
-  - Lints the source code in parallel (matrix) using:
+  - Lints the source code using:
     - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
   - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
 - [Framework test](./.github/workflows/Test-Module.yml)
