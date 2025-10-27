@@ -86,7 +86,7 @@ jobs:
           persist-credentials: false
 
       - name: Download module artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
@@ -112,7 +112,7 @@ jobs:
           persist-credentials: false
 
       - name: Download module artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
