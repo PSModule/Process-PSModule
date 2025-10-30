@@ -51,7 +51,7 @@ jobs:
         uses: PSModule/Install-PSModuleHelpers@v1
 
       - name: Download docs artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: docs
           path: ${{ inputs.WorkingDirectory }}/outputs/docs
