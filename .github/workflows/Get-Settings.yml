@@ -65,13 +65,13 @@ jobs:
       ModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleTestSuites }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Get-Settings
-        uses: PSModule/GitHub-Script@v1
+        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
         id: Get-Settings
         env:
           PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}

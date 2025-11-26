@@ -92,19 +92,19 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Download module artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@v1
+        uses: PSModule/Install-PSModuleHelpers@e05e9875aafc0a1e63fc13989b3b683a7ef6444f # v1.0.5
 
       - name: Import-Module
         id: import-module
@@ -118,7 +118,7 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@v4
+        uses: PSModule/Invoke-Pester@882994cbe1ff07c3fc8afdac52404c940f99b331 # v4.2.2
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}

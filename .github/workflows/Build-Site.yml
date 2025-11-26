@@ -42,16 +42,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@v1
+        uses: PSModule/Install-PSModuleHelpers@e05e9875aafc0a1e63fc13989b3b683a7ef6444f # v1.0.5
 
       - name: Download docs artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: docs
           path: ${{ inputs.WorkingDirectory }}/outputs/docs
@@ -65,7 +65,7 @@ jobs:
           pip install mkdocs-git-committers-plugin-2
 
       - name: Structure site
-        uses: PSModule/GitHub-Script@v1
+        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
@@ -173,7 +173,7 @@ jobs:
             mkdocs build --config-file mkdocs.yml --site-dir ../../_site
           }
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
           name: github-pages
           path: ${{ inputs.WorkingDirectory }}/_site

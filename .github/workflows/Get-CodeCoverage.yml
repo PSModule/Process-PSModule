@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get-CodeCoverage
-        uses: PSModule/Get-PesterCodeCoverage@v1
+        uses: PSModule/Get-PesterCodeCoverage@a7923eefbf55b452f9b1534c5b50ca9bd192f810 # v1.0.3
         id: Get-CodeCoverage
         with:
           CodeCoveragePercentTarget: ${{ inputs.CodeCoveragePercentTarget }}
