@@ -81,18 +81,18 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
 
       - name: Download module artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        uses: PSModule/Test-PSModule@v3
+        uses: PSModule/Test-PSModule@80b0364db8192e73f584603c68a127de171f881f # v3.0.6
         with:
           Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
@@ -107,18 +107,18 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
 
       - name: Download module artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Lint-Module
-        uses: PSModule/Invoke-ScriptAnalyzer@v4
+        uses: PSModule/Invoke-ScriptAnalyzer@0b13023a981f4c94136bba6193a9abd2d936cbc1 # v4.1.1
         with:
           Path: outputs/module
           Debug: ${{ inputs.Debug }}

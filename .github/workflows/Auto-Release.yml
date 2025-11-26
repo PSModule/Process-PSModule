@@ -26,9 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Auto-Release
-        uses: PSModule/Auto-Release@v1
+        uses: PSModule/Auto-Release@eabd533035e2cb9822160f26f2eda584bd012356 # v1.9.5
         with:
           IncrementalPrerelease: false

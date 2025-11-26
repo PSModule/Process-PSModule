@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get-TestResults
-        uses: PSModule/Get-PesterTestResults@v1
+        uses: PSModule/Get-PesterTestResults@0c1d8cde9575b192831f76e87d3f7e825a7d8ff4 # v1.0.7
         id: Get-TestResults
         with:
           SourceCodeTestSuites: ${{ inputs.SourceCodeTestSuites }}

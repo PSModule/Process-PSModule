@@ -29,13 +29,13 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Build module
-        uses: PSModule/Build-PSModule@v4
+        uses: PSModule/Build-PSModule@fe8cc14a7192066cc46cb9514659772ebde05849 # v4.0.9
         with:
           Name: ${{ inputs.Name }}
           ArtifactName: ${{ inputs.ArtifactName }}

@@ -104,7 +104,7 @@ jobs:
       - Get-Settings
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -295,13 +295,13 @@ jobs:
       - Get-Settings
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Run BeforeAll Setup Scripts
-        uses: PSModule/GitHub-Script@v1
+        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
         with:
           Name: BeforeAll-ModuleLocal
           ShowInfo: false
@@ -372,14 +372,14 @@ jobs:
       - Test-ModuleLocal
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Run AfterAll Teardown Scripts
         if: always()
-        uses: PSModule/GitHub-Script@v1
+        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
         with:
           Name: AfterAll-ModuleLocal
           ShowInfo: false
@@ -473,11 +473,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
 
   # Runs on:
   # - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
@@ -499,13 +499,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Download module artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
@@ -516,7 +516,7 @@ jobs:
           Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@v2
+        uses: PSModule/Publish-PSModule@6c25d139fe51b890f75c057897bd58ac344b192a # v2.0.8
         env:
           GH_TOKEN: ${{ github.token }}
         with:

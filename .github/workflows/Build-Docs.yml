@@ -48,25 +48,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Download module artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: module
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Document module
-        uses: PSModule/Document-PSModule@v1
+        uses: PSModule/Document-PSModule@7e50d9f41753417346ff75b3601a90524aa8ab7e # v1.0.11
         with:
           Name: ${{ inputs.Name }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Upload docs artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: docs
           path: ${{ inputs.WorkingDirectory }}/outputs/docs
@@ -74,7 +74,7 @@ jobs:
           retention-days: 1
 
       - name: Commit all changes
-        uses: PSModule/GitHub-Script@v1
+        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
