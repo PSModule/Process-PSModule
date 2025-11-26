@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: 0
