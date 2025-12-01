@@ -60,7 +60,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Document module
-        uses: PSModule/Document-PSModule@7e50d9f41753417346ff75b3601a90524aa8ab7e # v1.0.11
+        uses: PSModule/Document-PSModule@15dc407c99e408fc0a4023d4f16aee2a5507ba74 # v1.0.12
         with:
           Name: ${{ inputs.Name }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
