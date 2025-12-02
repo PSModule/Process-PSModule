@@ -104,7 +104,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@e05e9875aafc0a1e63fc13989b3b683a7ef6444f # v1.0.5
+        uses: PSModule/Install-PSModuleHelpers@d60d63e4be477d1ca0c67c6085101fb109bce8f1 # v1.0.6
 
       - name: Import-Module
         id: import-module

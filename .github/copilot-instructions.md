@@ -12,7 +12,7 @@ When executing terminal commands (using `run_in_terminal` or similar tools):
 
 ## Other instructions
 
-| Tech | Instruction file |
-|------|------------------|
+| Tech       | Instruction file                                            |
+|------------|-------------------------------------------------------------|
 | PowerShell | [pwsh.instructions.md](./instructions/pwsh.instructions.md) |
-| Markdown | [md.instructions.md](./instructions/md.instructions.md) |
+| Markdown   | [md.instructions.md](./instructions/md.instructions.md)     |

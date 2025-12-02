@@ -102,14 +102,14 @@ Given the implementation details provided as an argument, do this:
    - **Use the same title for the PR**: The PR title must match the issue title exactly
    - If unable to retrieve the issue title, determine the PR type and icon based on the changes:
 
-     | Type of change | Icon | Label |
-     |-|-|-|
-     | Docs | 📖 | Docs |
-     | Fix | 🪲 | Fix, Patch |
-     | Security fix | ⚠️ | Fix |
-     | Patch | 🩹 | Patch |
-     | Feature | 🚀 | Minor |
-     | Breaking change | 🌟 | Major |
+     | Type of change  | Icon | Label      |
+     | --------------- | ---- | ---------- |
+     | Docs            | 📖   | Docs       |
+     | Fix             | 🪲   | Fix, Patch |
+     | Security fix    | ⚠️   | Fix        |
+     | Patch           | 🩹   | Patch      |
+     | Feature         | 🚀   | Minor      |
+     | Breaking change | 🌟   | Major      |
 
    - Fallback PR title format (if issue title unavailable): `<Icon> [Type of change]: <Short description>`
    - Create PR description:

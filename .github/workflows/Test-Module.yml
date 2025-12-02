@@ -92,7 +92,7 @@ jobs:
           path: ${{ inputs.WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        uses: PSModule/Test-PSModule@80b0364db8192e73f584603c68a127de171f881f # v3.0.6
+        uses: PSModule/Test-PSModule@7d94ed751a60973867e84ea8d44521e94b7c485d # v3.0.7
         with:
           Name: ${{ inputs.Name }}
           Debug: ${{ inputs.Debug }}
