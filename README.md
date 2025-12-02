@@ -200,23 +200,23 @@ For more info see [Deploy GitHub Pages site](https://github.com/marketplace/acti
 
 This table shows when each job runs based on the trigger scenario:
 
-| Job | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
-|-----|-----------------|-----------|--------------|------------|
-| **Get-Settings** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
-| **Lint-Repository** | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Build-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Build-Docs** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Build-Site** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Test-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Lint-SourceCode** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Test-Module** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **BeforeAll-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Test-ModuleLocal** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **AfterAll-ModuleLocal** | ✅ Yes | ✅ Yes | ✅ Yes* | ✅ Yes |
-| **Get-TestResults** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Get-CodeCoverage** | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
-| **Publish-Site** | ❌ No | ✅ Yes | ❌ No | ❌ No |
-| **Publish-Module** | ✅ Yes** | ✅ Yes** | ✅ Yes*** | ✅ Yes** |
+| Job                       | Open/Updated PR | Merged PR  | Abandoned PR | Manual Run |
+| ------------------------- | --------------- | ---------- | ------------ | ---------- |
+| **Get-Settings**          | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
+| **Lint-Repository**       | ✅ Yes          | ❌ No      | ❌ No        | ❌ No      |
+| **Build-Module**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Build-Docs**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Build-Site**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Test-SourceCode**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Lint-SourceCode**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Test-Module**           | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **BeforeAll-ModuleLocal** | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Test-ModuleLocal**      | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **AfterAll-ModuleLocal**  | ✅ Yes          | ✅ Yes     | ✅ Yes*      | ✅ Yes     |
+| **Get-TestResults**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Get-CodeCoverage**      | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Publish-Site**          | ❌ No           | ✅ Yes     | ❌ No        | ❌ No      |
+| **Publish-Module**        | ✅ Yes**        | ✅ Yes**   | ✅ Yes***    | ✅ Yes**   |
 
 \* Runs for cleanup if tests were started
 \*\* Only when all tests/coverage/build succeed
@@ -261,7 +261,7 @@ The following settings are available in the settings file:
 | `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old prerelease module versions                                                     | `true`              |
 | `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                       | `true`              |
 | `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning                                                                    | `true`              |
-| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease ([.NET DateTime](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
+| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease ([.NET DateTime][netdt])                                                | `''`                |
 | `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                                                                                  | `'v'`               |
 | `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump                                                                   | `'major, breaking'` |
 | `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                   | `'minor, feature'`  |
@@ -453,3 +453,5 @@ The process is compatible with:
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
 - [SemVer 2.0.0 specifications](https://semver.org)
 - [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
+
+[netdt]: https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings

@@ -18,6 +18,8 @@ MD026:
 MD029: false                  # Ordered list item prefix
 MD033: false                  # Allow inline HTML
 MD036: false                  # Emphasis used instead of a heading
+MD060:
+  style: "leading"            # Table column style (leading avoids emoji width issues)
 
 #################
 # Rules by tags #

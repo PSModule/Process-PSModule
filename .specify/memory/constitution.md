@@ -495,21 +495,21 @@ The Process-PSModule workflow uses **dynamic conditions** to determine job execu
 
 ### Publishing Behavior Examples
 
-| PR State | Labels | Build/Test | Publish-Module | Publish-Site | Version |
-|----------|--------|------------|----------------|--------------|---------|
-| Opened | `minor` | ✅ Yes | ❌ No | ❌ No | N/A (not published) |
-| Opened | `prerelease` | ✅ Yes | ✅ Yes (prerelease) | ❌ No | `1.3.0-branchname001` |
-| Opened | `prerelease`, `minor` | ✅ Yes | ✅ Yes (prerelease) | ❌ No | `1.3.0-branchname001` |
-| Synchronized | `major` | ✅ Yes | ❌ No | ❌ No | N/A (not published) |
-| Synchronized | `prerelease` | ✅ Yes | ✅ Yes (prerelease) | ❌ No | `1.3.0-branchname002` |
-| Merged | `minor` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.3.0` |
-| Merged | `major` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `2.0.0` |
-| Merged | `patch` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.2.4` |
-| Merged | (no label) | ✅ Yes | ✅ Yes (if AutoPatching) | ✅ Yes | `1.2.4` (patch) |
-| Merged | `NoRelease` | ✅ Yes | ❌ No | ❌ No | N/A (skipped) |
-| Merged | `prerelease`, `minor` | ✅ Yes | ✅ Yes (normal) | ✅ Yes | `1.3.0` (prerelease ignored) |
-| Scheduled (cron) | N/A | ✅ Yes | ❌ No | ❌ No | N/A (validation only) |
-| Manual (workflow_dispatch) | N/A | ✅ Yes | ❌ No | ❌ No | N/A (validation only) |
+| PR State                   | Labels                | Build/Test | Publish-Module           | Publish-Site | Version                      |
+| -------------------------- | --------------------- | ---------- | ------------------------ | ------------ | ---------------------------- |
+| Opened                     | `minor`               | ✅ Yes     | ❌ No                    | ❌ No        | N/A (not published)          |
+| Opened                     | `prerelease`          | ✅ Yes     | ✅ Yes (prerelease)      | ❌ No        | `1.3.0-branchname001`        |
+| Opened                     | `prerelease`, `minor` | ✅ Yes     | ✅ Yes (prerelease)      | ❌ No        | `1.3.0-branchname001`        |
+| Synchronized               | `major`               | ✅ Yes     | ❌ No                    | ❌ No        | N/A (not published)          |
+| Synchronized               | `prerelease`          | ✅ Yes     | ✅ Yes (prerelease)      | ❌ No        | `1.3.0-branchname002`        |
+| Merged                     | `minor`               | ✅ Yes     | ✅ Yes (normal)          | ✅ Yes       | `1.3.0`                      |
+| Merged                     | `major`               | ✅ Yes     | ✅ Yes (normal)          | ✅ Yes       | `2.0.0`                      |
+| Merged                     | `patch`               | ✅ Yes     | ✅ Yes (normal)          | ✅ Yes       | `1.2.4`                      |
+| Merged                     | (no label)            | ✅ Yes     | ✅ Yes (if AutoPatching) | ✅ Yes       | `1.2.4` (patch)              |
+| Merged                     | `NoRelease`           | ✅ Yes     | ❌ No                    | ❌ No        | N/A (skipped)                |
+| Merged                     | `prerelease`, `minor` | ✅ Yes     | ✅ Yes (normal)          | ✅ Yes       | `1.3.0` (prerelease ignored) |
+| Scheduled (cron)           | N/A                   | ✅ Yes     | ❌ No                    | ❌ No        | N/A (validation only)        |
+| Manual (workflow_dispatch) | N/A                   | ✅ Yes     | ❌ No                    | ❌ No        | N/A (validation only)        |
 
 ### Version Calculation Process
 
