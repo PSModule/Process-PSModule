@@ -14,13 +14,13 @@ $ARGUMENTS
 
 ## Supported Change Types
 
-| Type | Icon | Labels | Description |
-|------|------|--------|-------------|
-| Major | 🌟 | `Major` | Breaking changes that affect compatibility |
-| Minor | 🚀 | `Minor` | New features or enhancements |
-| Patch | 🩹 | `Patch` | Small fixes or improvements |
-| Fix | 🪲 | `Fix`, `Patch` | Bugfixes |
-| Docs | 📖 | `Docs` | Documentation changes only |
+| Type  | Icon | Labels         | Description                                |
+| ----- | ---- | -------------- | ------------------------------------------ |
+| Major | 🌟   | `Major`        | Breaking changes that affect compatibility |
+| Minor | 🚀   | `Minor`        | New features or enhancements               |
+| Patch | 🩹   | `Patch`        | Small fixes or improvements                |
+| Fix   | 🪲   | `Fix`, `Patch` | Bugfixes                                   |
+| Docs  | 📖   | `Docs`         | Documentation changes only                 |
 
 ## Execution Steps
 
