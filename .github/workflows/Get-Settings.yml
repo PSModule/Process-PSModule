@@ -71,7 +71,7 @@ jobs:
           fetch-depth: 0
 
       - name: Get-Settings
-        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
+        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
         id: Get-Settings
         env:
           PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}

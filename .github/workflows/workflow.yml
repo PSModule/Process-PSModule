@@ -301,7 +301,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run BeforeAll Setup Scripts
-        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
+        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
         with:
           Name: BeforeAll-ModuleLocal
           ShowInfo: false
@@ -379,7 +379,7 @@ jobs:
 
       - name: Run AfterAll Teardown Scripts
         if: always()
-        uses: PSModule/GitHub-Script@00547bff5a143fbfc23a912a783fbfe9c470815c # v1.7.4
+        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
         with:
           Name: AfterAll-ModuleLocal
           ShowInfo: false
