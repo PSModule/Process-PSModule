@@ -29,9 +29,9 @@ Two operating modes:
 
 Replacement Analysis Table (when overlap detected):
 
-| Existing Item | Proposed New / Change | Overlap Basis | Suggested Action |
-|---------------|-----------------------|---------------|------------------|
-| <title / section> | <incoming title / change> | e.g. semantic similarity, scope duplication | Replace / Merge / Keep Both |
+| Existing Item       | Proposed New / Change     | Overlap Basis                                | Suggested Action           |
+|---------------------|---------------------------|----------------------------------------------|----------------------------|
+| <title / section>   | <incoming title / change> | e.g. semantic similarity, scope duplication | Replace / Merge / Keep Both |
 
 Heuristics for overlap:
 - Title similarity score (case-insensitive) >= 0.6 (rough string similarity) OR

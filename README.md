@@ -39,49 +39,46 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get settings](#get-settings)
-  - Gathers context from GitHub, the `github/PSModule.yml` file and other files in the repository to configure the workflow.
-  - Outputs the gathered context for use in later steps.
-- [Build module](#build-module)
-  - Compiles the module source code into a PowerShell module.
-  - Uploads the built module as an artifact for use in later steps.
-- [Test source code](#test-source-code)
-  - Tests the source code using:
-    - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
-- [Lint source code](./.github/workflows/Lint-SourceCode.yml)
-  - Lints the source code using:
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
-- [Framework test](./.github/workflows/Test-Module.yml)
-  - Tests and lints the module in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
-- [Test module](./.github/workflows/Test-ModuleLocal.yml)
-  - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
-  - Supports setup and teardown scripts executed via separate dedicated jobs:
-    - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
-    - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
-  - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as the tests.
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
-- [Get test results](./.github/workflows/Get-TestResults.yml)
-  - Gathers the test results from the previous steps and creates a summary of the results.
-  - If any tests have failed, the workflow will fail here.
-- [Get code coverage](./.github/workflows/Get-CodeCoverage.yml)
-  - Gathers the code coverage from the previous steps and creates a summary of the results.
-  - If the code coverage is below the target, the workflow will fail here.
-- [Build docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation and lints the documentation using:
-    - [super-linter](https://github.com/super-linter/super-linter).
-- [Build site](./.github/workflows/Build-Site.yml)
-  - Generates a static site using:
-    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
-- [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentation to GitHub Pages.
-- [Publish module](./.github/workflows/Publish-Module.yml)
-  - Publishes the module to the PowerShell Gallery.
-  - Creates a release on the GitHub repository.
+- [Process-PSModule](#process-psmodule)
+  - [How to get started](#how-to-get-started)
+  - [How it works](#how-it-works)
+    - [Workflow overview](#workflow-overview)
+    - [Get-Settings](#get-settings)
+    - [Lint-Repository](#lint-repository)
+    - [Get settings](#get-settings-1)
+    - [Build module](#build-module)
+    - [Test source code](#test-source-code)
+    - [Lint source code](#lint-source-code)
+    - [Framework test](#framework-test)
+    - [Test module](#test-module)
+      - [Setup and Teardown Scripts](#setup-and-teardown-scripts)
+        - [Setup - `BeforeAll.ps1`](#setup---beforeallps1)
+          - [Example - `BeforeAll.ps1`](#example---beforeallps1)
+        - [Teardown - `AfterAll.ps1`](#teardown---afterallps1)
+          - [Example - `AfterAll.ps1`](#example---afterallps1)
+      - [Module tests](#module-tests)
+    - [Get test results](#get-test-results)
+    - [Get code coverage](#get-code-coverage)
+    - [Publish module](#publish-module)
+    - [Build docs](#build-docs)
+    - [Build site](#build-site)
+    - [Publish Docs](#publish-docs)
+  - [Usage](#usage)
+    - [Inputs](#inputs)
+    - [Secrets](#secrets)
+    - [Permissions](#permissions)
+    - [Scenario Matrix](#scenario-matrix)
+  - [Configuration](#configuration)
+    - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
+    - [Example 2 - Rapid testing](#example-2---rapid-testing)
+    - [Example 3 - Configuring the Repository Linter](#example-3---configuring-the-repository-linter)
+      - [Disabling the Linter](#disabling-the-linter)
+      - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
+      - [Additional Configuration](#additional-configuration)
+      - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
+  - [Repository structure](#repository-structure)
+  - [Module source code structure](#module-source-code-structure)
+  - [Principles and practices](#principles-and-practices)
 
 ### Get-Settings
 
@@ -326,27 +323,27 @@ For more info, see [Deploy GitHub Pages site](https://github.com/marketplace/act
 
 This table shows when each job runs based on the trigger scenario:
 
-| Job                     | Open/Updated PR | Merged PR | Abandoned PR | Manual Run |
-| ------------------------| --------------- | --------- | ------------ | ---------- |
-| **Get-Settings**        | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always   |
-| **Lint-Repository**     | ✅ Yes          | ❌ No      | ❌ No        | ❌ No      |
-| **Build-Module**        | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Build-Docs**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Build-Site**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Test-SourceCode**     | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Lint-SourceCode**     | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Test-Module**         | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **BeforeAll-ModuleLocal** | ✅ Yes        | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Test-ModuleLocal**    | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **AfterAll-ModuleLocal** | ✅ Yes         | ✅ Yes     | ✅ Yes*      | ✅ Yes     |
-| **Get-TestResults**     | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Get-CodeCoverage**    | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Publish-Site**        | ❌ No           | ✅ Yes     | ❌ No        | ❌ No      |
-| **Publish-Module**      | ✅ Yes**        | ✅ Yes**   | ✅ Yes***    | ✅ Yes**   |
+| Job                       | Open/Updated PR | Merged PR  | Abandoned PR | Manual Run |
+| ------------------------- | --------------- | ---------- | ------------ | ---------- |
+| **Get-Settings**          | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
+| **Lint-Repository**       | ✅ Yes          | ❌ No      | ❌ No        | ❌ No      |
+| **Build-Module**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Build-Docs**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Build-Site**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Test-SourceCode**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Lint-SourceCode**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Test-Module**           | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **BeforeAll-ModuleLocal** | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Test-ModuleLocal**      | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **AfterAll-ModuleLocal**  | ✅ Yes          | ✅ Yes     | ✅ Yes*      | ✅ Yes     |
+| **Get-TestResults**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Get-CodeCoverage**      | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
+| **Publish-Site**          | ❌ No           | ✅ Yes     | ❌ No        | ❌ No      |
+| **Publish-Module**        | ✅ Yes**        | ✅ Yes**   | ✅ Yes***    | ✅ Yes**   |
 
-\* Runs for cleanup if tests were started
-\*\* Only when all tests/coverage/build succeed
-\*\*\* Publishes cleanup/retraction version
+- \* Runs for cleanup if tests were started
+- \*\* Only when all tests/coverage/build succeed
+- \*\*\* Publishes cleanup/retraction version
 
 ## Configuration
 
@@ -682,3 +679,5 @@ The process is compatible with:
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
 - [SemVer 2.0.0 specifications](https://semver.org)
 - [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
+
+[netdt]: https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings

@@ -50,12 +50,12 @@ jobs:
     runs-on: ${{ inputs.RunsOn }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
 
       - name: Lint-SourceCode
-        uses: PSModule/Invoke-ScriptAnalyzer@v4
+        uses: PSModule/Invoke-ScriptAnalyzer@0b13023a981f4c94136bba6193a9abd2d936cbc1 # v4.1.1
         with:
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
