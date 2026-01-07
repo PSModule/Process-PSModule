@@ -471,7 +471,7 @@ These tests run against your source code files in the `src` directory:
 | Test ID | Description | Example Skip Comment |
 |---------|-------------|---------------------|
 | `NumberOfProcessors` | Enforces use of `[System.Environment]::ProcessorCount` instead of `$env:NUMBER_OF_PROCESSORS` | `#SkipTest:NumberOfProcessors:Legacy code compatibility required` |
-| `Verbose` | Prevents use of `-Verbose` parameter in code (should only be used with `:$false` qualifier to explicitly disable) | `#SkipTest:Verbose:Required for debugging output` |
+| `Verbose` | Ensures code does not pass `-Verbose` to other commands (which would override user preference), unless explicitly disabled with `-Verbose:$false` | `#SkipTest:Verbose:Required for debugging output` |
 | `OutNull` | Enforces use of `$null = ...` instead of `... \| Out-Null` for better performance | `#SkipTest:OutNull:Pipeline processing required` |
 | `NoTernary` | Prohibits ternary operators for PowerShell 5.1 compatibility (this test is skipped by default in the framework) | `#SkipTest:NoTernary:PowerShell 7+ only module` |
 | `LowercaseKeywords` | Ensures all PowerShell keywords are lowercase | `#SkipTest:LowercaseKeywords:Generated code` |
@@ -514,12 +514,20 @@ function Get-ComplexData {
 }
 
 function Get-RawData {
-    param([string]$Path)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
     # Helper function implementation
 }
 
 function Format-ComplexData {
-    param($Data)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Data
+    )
     # Helper function implementation
 }
 ```
