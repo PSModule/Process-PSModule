@@ -471,9 +471,9 @@ These tests run against your source code files in the `src` directory:
 | Test ID | Description | Example Skip Comment |
 |---------|-------------|---------------------|
 | `NumberOfProcessors` | Enforces use of `[System.Environment]::ProcessorCount` instead of `$env:NUMBER_OF_PROCESSORS` | `#SkipTest:NumberOfProcessors:Legacy code compatibility required` |
-| `Verbose` | Ensures `-Verbose` is not used unless explicitly disabled with `:$false` | `#SkipTest:Verbose:Required for debugging output` |
-| `OutNull` | Enforces use of `$null = ...` instead of `... \| Out-Null` for better performance | `#SkipTest:OutNull:Pipeline output needed for compatibility` |
-| `NoTernary` | Checks for ternary operators (currently skipped by default for PowerShell 7+ compatibility) | `#SkipTest:NoTernary:PowerShell 7+ only module` |
+| `Verbose` | Prevents use of `-Verbose` parameter in code (should only be used with `:$false` qualifier to explicitly disable) | `#SkipTest:Verbose:Required for debugging output` |
+| `OutNull` | Enforces use of `$null = ...` instead of `... \| Out-Null` for better performance | `#SkipTest:OutNull:Pipeline processing required` |
+| `NoTernary` | Prohibits ternary operators for PowerShell 5.1 compatibility (this test is skipped by default in the framework) | `#SkipTest:NoTernary:PowerShell 7+ only module` |
 | `LowercaseKeywords` | Ensures all PowerShell keywords are lowercase | `#SkipTest:LowercaseKeywords:Generated code` |
 | `FunctionCount` | Ensures each file contains exactly one function | `#SkipTest:FunctionCount:Helper functions included` |
 | `FunctionName` | Ensures the filename matches the function name | `#SkipTest:FunctionName:Legacy naming convention` |
