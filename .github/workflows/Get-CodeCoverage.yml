@@ -26,4 +26,3 @@ jobs:
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
           Version: ${{ fromJson(inputs.Settings).Version }}
-          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

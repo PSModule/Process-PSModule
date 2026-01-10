@@ -20,11 +20,10 @@ jobs:
         uses: PSModule/Get-PesterTestResults@0c1d8cde9575b192831f76e87d3f7e825a7d8ff4 # v1.0.7
         id: Get-TestResults
         with:
-          SourceCodeTestSuites: ${{ fromJson(inputs.Settings).TestSuites.SourceCode }}
-          PSModuleTestSuites: ${{ fromJson(inputs.Settings).TestSuites.PSModule }}
-          ModuleTestSuites: ${{ fromJson(inputs.Settings).TestSuites.Module }}
+          SourceCodeTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.SourceCode) }}
+          PSModuleTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.PSModule) }}
+          ModuleTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.Module) }}
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
           Version: ${{ fromJson(inputs.Settings).Version }}
-          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
