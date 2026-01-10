@@ -1,0 +1,55 @@
+name: BeforeAll-ModuleLocal
+
+on:
+  workflow_call:
+    inputs:
+      Settings:
+        type: string
+        description: The complete settings object including test suites.
+        required: true
+
+permissions:
+  contents: read # to checkout the repo
+
+jobs:
+  BeforeAll-ModuleLocal:
+    name: BeforeAll-ModuleLocal
+    runs-on: ubuntu-latest
+    env:
+      Settings: ${{ inputs.Settings }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Run BeforeAll Setup Scripts
+        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
+        with:
+          Name: BeforeAll-ModuleLocal
+          ShowInfo: false
+          ShowOutput: true
+          Debug: ${{ fromJson(inputs.Settings).Debug }}
+          Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
+          Verbose: ${{ fromJson(inputs.Settings).Verbose }}
+          Version: ${{ fromJson(inputs.Settings).Version }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+          Script: |
+            LogGroup "Running BeforeAll Setup Scripts" {
+                $beforeAllScript = 'tests/BeforeAll.ps1'
+
+                if (-not (Test-Path $beforeAllScript)) {
+                    Write-Host "No BeforeAll.ps1 script found at [$beforeAllScript] - exiting successfully"
+                    exit 0
+                }
+
+                Write-Host "Running BeforeAll setup script: $beforeAllScript"
+                try {
+                    & $beforeAllScript
+                    Write-Host "BeforeAll script completed successfully: $beforeAllScript"
+                } catch {
+                    Write-Error "BeforeAll script failed: $beforeAllScript - $_"
+                    throw
+                }
+            }

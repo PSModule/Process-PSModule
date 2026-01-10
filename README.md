@@ -281,13 +281,7 @@ jobs:
 
 | Name | Type | Description | Required | Default |
 | ---- | ---- | ----------- | -------- | ------- |
-| `Name` | `string` | The name of the module to process. Defaults to the repository name if nothing is specified. | `false` | N/A |
-| `SettingsPath` | `string` | The path to the settings file. Settings in the settings file take precedence over the action inputs. | `false` | `.github/PSModule.yml` |
-| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
-| `Prerelease` | `boolean` | Whether to use a prerelease version of the **GitHub** module. | `false` | `false` |
-| `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
-| `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
-| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
+| `SettingsPath` | `string` | The path to the settings file. All workflow configuration is controlled through this settings file. | `false` | `.github/PSModule.yml` |
 
 ### Secrets
 

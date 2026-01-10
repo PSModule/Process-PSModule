@@ -1,0 +1,56 @@
+name: AfterAll-ModuleLocal
+
+on:
+  workflow_call:
+    inputs:
+      Settings:
+        type: string
+        description: The complete settings object including test suites.
+        required: true
+
+permissions:
+  contents: read # to checkout the repo
+
+jobs:
+  AfterAll-ModuleLocal:
+    name: AfterAll-ModuleLocal
+    runs-on: ubuntu-latest
+    env:
+      SETTINGS: ${{ inputs.Settings }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Run AfterAll Teardown Scripts
+        if: always()
+        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
+        with:
+          Name: AfterAll-ModuleLocal
+          ShowInfo: false
+          ShowOutput: true
+          Debug: ${{ fromJson(inputs.Settings).Debug }}
+          Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
+          Verbose: ${{ fromJson(inputs.Settings).Verbose }}
+          Version: ${{ fromJson(inputs.Settings).Version }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+          Script: |
+            LogGroup "Running AfterAll Teardown Scripts" {
+                $afterAllScript = 'tests/AfterAll.ps1'
+
+                if (-not (Test-Path $afterAllScript)) {
+                    Write-Host "No AfterAll.ps1 script found at [$afterAllScript] - exiting successfully"
+                    exit 0
+                }
+
+                Write-Host "Running AfterAll teardown script: $afterAllScript"
+                try {
+                    & $afterAllScript
+                    Write-Host "AfterAll script completed successfully: $afterAllScript"
+                } catch {
+                    Write-Warning "AfterAll script failed: $afterAllScript - $_"
+                    # Don't throw for teardown scripts to ensure other cleanup scripts can run
+                }
+            }

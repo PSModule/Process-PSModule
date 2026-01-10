@@ -3,10 +3,6 @@ name: Get-Settings
 on:
   workflow_call:
     inputs:
-      Name:
-        type: string
-        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
-        required: false
       SettingsPath:
         type: string
         description: The path to the settings file.
