@@ -74,8 +74,12 @@ jobs:
           Settings: Module
 
   Lint-Module:
-    name: Lint-Module (${{ inputs.RunsOn }})
-    runs-on: ${{ inputs.RunsOn }}
+    name: Lint-Module (${{ matrix.OSName }})
+    runs-on: ${{ matrix.RunsOn }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.Settings).TestSuites.PSModule }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
