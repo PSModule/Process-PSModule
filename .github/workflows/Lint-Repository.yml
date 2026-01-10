@@ -1,0 +1,69 @@
+name: Lint-Repository
+
+on:
+  workflow_call:
+    inputs:
+      Settings:
+        type: string
+        description: The settings object as a JSON string.
+        required: true
+
+permissions:
+  contents: read  # to checkout the repository
+  statuses: write # to update the status of the workflow from linter
+
+jobs:
+  Lint-Repository:
+    name: Lint code base
+    runs-on: ubuntu-latest
+    env:
+      Settings: ${{ inputs.Settings }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Load dynamic envs
+        run: |
+          Write-Host "Loading settings for super-linter:"
+          $settings = $env:Settings | ConvertFrom-Json -AsHashtable
+          $linter = $settings.Linter
+          $env = $linter.env
+
+          foreach ($key in $env.Keys) {
+            $value = $env[$key]
+
+            if ($value -is [bool]) {
+                $value = $value.ToString().ToLower()
+            }
+
+            Write-Host "$key = $value"
+
+            # Persist for following steps in this job
+            "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+      - name: Lint code base
+        id: super-linter
+        uses: super-linter/super-linter@47984f49b4e87383eed97890fe2dca6063bbd9c3 # v8.3.1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_WORKSPACE: ${{ fromJson(env.Settings).WorkingDirectory }}
+          FILTER_REGEX_INCLUDE: ${{ fromJson(env.Settings).WorkingDirectory }}
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
+          SAVE_SUPER_LINTER_SUMMARY: true
+
+      - name: Post super-linter summary
+        if: failure() || fromJson(env.Settings).Linter.ShowSummaryOnSuccess == true
+        shell: pwsh
+        run: |
+          $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
+          Get-Content $summaryPath | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+          $failed = '${{ steps.super-linter.outcome }}' -eq 'failure'
+          if ($failed) {
+              Write-Host "::error::Super-linter found issues. Please review the summary above."
+              exit 1
+          }

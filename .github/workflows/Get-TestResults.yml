@@ -3,17 +3,9 @@ name: Get-TestResults
 on:
   workflow_call:
     inputs:
-      SourceCodeTestSuites:
+      Settings:
         type: string
-        description: The test suites to run for the source code.
-        required: true
-      PSModuleTestSuites:
-        type: string
-        description: The test suites to run for the PSModule.
-        required: true
-      ModuleTestSuites:
-        type: string
-        description: The test suites to run for the module.
+        description: The complete settings object including test suites.
         required: true
       Debug:
         type: boolean
@@ -53,9 +45,9 @@ jobs:
         uses: PSModule/Get-PesterTestResults@0c1d8cde9575b192831f76e87d3f7e825a7d8ff4 # v1.0.7
         id: Get-TestResults
         with:
-          SourceCodeTestSuites: ${{ inputs.SourceCodeTestSuites }}
-          PSModuleTestSuites: ${{ inputs.PSModuleTestSuites }}
-          ModuleTestSuites: ${{ inputs.ModuleTestSuites }}
+          SourceCodeTestSuites: ${{ fromJson(inputs.Settings).TestSuites.SourceCode }}
+          PSModuleTestSuites: ${{ fromJson(inputs.Settings).TestSuites.PSModule }}
+          ModuleTestSuites: ${{ fromJson(inputs.Settings).TestSuites.Module }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
