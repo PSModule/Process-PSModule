@@ -76,6 +76,14 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
       - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
       - [Additional Configuration](#additional-configuration)
       - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
+  - [Skipping Individual Framework Tests](#skipping-individual-framework-tests)
+    - [How to Skip Tests](#how-to-skip-tests)
+    - [Available Framework Tests](#available-framework-tests)
+      - [SourceCode Tests](#sourcecode-tests)
+      - [Module Tests](#module-tests-1)
+    - [Example Usage](#example-usage)
+    - [Best Practices](#best-practices)
+    - [Related Configuration](#related-configuration)
   - [Repository structure](#repository-structure)
   - [Module source code structure](#module-source-code-structure)
   - [Principles and practices](#principles-and-practices)
@@ -91,21 +99,21 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 ### Get settings
 
 [workflow](#get-settings)
-  - Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
-  - Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
-    to setup testing infrastructure and what operating systems to run the tests on.
+- Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
+- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
+  to setup testing infrastructure and what operating systems to run the tests on.
 
 ### Build module
 
 [workflow](./.github/workflows/Build-Module.yml)
-  - Compiles the module source code into a PowerShell module.
+- Compiles the module source code into a PowerShell module.
 
 ### Test source code
 
 [workflow](./.github/workflows/Test-SourceCode.yml)
-  - Tests the source code in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+- Tests the source code in parallel (matrix) using:
+  - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 
 The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.Tests.ps1) verifies the following coding practices that the framework enforces:
 
@@ -126,27 +134,27 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 ### Lint source code
 
 [workflow](./.github/workflows/Lint-SourceCode.yml)
-  - Lints the source code in parallel (matrix) using:
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
+- Lints the source code in parallel (matrix) using:
+  - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
 
 ### Framework test
 
 [workflow](./.github/workflows/Test-Module.yml)
-  - Tests and lints the module in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+- Tests and lints the module in parallel (matrix) using:
+  - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
+  - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 
 ### Test module
 
 [workflow](./.github/workflows/Test-ModuleLocal.yml)
-  - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
-  - Supports setup and teardown scripts executed via separate dedicated jobs:
-    - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
-    - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
-  - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as the tests.
-  - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+- Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
+- Supports setup and teardown scripts executed via separate dedicated jobs:
+  - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
+  - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
+- Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as the tests.
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 
 #### Setup and Teardown Scripts
 
