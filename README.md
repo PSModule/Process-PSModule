@@ -210,32 +210,32 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Get test results
 
 [workflow](./.github/workflows/Get-TestResults.yml)
-  - Gathers the test results from the previous steps and creates a summary of the results.
-  - If any tests have failed, the workflow will fail here.
+- Gathers the test results from the previous steps and creates a summary of the results.
+- If any tests have failed, the workflow will fail here.
 
 ### Get code coverage
 
 [workflow](./.github/workflows/Get-CodeCoverage.yml)
-  - Gathers the code coverage from the previous steps and creates a summary of the results.
-  - If the code coverage is below the target, the workflow will fail here.
+- Gathers the code coverage from the previous steps and creates a summary of the results.
+- If the code coverage is below the target, the workflow will fail here.
 
 ### Publish module
 
 [workflow](./.github/workflows/Publish-Module.yml)
-  - Publishes the module to the PowerShell Gallery.
-  - Creates a release on the GitHub repository.
+- Publishes the module to the PowerShell Gallery.
+- Creates a release on the GitHub repository.
 
 ### Build docs
 
 [workflow](./.github/workflows/Build-Docs.yml)
-  - Generates documentation and lints the documentation using:
-    - [super-linter](https://github.com/super-linter/super-linter).
+- Generates documentation and lints the documentation using:
+  - [super-linter](https://github.com/super-linter/super-linter).
 
 ### Build site
 
 [workflow](./.github/workflows/Build-Site.yml)
-  - Generates a static site using:
-    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+- Generates a static site using:
+  - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
 ### Publish Docs
 
@@ -724,7 +724,7 @@ Key expectations:
 
 How the module is built.
 
-```
+```plaintext
 ├── src/                                    # Module source compiled and documented by the pipeline
 │   ├── assemblies/                         # Bundled binaries copied into the build artifact
 │   ├── classes/                            # Class scripts merged into the root module
@@ -791,5 +791,3 @@ The process is compatible with:
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
 - [SemVer 2.0.0 specifications](https://semver.org)
 - [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
-
-[netdt]: https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings
