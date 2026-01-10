@@ -26,6 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Load dynamic envs
+        shell: pwsh
         run: |
           Write-Host "Loading settings for super-linter:"
           $settings = $env:Settings | ConvertFrom-Json -AsHashtable
