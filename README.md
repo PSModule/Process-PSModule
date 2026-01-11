@@ -1,72 +1,245 @@
 # Process-PSModule
 
-A workflow for crafting PowerShell modules using the PSModule framework, which builds, tests, and publishes PowerShell modules to the PowerShell
-Gallery and produces documentation that is published to GitHub Pages. The workflow is used by all PowerShell modules in the PSModule organization.
+Process-PSModule is the corner-stone of the PSModule framework. It is an end-to-end GitHub Actions workflow that automates the entire lifecycle of a
+PowerShell module. The workflow builds the PowerShell module, runs cross-platform tests, enforces code quality and coverage requirements, generates
+documentation, and publishes module to the PowerShell Gallery and its documentation site to GitHub Pages. It is the core workflow used across all
+PowerShell modules in the [PSModule organization](https://github.com/PSModule), ensuring reliable, automated, and maintainable delivery of PowerShell
+projects.
 
 ## How to get started
 
 1. [Create a repository from the Template-Module](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
-1. Configure the repository:
-   1. Enable GitHub Pages in the repository settings. Set it to deploy from `GitHub Actions`.
-   1. This will create an environment called `github-pages` that GitHub deploys your site to.
-      <details><summary>Within the environment, remove the branch protection for <code>main</code>.</summary>
-      <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
+2. Configure the repository:
+   1. Enable GitHub Pages in the repository settings. Set it to deploy from **GitHub Actions**.
+   2. This will create an environment called `github-pages` that GitHub deploys your site to.
+      <details><summary>Within the <code>github-pages</code> environment, remove the branch protection for <code>main</code>.</summary>
+        <img src="./media/pagesEnvironment.png" alt="Remove the branch protection on main">
       </details>
-   1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it enough permission to manage the module you are working on.
-   1. Create a new secret in the repository called `APIKEY` and set it to the API key for the PowerShell Gallery.
-1. Create a branch, make your changes, create a PR and let the workflow run.
+   3. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission to manage the module you
+      are working on.
+   4. Create a new secret called `APIKEY` in the repository and set the API key for the PowerShell Gallery as its value.
+   5. If you are planning on creating many modules, you could use a glob pattern for the API key permissions in PowerShell Gallery and store the
+      secret on the organization.
+3. Clone the repo locally, create a branch, make your changes, push the changes, create a PR and let the workflow run.
+   - Adding a `Prerelease` label to the PR will create a prerelease version of the module.
+4. When merging to `main`, the workflow automatically builds, tests, and publishes your module to the PowerShell Gallery and maintains the
+   documentation on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on
+   the PR to bump the version accordingly.
 
 ## How it works
 
+Everything is packaged into this single workflow to simplify full configuration of the workflow via this repository. Simplifying management and
+operations across all PowerShell module projects. A user can configure how it works by simply configuring settings using a single file.
+
+### Workflow overview
+
 The workflow is designed to be triggered on pull requests to the repository's default branch.
 When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow will run.
-Depending on the labels in the pull requests, the workflow will result in different outcomes.
+Depending on the labels in the pull requests, the [workflow will result in different outcomes](#scenario-matrix).
 
 ![Process diagram](./media/Process-PSModule.png)
 
-- [Get settings](./.github/workflows/Get-Settings.yml)
-  - Reads the settings file from a file in the module repository to configure the workflow.
-  - Gathers tests and creates test configuration based on the settings and the tests available in the module repository.
-  - This includes the selection of what OSes to run the tests on.
-- [Build module](./.github/workflows/Build-Module.yml)
-  - Compiles the module source code into a PowerShell module.
-- [Test source code](./.github/workflows/Test-SourceCode.yml)
-  - Tests the source code in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
-  - This produces a json based report that is used to later evaluate the results of the tests.
-- [Lint source code](./.github/workflows/Lint-SourceCode.yml)
-  - Lints the source code in parallel (matrix) using:
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
-  - This produces a json based report that is used to later evaluate the results of the linter.
-- [Framework test](./.github/workflows/Test-Module.yml)
-  - Tests and lints the module in parallel (matrix) using:
-    - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
-    - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer).
-  - This produces a json based report that is used to later evaluate the results of the tests.
-- [Test module](./.github/workflows/Test-ModuleLocal.yml)
-  - Import and tests the module in parallel (matrix) using Pester tests from the module repository.
-  - Supports setup and teardown scripts executed via separate dedicated jobs:
-    - `BeforeAll`: Runs once before all test matrix jobs to set up test environment (e.g., deploy infrastructure, download test data)
-    - `AfterAll`: Runs once after all test matrix jobs complete to clean up test environment (e.g., remove test resources, cleanup databases)
-  - Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as tests
-  - This produces a json based report that is used to later evaluate the results of the tests.
-- [Get test results](./.github/workflows/Get-TestResults.yml)
-  - Gathers the test results from the previous steps and creates a summary of the results.
-  - If any tests have failed, the workflow will fail here.
-- [Get code coverage](./.github/workflows/Get-CodeCoverage.yml)
-  - Gathers the code coverage from the previous steps and creates a summary of the results.
-  - If the code coverage is below the target, the workflow will fail here.
-- [Build docs](./.github/workflows/Build-Docs.yml)
-  - Generates documentation and lints the documentation using:
-    - [super-linter](https://github.com/super-linter/super-linter).
-- [Build site](./.github/workflows/Build-Site.yml)
-  - Generates a static site using:
-    - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
-- [Publish site](./.github/workflows/Publish-Site.yml)
-  - Publishes the static site with the module documentation to GitHub Pages.
-- [Publish module](./.github/workflows/Publish-Module.yml)
-  - Publishes the module to the PowerShell Gallery.
-  - Creates a release on the GitHub repository.
+- [Process-PSModule](#process-psmodule)
+  - [How to get started](#how-to-get-started)
+  - [How it works](#how-it-works)
+    - [Workflow overview](#workflow-overview)
+    - [Get-Settings](#get-settings)
+    - [Lint-Repository](#lint-repository)
+    - [Get settings](#get-settings-1)
+    - [Build module](#build-module)
+    - [Test source code](#test-source-code)
+    - [Lint source code](#lint-source-code)
+    - [Framework test](#framework-test)
+    - [Test module](#test-module)
+      - [Setup and Teardown Scripts](#setup-and-teardown-scripts)
+        - [Setup - `BeforeAll.ps1`](#setup---beforeallps1)
+          - [Example - `BeforeAll.ps1`](#example---beforeallps1)
+        - [Teardown - `AfterAll.ps1`](#teardown---afterallps1)
+          - [Example - `AfterAll.ps1`](#example---afterallps1)
+      - [Module tests](#module-tests)
+    - [Get test results](#get-test-results)
+    - [Get code coverage](#get-code-coverage)
+    - [Publish module](#publish-module)
+    - [Build docs](#build-docs)
+    - [Build site](#build-site)
+    - [Publish Docs](#publish-docs)
+  - [Usage](#usage)
+    - [Inputs](#inputs)
+    - [Secrets](#secrets)
+    - [Permissions](#permissions)
+    - [Scenario Matrix](#scenario-matrix)
+  - [Configuration](#configuration)
+    - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
+    - [Example 2 - Rapid testing](#example-2---rapid-testing)
+    - [Example 3 - Configuring the Repository Linter](#example-3---configuring-the-repository-linter)
+      - [Disabling the Linter](#disabling-the-linter)
+      - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
+      - [Additional Configuration](#additional-configuration)
+      - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
+  - [Skipping Individual Framework Tests](#skipping-individual-framework-tests)
+    - [How to Skip Tests](#how-to-skip-tests)
+    - [Available Framework Tests](#available-framework-tests)
+      - [SourceCode Tests](#sourcecode-tests)
+      - [Module Tests](#module-tests-1)
+    - [Example Usage](#example-usage)
+    - [Best Practices](#best-practices)
+    - [Related Configuration](#related-configuration)
+  - [Repository structure](#repository-structure)
+  - [Module source code structure](#module-source-code-structure)
+  - [Principles and practices](#principles-and-practices)
+
+### Get-Settings
+
+[workflow](./.github/workflows/Get-Settings.yml)
+
+### Lint-Repository
+
+[workflow](./.github/workflows/Lint-Repository.yml)
+
+### Get settings
+
+[workflow](#get-settings)
+- Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
+- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
+  to setup testing infrastructure and what operating systems to run the tests on.
+
+### Build module
+
+[workflow](./.github/workflows/Build-Module.yml)
+- Compiles the module source code into a PowerShell module.
+
+### Test source code
+
+[workflow](./.github/workflows/Test-SourceCode.yml)
+- Tests the source code in parallel (matrix) using:
+  - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+
+The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.Tests.ps1) verifies the following coding practices that the framework enforces:
+
+| ID                  | Category            | Description                                                                                |
+|---------------------|---------------------|--------------------------------------------------------------------------------------------|
+| NumberOfProcessors  | General             | Should use `[System.Environment]::ProcessorCount` instead of `$env:NUMBER_OF_PROCESSORS`.  |
+| Verbose             | General             | Should not contain `-Verbose` unless it is explicitly disabled with `:$false`.             |
+| OutNull             | General             | Should use `$null = ...` instead of piping output to `Out-Null`.                           |
+| NoTernary           | General             | Should not use ternary operations to maintain compatibility with PowerShell 5.1 and below. |
+| LowercaseKeywords   | General             | All PowerShell keywords should be written in lowercase.                                    |
+| FunctionCount       | Functions (Generic) | Each script file should contain exactly one function or filter.                            |
+| FunctionName        | Functions (Generic) | Script filenames should match the name of the function or filter they contain.             |
+| CmdletBinding       | Functions (Generic) | Functions should include the `[CmdletBinding()]` attribute.                                |
+| ParamBlock          | Functions (Generic) | Functions should have a parameter block (`param()`).                                       |
+| FunctionTest        | Functions (Public)  | All public functions/filters should have corresponding tests.                              |
+
+
+### Lint source code
+
+[workflow](./.github/workflows/Lint-SourceCode.yml)
+- Lints the source code in parallel (matrix) using:
+  - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
+
+### Framework test
+
+[workflow](./.github/workflows/Test-Module.yml)
+- Tests and lints the module in parallel (matrix) using:
+  - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
+  - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+
+### Test module
+
+[workflow](./.github/workflows/Test-ModuleLocal.yml)
+- Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
+- Supports setup and teardown scripts executed via separate dedicated jobs:
+  - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
+  - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
+- Setup/teardown scripts are automatically detected in test directories and executed with the same environment variables as the tests.
+- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+
+#### Setup and Teardown Scripts
+
+The workflow supports automatic execution of setup and teardown scripts for module tests:
+
+- Scripts are automatically detected and executed if present.
+- If no scripts are found, the workflow continues normally.
+
+##### Setup - `BeforeAll.ps1`
+
+- Place in your test directories (`tests/BeforeAll.ps1`).
+- Runs once before all test matrix jobs to prepare the test environment.
+- Deploy test infrastructure, download test data, initialize databases, or configure services.
+- Has access to the same environment variables as your tests (secrets, GitHub token, etc.).
+
+###### Example - `BeforeAll.ps1`
+
+```powershell
+Write-Host "Setting up test environment..."
+# Deploy test infrastructure
+# Download test data
+# Initialize test databases
+Write-Host "Test environment ready!"
+```
+
+##### Teardown - `AfterAll.ps1`
+
+- Place in your test directories (`tests/AfterAll.ps1`).
+- Runs once after all test matrix jobs complete to clean up the test environment.
+- Remove test resources, clean up databases, stop services, or upload artifacts.
+- Has access to the same environment variables as your tests.
+
+###### Example - `AfterAll.ps1`
+
+```powershell
+Write-Host "Cleaning up test environment..."
+# Remove test resources
+# Clean up databases
+# Stop services
+Write-Host "Cleanup completed!"
+```
+
+
+#### Module tests
+
+The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1) verifies the following coding practices that the framework enforces:
+
+| Name | Description |
+| ------ | ----------- |
+| Module Manifest exists | Verifies that a module manifest file is present. |
+| Module Manifest is valid | Verifies that the module manifest file is valid. |
+
+### Get test results
+
+[workflow](./.github/workflows/Get-TestResults.yml)
+- Gathers the test results from the previous steps and creates a summary of the results.
+- If any tests have failed, the workflow will fail here.
+
+### Get code coverage
+
+[workflow](./.github/workflows/Get-CodeCoverage.yml)
+- Gathers the code coverage from the previous steps and creates a summary of the results.
+- If the code coverage is below the target, the workflow will fail here.
+
+### Publish module
+
+[workflow](./.github/workflows/Publish-Module.yml)
+- Publishes the module to the PowerShell Gallery.
+- Creates a release on the GitHub repository.
+
+### Build docs
+
+[workflow](./.github/workflows/Build-Docs.yml)
+- Generates documentation and lints the documentation using:
+  - [super-linter](https://github.com/super-linter/super-linter).
+
+### Build site
+
+[workflow](./.github/workflows/Build-Site.yml)
+- Generates a static site using:
+  - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+
+### Publish Docs
+
+[workflow](./.github/workflows/Publish-Docs.yml)
 
 ## Usage
 
@@ -108,78 +281,35 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKEY: ${{ secrets.APIKEY }}
-
 ```
+
 </details>
 
 ### Inputs
 
 | Name | Type | Description | Required | Default |
 | ---- | ---- | ----------- | -------- | ------- |
-| `Name` | `string` | The name of the module to process. This defaults to the repository name if nothing is specified. | `false` | N/A |
-| `SettingsPath` | `string` | The path to the settings file. Settings in the settings file take precedence over the action inputs. | `false` | `.github/PSModule.yml` |
+| `SettingsPath` | `string` | The path to the settings file. All workflow configuration is controlled through this settings file. | `false` | `.github/PSModule.yml` |
+| `Debug` | `boolean` | Enable debug output. | `false` | `false` |
+| `Verbose` | `boolean` | Enable verbose output. | `false` | `false` |
 | `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
-| `Debug` | `boolean` | Whether to enable debug output. Adds a `debug` step to every job. | `false` | `false` |
-| `Verbose` | `boolean` | Whether to enable verbose output. | `false` | `false` |
-| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `.` |
-
-### Setup and Teardown Scripts
-
-The workflow supports automatic execution of setup and teardown scripts for module tests:
-
-- Scripts are automatically detected and executed if present
-- If no scripts are found, the workflow continues normally
-
-#### Setup - `BeforeAll.ps1`
-
-- Place in your test directories (`tests/BeforeAll.ps1`)
-- Runs once before all test matrix jobs to prepare the test environment
-- Deploy test infrastructure, download test data, initialize databases, or configure services
-- Has access to the same environment variables as your tests (secrets, GitHub token, etc.)
-
-##### Example - `BeforeAll.ps1`
-
-```powershell
-Write-Host "Setting up test environment..."
-# Deploy test infrastructure
-# Download test data
-# Initialize test databases
-Write-Host "Test environment ready!"
-```
-
-#### Teardown - `AfterAll.ps1`
-
-- Place in your test directories (`tests/AfterAll.ps1`)
-- Runs once after all test matrix jobs complete to clean up the test environment
-- Remove test resources, clean up databases, stop services, or upload artifacts
-- Has access to the same environment variables as your tests
-
-##### Example - `AfterAll.ps1`
-
-```powershell
-Write-Host "Cleaning up test environment..."
-# Remove test resources
-# Cleanup databases
-# Stop services
-Write-Host "Cleanup completed!"
-```
+| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `'.'` |
 
 ### Secrets
 
-The following secrets are used by the workflow. They can be automatically provided (if available) by setting the `secrets: inherit`
-in the workflow file.
+The following secrets are used by the workflow. They can be automatically provided (if available) by setting `secrets: inherit` in the workflow file.
 
-| Name | Location | Description | Default |
-| ---- | -------- | ----------- | ------- |
-| `APIKEY` | GitHub secrets | The API key for the PowerShell Gallery. | N/A |
-| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests. | N/A |
-| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests. | N/A |
-| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests. | N/A |
-| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests. | N/A |
-| `TEST_USER_ORG_FG_PAT` | GitHub secrets | The fine-grained personal access token with org access for running tests. | N/A |
-| `TEST_USER_USER_FG_PAT` | GitHub secrets | The fine-grained personal access token with user account access for running tests. | N/A |
-| `TEST_USER_PAT` | GitHub secrets | The classic personal access token for running tests. | N/A |
+| Name | Location       | Description                                                               | Default |
+| ---- | -------------- | ------------------------------------------------------------------------- | ------- |
+| `APIKEY`                 | GitHub secrets | The API key for the PowerShell Gallery.                                      | N/A |
+| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests.                 | N/A |
+| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests.             | N/A |
+| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests.              | N/A |
+| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests.           | N/A |
+| `TEST_USER_ORG_FG_PAT`   | GitHub secrets | The fine-grained PAT with organization access for running tests.           | N/A |
+| `TEST_USER_USER_FG_PAT`  | GitHub secrets | The fine-grained PAT with user account access for running tests.           | N/A |
+| `TEST_USER_PAT`          | GitHub secrets | The classic personal access token for running tests.                       | N/A |
 
 ### Permissions
 
@@ -194,7 +324,7 @@ permissions:
   id-token: write      # to verify the Pages deployment originates from an appropriate source
 ```
 
-For more info see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
+For more info, see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
 
 ### Scenario Matrix
 
@@ -218,9 +348,9 @@ This table shows when each job runs based on the trigger scenario:
 | **Publish-Site**          | ❌ No           | ✅ Yes     | ❌ No        | ❌ No      |
 | **Publish-Module**        | ✅ Yes**        | ✅ Yes**   | ✅ Yes***    | ✅ Yes**   |
 
-\* Runs for cleanup if tests were started
-\*\* Only when all tests/coverage/build succeed
-\*\*\* Publishes cleanup/retraction version
+- \* Runs for cleanup if tests were started
+- \*\* Only when all tests/coverage/build succeed
+- \*\*\* Publishes cleanup/retraction version
 
 ## Configuration
 
@@ -229,52 +359,52 @@ The file can be a `JSON`, `YAML`, or `PSD1` file. By default, it will look for `
 
 The following settings are available in the settings file:
 
-| Name                                   | Type      | Description                                                                                              | Default             |
-|----------------------------------------|-----------|----------------------------------------------------------------------------------------------------------|---------------------|
-| `Name`                                 | `String`  | Name of the module to publish. Defaults to repository name.                                              | `null`              |
-| `Test.Skip`                            | `Boolean` | Skip all tests                                                                                           | `false`             |
-| `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                                                                                      | `false`             |
-| `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                                                                                      | `false`             |
-| `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                                                                                    | `false`             |
-| `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                                                                                   | `false`             |
-| `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux                                                                          | `false`             |
-| `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS                                                                          | `false`             |
-| `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows                                                                        | `false`             |
-| `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests                                                                            | `false`             |
-| `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux                                                                   | `false`             |
-| `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS                                                                   | `false`             |
-| `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows                                                                 | `false`             |
-| `Test.Module.Skip`                     | `Boolean` | Skip module tests                                                                                        | `false`             |
-| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                                                                               | `false`             |
-| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                                                                               | `false`             |
-| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                                                                             | `false`             |
-| `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                                                                              | `false`             |
-| `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                                                                                 | `false`             |
-| `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage                                                                          | `0`                 |
-| `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports                                                              | `'Missed, Files'`   |
-| `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                     | `false`             |
-| `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                        | `false`             |
-| `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                                 | `false`             |
-| `Build.Docs.ShowSummaryOnSuccess`      | `Boolean` | Show super-linter summary on success for documentation linting                                           | `false`             |
-| `Build.Site.Skip`                      | `Boolean` | Skip site build                                                                                          | `false`             |
-| `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                   | `false`             |
-| `Publish.Module.AutoCleanup`           | `Boolean` | Automatically cleanup old prerelease module versions                                                     | `true`              |
-| `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                       | `true`              |
-| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning                                                                    | `true`              |
-| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease ([.NET DateTime][netdt])                                                | `''`                |
-| `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                                                                                  | `'v'`               |
-| `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump                                                                   | `'major, breaking'` |
-| `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                   | `'minor, feature'`  |
-| `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                   | `'patch, fix'`      |
-| `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                             | `'NoRelease'`       |
-| `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                                  | `false`             |
-| `Linter.ShowSummaryOnSuccess`          | `Boolean` | Show super-linter summary on success for repository linting                                              | `false`             |
-| `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                     | `{}`                |
+| Name                                   | Type      | Description                                                                                           | Default             |
+| -------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- | ------------------- |
+| `Name`                                 | `String`  | Name of the module to publish. Defaults to the repository name.                                       | `null`              |
+| `Test.Skip`                            | `Boolean` | Skip all tests                                                                                        | `false`             |
+| `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                                                                                   | `false`             |
+| `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                                                                                   | `false`             |
+| `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                                                                                 | `false`             |
+| `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                                                                                | `false`             |
+| `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux                                                                       | `false`             |
+| `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS                                                                       | `false`             |
+| `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows                                                                     | `false`             |
+| `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests                                                                         | `false`             |
+| `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux                                                                | `false`             |
+| `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS                                                                | `false`             |
+| `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows                                                              | `false`             |
+| `Test.Module.Skip`                     | `Boolean` | Skip module tests                                                                                     | `false`             |
+| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                                                                            | `false`             |
+| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                                                                            | `false`             |
+| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                                                                          | `false`             |
+| `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                                                                           | `false`             |
+| `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                                                                              | `false`             |
+| `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage                                                                       | `0`                 |
+| `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports                                                           | `'Missed, Files'`   |
+| `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                  | `false`             |
+| `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                     | `false`             |
+| `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                              | `false`             |
+| `Build.Docs.ShowSummaryOnSuccess`      | `Boolean` | Show super-linter summary on success for documentation linting                                        | `false`             |
+| `Build.Site.Skip`                      | `Boolean` | Skip site build                                                                                       | `false`             |
+| `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                | `false`             |
+| `Publish.Module.AutoCleanup`           | `Boolean` | Automatically clean up old prerelease module versions                                                 | `true`              |
+| `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                    | `true`              |
+| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning                                                                 | `true`              |
+| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
+| `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                                                                               | `'v'`               |
+| `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump                                                                | `'major, breaking'` |
+| `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                | `'minor, feature'`  |
+| `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                | `'patch, fix'`      |
+| `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                          | `'NoRelease'`       |
+| `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                               | `false`             |
+| `Linter.ShowSummaryOnSuccess`          | `Boolean` | Show super-linter summary on success for repository linting                                           | `false`             |
+| `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                  | `{}`                |
 
 <details>
 <summary>`PSModule.yml` with all defaults</summary>
 
-```yml
+```yaml
 Name: null
 
 Build:
@@ -343,8 +473,8 @@ Linter:
   Skip: false
   ShowSummaryOnSuccess: false
   env: {}
-
 ```
+
 </details>
 
 ### Example 1 - Defaults with Code Coverage target
@@ -359,7 +489,7 @@ Test:
 
 ### Example 2 - Rapid testing
 
-This example ends up running Get-Settings, Build-Module and Test-Module (tests from the module repo) on ubuntu-latest.
+This example ends up running Get-Settings, Build-Module and Test-Module (tests from the module repo) on **ubuntu-latest** only.
 
 ```yaml
 Test:
@@ -397,7 +527,7 @@ Linter:
 
 #### Configuring Linter Validation Rules
 
-The workflow supports all environment variables that super-linter provides. You can configure these through the `Linter.env` object:
+The workflow supports all environment variables that **super-linter** provides. You can configure these through the `Linter.env` object:
 
 ```yaml
 Linter:
@@ -549,13 +679,115 @@ For broader test control, use the configuration file settings:
 
 See the [Configuration](#configuration) section for more details.
 
-## Specifications and practices
+## Repository structure
+
+Process-PSModule expects repositories to follow the staged layout produced by Template-PSModule. The workflow inspects this structure to decide what to compile, document, and publish.
+
+```plaintext
+<ModuleName>/
+├── .github/                                   # Workflow config, doc/site templates, automation policy
+│   ├── linters/                               # Rule sets applied by shared lint steps
+│   │   ├── .markdown-lint.yml                 # Markdown rules enforced via super-linter
+│   │   ├── .powershell-psscriptanalyzer.psd1  # Analyzer profile for test jobs
+│   │   └── .textlintrc                        # Text lint rules surfaced in Build Docs summaries
+│   ├── workflows/                             # Entry points for the reusable workflow
+│   │   └── Process-PSModule.yml               # Consumer hook into this workflow bundle
+│   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
+│   ├── dependabot.yml                         # Dependency update cadence handled by GitHub
+│   ├── mkdocs.yml                             # MkDocs config consumed during site builds
+│   ├── PSModule.yml                           # Settings parsed to drive matrices
+│   └── release.yml                            # Release automation template invoked on publish
+├── examples/                                  # Samples referenced in generated documentation
+│   └── General.ps1                            # Example script ingested by Document-PSModule
+├── icon/                                      # Icon assets linked from manifest and documentation
+│   └── icon.png                               # Default module icon (PNG format)
+├── src/                                       # Module source, see "Module source code structure" below
+├── tests/                                     # Pester suites executed during validation
+│   ├── AfterAll.ps1 (optional)                # Cleanup script for ModuleLocal runs
+│   ├── BeforeAll.ps1 (optional)               # Setup script for ModuleLocal runs
+│   └── <ModuleName>.Tests.ps1                 # Primary test entry point
+├── .gitattributes                             # Normalizes line endings across platforms
+├── .gitignore                                 # Excludes build artifacts from source control
+├── LICENSE                                    # License text surfaced in manifest metadata
+└── README.md                                  # Repository overview rendered on GitHub and docs landing
+```
+
+Key expectations:
+
+- Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/`.
+- Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
+- Markdown files in `src/functions/public` subfolders become documentation pages alongside generated help.
+- The build step compiles `src/` into a root module file and removes the original project layout from the artifact.
+- Documentation generation mirrors the `src/functions/public` hierarchy so help content always aligns with source.
+
+## Module source code structure
+
+How the module is built.
+
+```plaintext
+├── src/                                    # Module source compiled and documented by the pipeline
+│   ├── assemblies/                         # Bundled binaries copied into the build artifact
+│   ├── classes/                            # Class scripts merged into the root module
+│   │   ├── private/                        # Internal classes kept out of exports
+│   │   │   └── SecretWriter.ps1            # Example internal class implementation
+│   │   └── public/                         # Public classes exported via type accelerators
+│   │       └── Book.ps1                    # Example public class documented for consumers
+│   ├── data/                               # Configuration loaded into `$script:` scope at runtime
+│   │   ├── Config.psd1                     # Example config surfaced in generated help
+│   │   └── Settings.psd1                   # Additional configuration consumed on import
+│   ├── formats/                            # Formatting metadata registered during build
+│   │   ├── CultureInfo.Format.ps1xml       # Example format included in manifest
+│   │   └── Mygciview.Format.ps1xml         # Additional format loaded at import
+│   ├── functions/                          # Function scripts exported by the module
+│   │   ├── private/                        # Helper functions scoped to the module
+│   │   │   ├── Get-InternalPSModule.ps1    # Sample internal helper
+│   │   │   └── Set-InternalPSModule.ps1    # Sample internal helper
+│   │   └── public/                         # Public commands documented and tested
+│   │       ├── Category/                   # Optional: organize commands into categories
+│   │       │   ├── Get-CategoryCommand.ps1 # Command file within category
+│   │       │   └── Category.md             # Category overview merged into docs output
+│   │       ├── Get-PSModuleTest.ps1        # Example command captured by Microsoft.PowerShell.PlatyPS
+│   │       ├── New-PSModuleTest.ps1        # Example command exported and tested
+│   │       ├── Set-PSModuleTest.ps1        # Example command exported and tested
+│   │       └── Test-PSModuleTest.ps1       # Example command exported and tested
+│   ├── init/                               # Initialization scripts executed during module load
+│   │   └── initializer.ps1                 # Example init script included in build output
+│   ├── modules/                            # Nested modules packaged with the compiled output
+│   │   └── OtherPSModule.psm1              # Example nested module staged for export
+│   ├── scripts/                            # Scripts listed in 'ScriptsToProcess'
+│   │   └── loader.ps1                      # Loader executed when the module imports
+│   ├── types/                              # Type data merged into the manifest
+│   │   ├── DirectoryInfo.Types.ps1xml      # Type definition registered on import
+│   │   └── FileInfo.Types.ps1xml           # Type definition registered on import
+│   ├── variables/                          # Variable scripts exported by the module
+│   │   ├── private/                        # Internal variables scoped to the module
+│   │   │   └── PrivateVariables.ps1        # Example private variable seed
+│   │   └── public/                         # Public variables exported and documented
+│   │       ├── Moons.ps1                   # Example variable surfaced in generated docs
+│   │       ├── Planets.ps1                 # Example variable surfaced in generated docs
+│   │       └── SolarSystems.ps1            # Example variable surfaced in generated docs
+│   ├── finally.ps1                         # Cleanup script appended to the root module
+│   ├── header.ps1                          # Optional header injected at the top of the module
+│   ├── manifest.psd1 (optional)            # Source manifest reused when present
+│   └── README.md                           # Module-level docs ingested by Document-PSModule
+```
+
+## Principles and practices
+
+The contribution and release process is based on the idea that a PR is a release, and we only maintain a single linear ancestry of versions, not going
+back to patch and update old versions of the modules. This means that if we are on version `2.1.3` of a module and there is a security issue, we only
+patch the latest version with a fix, not releasing new versions based on older versions of the module, i.e. not updating the latest 1.x with the
+patch.
+
+If you need to work forth a bigger release, create a branch representing the release (a release branch) and open a PR towards `main` for this branch.
+For each topic or feature to add to the release, open a new branch representing the feature (a feature branch) and open a PR towards the release
+branch. Optionally add the `Prerelease` label on the PR for the release branch, to release preview versions before merging and releasing a published
+version of the PowerShell module.
+
 
 The process is compatible with:
 
-- [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules)
+- [Test-Driven Development](https://testdriven.io/test-driven-development/) using [Pester](https://pester.dev) and [PSScriptAnalyzer](https://learn.microsoft.com/powershell/utility-modules/psscriptanalyzer/overview)
 - [GitHub Flow specifications](https://docs.github.com/en/get-started/using-github/github-flow)
 - [SemVer 2.0.0 specifications](https://semver.org)
 - [Continuous Delivery practices](https://en.wikipedia.org/wiki/Continuous_delivery)
-
-[netdt]: https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings

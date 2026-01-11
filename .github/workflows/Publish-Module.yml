@@ -1,0 +1,60 @@
+name: Publish-Module
+
+on:
+  workflow_call:
+    secrets:
+      APIKey:
+        description: The API key for the PowerShell Gallery.
+        required: true
+    inputs:
+      Settings:
+        type: string
+        description: The complete settings object.
+        required: true
+
+permissions:
+  contents: read # to checkout the repo
+
+jobs:
+  Publish-Module:
+    name: Publish-Module
+    runs-on: ubuntu-latest
+    env:
+      SETTINGS: ${{ inputs.Settings }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Download module artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: module
+          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
+
+      - name: Update Microsoft.PowerShell.PSResourceGet
+        shell: pwsh
+        run: |
+          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
+
+      - name: Publish module
+        uses: PSModule/Publish-PSModule@6c25d139fe51b890f75c057897bd58ac344b192a # v2.0.8
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          Name: ${{ fromJson(inputs.Settings).Name }}
+          ModulePath: outputs/module
+          APIKey: ${{ secrets.APIKEY }}
+          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
+          AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
+          AutoPatching: ${{ fromJson(inputs.Settings).Publish.Module.AutoPatching }}
+          DatePrereleaseFormat: ${{ fromJson(inputs.Settings).Publish.Module.DatePrereleaseFormat }}
+          IgnoreLabels: ${{ fromJson(inputs.Settings).Publish.Module.IgnoreLabels }}
+          IncrementalPrerelease: ${{ fromJson(inputs.Settings).Publish.Module.IncrementalPrerelease }}
+          MajorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MajorLabels }}
+          MinorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MinorLabels }}
+          PatchLabels: ${{ fromJson(inputs.Settings).Publish.Module.PatchLabels }}
+          VersionPrefix: ${{ fromJson(inputs.Settings).Publish.Module.VersionPrefix }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

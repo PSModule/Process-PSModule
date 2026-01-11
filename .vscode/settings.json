@@ -1,0 +1,15 @@
+{
+    "chat.promptFilesRecommendations": {
+        "PSModule.constitution": true,
+        "PSModule.specify": true,
+        "PSModule.plan": true,
+        "PSModule.tasks": true,
+        "PSModule.implement": true,
+        "PSModule.analyze": true,
+        "PSModule.clarify": true,
+        "PSModule.pr": true
+    },
+    "chat.tools.terminal.autoApprove": {
+        ".specify/scripts/": true
+    }
+}

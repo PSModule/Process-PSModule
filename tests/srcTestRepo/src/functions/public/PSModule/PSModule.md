@@ -1,1 +1,1 @@
-# This is PSModule
+# PSModule

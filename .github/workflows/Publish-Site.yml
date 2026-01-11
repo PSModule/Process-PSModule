@@ -1,0 +1,29 @@
+name: Publish-Site
+
+on:
+  workflow_call:
+    inputs:
+      Settings:
+        type: string
+        description: The complete settings object.
+        required: true
+
+permissions:
+  pages: write    # to deploy to Pages
+  id-token: write # to verify the deployment originates from an appropriate source
+
+jobs:
+  Publish-Site:
+    name: Publish-Site
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    env:
+      Settings: ${{ inputs.Settings }}
+    steps:
+      - uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

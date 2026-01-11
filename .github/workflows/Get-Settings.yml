@@ -3,10 +3,6 @@ name: Get-Settings
 on:
   workflow_call:
     inputs:
-      Name:
-        type: string
-        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
-        required: false
       SettingsPath:
         type: string
         description: The path to the settings file.
@@ -39,17 +35,8 @@ on:
 
     outputs:
       Settings:
-        description: The path to the settings file.
+        description: The complete settings object including test suites
         value: ${{ jobs.Get-Settings.outputs.Settings }}
-      SourceCodeTestSuites:
-        description: Source Code PSModule test suites to run.
-        value: ${{ jobs.Get-Settings.outputs.SourceCodeTestSuites }}
-      PSModuleTestSuites:
-        description: Module PSModule test suites to run.
-        value: ${{ jobs.Get-Settings.outputs.PSModuleTestSuites }}
-      ModuleTestSuites:
-        description: Module local test suites to run.
-        value: ${{ jobs.Get-Settings.outputs.ModuleTestSuites }}
 
 permissions:
   contents: read # to checkout the repo
@@ -59,10 +46,7 @@ jobs:
     name: Get-Settings
     runs-on: ubuntu-latest
     outputs:
-      Settings: ${{ fromJson(steps.Get-Settings.outputs.result).Settings }}
-      SourceCodeTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).SourceCodeTestSuites }}
-      PSModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).PSModuleTestSuites }}
-      ModuleTestSuites: ${{ fromJson(steps.Get-Settings.outputs.result).ModuleTestSuites }}
+      Settings: ${{ steps.Get-Settings.outputs.Settings }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -71,305 +55,12 @@ jobs:
           fetch-depth: 0
 
       - name: Get-Settings
-        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
+        uses: PSModule/Get-PSModuleSettings@77c3c599734effaecc3a868a34bf39ab0ca7f0a0 # v1.0.0
         id: Get-Settings
-        env:
-          PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
-          PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         with:
-          Name: Get-Settings
-          ShowInfo: false
-          ShowOutput: true
+          SettingsPath: ${{ inputs.SettingsPath }}
           Debug: ${{ inputs.Debug }}
           Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Script: |
-            'powershell-yaml' | Install-PSResource -Repository PSGallery -TrustRepository -Reinstall
-
-            $inputName = $env:PSMODULE_GET_SETTINGS_INPUT_Name
-            $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
-            LogGroup "Inputs" {
-                [pscustomobject]@{
-                    PWD          = (Get-Location).Path
-                    Name         = $inputName
-                    SettingsPath = $settingsPath
-                } | Format-List | Out-String
-            }
-
-            if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
-                LogGroup "Import settings" {
-                    $settingsFile = Get-Item -Path $settingsPath
-                    $relativeSettingsPath = $settingsFile | Resolve-Path -Relative
-                    Write-Host "Importing settings from [$relativeSettingsPath]"
-                    $content = $settingsFile | Get-Content -Raw
-                    switch -Regex ($settingsFile.Extension) {
-                        '.json' {
-                            $settings = $content | ConvertFrom-Json
-                            Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
-                        }
-                        '.yaml|.yml' {
-                            $settings = $content | ConvertFrom-Yaml
-                            Write-Host ($settings | ConvertTo-Yaml | Out-String)
-                        }
-                        '.psd1' {
-                            $settings = $content | ConvertFrom-Hashtable
-                            Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
-                        }
-                        default {
-                            throw "Unsupported settings file format: [$settingsPath]. Supported formats are json, yaml/yml and psd1."
-                        }
-                    }
-                }
-            } else {
-                Write-Host 'No settings file present.'
-                $settings = @{}
-            }
-
-            LogGroup "Name" {
-                [pscustomobject]@{
-                    InputName      = $inputName
-                    SettingsName   = $settings.Name
-                    RepositoryName = $env:GITHUB_REPOSITORY_NAME
-                } | Format-List | Out-String
-
-                if (![string]::IsNullOrEmpty($inputName)) {
-                    $name = $inputName
-                } elseif (![string]::IsNullOrEmpty($settings.Name)) {
-                    $name = $settings.Name
-                } else {
-                    $name = $env:GITHUB_REPOSITORY_NAME
-                }
-
-                Write-Host "Using [$name] as the module name."
-            }
-
-            $settings = [pscustomobject]@{
-                Name    = $name
-                Test    = [pscustomobject]@{
-                    Skip       = $settings.Test.Skip ?? $false
-                    Linux      = [pscustomobject]@{
-                        Skip = $settings.Test.Linux.Skip ?? $false
-                    }
-                    MacOS      = [pscustomobject]@{
-                        Skip = $settings.Test.MacOS.Skip ?? $false
-                    }
-                    Windows    = [pscustomobject]@{
-                        Skip = $settings.Test.Windows.Skip ?? $false
-                    }
-                    SourceCode = [pscustomobject]@{
-                        Skip    = $settings.Test.SourceCode.Skip ?? $false
-                        Linux   = [pscustomobject]@{
-                            Skip = $settings.Test.SourceCode.Linux.Skip ?? $false
-                        }
-                        MacOS   = [pscustomobject]@{
-                            Skip = $settings.Test.SourceCode.MacOS.Skip ?? $false
-                        }
-                        Windows = [pscustomobject]@{
-                            Skip = $settings.Test.SourceCode.Windows.Skip ?? $false
-                        }
-                    }
-                    PSModule   = [pscustomobject]@{
-                        Skip    = $settings.Test.PSModule.Skip ?? $false
-                        Linux   = [pscustomobject]@{
-                            Skip = $settings.Test.PSModule.Linux.Skip ?? $false
-                        }
-                        MacOS   = [pscustomobject]@{
-                            Skip = $settings.Test.PSModule.MacOS.Skip ?? $false
-                        }
-                        Windows = [pscustomobject]@{
-                            Skip = $settings.Test.PSModule.Windows.Skip ?? $false
-                        }
-                    }
-                    Module     = [pscustomobject]@{
-                        Skip    = $settings.Test.Module.Skip ?? $false
-                        Linux   = [pscustomobject]@{
-                            Skip = $settings.Test.Module.Linux.Skip ?? $false
-                        }
-                        MacOS   = [pscustomobject]@{
-                            Skip = $settings.Test.Module.MacOS.Skip ?? $false
-                        }
-                        Windows = [pscustomobject]@{
-                            Skip = $settings.Test.Module.Windows.Skip ?? $false
-                        }
-                    }
-                    TestResults = [pscustomobject]@{
-                        Skip = $settings.Test.TestResults.Skip ?? $false
-                    }
-                    CodeCoverage = [pscustomobject]@{
-                      Skip = $settings.Test.CodeCoverage.Skip ?? $false
-                      PercentTarget = $settings.Test.CodeCoverage.PercentTarget ?? 0
-                      StepSummaryMode = $settings.Test.CodeCoverage.StepSummary_Mode ?? 'Missed, Files'
-                    }
-                }
-                Build   = [pscustomobject]@{
-                    Skip   = $settings.Build.Skip ?? $false
-                    Module = [pscustomobject]@{
-                        Skip = $settings.Build.Module.Skip ?? $false
-                    }
-                    Docs   = [pscustomobject]@{
-                        Skip                 = $settings.Build.Docs.Skip ?? $false
-                        ShowSummaryOnSuccess = $settings.Build.Docs.ShowSummaryOnSuccess ?? $false
-                    }
-                    Site = [pscustomobject]@{
-                        Skip = $settings.Build.Site.Skip ?? $false
-                    }
-                }
-                Publish = [pscustomobject]@{
-                    Module = [pscustomobject]@{
-                        Skip                  = $settings.Publish.Module.Skip ?? $false
-                        AutoCleanup           = $settings.Publish.Module.AutoCleanup ?? $true
-                        AutoPatching          = $settings.Publish.Module.AutoPatching ?? $true
-                        IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $true
-                        DatePrereleaseFormat  = $settings.Publish.Module.DatePrereleaseFormat ?? ''
-                        VersionPrefix         = $settings.Publish.Module.VersionPrefix ?? 'v'
-                        MajorLabels           = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
-                        MinorLabels           = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
-                        PatchLabels           = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
-                        IgnoreLabels          = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
-                    }
-
-                }
-                Linter  = [pscustomobject]@{
-                    Skip                 = $settings.Linter.Skip ?? $false
-                    ShowSummaryOnSuccess = $settings.Linter.ShowSummaryOnSuccess ?? $false
-                    env                  = $settings.Linter.env ?? @{}
-                }
-            }
-            LogGroup "Final settings" {
-                switch -Regex ($settingsFile.Extension) {
-                    '.yaml|.yml' {
-                        Write-Host ($settings | ConvertTo-Yaml | Out-String)
-                    }
-                    '.psd1' {
-                        Write-Host ($settings | ConvertTo-Hashtable | Format-Hashtable | Out-String)
-                    }
-                    default {
-                        Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
-                    }
-                }
-            }
-
-            Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
-
-            # Get-TestSuites
-            if ($settings.Test.Skip) {
-                Write-Host 'Skipping all tests.'
-                Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
-                Set-GitHubOutput -Name PSModuleTestSuites -Value '[]'
-                Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
-                exit 0
-            }
-
-            # Define test configurations as an array of hashtables.
-            $linux = [PSCustomObject]@{ RunsOn = 'ubuntu-latest'; OSName = 'Linux' }
-            $macOS = [PSCustomObject]@{ RunsOn = 'macos-latest'; OSName = 'macOS' }
-            $windows = [PSCustomObject]@{ RunsOn = 'windows-latest'; OSName = 'Windows' }
-
-            LogGroup 'Source Code Test Suites:' {
-                $sourceCodeTestSuites = if ($settings.Test.SourceCode.Skip) {
-                    Write-Host 'Skipping all source code tests.'
-                } else {
-                    if (-not $settings.Test.Linux.Skip -and -not $settings.Test.SourceCode.Linux.Skip) { $linux }
-                    if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.SourceCode.MacOS.Skip) { $macOS }
-                    if (-not $settings.Test.Windows.Skip -and -not $settings.Test.SourceCode.Windows.Skip) { $windows }
-                }
-                $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
-                $sourceCodeTestSuites = ($null -ne $sourceCodeTestSuites) ? ($sourceCodeTestSuites | ConvertTo-Json -AsArray) : '[]'
-                Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
-            }
-
-            LogGroup 'PSModule Test Suites:' {
-                $psModuleTestSuites = if ($settings.Test.PSModule.Skip) {
-                    Write-Host 'Skipping all PSModule tests.'
-                } else {
-                    if (-not $settings.Test.Linux.Skip -and -not $settings.Test.PSModule.Linux.Skip) { $linux }
-                    if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.PSModule.MacOS.Skip) { $macOS }
-                    if (-not $settings.Test.Windows.Skip -and -not $settings.Test.PSModule.Windows.Skip) { $windows }
-                }
-                $psModuleTestSuites | Format-Table -AutoSize | Out-String
-                $psModuleTestSuites = ($null -ne $psModuleTestSuites) ? ($psModuleTestSuites | ConvertTo-Json -AsArray) : '[]'
-                Set-GitHubOutput -Name PSModuleTestSuites -Value $psModuleTestSuites
-            }
-
-            LogGroup 'Module Local Test Suites:' {
-                $moduleTestSuites = if ($settings.Test.Module.Skip) {
-                    Write-Host 'Skipping all module tests.'
-                } else {
-                    # Locate the tests directory.
-                    $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
-                    if (-not $testsPath) {
-                        Write-Warning 'No tests found'
-                    }
-                    Write-Host "Tests found at [$testsPath]"
-
-                    function Get-TestItemsFromFolder {
-                        param ([string]$FolderPath)
-
-                        $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
-                        if ($configFiles.Count -eq 1) {
-                            return @($configFiles)
-                        } elseif ($configFiles.Count -gt 1) {
-                            throw "Multiple configuration files found in [$FolderPath]. Please separate configurations into different folders."
-                        }
-
-                        $containerFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Container.ps1'
-                        if ($containerFiles.Count -ge 1) {
-                            return $containerFiles
-                        }
-
-                        $testFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Tests.ps1'
-                        return $testFiles
-                    }
-
-                    function Find-TestDirectories {
-                        param ([string]$Path)
-
-                        $directories = @()
-                        $childDirs = Get-ChildItem -Path $Path -Directory
-
-                        foreach ($dir in $childDirs) {
-                            $directories += $dir.FullName
-                            $directories += Find-TestDirectories -Path $dir.FullName
-                        }
-
-                        return $directories
-                    }
-
-                    $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
-
-                    foreach ($folder in $allTestFolders) {
-                        $testItems = Get-TestItemsFromFolder -FolderPath $folder
-                        foreach ($item in $testItems) {
-                            if (-not $settings.Test.Linux.Skip -and -not $settings.Test.Module.Linux.Skip) {
-                                [pscustomobject]@{
-                                    RunsOn   = $linux.RunsOn
-                                    OSName   = $linux.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
-                            }
-                            if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.Module.MacOS.Skip) {
-                                [pscustomobject]@{
-                                    RunsOn   = $macOS.RunsOn
-                                    OSName   = $macOS.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
-                            }
-                            if (-not $settings.Test.Windows.Skip -and -not $settings.Test.Module.Windows.Skip) {
-                                [pscustomobject]@{
-                                    RunsOn   = $windows.RunsOn
-                                    OSName   = $windows.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
-                            }
-                        }
-                    }
-                }
-                $moduleTestSuites | Format-Table -AutoSize | Out-String
-                $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
-                Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
-            }

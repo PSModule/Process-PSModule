@@ -3,20 +3,15 @@ name: Build-Module
 on:
   workflow_call:
     inputs:
-      Name:
+      Settings:
         type: string
-        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
-        required: false
+        description: The settings object as a JSON string.
+        required: true
       ArtifactName:
         type: string
         description: Name of the artifact to upload.
         required: false
         default: module
-      WorkingDirectory:
-        type: string
-        description: The working directory where the script will run from.
-        required: false
-        default: '.'
 
 permissions:
   contents: read # to checkout the repository
@@ -37,6 +32,6 @@ jobs:
       - name: Build module
         uses: PSModule/Build-PSModule@fe8cc14a7192066cc46cb9514659772ebde05849 # v4.0.9
         with:
-          Name: ${{ inputs.Name }}
+          Name: ${{ fromJson(inputs.Settings).Name }}
           ArtifactName: ${{ inputs.ArtifactName }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

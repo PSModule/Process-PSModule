@@ -28,10 +28,6 @@ on:
         description: The classic personal access token for running tests.
         required: false
     inputs:
-      Name:
-        type: string
-        description: The name of the module to process. Scripts default to the repository name if nothing is specified.
-        required: false
       SettingsPath:
         type: string
         description: The path to the settings file. Settings in the settings file take precedence over the action inputs.
@@ -70,10 +66,6 @@ permissions:
   pages: write         # to deploy to Pages
   id-token: write      # to verify the deployment originates from an appropriate source
 
-defaults:
-  run:
-    shell: pwsh
-
 jobs:
   # Runs on:
   # - ✅ Open/Updated PR - Always runs to load configuration
@@ -83,7 +75,6 @@ jobs:
   Get-Settings:
     uses: ./.github/workflows/Get-Settings.yml
     with:
-      Name: ${{ inputs.Name }}
       SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
       Prerelease: ${{ inputs.Prerelease }}
@@ -97,62 +88,12 @@ jobs:
   # - ❌ Abandoned PR    - No need to lint abandoned changes
   # - ❌ Manual run      - Only runs for PR events
   Lint-Repository:
-    name: Lint code base
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged != true && github.event.action != 'closed' && fromJson(needs.Get-Settings.outputs.Settings).Linter.Skip != true
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.LintRepository
     needs:
       - Get-Settings
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Load dynamic envs
-        env:
-          SETTINGS: ${{ needs.Get-Settings.outputs.Settings }}
-        run: |
-          Write-Host "Loading settings for super-linter:"
-          $settings = $env:SETTINGS | ConvertFrom-Json -AsHashtable
-          $linter = $settings.Linter
-          $env = $linter.env
-
-          foreach ($key in $env.Keys) {
-            $value = $env[$key]
-
-            if ($value -is [bool]) {
-                $value = $value.ToString().ToLower()
-            }
-
-            Write-Host "$key = $value"
-
-            # Persist for following steps in this job
-            "$key=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          }
-
-      - name: Lint code base
-        id: super-linter
-        uses: super-linter/super-linter@47984f49b4e87383eed97890fe2dca6063bbd9c3 # v8.3.1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          DEFAULT_WORKSPACE: ${{ inputs.WorkingDirectory }}
-          FILTER_REGEX_INCLUDE: ${{ inputs.WorkingDirectory }}
-          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
-          SAVE_SUPER_LINTER_SUMMARY: true
-
-      - name: Post super-linter summary
-        if: failure() || fromJson(needs.Get-Settings.outputs.Settings).Linter.ShowSummaryOnSuccess == true
-        shell: pwsh
-        run: |
-          $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
-          Get-Content $summaryPath | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
-
-          $failed = '${{ steps.super-linter.outcome }}' -eq 'failure'
-          if ($failed) {
-              Write-Host "::error::Super-linter found issues. Please review the summary above."
-              exit 1
-          }
+    uses: ./.github/workflows/Lint-Repository.yml
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
@@ -160,52 +101,12 @@ jobs:
   # - ❌ Abandoned PR    - Skips building abandoned changes
   # - ✅ Manual run      - Builds module when manually triggered
   Build-Module:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Module.Skip != true }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BuildModule
     uses: ./.github/workflows/Build-Module.yml
     needs:
       - Get-Settings
     with:
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-
-  # Runs on:
-  # - ✅ Open/Updated PR - Builds documentation for review
-  # - ✅ Merged PR       - Builds documentation for publishing
-  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
-  # - ✅ Manual run      - Builds documentation when manually triggered
-  Build-Docs:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.Skip != true }}
-    needs:
-      - Get-Settings
-      - Build-Module
-    uses: ./.github/workflows/Build-Docs.yml
-    with:
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
-      ShowSummaryOnSuccess: ${{ fromJson(needs.Get-Settings.outputs.Settings).Build.Docs.ShowSummaryOnSuccess }}
-
-  # Runs on:
-  # - ✅ Open/Updated PR - Builds site for preview
-  # - ✅ Merged PR       - Builds site for publishing
-  # - ❌ Abandoned PR    - Skips building site for abandoned changes
-  # - ✅ Manual run      - Builds site when manually triggered
-  Build-Site:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && fromJson(needs.Get-Settings.outputs.Settings).Build.Site.Skip != true }}
-    needs:
-      - Get-Settings
-      - Build-Docs
-    uses: ./.github/workflows/Build-Site.yml
-    with:
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests source code changes
@@ -213,23 +114,12 @@ jobs:
   # - ❌ Abandoned PR    - Skips testing abandoned changes
   # - ✅ Manual run      - Tests source code when manually triggered
   Test-SourceCode:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.TestSourceCode
     needs:
       - Get-Settings
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints source code changes
@@ -237,23 +127,12 @@ jobs:
   # - ❌ Abandoned PR    - Skips linting abandoned changes
   # - ✅ Manual run      - Lints source code when manually triggered
   Lint-SourceCode:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.LintSourceCode
     needs:
       - Get-Settings
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.SourceCodeTestSuites) }}
     uses: ./.github/workflows/Lint-SourceCode.yml
     with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests built module
@@ -261,25 +140,14 @@ jobs:
   # - ❌ Abandoned PR    - Skips testing abandoned changes
   # - ✅ Manual run      - Tests built module when manually triggered
   Test-Module:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.PSModuleTestSuites != '[]' }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.TestModule && needs.Build-Module.result == 'success' && !cancelled()
     needs:
       - Build-Module
       - Get-Settings
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.PSModuleTestSuites) }}
     uses: ./.github/workflows/Test-Module.yml
     secrets: inherit
     with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OS: ${{ matrix.OSName }}
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs setup scripts before local module tests
@@ -287,48 +155,13 @@ jobs:
   # - ❌ Abandoned PR    - Skips setup for abandoned changes
   # - ✅ Manual run      - Runs setup scripts when manually triggered
   BeforeAll-ModuleLocal:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
-    name: BeforeAll-ModuleLocal
-    runs-on: ubuntu-latest
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
+    uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
     needs:
       - Build-Module
       - Get-Settings
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Run BeforeAll Setup Scripts
-        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
-        with:
-          Name: BeforeAll-ModuleLocal
-          ShowInfo: false
-          ShowOutput: true
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Script: |
-            LogGroup "Running BeforeAll Setup Scripts" {
-                $beforeAllScript = 'tests/BeforeAll.ps1'
-
-                if (-not (Test-Path $beforeAllScript)) {
-                    Write-Host "No BeforeAll.ps1 script found at [$beforeAllScript] - exiting successfully"
-                    exit 0
-                }
-
-                Write-Host "Running BeforeAll setup script: $beforeAllScript"
-                try {
-                    & $beforeAllScript
-                    Write-Host "BeforeAll script completed successfully: $beforeAllScript"
-                } catch {
-                    Write-Error "BeforeAll script failed: $beforeAllScript - $_"
-                    throw
-                }
-            }
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests module in local environment
@@ -336,28 +169,15 @@ jobs:
   # - ❌ Abandoned PR    - Skips testing abandoned changes
   # - ✅ Manual run      - Tests module in local environment when manually triggered
   Test-ModuleLocal:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Build-Module.result == 'success' && !cancelled() && needs.Get-Settings.outputs.ModuleTestSuites != '[]' }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.TestModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     needs:
       - Build-Module
       - Get-Settings
       - BeforeAll-ModuleLocal
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.Get-Settings.outputs.ModuleTestSuites) }}
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets: inherit
     with:
-      RunsOn: ${{ matrix.RunsOn }}
-      OSName: ${{ matrix.OSName }}
-      TestPath: ${{ matrix.TestPath }}
-      TestName: ${{ matrix.TestName }}
-      Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
-      WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs teardown scripts after local module tests
@@ -365,48 +185,13 @@ jobs:
   # - ✅ Abandoned PR    - Runs teardown if tests were started (cleanup)
   # - ✅ Manual run      - Runs teardown scripts after local module tests
   AfterAll-ModuleLocal:
-    if: ${{ needs.Test-ModuleLocal.result != 'skipped' && always() }}
-    name: AfterAll-ModuleLocal
-    runs-on: ubuntu-latest
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
+    uses: ./.github/workflows/AfterAll-ModuleLocal.yml
     needs:
+      - Get-Settings
       - Test-ModuleLocal
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Run AfterAll Teardown Scripts
-        if: always()
-        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
-        with:
-          Name: AfterAll-ModuleLocal
-          ShowInfo: false
-          ShowOutput: true
-          Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
-          Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          Script: |
-            LogGroup "Running AfterAll Teardown Scripts" {
-                $afterAllScript = 'tests/AfterAll.ps1'
-
-                if (-not (Test-Path $afterAllScript)) {
-                    Write-Host "No AfterAll.ps1 script found at [$afterAllScript] - exiting successfully"
-                    exit 0
-                }
-
-                Write-Host "Running AfterAll teardown script: $afterAllScript"
-                try {
-                    & $afterAllScript
-                    Write-Host "AfterAll script completed successfully: $afterAllScript"
-                } catch {
-                    Write-Warning "AfterAll script failed: $afterAllScript - $_"
-                    # Don't throw for teardown scripts to ensure other cleanup scripts can run
-                }
-            }
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Collects and reports test results
@@ -414,7 +199,7 @@ jobs:
   # - ❌ Abandoned PR    - Skips collecting results for abandoned changes
   # - ✅ Manual run      - Collects and reports test results when manually triggered
   Get-TestResults:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.TestResults.Skip && (needs.Get-Settings.outputs.SourceCodeTestSuites != '[]' || needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled()) }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.GetTestResults && needs.Get-Settings.result == 'success' && always() && !cancelled()
     needs:
       - Get-Settings
       - Test-SourceCode
@@ -424,13 +209,7 @@ jobs:
     uses: ./.github/workflows/Get-TestResults.yml
     secrets: inherit
     with:
-      ModuleTestSuites: ${{ needs.Get-Settings.outputs.ModuleTestSuites }}
-      SourceCodeTestSuites: ${{ needs.Get-Settings.outputs.SourceCodeTestSuites }}
-      PSModuleTestSuites: ${{ needs.Get-Settings.outputs.PSModuleTestSuites }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Calculates and reports code coverage
@@ -438,7 +217,7 @@ jobs:
   # - ❌ Abandoned PR    - Skips coverage for abandoned changes
   # - ✅ Manual run      - Calculates and reports code coverage when manually triggered
   Get-CodeCoverage:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-Settings.result == 'success' && !fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.Skip && (needs.Get-Settings.outputs.PSModuleTestSuites != '[]' || needs.Get-Settings.outputs.ModuleTestSuites != '[]') && (always() && !cancelled()) }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.GetCodeCoverage && needs.Get-Settings.result == 'success' && always() && !cancelled()
     needs:
       - Get-Settings
       - Test-Module
@@ -446,12 +225,52 @@ jobs:
     uses: ./.github/workflows/Get-CodeCoverage.yml
     secrets: inherit
     with:
-      CodeCoveragePercentTarget: ${{ fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.PercentTarget }}
-      StepSummary_Mode: ${{ fromJson(needs.Get-Settings.outputs.Settings).Test.CodeCoverage.StepSummaryMode }}
-      Debug: ${{ inputs.Debug }}
-      Prerelease: ${{ inputs.Prerelease }}
-      Verbose: ${{ inputs.Verbose }}
-      Version: ${{ inputs.Version }}
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+
+  # Runs on:
+  # - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
+  # - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
+  # - ✅ Abandoned PR    - Publishes cleanup/retraction version
+  # - ✅ Manual run      - Publishes when all tests/coverage/build succeed
+  Publish-Module:
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishModule && needs.Get-Settings.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
+    uses: ./.github/workflows/Publish-Module.yml
+    secrets: inherit
+    needs:
+      - Get-Settings
+      - Get-TestResults
+      - Get-CodeCoverage
+      - Build-Site
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+
+  # Runs on:
+  # - ✅ Open/Updated PR - Builds documentation for review
+  # - ✅ Merged PR       - Builds documentation for publishing
+  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
+  # - ✅ Manual run      - Builds documentation when manually triggered
+  Build-Docs:
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BuildDocs
+    needs:
+      - Get-Settings
+      - Build-Module
+    uses: ./.github/workflows/Build-Docs.yml
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+
+  # Runs on:
+  # - ✅ Open/Updated PR - Builds site for preview
+  # - ✅ Merged PR       - Builds site for publishing
+  # - ❌ Abandoned PR    - Skips building site for abandoned changes
+  # - ✅ Manual run      - Builds site when manually triggered
+  Build-Site:
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BuildSite
+    needs:
+      - Get-Settings
+      - Build-Docs
+    uses: ./.github/workflows/Build-Site.yml
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
   # - ❌ Open/Updated PR - Site not published for PRs in progress
@@ -459,78 +278,12 @@ jobs:
   # - ❌ Abandoned PR    - Site not published for abandoned changes
   # - ❌ Manual run      - Only publishes on merged PRs, not manual runs
   Publish-Site:
-    if: ${{ !(github.event.action == 'closed' && github.event.pull_request.merged != true) && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+    if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishSite && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled()
+    uses: ./.github/workflows/Publish-Site.yml
     needs:
       - Get-Settings
       - Get-TestResults
       - Get-CodeCoverage
       - Build-Site
-    permissions:
-      pages: write    # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
-
-  # Runs on:
-  # - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
-  # - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
-  # - ✅ Abandoned PR    - Publishes cleanup/retraction version
-  # - ✅ Manual run      - Publishes when all tests/coverage/build succeed
-  #
-  Publish-Module:
-    if: |
-      needs.Get-Settings.result == 'success' && !cancelled() && github.event_name == 'pull_request' && (
-        (github.event.action == 'closed' && github.event.pull_request.merged != true) ||
-        (needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success')
-      )
-    needs:
-      - Get-Settings
-      - Get-TestResults
-      - Get-CodeCoverage
-      - Build-Site
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Download module artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: module
-          path: ${{ inputs.WorkingDirectory }}/outputs/module
-
-      - name: Update Microsoft.PowerShell.PSResourceGet
-        shell: pwsh
-        run: |
-          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
-
-      - name: Publish module
-        uses: PSModule/Publish-PSModule@6c25d139fe51b890f75c057897bd58ac344b192a # v2.0.8
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          Name: ${{ fromJson(needs.Get-Settings.outputs.Settings).Name }}
-          ModulePath: outputs/module
-          APIKey: ${{ secrets.APIKEY }}
-          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
-          AutoCleanup: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoCleanup }}
-          AutoPatching: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.AutoPatching }}
-          DatePrereleaseFormat: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.DatePrereleaseFormat }}
-          IgnoreLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IgnoreLabels }}
-          IncrementalPrerelease: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.IncrementalPrerelease }}
-          MajorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MajorLabels }}
-          MinorLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.MinorLabels }}
-          PatchLabels: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.PatchLabels }}
-          VersionPrefix: ${{ fromJson(needs.Get-Settings.outputs.Settings).Publish.Module.VersionPrefix }}
-          WorkingDirectory: ${{ inputs.WorkingDirectory }}
+    with:
+      Settings: ${{ needs.Get-Settings.outputs.Settings }}
