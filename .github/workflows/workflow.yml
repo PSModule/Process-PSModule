@@ -145,7 +145,6 @@ jobs:
       - Build-Module
       - Get-Settings
     uses: ./.github/workflows/Test-Module.yml
-    secrets: inherit
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
@@ -157,6 +156,14 @@ jobs:
   BeforeAll-ModuleLocal:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
+    secrets:
+      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
     needs:
       - Build-Module
       - Get-Settings
@@ -175,7 +182,14 @@ jobs:
       - Get-Settings
       - BeforeAll-ModuleLocal
     uses: ./.github/workflows/Test-ModuleLocal.yml
-    secrets: inherit
+    secrets:
+      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
@@ -187,6 +201,14 @@ jobs:
   AfterAll-ModuleLocal:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
+    secrets:
+      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
     needs:
       - Get-Settings
       - Test-ModuleLocal
@@ -207,7 +229,6 @@ jobs:
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
-    secrets: inherit
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
@@ -223,7 +244,6 @@ jobs:
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
-    secrets: inherit
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
@@ -235,7 +255,8 @@ jobs:
   Publish-Module:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishModule && needs.Get-Settings.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
     uses: ./.github/workflows/Publish-Module.yml
-    secrets: inherit
+    secrets:
+      APIKey: ${{ secrets.APIKey }}
     needs:
       - Get-Settings
       - Get-TestResults
