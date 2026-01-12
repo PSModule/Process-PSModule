@@ -157,6 +157,14 @@ jobs:
   BeforeAll-ModuleLocal:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
+    secrets:
+      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
     needs:
       - Build-Module
       - Get-Settings
@@ -187,6 +195,14 @@ jobs:
   AfterAll-ModuleLocal:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
+    secrets:
+      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
+      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
+      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
+      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
+      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
+      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
+      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
     needs:
       - Get-Settings
       - Test-ModuleLocal
