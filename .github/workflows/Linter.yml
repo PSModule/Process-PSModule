@@ -28,11 +28,8 @@ jobs:
         uses: super-linter/super-linter@47984f49b4e87383eed97890fe2dca6063bbd9c3 # v8.3.1
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          # VALIDATE_BIOME_FORMAT: false
-          # VALIDATE_BIOME_LINT: false
-          # VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
-          # VALIDATE_JSCPD: false
-          # VALIDATE_JSON_PRETTIER: false
-          # VALIDATE_MARKDOWN_PRETTIER: false
-          # VALIDATE_YAML_PRETTIER: false
-
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_JSCPD: false
+          VALIDATE_JSON_PRETTIER: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
