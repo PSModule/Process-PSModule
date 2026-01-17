@@ -397,6 +397,9 @@ The following settings are available in the settings file:
 | `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                | `'minor, feature'`  |
 | `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                | `'patch, fix'`      |
 | `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                          | `'NoRelease'`       |
+| `Publish.Module.UsePRTitleAsReleaseName`  | `Boolean` | Use the PR title as the GitHub release name instead of version string                              | `false`             |
+| `Publish.Module.UsePRBodyAsReleaseNotes`  | `Boolean` | Use the PR body as the release notes content                                                       | `true`              |
+| `Publish.Module.UsePRTitleAsNotesHeading` | `Boolean` | Prepend PR title as H1 heading with PR number link before the body                                 | `true`              |
 | `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                               | `false`             |
 | `Linter.ShowSummaryOnSuccess`          | `Boolean` | Show super-linter summary on success for repository linting                                           | `false`             |
 | `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                  | `{}`                |
@@ -468,6 +471,9 @@ Publish:
     MinorLabels: 'minor, feature'
     PatchLabels: 'patch, fix'
     IgnoreLabels: 'NoRelease'
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: true
+    UsePRTitleAsNotesHeading: true
 
 Linter:
   Skip: false
