@@ -11,4 +11,6 @@ updates:
       - dependencies
       - github-actions
     schedule:
-      interval: weekly
+      interval: daily
+    cooldown:
+      default-days: 7
