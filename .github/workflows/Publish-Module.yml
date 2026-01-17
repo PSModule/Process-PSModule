@@ -41,7 +41,7 @@ jobs:
           Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@6c25d139fe51b890f75c057897bd58ac344b192a # v2.0.8
+        uses: PSModule/Publish-PSModule@releasenotes
         env:
           GH_TOKEN: ${{ github.token }}
         with:

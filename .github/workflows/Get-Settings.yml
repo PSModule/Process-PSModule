@@ -55,7 +55,7 @@ jobs:
           fetch-depth: 0
 
       - name: Get-Settings
-        uses: PSModule/Get-PSModuleSettings@5be814463ddf37293196c5bd07c861f6fb617a59 # v1.0.3
+        uses: PSModule/Get-PSModuleSettings@releasenotes
         id: Get-Settings
         with:
           SettingsPath: ${{ inputs.SettingsPath }}
