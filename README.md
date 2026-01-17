@@ -76,6 +76,10 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
       - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
       - [Additional Configuration](#additional-configuration)
       - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
+    - [Example 4 - Configuring PR-based release notes](#example-4---configuring-pr-based-release-notes)
+      - [Default configuration (recommended)](#default-configuration-recommended)
+      - [Version-only release names](#version-only-release-names)
+      - [Auto-generated notes](#auto-generated-notes)
   - [Skipping Individual Framework Tests](#skipping-individual-framework-tests)
     - [How to Skip Tests](#how-to-skip-tests)
     - [Available Framework Tests](#available-framework-tests)
@@ -580,6 +584,71 @@ This is useful for reviewing what was checked even when no issues are found.
 
 For a complete list of available environment variables and configuration options, see the
 [super-linter environment variables documentation](https://github.com/super-linter/super-linter#environment-variables).
+
+### Example 4 - Configuring PR-based release notes
+
+The workflow can automatically generate GitHub release names and notes from your pull request content.
+Three parameters control this behavior:
+
+| Parameter | Description |
+|-----------|-------------|
+| `UsePRTitleAsReleaseName` | Use the PR title as the GitHub release name instead of the version string |
+| `UsePRBodyAsReleaseNotes` | Use the PR body as the release notes content |
+| `UsePRTitleAsNotesHeading` | Prepend PR title as H1 heading with PR number link before the body |
+
+These parameters follow specific precedence rules when building release notes:
+
+1. **Heading + Body** (`UsePRTitleAsNotesHeading: true` + `UsePRBodyAsReleaseNotes: true`): Creates formatted notes with the PR title as an H1 heading followed by the PR body. The output format is `# PR Title (#123)\n\nPR body content`. Both the PR title and body must be present.
+
+1. **Body only** (`UsePRBodyAsReleaseNotes: true`): Uses the PR body as-is for release notes. Takes effect when heading option is disabled or PR title is missing.
+
+1. **Fallback**: When neither option is enabled or required PR content is missing, GitHub's auto-generated release notes are used via `--generate-notes`.
+
+#### Default configuration (recommended)
+
+The defaults provide rich release notes with the PR title as a heading:
+
+```yaml
+Publish:
+  Module:
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: true
+    UsePRTitleAsNotesHeading: true
+```
+
+This produces release notes like:
+
+```markdown
+# 🚀 Add new authentication feature (#42)
+
+This PR adds OAuth2 support with the following changes:
+- Added `Connect-OAuth2` function
+- Updated documentation
+```
+
+#### Version-only release names
+
+If you prefer version numbers as release names but still want PR-based notes:
+
+```yaml
+Publish:
+  Module:
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: true
+    UsePRTitleAsNotesHeading: false
+```
+
+#### Auto-generated notes
+
+To use GitHub's auto-generated release notes instead of PR content:
+
+```yaml
+Publish:
+  Module:
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: false
+    UsePRTitleAsNotesHeading: false
+```
 
 ## Skipping Individual Framework Tests
 
