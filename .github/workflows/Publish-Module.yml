@@ -13,7 +13,8 @@ on:
         required: true
 
 permissions:
-  contents: read # to checkout the repo
+  contents: write # to checkout the repo and create releases
+  pull-requests: write # to comment on PRs
 
 jobs:
   Publish-Module:
