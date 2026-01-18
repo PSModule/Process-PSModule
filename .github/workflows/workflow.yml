@@ -250,7 +250,7 @@ jobs:
   # Runs on:
   # - ✅ Open/Updated PR - Only with prerelease label: publishes prerelease version
   # - ✅ Merged PR       - To default branch only: publishes release when all tests/coverage/build succeed
-  # - ✅ Abandoned PR    - Publishes cleanup/retraction version
+  # - ✅ Abandoned PR    - Cleans up prereleases for the abandoned branch (no version published)
   # - ❌ Manual run      - Only runs for PR events
   Publish-Module:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishModule && needs.Get-Settings.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
