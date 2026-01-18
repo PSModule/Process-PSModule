@@ -29,17 +29,6 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Download module artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: module
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
-
-      - name: Update Microsoft.PowerShell.PSResourceGet
-        shell: pwsh
-        run: |
-          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
-
       - name: Publish module
         uses: PSModule/Publish-PSModule@feature/releasetype-input
         env:
