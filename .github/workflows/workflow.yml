@@ -248,7 +248,7 @@ jobs:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
-  # - ⚡ Open/Updated PR - Only with prerelease label: publishes prerelease version
+  # - ✅ Open/Updated PR - Only with prerelease label: publishes prerelease version
   # - ✅ Merged PR       - To default branch only: publishes release when all tests/coverage/build succeed
   # - ✅ Abandoned PR    - Publishes cleanup/retraction version
   # - ❌ Manual run      - Only runs for PR events
