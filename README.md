@@ -228,6 +228,10 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 [workflow](./.github/workflows/Publish-Module.yml)
 - Publishes the module to the PowerShell Gallery.
 - Creates a release on the GitHub repository.
+- **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
+  prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned
+  prereleases in the PowerShell Gallery or repository. This behavior is controlled by the `Publish.Module.AutoCleanup`
+  setting.
 
 ### Build docs
 
@@ -354,7 +358,8 @@ This table shows when each job runs based on the trigger scenario:
 
 - \* Runs for cleanup if tests were started
 - \*\* Only when all tests/coverage/build succeed
-- \*\*\* Publishes cleanup/retraction version
+- \*\*\* Cleans up prerelease versions and tags created for the abandoned PR (when `Publish.Module.AutoCleanup` is
+  enabled)
 
 ## Configuration
 
