@@ -248,10 +248,10 @@ jobs:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
   # Runs on:
-  # - ✅ Open/Updated PR - Publishes prerelease when all tests/coverage/build succeed
-  # - ✅ Merged PR       - Publishes release when all tests/coverage/build succeed
+  # - ⚡ Open/Updated PR - Only with prerelease label: publishes prerelease version
+  # - ✅ Merged PR       - To default branch only: publishes release when all tests/coverage/build succeed
   # - ✅ Abandoned PR    - Publishes cleanup/retraction version
-  # - ✅ Manual run      - Publishes when all tests/coverage/build succeed
+  # - ❌ Manual run      - Only runs for PR events
   Publish-Module:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishModule && needs.Get-Settings.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
     uses: ./.github/workflows/Publish-Module.yml
@@ -295,9 +295,9 @@ jobs:
 
   # Runs on:
   # - ❌ Open/Updated PR - Site not published for PRs in progress
-  # - ✅ Merged PR       - Deploys site to GitHub Pages after successful merge
+  # - ✅ Merged PR       - To default branch only: deploys site to GitHub Pages
   # - ❌ Abandoned PR    - Site not published for abandoned changes
-  # - ❌ Manual run      - Only publishes on merged PRs, not manual runs
+  # - ❌ Manual run      - Only publishes on merged PRs to default branch
   Publish-Site:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishSite && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled()
     uses: ./.github/workflows/Publish-Site.yml
