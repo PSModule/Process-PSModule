@@ -53,7 +53,6 @@ jobs:
           AutoPatching: ${{ fromJson(inputs.Settings).Publish.Module.AutoPatching }}
           DatePrereleaseFormat: ${{ fromJson(inputs.Settings).Publish.Module.DatePrereleaseFormat }}
           IgnoreLabels: ${{ fromJson(inputs.Settings).Publish.Module.IgnoreLabels }}
-          PrereleaseLabels: ${{ fromJson(inputs.Settings).Publish.Module.PrereleaseLabels }}
           ReleaseType: ${{ fromJson(inputs.Settings).Run.ReleaseType }}
           IncrementalPrerelease: ${{ fromJson(inputs.Settings).Publish.Module.IncrementalPrerelease }}
           MajorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MajorLabels }}
