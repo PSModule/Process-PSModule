@@ -392,7 +392,7 @@ The following settings are available in the settings file:
 | `Build.Docs.ShowSummaryOnSuccess`         | `Boolean` | Show super-linter summary on success for documentation linting                                                                                                       | `false`             |
 | `Build.Site.Skip`                         | `Boolean` | Skip site build                                                                                                                                                      | `false`             |
 | `Publish.Module.Skip`                     | `Boolean` | Skip module publishing                                                                                                                                               | `false`             |
-| `Publish.Module.AutoCleanup`              | `Boolean` | Automatically clean up old prerelease module versions                                                                                                                | `true`              |
+| `Publish.Module.CleanupPrereleases`       | `Boolean` | Automatically clean up old prerelease tags when merging to main or when a PR is abandoned                                                                            | `true`              |
 | `Publish.Module.AutoPatching`             | `Boolean` | Automatically patch module version                                                                                                                                   | `true`              |
 | `Publish.Module.IncrementalPrerelease`    | `Boolean` | Use incremental prerelease versioning                                                                                                                                | `true`              |
 | `Publish.Module.DatePrereleaseFormat`     | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
@@ -466,7 +466,7 @@ Test:
 Publish:
   Module:
     Skip: false
-    AutoCleanup: true
+    CleanupPrereleases: true
     AutoPatching: true
     IncrementalPrerelease: true
     DatePrereleaseFormat: ''

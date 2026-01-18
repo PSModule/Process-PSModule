@@ -49,11 +49,11 @@ jobs:
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
-          AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
+          CleanupPrereleases: ${{ fromJson(inputs.Settings).Publish.Module.CleanupPrereleases }}
           AutoPatching: ${{ fromJson(inputs.Settings).Publish.Module.AutoPatching }}
           DatePrereleaseFormat: ${{ fromJson(inputs.Settings).Publish.Module.DatePrereleaseFormat }}
           IgnoreLabels: ${{ fromJson(inputs.Settings).Publish.Module.IgnoreLabels }}
-          ReleaseType: ${{ fromJson(inputs.Settings).Run.ReleaseType }}
+          ReleaseType: ${{ fromJson(inputs.Settings).Publish.Module.ReleaseType }}
           IncrementalPrerelease: ${{ fromJson(inputs.Settings).Publish.Module.IncrementalPrerelease }}
           MajorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MajorLabels }}
           MinorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MinorLabels }}
