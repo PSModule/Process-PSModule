@@ -11,7 +11,7 @@ Test:
     PercentTarget: 1
 Publish:
   Module:
-    CleanupPrereleases: false
+    AutoCleanup: false
 Linter:
   env:
     VALIDATE_BIOME_FORMAT: false
