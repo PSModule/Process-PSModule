@@ -38,7 +38,7 @@ jobs:
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKEY }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
-          CleanupPrereleases: ${{ fromJson(inputs.Settings).Publish.Module.CleanupPrereleases }}
+          AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
           AutoPatching: ${{ fromJson(inputs.Settings).Publish.Module.AutoPatching }}
           DatePrereleaseFormat: ${{ fromJson(inputs.Settings).Publish.Module.DatePrereleaseFormat }}
           IgnoreLabels: ${{ fromJson(inputs.Settings).Publish.Module.IgnoreLabels }}
