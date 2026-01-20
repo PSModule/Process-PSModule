@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@feature/releasetype-input
+        uses: PSModule/Publish-PSModule@e1b338d1266dee28c6d6218756979597c8a77b7a # v2.2.0
         env:
           GH_TOKEN: ${{ github.token }}
         with:
