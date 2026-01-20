@@ -76,6 +76,10 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
       - [Configuring Linter Validation Rules](#configuring-linter-validation-rules)
       - [Additional Configuration](#additional-configuration)
       - [Showing Linter Summary on Success](#showing-linter-summary-on-success)
+    - [Example 4 - Configuring PR-based release notes](#example-4---configuring-pr-based-release-notes)
+      - [Default configuration (recommended)](#default-configuration-recommended)
+      - [Version-only release names](#version-only-release-names)
+      - [Auto-generated notes](#auto-generated-notes)
   - [Skipping Individual Framework Tests](#skipping-individual-framework-tests)
     - [How to Skip Tests](#how-to-skip-tests)
     - [Available Framework Tests](#available-framework-tests)
@@ -224,6 +228,10 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 [workflow](./.github/workflows/Publish-Module.yml)
 - Publishes the module to the PowerShell Gallery.
 - Creates a release on the GitHub repository.
+- **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
+  prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned
+  prereleases in the PowerShell Gallery or repository. This behavior is controlled by the `Publish.Module.AutoCleanup`
+  setting.
 
 ### Build docs
 
@@ -350,7 +358,8 @@ This table shows when each job runs based on the trigger scenario:
 
 - \* Runs for cleanup if tests were started
 - \*\* Only when all tests/coverage/build succeed
-- \*\*\* Publishes cleanup/retraction version
+- \*\*\* Cleans up prerelease versions and tags created for the abandoned PR (when `Publish.Module.AutoCleanup` is
+  enabled)
 
 ## Configuration
 
@@ -359,47 +368,50 @@ The file can be a `JSON`, `YAML`, or `PSD1` file. By default, it will look for `
 
 The following settings are available in the settings file:
 
-| Name                                   | Type      | Description                                                                                           | Default             |
-| -------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- | ------------------- |
-| `Name`                                 | `String`  | Name of the module to publish. Defaults to the repository name.                                       | `null`              |
-| `Test.Skip`                            | `Boolean` | Skip all tests                                                                                        | `false`             |
-| `Test.Linux.Skip`                      | `Boolean` | Skip tests on Linux                                                                                   | `false`             |
-| `Test.MacOS.Skip`                      | `Boolean` | Skip tests on macOS                                                                                   | `false`             |
-| `Test.Windows.Skip`                    | `Boolean` | Skip tests on Windows                                                                                 | `false`             |
-| `Test.SourceCode.Skip`                 | `Boolean` | Skip source code tests                                                                                | `false`             |
-| `Test.SourceCode.Linux.Skip`           | `Boolean` | Skip source code tests on Linux                                                                       | `false`             |
-| `Test.SourceCode.MacOS.Skip`           | `Boolean` | Skip source code tests on macOS                                                                       | `false`             |
-| `Test.SourceCode.Windows.Skip`         | `Boolean` | Skip source code tests on Windows                                                                     | `false`             |
-| `Test.PSModule.Skip`                   | `Boolean` | Skip PSModule framework tests                                                                         | `false`             |
-| `Test.PSModule.Linux.Skip`             | `Boolean` | Skip PSModule framework tests on Linux                                                                | `false`             |
-| `Test.PSModule.MacOS.Skip`             | `Boolean` | Skip PSModule framework tests on macOS                                                                | `false`             |
-| `Test.PSModule.Windows.Skip`           | `Boolean` | Skip PSModule framework tests on Windows                                                              | `false`             |
-| `Test.Module.Skip`                     | `Boolean` | Skip module tests                                                                                     | `false`             |
-| `Test.Module.Linux.Skip`               | `Boolean` | Skip module tests on Linux                                                                            | `false`             |
-| `Test.Module.MacOS.Skip`               | `Boolean` | Skip module tests on macOS                                                                            | `false`             |
-| `Test.Module.Windows.Skip`             | `Boolean` | Skip module tests on Windows                                                                          | `false`             |
-| `Test.TestResults.Skip`                | `Boolean` | Skip test result processing                                                                           | `false`             |
-| `Test.CodeCoverage.Skip`               | `Boolean` | Skip code coverage tests                                                                              | `false`             |
-| `Test.CodeCoverage.PercentTarget`      | `Integer` | Target code coverage percentage                                                                       | `0`                 |
-| `Test.CodeCoverage.StepSummaryMode`    | `String`  | Step summary mode for code coverage reports                                                           | `'Missed, Files'`   |
-| `Build.Skip`                           | `Boolean` | Skip all build tasks                                                                                  | `false`             |
-| `Build.Module.Skip`                    | `Boolean` | Skip module build                                                                                     | `false`             |
-| `Build.Docs.Skip`                      | `Boolean` | Skip documentation build                                                                              | `false`             |
-| `Build.Docs.ShowSummaryOnSuccess`      | `Boolean` | Show super-linter summary on success for documentation linting                                        | `false`             |
-| `Build.Site.Skip`                      | `Boolean` | Skip site build                                                                                       | `false`             |
-| `Publish.Module.Skip`                  | `Boolean` | Skip module publishing                                                                                | `false`             |
-| `Publish.Module.AutoCleanup`           | `Boolean` | Automatically clean up old prerelease module versions                                                 | `true`              |
-| `Publish.Module.AutoPatching`          | `Boolean` | Automatically patch module version                                                                    | `true`              |
-| `Publish.Module.IncrementalPrerelease` | `Boolean` | Use incremental prerelease versioning                                                                 | `true`              |
-| `Publish.Module.DatePrereleaseFormat`  | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
-| `Publish.Module.VersionPrefix`         | `String`  | Prefix for version tags                                                                               | `'v'`               |
-| `Publish.Module.MajorLabels`           | `String`  | Labels indicating a major version bump                                                                | `'major, breaking'` |
-| `Publish.Module.MinorLabels`           | `String`  | Labels indicating a minor version bump                                                                | `'minor, feature'`  |
-| `Publish.Module.PatchLabels`           | `String`  | Labels indicating a patch version bump                                                                | `'patch, fix'`      |
-| `Publish.Module.IgnoreLabels`          | `String`  | Labels indicating no release                                                                          | `'NoRelease'`       |
-| `Linter.Skip`                          | `Boolean` | Skip repository linting                                                                               | `false`             |
-| `Linter.ShowSummaryOnSuccess`          | `Boolean` | Show super-linter summary on success for repository linting                                           | `false`             |
-| `Linter.env`                           | `Object`  | Environment variables for super-linter configuration                                                  | `{}`                |
+| Name                                      | Type      | Description                                                                                                                                                          | Default             |
+| ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `Name`                                    | `String`  | Name of the module to publish. Defaults to the repository name.                                                                                                      | `null`              |
+| `Test.Skip`                               | `Boolean` | Skip all tests                                                                                                                                                       | `false`             |
+| `Test.Linux.Skip`                         | `Boolean` | Skip tests on Linux                                                                                                                                                  | `false`             |
+| `Test.MacOS.Skip`                         | `Boolean` | Skip tests on macOS                                                                                                                                                  | `false`             |
+| `Test.Windows.Skip`                       | `Boolean` | Skip tests on Windows                                                                                                                                                | `false`             |
+| `Test.SourceCode.Skip`                    | `Boolean` | Skip source code tests                                                                                                                                               | `false`             |
+| `Test.SourceCode.Linux.Skip`              | `Boolean` | Skip source code tests on Linux                                                                                                                                      | `false`             |
+| `Test.SourceCode.MacOS.Skip`              | `Boolean` | Skip source code tests on macOS                                                                                                                                      | `false`             |
+| `Test.SourceCode.Windows.Skip`            | `Boolean` | Skip source code tests on Windows                                                                                                                                    | `false`             |
+| `Test.PSModule.Skip`                      | `Boolean` | Skip PSModule framework tests                                                                                                                                        | `false`             |
+| `Test.PSModule.Linux.Skip`                | `Boolean` | Skip PSModule framework tests on Linux                                                                                                                               | `false`             |
+| `Test.PSModule.MacOS.Skip`                | `Boolean` | Skip PSModule framework tests on macOS                                                                                                                               | `false`             |
+| `Test.PSModule.Windows.Skip`              | `Boolean` | Skip PSModule framework tests on Windows                                                                                                                             | `false`             |
+| `Test.Module.Skip`                        | `Boolean` | Skip module tests                                                                                                                                                    | `false`             |
+| `Test.Module.Linux.Skip`                  | `Boolean` | Skip module tests on Linux                                                                                                                                           | `false`             |
+| `Test.Module.MacOS.Skip`                  | `Boolean` | Skip module tests on macOS                                                                                                                                           | `false`             |
+| `Test.Module.Windows.Skip`                | `Boolean` | Skip module tests on Windows                                                                                                                                         | `false`             |
+| `Test.TestResults.Skip`                   | `Boolean` | Skip test result processing                                                                                                                                          | `false`             |
+| `Test.CodeCoverage.Skip`                  | `Boolean` | Skip code coverage tests                                                                                                                                             | `false`             |
+| `Test.CodeCoverage.PercentTarget`         | `Integer` | Target code coverage percentage                                                                                                                                      | `0`                 |
+| `Test.CodeCoverage.StepSummaryMode`       | `String`  | Step summary mode for code coverage reports                                                                                                                          | `'Missed, Files'`   |
+| `Build.Skip`                              | `Boolean` | Skip all build tasks                                                                                                                                                 | `false`             |
+| `Build.Module.Skip`                       | `Boolean` | Skip module build                                                                                                                                                    | `false`             |
+| `Build.Docs.Skip`                         | `Boolean` | Skip documentation build                                                                                                                                             | `false`             |
+| `Build.Docs.ShowSummaryOnSuccess`         | `Boolean` | Show super-linter summary on success for documentation linting                                                                                                       | `false`             |
+| `Build.Site.Skip`                         | `Boolean` | Skip site build                                                                                                                                                      | `false`             |
+| `Publish.Module.Skip`                     | `Boolean` | Skip module publishing                                                                                                                                               | `false`             |
+| `Publish.Module.AutoCleanup`              | `Boolean` | Automatically clean up old prerelease tags when merging to main or when a PR is abandoned                                                                            | `true`              |
+| `Publish.Module.AutoPatching`             | `Boolean` | Automatically patch module version                                                                                                                                   | `true`              |
+| `Publish.Module.IncrementalPrerelease`    | `Boolean` | Use incremental prerelease versioning                                                                                                                                | `true`              |
+| `Publish.Module.DatePrereleaseFormat`     | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
+| `Publish.Module.VersionPrefix`            | `String`  | Prefix for version tags                                                                                                                                              | `'v'`               |
+| `Publish.Module.MajorLabels`              | `String`  | Labels indicating a major version bump                                                                                                                               | `'major, breaking'` |
+| `Publish.Module.MinorLabels`              | `String`  | Labels indicating a minor version bump                                                                                                                               | `'minor, feature'`  |
+| `Publish.Module.PatchLabels`              | `String`  | Labels indicating a patch version bump                                                                                                                               | `'patch, fix'`      |
+| `Publish.Module.IgnoreLabels`             | `String`  | Labels indicating no release                                                                                                                                         | `'NoRelease'`       |
+| `Publish.Module.UsePRTitleAsReleaseName`  | `Boolean` | Use the PR title as the GitHub release name instead of version string                                                                                                | `false`             |
+| `Publish.Module.UsePRBodyAsReleaseNotes`  | `Boolean` | Use the PR body as the release notes content                                                                                                                         | `true`              |
+| `Publish.Module.UsePRTitleAsNotesHeading` | `Boolean` | Prepend PR title as H1 heading with PR number link before the body                                                                                                   | `true`              |
+| `Linter.Skip`                             | `Boolean` | Skip repository linting                                                                                                                                              | `false`             |
+| `Linter.ShowSummaryOnSuccess`             | `Boolean` | Show super-linter summary on success for repository linting                                                                                                          | `false`             |
+| `Linter.env`                              | `Object`  | Environment variables for super-linter configuration                                                                                                                 | `{}`                |
 
 <details>
 <summary>`PSModule.yml` with all defaults</summary>
@@ -468,6 +480,9 @@ Publish:
     MinorLabels: 'minor, feature'
     PatchLabels: 'patch, fix'
     IgnoreLabels: 'NoRelease'
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: true
+    UsePRTitleAsNotesHeading: true
 
 Linter:
   Skip: false
@@ -574,6 +589,69 @@ This is useful for reviewing what was checked even when no issues are found.
 
 For a complete list of available environment variables and configuration options, see the
 [super-linter environment variables documentation](https://github.com/super-linter/super-linter#environment-variables).
+
+### Example 4 - Configuring PR-based release notes
+
+The workflow can automatically generate GitHub release names and notes from your pull request content.
+Three parameters control this behavior:
+
+| Parameter | Description |
+|-----------|-------------|
+| `UsePRTitleAsReleaseName` | Use the PR title as the GitHub release name instead of the version string |
+| `UsePRBodyAsReleaseNotes` | Use the PR body as the release notes content |
+| `UsePRTitleAsNotesHeading` | Prepend PR title as H1 heading with PR number link before the body |
+
+These parameters follow specific precedence rules when building release notes:
+
+1. **Heading + Body** (`UsePRTitleAsNotesHeading: true` + `UsePRBodyAsReleaseNotes: true`): Creates formatted notes with the PR title as an H1 heading followed by the PR body. The output format is `# PR Title (#123)\n\nPR body content`. Both the PR title and body must be present.
+1. **Body only** (`UsePRBodyAsReleaseNotes: true`): Uses the PR body as-is for release notes. Takes effect when heading option is disabled or PR title is missing.
+1. **Fallback**: When neither option is enabled or required PR content is missing, GitHub's auto-generated release notes are used via `--generate-notes`.
+
+#### Default configuration (recommended)
+
+The defaults provide rich release notes with the PR title as a heading:
+
+```yaml
+Publish:
+  Module:
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: true
+    UsePRTitleAsNotesHeading: true
+```
+
+This produces release notes like:
+
+```markdown
+# 🚀 Add new authentication feature (#42)
+
+This PR adds OAuth2 support with the following changes:
+- Added `Connect-OAuth2` function
+- Updated documentation
+```
+
+#### Version-only release names
+
+If you prefer version numbers as release names but still want PR-based notes:
+
+```yaml
+Publish:
+  Module:
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: true
+    UsePRTitleAsNotesHeading: false
+```
+
+#### Auto-generated notes
+
+To use GitHub's auto-generated release notes instead of PR content:
+
+```yaml
+Publish:
+  Module:
+    UsePRTitleAsReleaseName: false
+    UsePRBodyAsReleaseNotes: false
+    UsePRTitleAsNotesHeading: false
+```
 
 ## Skipping Individual Framework Tests
 

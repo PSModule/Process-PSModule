@@ -29,19 +29,8 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Download module artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: module
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
-
-      - name: Update Microsoft.PowerShell.PSResourceGet
-        shell: pwsh
-        run: |
-          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
-
       - name: Publish module
-        uses: PSModule/Publish-PSModule@6c25d139fe51b890f75c057897bd58ac344b192a # v2.0.8
+        uses: PSModule/Publish-PSModule@e1b338d1266dee28c6d6218756979597c8a77b7a # v2.2.0
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -53,9 +42,13 @@ jobs:
           AutoPatching: ${{ fromJson(inputs.Settings).Publish.Module.AutoPatching }}
           DatePrereleaseFormat: ${{ fromJson(inputs.Settings).Publish.Module.DatePrereleaseFormat }}
           IgnoreLabels: ${{ fromJson(inputs.Settings).Publish.Module.IgnoreLabels }}
+          ReleaseType: ${{ fromJson(inputs.Settings).Publish.Module.ReleaseType }}
           IncrementalPrerelease: ${{ fromJson(inputs.Settings).Publish.Module.IncrementalPrerelease }}
           MajorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MajorLabels }}
           MinorLabels: ${{ fromJson(inputs.Settings).Publish.Module.MinorLabels }}
           PatchLabels: ${{ fromJson(inputs.Settings).Publish.Module.PatchLabels }}
           VersionPrefix: ${{ fromJson(inputs.Settings).Publish.Module.VersionPrefix }}
+          UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
+          UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
+          UsePRTitleAsNotesHeading: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsNotesHeading }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

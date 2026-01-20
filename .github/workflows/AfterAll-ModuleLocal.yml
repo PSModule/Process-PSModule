@@ -57,7 +57,7 @@ jobs:
 
       - name: Run AfterAll Teardown Scripts
         if: always()
-        uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
+        uses: PSModule/GitHub-Script@2010983167dc7a41bcd84cb88e698ec18eccb7ca # v1.7.8
         with:
           Name: AfterAll-ModuleLocal
           ShowInfo: false

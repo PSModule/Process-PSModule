@@ -10,7 +10,8 @@ Test:
   CodeCoverage:
     PercentTarget: 1
 Publish:
-  AutoCleanup: false
+  Module:
+    AutoCleanup: false
 Linter:
   env:
     VALIDATE_BIOME_FORMAT: false
