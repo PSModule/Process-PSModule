@@ -6,6 +6,8 @@ description: Create a pull request with a release note style description, approp
 
 The user input to you can be provided directly by the agent or as a command argument - you **MUST** consider it before proceeding with the prompt (if not empty).
 
+Use the GitHub MCP tools to create or update a pull request in the appropriate repository (fork or origin mode), with a structured release note style description, a title that includes an icon and change type, and labels based on the specified change type.
+
 ## User input
 
 $ARGUMENTS
@@ -69,7 +71,7 @@ $ARGUMENTS
      - Stop if the user cannot provide either of these.
 
 5. **Generate PR title**:
-   - **If issue title retrieved**: Use format `<Icon> <Issue Title>`
+   - **If issue title retrieved**: Use format `<Icon> [<Change Type>]: <Issue Title>`
    - Examples:
      - `🚀 [Feature]: Add support for custom module templates`
      - `🪲 [Fix]: Resolve null reference in parameter validation`
