@@ -39,7 +39,8 @@ on:
         value: ${{ jobs.Get-Settings.outputs.Settings }}
 
 permissions:
-  contents: read # to checkout the repo
+  contents: read        # to checkout the repo
+  pull-requests: write  # to add labels to PRs
 
 jobs:
   Get-Settings:
