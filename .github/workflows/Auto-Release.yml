@@ -31,6 +31,6 @@ jobs:
           persist-credentials: false
 
       - name: Auto-Release
-        uses: PSModule/Release-GHRepository@88c70461c8f16cc09682005bcf3b7fca4dd8dc1a # v2
+        uses: PSModule/Release-GHRepository@88c70461c8f16cc09682005bcf3b7fca4dd8dc1a # v2.0.1
         with:
           IncrementalPrerelease: false
