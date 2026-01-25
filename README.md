@@ -104,7 +104,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 
 [workflow](#get-settings)
 - Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
-- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
+- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and whether
   to setup testing infrastructure and what operating systems to run the tests on.
 
 ### Build module
