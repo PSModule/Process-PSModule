@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build module
-        uses: PSModule/Build-PSModule@fe8cc14a7192066cc46cb9514659772ebde05849 # v4.0.9
+        uses: PSModule/Build-PSModule@869da3f28cbb5c04c6868dded0d511a40f191a59 # v4.0.12
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ArtifactName: ${{ inputs.ArtifactName }}

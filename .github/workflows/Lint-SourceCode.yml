@@ -26,7 +26,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint-SourceCode
-        uses: PSModule/Invoke-ScriptAnalyzer@0b13023a981f4c94136bba6193a9abd2d936cbc1 # v4.1.1
+        uses: PSModule/Invoke-ScriptAnalyzer@17bb50ef88b72e7d723e56b81d2e04f27ddc7e37 # v4.1.2
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}

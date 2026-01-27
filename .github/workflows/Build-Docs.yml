@@ -30,7 +30,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Document module
-        uses: PSModule/Document-PSModule@51affc52831fa82500bea2a41f02abef9a9cfdc1 # v1.0.14
+        uses: PSModule/Document-PSModule@dc5b329f840f7803ec02d34a42ee725bca39db5f # v1.0.16
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

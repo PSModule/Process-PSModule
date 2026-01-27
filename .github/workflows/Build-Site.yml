@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@d60d63e4be477d1ca0c67c6085101fb109bce8f1 # v1.0.6
+        uses: PSModule/Install-PSModuleHelpers@ed79b6e3aa8c9cd3d30ab2bf02ea6bd4687b9c74 # v1.0.7
 
       - name: Download docs artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0

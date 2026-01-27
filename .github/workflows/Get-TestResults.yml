@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get-TestResults
-        uses: PSModule/Get-PesterTestResults@0c1d8cde9575b192831f76e87d3f7e825a7d8ff4 # v1.0.7
+        uses: PSModule/Get-PesterTestResults@616387914e439d7b648e3cfaaf73542f5723ff42 # v1.0.8
         id: Get-TestResults
         with:
           SourceCodeTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.SourceCode) }}
