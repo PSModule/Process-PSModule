@@ -67,13 +67,6 @@ permissions:
   id-token: write      # to verify the deployment originates from an appropriate source
 
 jobs:
-  Debug:
-    name: Debug
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug
-        uses: PSModule/Debug@main
-
   # Runs on:
   # - ✅ Open/Updated PR - Always runs to load configuration
   # - ✅ Merged PR       - Always runs to load configuration
