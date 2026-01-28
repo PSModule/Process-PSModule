@@ -6,6 +6,8 @@ description: Create a pull request with a release note style description, approp
 
 The user input to you can be provided directly by the agent or as a command argument - you **MUST** consider it before proceeding with the prompt (if not empty).
 
+Use the GitHub MCP tools to create or update a pull request in the appropriate repository (fork or origin mode), with a structured release note style description, a title that includes an icon and change type, and labels based on the specified change type.
+
 ## User input
 
 $ARGUMENTS
@@ -14,13 +16,13 @@ $ARGUMENTS
 
 ## Supported Change Types
 
-| Type  | Icon | Labels         | Description                                |
-| ----- | ---- | -------------- | ------------------------------------------ |
-| Major | 🌟   | `Major`        | Breaking changes that affect compatibility |
-| Minor | 🚀   | `Minor`        | New features or enhancements               |
-| Patch | 🩹   | `Patch`        | Small fixes or improvements                |
-| Fix   | 🪲   | `Fix`, `Patch` | Bugfixes                                   |
-| Docs  | 📖   | `Docs`         | Documentation changes only                 |
+| Type        | Icon | Labels         | Description                                |
+| ----------- | ---- | -------------- | -------------------------------------------|
+| Major       | 🌟   | `Major`        | Breaking changes that affect compatibility |
+| Minor       | 🚀   | `Minor`        | New features or enhancements               |
+| Patch       | 🩹   | `Patch`        | Small fixes or improvements                |
+| Docs        | 📖   | `NoRelease`    | Documentation changes only                 |
+| Maintenance | ⚙️   | `NoRelease`    | CI/CD, build configs, internal maintenance |
 
 ## Execution Steps
 
@@ -37,13 +39,13 @@ $ARGUMENTS
    - If in doubt, ask the user to clarify which repository to target.
 
 2. **Determine the change type**:
-   1. Parse the user input to identify the change type (Major, Minor, Patch, Fix, or Docs)
+   1. Parse the user input to identify the change type (Major, Minor, Patch, Fix, Docs, or Maintenance)
    2. If nothing is provided, **analyze ALL changes in the branch** to infer the type:
       - Run `git diff origin/main...HEAD --name-only` to get all changed files in the branch
       - Read the diff content using `git diff origin/main...HEAD` to understand the nature of changes
       - Categorize based on ALL changes combined, not just recent commits:
+        * **Maintenance**: CI/CD workflows, build configs, dependency updates, or internal tooling with no user-facing changes
         * **Docs**: ONLY if ALL changes are to documentation files (*.md, docs/, .github/prompts/, etc.) with no code/functionality changes
-        * **Fix**: If changes specifically fix bugs without adding new features
         * **Patch**: Small fixes or improvements that do not add new features
         * **Minor**: New features or enhancements that do not break existing functionality
         * **Major**: Changes that break backward compatibility (e.g., removing public APIs, changing method signatures)
@@ -69,11 +71,12 @@ $ARGUMENTS
      - Stop if the user cannot provide either of these.
 
 5. **Generate PR title**:
-   - **If issue title retrieved**: Use format `<Icon> <Issue Title>`
+   - **If issue title retrieved**: Use format `<Icon> [<type of change>]: <Issue Title>`
    - Examples:
      - `🚀 [Feature]: Add support for custom module templates`
      - `🪲 [Fix]: Resolve null reference in parameter validation`
      - `📖 [Docs]: Update installation guide with prerequisites`
+     - `⚙️ [Maintenance]: Update Release workflow and dependencies`
 
 6. **Generate release note style description**:
    - The PR description will be used automatically as the release note in an automated release
@@ -139,8 +142,7 @@ $ARGUMENTS
      - Add labels to PR - owner/repo should be target repository, use `update_issue` (PRs are issues in GitHub API)
 
 8. **Apply labels to the PR**:
-   - Add the **change type label** based on the type specified (Major, Minor, Patch, Fix, or Docs)
-   - For Fix type, add both `Fix` and `Patch` labels
+   - Add the **change type label** based on the type specified (Major, Minor, Patch, Fix, Docs, or Maintenance)
    - If currently in a feature workflow phase (e.g., Planning, Implementation), also apply that phase label
    - Use GitHub MCP to add labels in the **target repository** (upstream in fork mode, origin otherwise)
 
@@ -149,14 +151,6 @@ $ARGUMENTS
    - Summarize the PR title, type, and labels applied
    - If in fork mode, remind the user that the PR was created in the upstream repository
 
-## Example usage
-
-- `/PR` - Create a PR for the current changes
-- `/PR Minor` - Create a PR for a new feature
-- `/PR Fix` - Create a PR for a bugfix
-- `/PR Docs` - Create a PR for documentation changes
-- `/PR Major` - Create a PR for breaking changes
-- `/PR Patch` - Create a PR for small improvements
 
 ## Notes
 

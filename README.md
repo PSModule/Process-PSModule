@@ -68,6 +68,10 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Secrets](#secrets)
     - [Permissions](#permissions)
     - [Scenario Matrix](#scenario-matrix)
+    - [Important file change detection](#important-file-change-detection)
+      - [Files that trigger releases](#files-that-trigger-releases)
+      - [Files that do NOT trigger releases](#files-that-do-not-trigger-releases)
+      - [Behavior when no important files are changed](#behavior-when-no-important-files-are-changed)
   - [Configuration](#configuration)
     - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
     - [Example 2 - Rapid testing](#example-2---rapid-testing)
@@ -104,7 +108,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 
 [workflow](#get-settings)
 - Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
-- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and wether
+- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and whether
   to setup testing infrastructure and what operating systems to run the tests on.
 
 ### Build module
@@ -360,6 +364,41 @@ This table shows when each job runs based on the trigger scenario:
 - \*\* Only when all tests/coverage/build succeed
 - \*\*\* Cleans up prerelease versions and tags created for the abandoned PR (when `Publish.Module.AutoCleanup` is
   enabled)
+
+### Important file change detection
+
+The workflow automatically detects whether a pull request contains changes to "important" files that warrant a new
+release. This prevents unnecessary releases when only non-functional files (such as workflow configurations, linter
+settings, or test files) are modified.
+
+#### Files that trigger releases
+
+| Path | Description |
+| :--- | :---------- |
+| `src/**` | Module source code |
+| `README.md` | Module documentation |
+
+#### Files that do NOT trigger releases
+
+Changes to the following files will not trigger a release:
+
+- `.github/workflows/*` - Workflow configurations
+- `.github/linters/*` - Linter configuration files
+- `tests/**` - Test files
+- `examples/**` - Example scripts
+- `.gitignore`, `.editorconfig`, etc. - Repository configuration files
+
+#### Behavior when no important files are changed
+
+When a pull request does not contain changes to important files:
+
+1. A comment is automatically added to the PR explaining why build/test stages are skipped
+2. The `ReleaseType` output is set to `None`
+3. Build, test, and publish stages are skipped
+4. The PR can still be merged for non-release changes (documentation updates, CI improvements, etc.)
+
+This behavior ensures that maintenance PRs (such as updating GitHub Actions versions or fixing typos in comments)
+don't create unnecessary releases in the PowerShell Gallery.
 
 ## Configuration
 

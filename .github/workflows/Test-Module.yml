@@ -52,7 +52,7 @@ jobs:
         include: ${{ fromJson(inputs.Settings).TestSuites.PSModule }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -63,7 +63,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        uses: PSModule/Test-PSModule@7d94ed751a60973867e84ea8d44521e94b7c485d # v3.0.7
+        uses: PSModule/Test-PSModule@d4d6d1d2ac1d243ca82c9c199371533e8d2220ef # v3.0.8
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           Debug: ${{ fromJson(inputs.Settings).Debug }}
@@ -82,7 +82,7 @@ jobs:
         include: ${{ fromJson(inputs.Settings).TestSuites.PSModule }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -93,7 +93,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Lint-Module
-        uses: PSModule/Invoke-ScriptAnalyzer@0b13023a981f4c94136bba6193a9abd2d936cbc1 # v4.1.1
+        uses: PSModule/Invoke-ScriptAnalyzer@17bb50ef88b72e7d723e56b81d2e04f27ddc7e37 # v4.1.2
         with:
           Path: outputs/module
           Debug: ${{ fromJson(inputs.Settings).Debug }}

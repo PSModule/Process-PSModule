@@ -53,7 +53,7 @@ jobs:
         include: ${{ fromJson(inputs.Settings).TestSuites.Module }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -65,7 +65,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@d60d63e4be477d1ca0c67c6085101fb109bce8f1 # v1.0.6
+        uses: PSModule/Install-PSModuleHelpers@ed79b6e3aa8c9cd3d30ab2bf02ea6bd4687b9c74 # v1.0.7
 
       - name: Import-Module
         id: import-module
@@ -79,7 +79,7 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@882994cbe1ff07c3fc8afdac52404c940f99b331 # v4.2.2
+        uses: PSModule/Invoke-Pester@1fcb663c0efe914e8374d78e16aa7bb907ea2434 # v4.2.3
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
