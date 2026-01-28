@@ -75,7 +75,6 @@ jobs:
         uses: super-linter/super-linter/slim@12562e48d7059cf666c43a4ecb0d3b5a2b31bd9e # v8.4.0
         env:
           RUN_LOCAL: true
-          SUPPRESS_OUTPUT_ON_SUCCESS: true
           DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           FILTER_REGEX_INCLUDE: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
