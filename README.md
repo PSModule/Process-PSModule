@@ -69,7 +69,8 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Permissions](#permissions)
     - [Scenario Matrix](#scenario-matrix)
     - [Important file change detection](#important-file-change-detection)
-      - [Files that trigger releases](#files-that-trigger-releases)
+      - [Default files that trigger releases](#default-files-that-trigger-releases)
+      - [Customizing important file patterns](#customizing-important-file-patterns)
       - [Files that do NOT trigger releases](#files-that-do-not-trigger-releases)
       - [Behavior when no important files are changed](#behavior-when-no-important-files-are-changed)
   - [Configuration](#configuration)
@@ -371,16 +372,40 @@ The workflow automatically detects whether a pull request contains changes to "i
 release. This prevents unnecessary releases when only non-functional files (such as workflow configurations, linter
 settings, or test files) are modified.
 
-#### Files that trigger releases
+#### Default files that trigger releases
 
-| Path | Description |
-| :--- | :---------- |
-| `src/**` | Module source code |
-| `README.md` | Module documentation |
+By default, the following file patterns are considered important and will trigger a release:
+
+| Pattern | Description |
+| :------ | :---------- |
+| `^src/` | Module source code |
+| `^README\.md$` | Module documentation |
+
+These patterns are regular expressions matched against the file paths changed in a pull request.
+
+#### Customizing important file patterns
+
+You can override the default patterns using the `Publish.Module.ImportantFilesPatterns` setting in your
+`PSModule.yml` file. The value is a comma-separated list of regular expression patterns:
+
+```yaml
+Publish:
+  Module:
+    ImportantFilesPatterns: '^src/, ^README\.md$'
+```
+
+For example, to also trigger releases when example scripts or a changelog are modified:
+
+```yaml
+Publish:
+  Module:
+    ImportantFilesPatterns: '^src/, ^README\.md$, ^examples/, ^CHANGELOG\.md$'
+```
 
 #### Files that do NOT trigger releases
 
-Changes to the following files will not trigger a release:
+Changes to files that do not match any of the important file patterns will not trigger a release.
+With the default patterns, this includes:
 
 - `.github/workflows/*` - Workflow configurations
 - `.github/linters/*` - Linter configuration files
@@ -448,6 +473,7 @@ The following settings are available in the settings file:
 | `Publish.Module.UsePRTitleAsReleaseName`  | `Boolean` | Use the PR title as the GitHub release name instead of version string                                                                                                | `false`             |
 | `Publish.Module.UsePRBodyAsReleaseNotes`  | `Boolean` | Use the PR body as the release notes content                                                                                                                         | `true`              |
 | `Publish.Module.UsePRTitleAsNotesHeading` | `Boolean` | Prepend PR title as H1 heading with PR number link before the body                                                                                                   | `true`              |
+| `Publish.Module.ImportantFilesPatterns`   | `String`  | Comma-separated list of regex patterns for files that trigger a release (see [Important file change detection](#important-file-change-detection))                     | `'^src/, ^README\.md$'` |
 | `Linter.Skip`                             | `Boolean` | Skip repository linting                                                                                                                                              | `false`             |
 | `Linter.ShowSummaryOnSuccess`             | `Boolean` | Show super-linter summary on success for repository linting                                                                                                          | `false`             |
 | `Linter.env`                              | `Object`  | Environment variables for super-linter configuration                                                                                                                 | `{}`                |
@@ -519,6 +545,7 @@ Publish:
     MinorLabels: 'minor, feature'
     PatchLabels: 'patch, fix'
     IgnoreLabels: 'NoRelease'
+    ImportantFilesPatterns: '^src/, ^README\.md$'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true
