@@ -12,6 +12,9 @@ on:
       - reopened
       - synchronize
       - labeled
+    paths:
+      - '.github/workflows/**'
+      - '.github/linters/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
