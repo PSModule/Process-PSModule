@@ -14,7 +14,9 @@ on:
       - labeled
     paths:
       - '.github/workflows/**'
-      - '.github/linters/**'
+      - '!.github/workflows/Auto-Release.yml'
+      - '!.github/workflows/Linter.yml'
+      - '!.github/workflows/Workflow-Test-*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
