@@ -1,6 +1,6 @@
-name: Auto-Release
+name: Release
 
-run-name: "Auto-Release - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+run-name: "Release - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on:
   pull_request:
@@ -12,25 +12,28 @@ on:
       - reopened
       - synchronize
       - labeled
+    paths:
+      - '.github/workflows/**'
+      - '!.github/workflows/Release.yml'
+      - '!.github/workflows/Linter.yml'
+      - '!.github/workflows/Workflow-Test-*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write # Required to create releases
+  pull-requests: write # Required to create comments on the PRs
 
 jobs:
-  Auto-Release:
+  Release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - name: Auto-Release
+      - name: Release
         uses: PSModule/Release-GHRepository@5a5165d66f485d1aad217ef34a190178b214fdcb # v2.0.2
-        with:
-          IncrementalPrerelease: false
