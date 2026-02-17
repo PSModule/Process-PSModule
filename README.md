@@ -205,6 +205,70 @@ Write-Host "Cleaning up test environment..."
 Write-Host "Cleanup completed!"
 ```
 
+##### Best practices for shared test infrastructure
+
+Tests run in parallel across multiple OS runners. To avoid rate limits or conflicts from excessive resource creation,
+provision shared infrastructure once in `BeforeAll.ps1` and tear it down in `AfterAll.ps1`. Individual test files
+should consume the shared infrastructure instead of creating their own.
+
+###### Use deterministic naming with `$env:GITHUB_RUN_ID`
+
+Use `$env:GITHUB_RUN_ID` (stable per workflow run, shared across OS runners) to build deterministic resource names.
+This lets test files reference shared resources by name without passing state between jobs.
+
+```powershell
+# BeforeAll.ps1
+$os = $env:RUNNER_OS
+$id = $env:GITHUB_RUN_ID
+$resourceName = "Test-$os-$id"
+```
+
+Do **not** use `[guid]::NewGuid()` or `Get-Random` for shared resource names — these produce different values on
+each runner and cannot be referenced by other jobs.
+
+###### Clean up stale resources from previous failed runs
+
+If a previous workflow run failed before teardown completed, stale resources may remain. Start `BeforeAll.ps1` by
+removing any resources matching your naming prefix before creating new ones:
+
+```powershell
+# Remove stale resources from previous failed runs
+Get-Resources -Filter "Test-$os-*" | Remove-Resource
+
+# Create fresh shared resources
+New-Resource -Name "Test-$os-$id"
+```
+
+###### Tests reference shared resources — they do not create them
+
+Test files should fetch the shared resource by its deterministic name, not create new resources:
+
+```powershell
+# Inside a test file
+BeforeAll {
+    $os = $env:RUNNER_OS
+    $id = $env:GITHUB_RUN_ID
+    $resource = Get-Resource -Name "Test-$os-$id"
+}
+```
+
+Test-specific ephemeral resources (for example, secrets, variables, or temporary items) can still be created and
+cleaned up within each test file. Only long-lived or expensive resources should be shared.
+
+###### Naming conventions
+
+Use a consistent naming scheme so that resources are easy to identify and clean up. A recommended pattern:
+
+| Resource          | Pattern                               | Example                    |
+|-------------------|---------------------------------------|----------------------------|
+| Shared resource   | `Test-{OS}-{RunID}`                   | `Test-Linux-1234`          |
+| Extra resource    | `Test-{OS}-{RunID}-{N}`               | `Test-Linux-1234-1`        |
+| Secret / variable | `{TestName}_{OS}_{RunID}`             | `Secrets_Linux_1234`       |
+| Environment       | `{TestName}-{OS}-{RunID}`             | `Secrets-Linux-1234`       |
+
+When tests use multiple authentication contexts that share the same runner, include a token or context identifier in
+the name to avoid collisions (for example, `Test-{OS}-{ContextID}-{RunID}`).
+
 
 #### Module tests
 
