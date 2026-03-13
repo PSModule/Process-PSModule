@@ -919,7 +919,7 @@ How the module is built.
 │   ├── formats/                            # Formatting metadata registered during build
 │   │   ├── CultureInfo.Format.ps1xml       # Example format included in manifest
 │   │   └── Mygciview.Format.ps1xml         # Additional format loaded at import
-│   ├── functions/                          # Function scripts exported by the module; #Requires -Modules statements here are compiled into RequiredModules
+│   ├── functions/                          # Function scripts exported by the module
 │   │   ├── private/                        # Helper functions scoped to the module
 │   │   │   ├── Get-InternalPSModule.ps1    # Sample internal helper
 │   │   │   └── Set-InternalPSModule.ps1    # Sample internal helper
@@ -949,57 +949,24 @@ How the module is built.
 │   │       └── SolarSystems.ps1            # Example variable surfaced in generated docs
 │   ├── finally.ps1                         # Cleanup script appended to the root module
 │   ├── header.ps1                          # Optional header injected at the top of the module
-│   ├── manifest.psd1 (optional)            # Source manifest reused when present; RequiredModules is not propagated — use #Requires -Modules in function files instead (see "Declaring module dependencies" below)
+│   ├── manifest.psd1 (optional)            # Source manifest reused when present
 │   └── README.md                           # Module-level docs ingested by Document-PSModule
 ```
 
 ### Declaring module dependencies
 
-Module dependencies are declared using [`#Requires -Modules`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_requires)
-statements at the top of individual PowerShell function files under `src/functions/public/` and `src/functions/private/`.
-The build system ([Build-PSModule](https://github.com/PSModule/Build-PSModule)) collects all `#Requires -Modules`
-declarations across every source file, de-duplicates them, and writes the merged result into the `RequiredModules` field
-of the compiled module manifest.
+Declare module dependencies using
+[`#Requires -Modules`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_requires)
+statements at the top of function files in `src/functions/public/` or `src/functions/private/` that require external modules.
+[Build-PSModule](https://github.com/PSModule/Build-PSModule) collects every `#Requires -Modules` declaration across all
+source files, de-duplicates the list, and writes it into the `RequiredModules` field of the compiled manifest
+automatically. For the full range of supported syntax variants, see the
+[about_Requires](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_requires)
+documentation.
 
 > [!IMPORTANT]
 > Adding `RequiredModules` to `src/manifest.psd1` is **not** supported for this purpose. Those entries are silently
-> ignored by the build — they will not appear in the built manifest. Use `#Requires -Modules` in function files instead.
-
-#### Supported syntax variants
-
-```powershell
-# Bare module name — any version is acceptable
-#Requires -Modules Microsoft.Graph.Authentication
-
-# Minimum version constraint
-#Requires -Modules @{ ModuleName = 'Microsoft.Graph.Authentication'; ModuleVersion = '2.28.0' }
-
-# Exact version constraint
-#Requires -Modules @{ ModuleName = 'PSSemVer'; RequiredVersion = '1.1.4' }
-```
-
-#### Example
-
-A function that calls into `Microsoft.Graph.Authentication` declares its dependency at the top of the file:
-
-```powershell
-#Requires -Modules @{ ModuleName = 'Microsoft.Graph.Authentication'; ModuleVersion = '2.28.0' }
-
-function Get-GraphToken {
-    ...
-}
-```
-
-When the module is built, the compiled manifest automatically includes:
-
-```powershell
-RequiredModules = @(
-    @{ ModuleName = 'Microsoft.Graph.Authentication'; ModuleVersion = '2.28.0' }
-)
-```
-
-This co-location approach keeps dependency declarations next to the functions that need them, making it immediately
-clear which commands drive each external dependency.
+> ignored by the build and will not appear in the compiled manifest. Use `#Requires -Modules` in function files instead.
 
 ## Principles and practices
 
@@ -1013,6 +980,9 @@ For each topic or feature to add to the release, open a new branch representing 
 branch. Optionally add the `Prerelease` label on the PR for the release branch, to release preview versions before merging and releasing a published
 version of the PowerShell module.
 
+Co-locate concerns for long-term maintainability. For example, `#Requires -Modules` statements belong in the function files that use them, not in a
+central manifest — this makes it immediately visible which functions drive each external dependency, and avoids silent drift between the manifest and
+the actual code.
 
 The process is compatible with:
 
