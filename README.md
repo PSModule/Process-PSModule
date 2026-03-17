@@ -994,9 +994,9 @@ For each topic or feature to add to the release, open a new branch representing 
 branch. Optionally add the `Prerelease` label on the PR for the release branch, to release preview versions before merging and releasing a published
 version of the PowerShell module.
 
-### Co-location of concerns
+### Colocation of concerns
 
-Co-locate concerns for long-term maintainability. For example, `#Requires -Modules` statements belong in the function files that use them, not in a
+Colocate concerns for long-term maintainability. For example, `#Requires -Modules` statements belong in the function files that use them, not in a
 central manifest — this makes it immediately visible which functions drive each external dependency, and avoids silent drift between the manifest and
 the actual code. Another example is how parameter descriptions are placed as comments in the `param()` block directly above each parameter
 declaration, rather than in the comment-based help at the top of the function — this keeps the description next to the code it documents.
