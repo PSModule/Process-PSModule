@@ -103,7 +103,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
   - [Principles and practices](#principles-and-practices)
     - [Linear versioning](#linear-versioning)
     - [Release and feature branches](#release-and-feature-branches)
-    - [Co-location of concerns](#co-location-of-concerns)
+    - [Colocation of concerns](#colocation-of-concerns)
     - [Compatibility](#compatibility)
 
 ### Get-Settings
