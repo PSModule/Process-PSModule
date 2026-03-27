@@ -58,6 +58,13 @@ on:
         description: The path to the root of the repo.
         required: false
         default: '.'
+      ImportantFilePatterns:
+        type: string
+        description: |
+          Newline-separated list of regex patterns that identify important files.
+          Changes matching these patterns trigger build, test, and publish stages.
+          When set, fully replaces the defaults (^src/ and ^README\.md$).
+        required: false
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
@@ -81,6 +88,7 @@ jobs:
       Verbose: ${{ inputs.Verbose }}
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
+      ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints code changes in active PRs
