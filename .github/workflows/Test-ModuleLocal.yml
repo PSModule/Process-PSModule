@@ -59,7 +59,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download module artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           name: module
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
@@ -79,7 +79,7 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@1fcb663c0efe914e8374d78e16aa7bb907ea2434 # v4.2.3
+        uses: PSModule/Invoke-Pester@abddf7bef0d0614d7ca322036af6a06ee0fb4d44 # v4.2.4
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
