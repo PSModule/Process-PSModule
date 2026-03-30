@@ -63,7 +63,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        uses: PSModule/Test-PSModule@d4d6d1d2ac1d243ca82c9c199371533e8d2220ef # v3.0.8
+        uses: PSModule/Test-PSModule@3cf6c58ae68d1bb054718c3842377aef3c8aaad3 # v3.0.9
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           Debug: ${{ fromJson(inputs.Settings).Debug }}
