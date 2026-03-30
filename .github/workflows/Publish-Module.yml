@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@207c39b9eff2118d0e4eabff78e90f7015bc36da # v2.2.3
+        uses: PSModule/Publish-PSModule@8917aed588dae1bd1aa2873b1caec1c50c20d255 # v2.2.4
         env:
           GH_TOKEN: ${{ github.token }}
         with:
