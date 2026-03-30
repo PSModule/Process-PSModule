@@ -93,7 +93,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Lint-Module
-        uses: PSModule/Invoke-ScriptAnalyzer@17bb50ef88b72e7d723e56b81d2e04f27ddc7e37 # v4.1.2
+        uses: PSModule/Invoke-ScriptAnalyzer@6aeb1bc093b89f9b15c2ac3e5f9ef9e0879dc755 # v4.1.3
         with:
           Path: outputs/module
           Debug: ${{ fromJson(inputs.Settings).Debug }}
