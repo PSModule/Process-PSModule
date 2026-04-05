@@ -9,8 +9,9 @@ on:
         required: true
 
 permissions:
-  contents: read  # to checkout the repository
-  statuses: write # to update the status of the workflow from linter
+  contents: read       # to checkout the repository
+  statuses: write      # to update the status of the workflow from linter
+  pull-requests: write # to post super-linter summary comments on PRs
 
 jobs:
   Lint-Repository:
