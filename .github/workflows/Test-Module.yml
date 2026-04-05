@@ -72,6 +72,9 @@ jobs:
           Version: ${{ fromJson(inputs.Settings).Version }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           Settings: Module
+          CodeCoverage_Enabled: true
+          CodeCoverage_OutputFormat: JaCoCo
+          CodeCoverage_CoveragePercentTarget: 0
 
   Lint-Module:
     name: Lint-Module (${{ matrix.OSName }})
