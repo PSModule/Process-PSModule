@@ -165,8 +165,8 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 - **Code coverage for framework-generated code**: This step collects code coverage for framework-generated
   boilerplate. During the [build step](#build-module), [Build-PSModule](https://github.com/PSModule/Build-PSModule)
-  injects boilerplate code into the compiled `.psm1` file — including the `$IsWindows` compatibility shim, type
-  accelerator registration for public classes and enums, and the `OnRemove` cleanup hook. The framework tests in
+  injects boilerplate code into the compiled `.psm1` file — including type accelerator registration for public classes
+  and enums, and the `OnRemove` cleanup hook. The framework tests in
   [Test-PSModule](https://github.com/PSModule/Test-PSModule) exercise these code paths and produce coverage artifacts
   that are aggregated with coverage from [Test-ModuleLocal](#test-module) in the
   [Get code coverage](#get-code-coverage) step. This keeps framework-generated lines from counting against the module
