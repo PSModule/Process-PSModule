@@ -39,6 +39,9 @@ on:
           Changes matching these patterns trigger build, test, and publish stages.
           When set, fully replaces the defaults (^src/ and ^README\.md$).
         required: false
+        default: |
+          ^src/
+          ^README\.md$
 
     outputs:
       Settings:
