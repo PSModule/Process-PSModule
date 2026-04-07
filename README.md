@@ -507,15 +507,6 @@ workflow input.
 
 Resolution order: settings file → workflow input → hardcoded defaults.
 
-#### Files that do NOT trigger releases
-
-Changes to the following files will not trigger a release:
-
-- `.github/workflows/*` - Workflow configurations
-- `.github/linters/*` - Linter configuration files
-- `tests/**` - Test files
-- `.gitignore`, `.editorconfig`, etc. - Repository configuration files
-
 #### Behavior when no important files are changed
 
 When a pull request does not contain changes to important files:
