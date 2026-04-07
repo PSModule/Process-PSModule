@@ -68,9 +68,6 @@ on:
         default: |
           ^src/
           ^README\.md$
-        default: |
-          ^src/
-          ^README\.md$
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
