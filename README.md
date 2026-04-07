@@ -75,7 +75,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Scenario Matrix](#scenario-matrix)
     - [Important file change detection](#important-file-change-detection)
       - [Files that trigger releases](#files-that-trigger-releases)
-      - [Files that do NOT trigger releases](#files-that-do-not-trigger-releases)
+      - [Customizing important file patterns](#customizing-important-file-patterns)
       - [Behavior when no important files are changed](#behavior-when-no-important-files-are-changed)
   - [Configuration](#configuration)
     - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
