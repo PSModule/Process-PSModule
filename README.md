@@ -500,8 +500,10 @@ jobs:
         ^examples/
 ```
 
-To disable triggering via workflow input, pass an empty string or omit the `with:` block entirely and rely on the
-settings file instead.
+To disable triggering via workflow input, pass an explicit empty string. Note that omitting the input entirely causes
+the workflow's default patterns (`^src/` and `^README\.md$`) to be used — the settings file takes priority over the
+workflow input, so set `ImportantFilePatterns: []` in `.github/PSModule.yml` to disable triggering regardless of the
+workflow input.
 
 Resolution order: settings file → workflow input → hardcoded defaults.
 
