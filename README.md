@@ -457,7 +457,7 @@ The workflow automatically detects whether a pull request contains changes to "i
 release. This prevents unnecessary releases when only non-functional files (such as workflow configurations, linter
 settings, or test files) are modified.
 
-#### Default patterns
+#### Files that trigger releases
 
 By default, the following regular expression patterns identify important files:
 
