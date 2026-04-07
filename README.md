@@ -500,10 +500,19 @@ jobs:
         ^examples/
 ```
 
-To disable triggering via workflow input, pass an explicit empty string. Note that omitting the input entirely causes
-the workflow's default patterns (`^src/` and `^README\.md$`) to be used — the settings file takes priority over the
-workflow input, so set `ImportantFilePatterns: []` in `.github/PSModule.yml` to disable triggering regardless of the
-workflow input.
+To disable triggering via the workflow input, pass an explicit empty string:
+
+```yaml
+jobs:
+  process:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    with:
+      ImportantFilePatterns: ''
+```
+
+Note that omitting the `ImportantFilePatterns` key entirely causes the workflow's default patterns (`^src/` and
+`^README\.md$`) to be used. The settings file takes priority over the workflow input, so set
+`ImportantFilePatterns: []` in `.github/PSModule.yml` to disable triggering regardless of the workflow input.
 
 Resolution order: settings file → workflow input → workflow input default values.
 
