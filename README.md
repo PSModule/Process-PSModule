@@ -480,6 +480,13 @@ ImportantFilePatterns:
 When configured, the provided list fully replaces the defaults. Include the default patterns in your list if you still
 want them to trigger releases.
 
+To disable file-change triggering entirely (so that no file changes ever trigger a release), set an empty list in the
+settings file:
+
+```yaml
+ImportantFilePatterns: []
+```
+
 You can also pass patterns via the workflow input:
 
 ```yaml
@@ -492,6 +499,9 @@ jobs:
         ^README\.md$
         ^examples/
 ```
+
+To disable triggering via workflow input, pass an empty string or omit the `with:` block entirely and rely on the
+settings file instead.
 
 Resolution order: settings file → workflow input → hardcoded defaults.
 
