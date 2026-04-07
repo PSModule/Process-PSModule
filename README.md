@@ -505,7 +505,7 @@ the workflow's default patterns (`^src/` and `^README\.md$`) to be used — the 
 workflow input, so set `ImportantFilePatterns: []` in `.github/PSModule.yml` to disable triggering regardless of the
 workflow input.
 
-Resolution order: settings file → workflow input → hardcoded defaults.
+Resolution order: settings file → workflow input → workflow input default values.
 
 #### Behavior when no important files are changed
 
