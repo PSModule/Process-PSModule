@@ -474,7 +474,7 @@ You can also pass patterns via the workflow input:
 ```yaml
 jobs:
   Process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v1
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     with:
       ImportantFilePatterns: |
         ^src/
