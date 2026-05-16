@@ -75,7 +75,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Scenario Matrix](#scenario-matrix)
     - [Important file change detection](#important-file-change-detection)
       - [Files that trigger releases](#files-that-trigger-releases)
-      - [Files that do NOT trigger releases](#files-that-do-not-trigger-releases)
+      - [Customizing important file patterns](#customizing-important-file-patterns)
       - [Behavior when no important files are changed](#behavior-when-no-important-files-are-changed)
   - [Configuration](#configuration)
     - [Example 1 - Defaults with Code Coverage target](#example-1---defaults-with-code-coverage-target)
@@ -392,6 +392,7 @@ jobs:
 | `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
 | `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `'.'` |
+| `ImportantFilePatterns` | `string` | Newline-separated list of regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `false` | `^src/\n^README\.md$` |
 
 ### Secrets
 
@@ -458,26 +459,69 @@ settings, or test files) are modified.
 
 #### Files that trigger releases
 
-| Path | Description |
+By default, the following regular expression patterns identify important files:
+
+| Pattern | Description |
 | :--- | :---------- |
-| `src/**` | Module source code |
-| `README.md` | Module documentation |
+| `^src/` | Module source code |
+| `^README\.md$` | Module documentation |
 
-#### Files that do NOT trigger releases
+#### Customizing important file patterns
 
-Changes to the following files will not trigger a release:
+To override the default patterns, set `ImportantFilePatterns` in your settings file (`.github/PSModule.yml`):
 
-- `.github/workflows/*` - Workflow configurations
-- `.github/linters/*` - Linter configuration files
-- `tests/**` - Test files
-- `examples/**` - Example scripts
-- `.gitignore`, `.editorconfig`, etc. - Repository configuration files
+```yaml
+ImportantFilePatterns:
+  - '^src/'
+  - '^README\.md$'
+  - '^examples/'
+```
+
+When configured, the provided list fully replaces the defaults. Include the default patterns in your list if you still
+want them to trigger releases.
+
+To disable file-change triggering entirely (so that no file changes ever trigger a release), set an empty list in the
+settings file:
+
+```yaml
+ImportantFilePatterns: []
+```
+
+You can also pass patterns via the workflow input:
+
+```yaml
+jobs:
+  Process:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    with:
+      ImportantFilePatterns: |
+        ^src/
+        ^README\.md$
+        ^examples/
+```
+
+To disable triggering via the workflow input, pass an explicit empty string:
+
+```yaml
+jobs:
+  process:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    with:
+      ImportantFilePatterns: ''
+```
+
+Note that omitting the `ImportantFilePatterns` key entirely causes the workflow's default patterns (`^src/` and
+`^README\.md$`) to be used. The settings file takes priority over the workflow input, so set
+`ImportantFilePatterns: []` in `.github/PSModule.yml` to disable triggering regardless of the workflow input.
+
+Resolution order: settings file → workflow input → workflow input default values.
 
 #### Behavior when no important files are changed
 
 When a pull request does not contain changes to important files:
 
-1. A comment is automatically added to the PR explaining why build/test stages are skipped
+1. A comment is automatically added to the PR listing the configured patterns and explaining why build/test stages are
+   skipped
 2. The `ReleaseType` output is set to `None`
 3. Build, test, and publish stages are skipped
 4. The PR can still be merged for non-release changes (documentation updates, CI improvements, etc.)
@@ -495,6 +539,7 @@ The following settings are available in the settings file:
 | Name                                      | Type      | Description                                                                                                                                                          | Default             |
 | ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | `Name`                                    | `String`  | Name of the module to publish. Defaults to the repository name.                                                                                                      | `null`              |
+| `ImportantFilePatterns`                    | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
 | `Test.Skip`                               | `Boolean` | Skip all tests                                                                                                                                                       | `false`             |
 | `Test.Linux.Skip`                         | `Boolean` | Skip tests on Linux                                                                                                                                                  | `false`             |
 | `Test.MacOS.Skip`                         | `Boolean` | Skip tests on macOS                                                                                                                                                  | `false`             |
@@ -542,6 +587,10 @@ The following settings are available in the settings file:
 
 ```yaml
 Name: null
+
+ImportantFilePatterns:
+  - '^src/'
+  - '^README\.md$'
 
 Build:
   Skip: false
