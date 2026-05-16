@@ -32,6 +32,16 @@ on:
         description: The path to the root of the repo.
         required: false
         default: '.'
+      ImportantFilePatterns:
+        type: string
+        description: |
+          Newline-separated list of regex patterns that identify important files.
+          Changes matching these patterns trigger build, test, and publish stages.
+          When set, fully replaces the defaults (^src/ and ^README\.md$).
+        required: false
+        default: |
+          ^src/
+          ^README\.md$
 
     outputs:
       Settings:
@@ -56,7 +66,7 @@ jobs:
           fetch-depth: 0
 
       - name: Get-Settings
-        uses: PSModule/Get-PSModuleSettings@21c88f499579f56a60cced37872089d866b94a66 # v1.4.4
+        uses: PSModule/Get-PSModuleSettings@1e3d156786c56e6fbd839a1ba5ab21ff8858090e # v1.5.0
         id: Get-Settings
         with:
           SettingsPath: ${{ inputs.SettingsPath }}
@@ -65,3 +75,4 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
+          ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
