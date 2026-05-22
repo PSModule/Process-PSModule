@@ -117,6 +117,43 @@ The Plan job is the single decision point of the workflow. It runs two steps in 
 
 The resolved version is passed into `Build-Module` so the manifest is stamped with the final version **before** the test stages run. The same artifact is then published unchanged by `Publish-Module`, which also uploads the zipped module as a GitHub Release asset. The bytes that are tested are the bytes that ship to the PowerShell Gallery and to GitHub Releases.
 
+#### How version resolution works
+
+The [Resolve-PSModuleVersion](https://github.com/PSModule/Resolve-PSModuleVersion) step reads configuration from `Settings.Publish.Module`:
+
+| Key | Description |
+| --- | ----------- |
+| `ReleaseType` | `Release`, `Prerelease`, or `None`. |
+| `AutoPatching` | When `true`, a patch bump is applied even without a label. |
+| `IncrementalPrerelease` | When `true`, an incrementing counter is appended to prerelease tags. |
+| `DatePrereleaseFormat` | Optional .NET DateTime format string for date-based prerelease suffixes. |
+| `VersionPrefix` | Tag prefix (typically `v`). |
+| `MajorLabels`, `MinorLabels`, `PatchLabels` | Comma-separated PR labels that trigger the corresponding bump. |
+| `IgnoreLabels` | Comma-separated PR labels that suppress version creation. |
+
+Resolution algorithm:
+
+1. Loads the `pull_request` event payload and collects PR labels.
+2. Validates `ReleaseType`; applies `IgnoreLabels` override (suppresses release if matched).
+3. Picks the bump type: `MajorLabels` > `MinorLabels` > (`PatchLabels` or `AutoPatching`).
+4. Reads the latest version from GitHub Releases (`gh release list`) and the PowerShell Gallery (`Find-PSResource`),
+   takes the higher of the two as the baseline.
+5. Bumps the baseline (major, minor, or patch).
+6. For prereleases, appends the sanitized branch name, optionally a `DatePrereleaseFormat` timestamp, and an
+   incremental counter calculated from existing prereleases on the same baseline + branch.
+7. Emits outputs:
+
+| Output | Description |
+| --- | --- |
+| `Version` | `Major.Minor.Patch` portion (for example `1.4.0`). |
+| `Prerelease` | Prerelease tag, empty when not a prerelease. |
+| `FullVersion` | Full string including prefix and prerelease (for example `v1.4.0-mybranch001`). |
+| `ReleaseType` | `Release`, `Prerelease`, or `None` when no bump label is found. |
+| `CreateRelease` | `true` when a release or prerelease should be created. |
+
+When `ReleaseType` is `None`, when an `IgnoreLabels` label is present, or when no version bump label is found
+(and `AutoPatching` is disabled), `CreateRelease` is `false` and the version outputs are empty strings.
+
 ### Lint-Repository
 
 [workflow](./.github/workflows/Lint-Repository.yml)
