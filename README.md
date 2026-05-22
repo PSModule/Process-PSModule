@@ -43,9 +43,9 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
   - [How to get started](#how-to-get-started)
   - [How it works](#how-it-works)
     - [Workflow overview](#workflow-overview)
-    - [Get-Settings](#get-settings)
+    - [Plan](#plan)
     - [Lint-Repository](#lint-repository)
-    - [Get settings](#get-settings-1)
+    - [Plan job](#plan-job)
     - [Build module](#build-module)
     - [Test source code](#test-source-code)
     - [Lint source code](#lint-source-code)
@@ -106,20 +106,28 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Colocation of concerns](#colocation-of-concerns)
     - [Compatibility](#compatibility)
 
-### Get-Settings
+### Plan
 
-[workflow](./.github/workflows/Get-Settings.yml)
+[workflow](./.github/workflows/Plan.yml)
+
+The Plan job is the single decision point of the workflow. It runs two steps in sequence:
+
+1. **Get-PSModuleSettings** — loads the settings file (`.github/PSModule.yml`) and emits a fully resolved `Settings` JSON object that every downstream job consumes.
+2. **Resolve-PSModuleVersion** — calculates the next module version from the resolved settings and the labels on the current pull request. Emits `ModuleVersion`, `ModulePrerelease`, `ModuleFullVersion`, `ReleaseType`, and `CreateRelease` as job outputs.
+
+The resolved version is passed into `Build-Module` so the manifest is stamped with the final version **before** the test stages run. The same artifact is then published unchanged by `Publish-Module`, which also uploads the zipped module as a GitHub Release asset. The bytes that are tested are the bytes that ship to the PowerShell Gallery and to GitHub Releases.
 
 ### Lint-Repository
 
 [workflow](./.github/workflows/Lint-Repository.yml)
 
-### Get settings
+### Plan job
 
-[workflow](#get-settings)
-- Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
+[workflow](#plan)
+- Reads the settings file `.github/PSModule.yml` in the module repository to configure the workflow.
 - Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and whether
   to setup testing infrastructure and what operating systems to run the tests on.
+- Calculates the next module version from PR labels and existing releases, then publishes it as job outputs so Build-Module can stamp the manifest before the artifact is tested.
 
 ### Build module
 
@@ -317,6 +325,7 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 [workflow](./.github/workflows/Publish-Module.yml)
 - Publishes the module to the PowerShell Gallery.
 - Creates a release on the GitHub repository.
+- Attaches the built module as a `.zip` asset on the GitHub Release so consumers can download the exact bytes that were tested and pushed to the PowerShell Gallery.
 - **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
   prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned
   prereleases in the PowerShell Gallery or repository. This behavior is controlled by the `Publish.Module.AutoCleanup`
@@ -430,7 +439,7 @@ This table shows when each job runs based on the trigger scenario:
 
 | Job                       | Open/Updated PR | Merged PR  | Abandoned PR | Manual Run |
 | ------------------------- | --------------- | ---------- | ------------ | ---------- |
-| **Get-Settings**          | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
+| **Plan**                  | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
 | **Lint-Repository**       | ✅ Yes          | ❌ No      | ❌ No        | ❌ No      |
 | **Build-Module**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
 | **Build-Docs**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
@@ -677,7 +686,7 @@ Test:
 
 ### Example 2 - Rapid testing
 
-This example ends up running Get-Settings, Build-Module and Test-Module (tests from the module repo) on **ubuntu-latest** only.
+This example ends up running Plan, Build-Module and Test-Module (tests from the module repo) on **ubuntu-latest** only.
 
 ```yaml
 Test:
