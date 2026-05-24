@@ -43,7 +43,7 @@ jobs:
         uses: PSModule/Build-PSModule@v4.1
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
-          Version: ${{ inputs.ModuleVersion }}
+          Version: ${{ inputs.ModuleVersion != '' && inputs.ModuleVersion || '0.0.0' }}
           Prerelease: ${{ inputs.ModulePrerelease }}
           ArtifactName: ${{ inputs.ArtifactName }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
