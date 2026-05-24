@@ -70,8 +70,8 @@ on:
         value: ${{ jobs.Plan.outputs.CreateRelease }}
 
 permissions:
-  contents: read        # to checkout the repo
-  pull-requests: write  # to add labels / comments to PRs
+  contents: read # to checkout the repo
+  pull-requests: write # to add labels / comments to PRs
 
 jobs:
   Plan:

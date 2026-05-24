@@ -161,6 +161,7 @@ When `ReleaseType` is `None`, when an `IgnoreLabels` label is present, or when n
 ### Plan job
 
 [workflow](#plan)
+
 - Reads the settings file `.github/PSModule.yml` in the module repository to configure the workflow.
 - Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and whether
   to setup testing infrastructure and what operating systems to run the tests on.
@@ -169,11 +170,13 @@ When `ReleaseType` is `None`, when an `IgnoreLabels` label is present, or when n
 ### Build module
 
 [workflow](./.github/workflows/Build-Module.yml)
+
 - Compiles the module source code into a PowerShell module.
 
 ### Test source code
 
 [workflow](./.github/workflows/Test-SourceCode.yml)
+
 - Tests the source code in parallel (matrix) using:
   - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
@@ -193,10 +196,10 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 | ParamBlock          | Functions (Generic) | Functions should have a parameter block (`param()`).                                       |
 | FunctionTest        | Functions (Public)  | All public functions/filters should have corresponding tests.                              |
 
-
 ### Lint source code
 
 [workflow](./.github/workflows/Lint-SourceCode.yml)
+
 - Lints the source code in parallel (matrix) using:
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
@@ -204,6 +207,7 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 ### Framework test
 
 [workflow](./.github/workflows/Test-Module.yml)
+
 - Tests and lints the module in parallel (matrix) using:
   - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
@@ -220,6 +224,7 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 ### Test module
 
 [workflow](./.github/workflows/Test-ModuleLocal.yml)
+
 - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
 - Supports setup and teardown scripts executed via separate dedicated jobs:
   - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
@@ -332,7 +337,6 @@ Use a consistent naming scheme so that resources are easy to identify and clean 
 When tests use multiple authentication contexts that share the same runner, include a token or context identifier in
 the name to avoid collisions (for example, `Test-{OS}-{ContextID}-{RunID}`).
 
-
 #### Module tests
 
 The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1) verifies the following coding practices that the framework enforces:
@@ -345,12 +349,14 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Get test results
 
 [workflow](./.github/workflows/Get-TestResults.yml)
+
 - Gathers the test results from the previous steps and creates a summary of the results.
 - If any tests have failed, the workflow will fail here.
 
 ### Get code coverage
 
 [workflow](./.github/workflows/Get-CodeCoverage.yml)
+
 - Gathers the code coverage from the previous steps and creates a summary of the results.
 - Aggregates coverage from the [Framework test](#framework-test) step (framework-generated boilerplate) and the
   [Test module](#test-module) step (module author code). A command executed in either step counts as covered, so
@@ -360,6 +366,7 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Publish module
 
 [workflow](./.github/workflows/Publish-Module.yml)
+
 - Publishes the module to the PowerShell Gallery.
 - Creates a release on the GitHub repository.
 - Attaches the built module as a `.zip` asset on the GitHub Release so consumers can download the exact bytes that were tested and pushed to the PowerShell Gallery.
@@ -371,12 +378,14 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Build docs
 
 [workflow](./.github/workflows/Build-Docs.yml)
+
 - Generates documentation and lints the documentation using:
   - [super-linter](https://github.com/super-linter/super-linter).
 
 ### Build site
 
 [workflow](./.github/workflows/Build-Site.yml)
+
 - Generates a static site using:
   - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
