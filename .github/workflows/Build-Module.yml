@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build module
-        uses: PSModule/Build-PSModule@main
+        uses: PSModule/Build-PSModule@v4.1
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           Version: ${{ inputs.ModuleVersion }}
