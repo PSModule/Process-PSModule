@@ -106,7 +106,7 @@ jobs:
       - name: Resolve-Version
         # Resolve only when the workflow is going to create a release/prerelease.
         if: fromJson(steps.Get-Settings.outputs.Settings).Publish.Module.ReleaseType != 'None'
-        uses: PSModule/Resolve-PSModuleVersion@main
+        uses: PSModule/Resolve-PSModuleVersion@65b7cb026cb3414943778473fd82ee6cf4f0363e # v1.0.1
         id: Resolve-Version
         env:
           GH_TOKEN: ${{ github.token }}
