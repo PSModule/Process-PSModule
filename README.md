@@ -109,24 +109,10 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 
 [workflow](./.github/workflows/Plan.yml)
 
-The Plan job is the single decision point of the workflow. It runs two steps in sequence:
-
-1. **Get-PSModuleSettings** — loads the settings file (`.github/PSModule.yml`) and emits a fully resolved `Settings` JSON object that every downstream job consumes.
-2. **Resolve-PSModuleVersion** — calculates the next module version from the resolved settings and the labels on the current pull request.
-
-After both steps complete, the resolved version is merged into `Settings` under a `Module` key:
-
-| `Settings.Module` field | Description |
-| --- | ----------- |
-| `Version` | `Major.Minor.Patch` portion (for example `1.4.0`). |
-| `Prerelease` | Prerelease tag, empty when not a prerelease. |
-| `FullVersion` | Full string including prefix and prerelease (for example `v1.4.0-mybranch001`). |
-| `ReleaseType` | `Release`, `Prerelease`, or `None`. |
-| `CreateRelease` | `true` when a release or prerelease will be created. |
-
-All downstream jobs receive this single enriched `Settings` object — there are no separate version outputs.
-The version decided here is the version that ships. `Build-Module` stamps it into the manifest before any test runs,
-and `Publish-Module` publishes the artifact unchanged.
+The Plan job is the single decision point of the workflow. It reads the settings file (`.github/PSModule.yml`),
+collects event context from GitHub, and decides what should happen in the rest of the process. Using that
+situational awareness it calculates the next module version. All decisions are captured in a single `Settings`
+object — including version data under `Settings.Module` — that every downstream job receives.
 
 ### Lint-Repository
 
