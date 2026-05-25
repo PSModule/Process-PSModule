@@ -56,7 +56,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run BeforeAll Setup Scripts
-        uses: PSModule/GitHub-Script@0097f3bbe3f413f3b577b9bcc600727b0ca3201a # v1.7.10
+        uses: PSModule/GitHub-Script@1ee97bbc652d19c38ae12f6e1e47e9d9fbd12d0a # v1.8.0
         with:
           Name: BeforeAll-ModuleLocal
           ShowInfo: false
