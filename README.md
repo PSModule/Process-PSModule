@@ -122,9 +122,8 @@ object — including version data under `Settings.Module` — that every downstr
 
 [workflow](./.github/workflows/Build-Module.yml)
 
-- Receives the resolved version from `Settings.Module` and stamps it into the module manifest before the artifact is uploaded.
-- Compiles the module source code into a PowerShell module.
-- Produces the artifact that flows unchanged through test and publish stages.
+- Compiles the module source code into a PowerShell module, stamping the version from `Settings.Module` into the manifest.
+- Uploads the built artifact.
 
 ### Test source code
 
@@ -406,16 +405,16 @@ jobs:
 
 The following secrets are used by the workflow. They can be automatically provided (if available) by setting `secrets: inherit` in the workflow file.
 
-| Name | Location       | Description                                                               | Default |
-| ---- | -------------- | ------------------------------------------------------------------------- | ------- |
-| `APIKEY`                 | GitHub secrets | The API key for the PowerShell Gallery.                                      | N/A |
-| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests.                 | N/A |
-| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests.             | N/A |
-| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests.              | N/A |
-| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests.           | N/A |
-| `TEST_USER_ORG_FG_PAT`   | GitHub secrets | The fine-grained PAT with organization access for running tests.           | N/A |
-| `TEST_USER_USER_FG_PAT`  | GitHub secrets | The fine-grained PAT with user account access for running tests.           | N/A |
-| `TEST_USER_PAT`          | GitHub secrets | The classic personal access token for running tests.                       | N/A |
+| Name                       | Location       | Description                                                      |
+| -------------------------- | -------------- | ---------------------------------------------------------------- |
+| `APIKEY`                   | GitHub secrets | The API key for the PowerShell Gallery.                          |
+| `TEST_APP_ENT_CLIENT_ID`   | GitHub secrets | The client ID of an Enterprise GitHub App for running tests.     |
+| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests.   |
+| `TEST_APP_ORG_CLIENT_ID`   | GitHub secrets | The client ID of an Organization GitHub App for running tests.   |
+| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests. |
+| `TEST_USER_ORG_FG_PAT`     | GitHub secrets | The fine-grained PAT with organization access for running tests. |
+| `TEST_USER_USER_FG_PAT`    | GitHub secrets | The fine-grained PAT with user account access for running tests. |
+| `TEST_USER_PAT`            | GitHub secrets | The classic personal access token for running tests.             |
 
 ### Permissions
 
@@ -547,7 +546,7 @@ The following settings are available in the settings file:
 | Name                                      | Type      | Description                                                                                                                                                          | Default             |
 | ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | `Name`                                    | `String`  | Name of the module to publish. Defaults to the repository name.                                                                                                      | `null`              |
-| `ImportantFilePatterns`                    | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
+| `ImportantFilePatterns`                   | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
 | `Test.Skip`                               | `Boolean` | Skip all tests                                                                                                                                                       | `false`             |
 | `Test.Linux.Skip`                         | `Boolean` | Skip tests on Linux                                                                                                                                                  | `false`             |
 | `Test.MacOS.Skip`                         | `Boolean` | Skip tests on macOS                                                                                                                                                  | `false`             |
