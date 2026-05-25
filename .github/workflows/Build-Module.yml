@@ -12,16 +12,6 @@ on:
         description: Name of the artifact to upload.
         required: false
         default: module
-      ModuleVersion:
-        type: string
-        description: The Major.Minor.Patch version to stamp into the built manifest. Empty falls back to '999.0.0'.
-        required: false
-        default: ''
-      ModulePrerelease:
-        type: string
-        description: Optional prerelease tag to stamp into the built manifest.
-        required: false
-        default: ''
 
 permissions:
   contents: read # to checkout the repository
@@ -43,7 +33,7 @@ jobs:
         uses: PSModule/Build-PSModule@v4.1
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
-          Version: ${{ inputs.ModuleVersion != '' && inputs.ModuleVersion || '0.0.0' }}
-          Prerelease: ${{ inputs.ModulePrerelease }}
+          Version: ${{ fromJson(inputs.Settings).Module.Version != '' && fromJson(inputs.Settings).Module.Version || '0.0.0' }}
+          Prerelease: ${{ fromJson(inputs.Settings).Module.Prerelease }}
           ArtifactName: ${{ inputs.ArtifactName }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

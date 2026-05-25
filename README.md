@@ -45,7 +45,6 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Workflow overview](#workflow-overview)
     - [Plan](#plan)
     - [Lint-Repository](#lint-repository)
-    - [Plan job](#plan-job)
     - [Build module](#build-module)
     - [Test source code](#test-source-code)
     - [Lint source code](#lint-source-code)
@@ -113,65 +112,33 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 The Plan job is the single decision point of the workflow. It runs two steps in sequence:
 
 1. **Get-PSModuleSettings** — loads the settings file (`.github/PSModule.yml`) and emits a fully resolved `Settings` JSON object that every downstream job consumes.
-2. **Resolve-PSModuleVersion** — calculates the next module version from the resolved settings and the labels on the current pull request. Emits `ModuleVersion`, `ModulePrerelease`, `ModuleFullVersion`, `ReleaseType`, and `CreateRelease` as job outputs.
+2. **Resolve-PSModuleVersion** — calculates the next module version from the resolved settings and the labels on the current pull request.
 
-The resolved version is passed into `Build-Module` so the manifest is stamped with the final version **before** the test stages run. The same artifact is then published unchanged by `Publish-Module`, which also uploads the zipped module as a GitHub Release asset. The bytes that are tested are the bytes that ship to the PowerShell Gallery and to GitHub Releases.
+After both steps complete, the resolved version is merged into `Settings` under a `Module` key:
 
-#### How version resolution works
-
-The [Resolve-PSModuleVersion](https://github.com/PSModule/Resolve-PSModuleVersion) step reads configuration from `Settings.Publish.Module`:
-
-| Key | Description |
+| `Settings.Module` field | Description |
 | --- | ----------- |
-| `ReleaseType` | `Release`, `Prerelease`, or `None`. |
-| `AutoPatching` | When `true`, a patch bump is applied even without a label. |
-| `IncrementalPrerelease` | When `true`, an incrementing counter is appended to prerelease tags. |
-| `DatePrereleaseFormat` | Optional .NET DateTime format string for date-based prerelease suffixes. |
-| `VersionPrefix` | Tag prefix (typically `v`). |
-| `MajorLabels`, `MinorLabels`, `PatchLabels` | Comma-separated PR labels that trigger the corresponding bump. |
-| `IgnoreLabels` | Comma-separated PR labels that suppress version creation. |
-
-Resolution algorithm:
-
-1. Loads the `pull_request` event payload and collects PR labels.
-2. Validates `ReleaseType`; applies `IgnoreLabels` override (suppresses release if matched).
-3. Picks the bump type: `MajorLabels` > `MinorLabels` > (`PatchLabels` or `AutoPatching`).
-4. Reads the latest version from GitHub Releases (`gh release list`) and the PowerShell Gallery (`Find-PSResource`),
-   takes the higher of the two as the baseline.
-5. Bumps the baseline (major, minor, or patch).
-6. For prereleases, appends the sanitized branch name, optionally a `DatePrereleaseFormat` timestamp, and an
-   incremental counter calculated from existing prereleases on the same baseline + branch.
-7. Emits outputs:
-
-| Output | Description |
-| --- | --- |
 | `Version` | `Major.Minor.Patch` portion (for example `1.4.0`). |
 | `Prerelease` | Prerelease tag, empty when not a prerelease. |
 | `FullVersion` | Full string including prefix and prerelease (for example `v1.4.0-mybranch001`). |
-| `ReleaseType` | `Release`, `Prerelease`, or `None` when no bump label is found. |
-| `CreateRelease` | `true` when a release or prerelease should be created. |
+| `ReleaseType` | `Release`, `Prerelease`, or `None`. |
+| `CreateRelease` | `true` when a release or prerelease will be created. |
 
-When `ReleaseType` is `None`, when an `IgnoreLabels` label is present, or when no version bump label is found
-(and `AutoPatching` is disabled), `CreateRelease` is `false` and the version outputs are empty strings.
+All downstream jobs receive this single enriched `Settings` object — there are no separate version outputs.
+The version decided here is the version that ships. `Build-Module` stamps it into the manifest before any test runs,
+and `Publish-Module` publishes the artifact unchanged.
 
 ### Lint-Repository
 
 [workflow](./.github/workflows/Lint-Repository.yml)
 
-### Plan job
-
-[workflow](#plan)
-
-- Reads the settings file `.github/PSModule.yml` in the module repository to configure the workflow.
-- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and whether
-  to setup testing infrastructure and what operating systems to run the tests on.
-- Calculates the next module version from PR labels and existing releases, then publishes it as job outputs so Build-Module can stamp the manifest before the artifact is tested.
-
 ### Build module
 
 [workflow](./.github/workflows/Build-Module.yml)
 
+- Receives the resolved version from `Settings.Module` and stamps it into the module manifest before the artifact is uploaded.
 - Compiles the module source code into a PowerShell module.
+- Produces the artifact that flows unchanged through test and publish stages.
 
 ### Test source code
 
@@ -367,8 +334,8 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 
 [workflow](./.github/workflows/Publish-Module.yml)
 
-- Publishes the module to the PowerShell Gallery.
-- Creates a release on the GitHub repository.
+- Publishes the artifact to the PowerShell Gallery exactly as built — no version mutation.
+- Creates a GitHub Release using the version already stamped in the manifest.
 - Attaches the built module as a `.zip` asset on the GitHub Release so consumers can download the exact bytes that were tested and pushed to the PowerShell Gallery.
 - **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
   prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned

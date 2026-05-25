@@ -2,9 +2,10 @@ name: Plan
 
 # The Plan job is the single decision point for the workflow.
 # It runs two steps:
-#   1. Get-PSModuleSettings  - loads and resolves configuration
-#   2. Resolve-PSModuleVersion - calculates the next version from settings + PR labels
-# All downstream jobs consume the Settings JSON and the resolved version outputs from this job.
+#   1. Get-PSModuleSettings      - loads and resolves configuration
+#   2. Resolve-PSModuleVersion   - calculates the next version from settings + PR labels
+# The resolved version is merged into the Settings object (Settings.Module.*) by the Enrich-Settings step.
+# All downstream jobs receive one self-contained Settings JSON with no separate version outputs.
 
 on:
   workflow_call:
@@ -51,23 +52,8 @@ on:
 
     outputs:
       Settings:
-        description: The complete settings object including test suites.
+        description: The complete settings object including test suites and resolved module version.
         value: ${{ jobs.Plan.outputs.Settings }}
-      ModuleVersion:
-        description: The Major.Minor.Patch part of the next version.
-        value: ${{ jobs.Plan.outputs.ModuleVersion }}
-      ModulePrerelease:
-        description: The prerelease tag, empty string when not a prerelease.
-        value: ${{ jobs.Plan.outputs.ModulePrerelease }}
-      ModuleFullVersion:
-        description: The full version string including prefix and prerelease tag (for example v1.4.0).
-        value: ${{ jobs.Plan.outputs.ModuleFullVersion }}
-      ReleaseType:
-        description: The release type - Release, Prerelease, or None.
-        value: ${{ jobs.Plan.outputs.ReleaseType }}
-      CreateRelease:
-        description: 'true when a release/prerelease should actually be created.'
-        value: ${{ jobs.Plan.outputs.CreateRelease }}
 
 permissions:
   contents: read # to checkout the repo
@@ -78,12 +64,7 @@ jobs:
     name: Plan
     runs-on: ubuntu-latest
     outputs:
-      Settings: ${{ steps.Get-Settings.outputs.Settings }}
-      ModuleVersion: ${{ steps.Resolve-Version.outputs.Version }}
-      ModulePrerelease: ${{ steps.Resolve-Version.outputs.Prerelease }}
-      ModuleFullVersion: ${{ steps.Resolve-Version.outputs.FullVersion }}
-      ReleaseType: ${{ steps.Resolve-Version.outputs.ReleaseType }}
-      CreateRelease: ${{ steps.Resolve-Version.outputs.CreateRelease }}
+      Settings: ${{ steps.Enrich-Settings.outputs.Settings }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -117,3 +98,27 @@ jobs:
           Verbose: ${{ inputs.Verbose }}
           Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
+
+      - name: Enrich-Settings
+        # Merge the resolved version into the Settings object so all downstream jobs
+        # receive a single, self-contained Settings JSON with no separate version outputs.
+        id: Enrich-Settings
+        shell: pwsh
+        env:
+          SETTINGS: ${{ steps.Get-Settings.outputs.Settings }}
+          VERSION: ${{ steps.Resolve-Version.outputs.Version }}
+          PRERELEASE: ${{ steps.Resolve-Version.outputs.Prerelease }}
+          FULL_VERSION: ${{ steps.Resolve-Version.outputs.FullVersion }}
+          RELEASE_TYPE: ${{ steps.Resolve-Version.outputs.ReleaseType }}
+          CREATE_RELEASE: ${{ steps.Resolve-Version.outputs.CreateRelease }}
+        run: |
+          $settings = $env:SETTINGS | ConvertFrom-Json
+          $settings | Add-Member -MemberType NoteProperty -Name Module -Value ([pscustomobject]@{
+              Version       = $env:VERSION
+              Prerelease    = $env:PRERELEASE
+              FullVersion   = $env:FULL_VERSION
+              ReleaseType   = if ([string]::IsNullOrEmpty($env:RELEASE_TYPE)) { 'None' } else { $env:RELEASE_TYPE }
+              CreateRelease = $env:CREATE_RELEASE -eq 'true'
+          })
+          $enriched = $settings | ConvertTo-Json -Depth 10 -Compress
+          "Settings=$enriched" >> $env:GITHUB_OUTPUT

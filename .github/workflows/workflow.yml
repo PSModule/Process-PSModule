@@ -118,8 +118,6 @@ jobs:
       - Plan
     with:
       Settings: ${{ needs.Plan.outputs.Settings }}
-      ModuleVersion: ${{ needs.Plan.outputs.ModuleVersion }}
-      ModulePrerelease: ${{ needs.Plan.outputs.ModulePrerelease }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests source code changes
