@@ -19,12 +19,3 @@ updates:
       github-actions:
         patterns:
           - "*"
-    ignore:
-      # Temporary: freeze major bumps of our own *-PSModule lifecycle actions
-      # until the version-calculation refactor (#326) lands. A premature major
-      # bump of Publish-PSModule (#358) broke the publish pipeline; this stops
-      # Dependabot from re-proposing that class of change until the refactor is
-      # in place and the actions can be adopted together.
-      - dependency-name: "PSModule/*-PSModule"
-        update-types:
-          - version-update:semver-major
