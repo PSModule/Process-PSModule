@@ -24,13 +24,13 @@ jobs:
       SETTINGS: ${{ inputs.Settings }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Publish module
-        uses: PSModule/Publish-PSModule@8917aed588dae1bd1aa2873b1caec1c50c20d255 # v2.2.4
+        uses: PSModule/Publish-PSModule@03c0f8b53d0367c85a0f121f98af9b40c817b0e3 # v3.0.0
         env:
           GH_TOKEN: ${{ github.token }}
         with:

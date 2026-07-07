@@ -9,8 +9,13 @@ updates:
     directory: / # Location of package manifests
     labels:
       - dependencies
-      - github-actions
+      - github_actions
     schedule:
       interval: daily
     cooldown:
       default-days: 7
+    groups:
+      # Combine every GitHub Actions update into a single grouped pull request.
+      github-actions:
+        patterns:
+          - "*"
