@@ -36,7 +36,7 @@ jobs:
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
-          APIKey: ${{ secrets.APIKEY }}
+          APIKey: ${{ secrets.APIKey }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
           AutoPatching: ${{ fromJson(inputs.Settings).Publish.Module.AutoPatching }}
