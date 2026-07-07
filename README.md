@@ -176,6 +176,7 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 
 [workflow](./.github/workflows/Test-ModuleLocal.yml)
 - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
+- Test files lock Pester to the **6.x** major version via `#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.999.999'; GUID = 'a699dea5-2c73-4616-a270-1f7abb777e71' }`. The [Invoke-Pester](https://github.com/PSModule/Invoke-Pester) action installs a matching `6.x`, so minor and patch updates flow in automatically while a new major stays a deliberate, reviewed change.
 - Supports setup and teardown scripts executed via separate dedicated jobs:
   - `BeforeAll`: Runs once before all test matrix jobs to set up the test environment (e.g., deploy infrastructure, download test data).
   - `AfterAll`: Runs once after all test matrix jobs complete to clean up the test environment (e.g., remove test resources, clean up databases).
