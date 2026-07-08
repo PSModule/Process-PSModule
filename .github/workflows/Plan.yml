@@ -91,10 +91,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           Settings: ${{ steps.Get-Settings.outputs.Settings }}
+          Name: ${{ fromJson(steps.Get-Settings.outputs.Settings).Name }}
           Debug: ${{ inputs.Debug }}
-          Prerelease: ${{ inputs.Prerelease }}
           Verbose: ${{ inputs.Verbose }}
-          Version: ${{ inputs.Version }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
 
       - name: Enrich-Settings
