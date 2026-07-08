@@ -1,8 +1,4 @@
-﻿# TEMP masking probe (removed after verification): deliberately emits throwaway secret values so
-# the run logs can be inspected to confirm they render as *** (masked).
-Write-Verbose ("MASKPROBE TEST_USER_PAT=[{0}] CUSTOM_TEST_ENV_VAR=[{1}]" -f $env:TEST_USER_PAT, $env:CUSTOM_TEST_ENV_VAR) -Verbose
-
-Describe 'Environment Variables are available' {
+﻿Describe 'Environment Variables are available' {
     It 'Exposes [<Name>] with the caller-provided value' -ForEach @(
         @{ Name = 'TEST_APP_ENT_CLIENT_ID'; Expected = 'tmp-ent-client-id-01' }
         @{ Name = 'TEST_APP_ORG_CLIENT_ID'; Expected = 'tmp-org-client-id-02' }
