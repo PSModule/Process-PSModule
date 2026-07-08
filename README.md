@@ -394,7 +394,6 @@ jobs:
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
 | `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `'.'` |
 | `ImportantFilePatterns` | `string` | Newline-separated list of regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `false` | `^src/\n^README\.md$` |
-| `TestVariables` | `string` | A JSON object mapping environment variable names to non-secret values, exposed (unmasked) as environment variables to the module test jobs. Built by the caller from `toJSON(vars.<name>)`. | `false` | `''` |
 
 ### Secrets
 
@@ -404,18 +403,22 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 | Name | Location | Description | Required |
 | ---- | -------- | ----------- | -------- |
 | `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
-| `TestSecrets` | GitHub secrets | A JSON object mapping environment variable names to secret values, exposed to the module test jobs. | No |
+| `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
 
-#### Passing secrets and variables to the tests
+#### Passing test data (secrets and variables) to the tests
 
-`TestSecrets` (a secret) and `TestVariables` (a regular input) let a module expose any number of
-caller-defined values to its test jobs (`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and
-`AfterAll-ModuleLocal`) without changing the shared workflow. Use `TestSecrets` for sensitive values
-(masked in the logs) and `TestVariables` for non-secret configuration such as URLs, usernames and
-identifiers (not masked). The calling workflow decides exactly what is passed by building single-line
-JSON objects. Use `toJSON(secrets.<name>)` / `toJSON(vars.<name>)` so that quoting and multi-line
-values (such as private keys) are encoded correctly. A folded `>-` block keeps the source readable
-while producing a single-line value:
+A single `TestData` secret lets a module expose any number of caller-defined values to its test jobs
+(`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and `AfterAll-ModuleLocal`) without changing the shared
+workflow. It is one JSON object with two maps, so everything the tests need is visible in one place:
+
+```json
+{ "secrets": { "NAME": "value" }, "variables": { "NAME": "value" } }
+```
+
+Values under `secrets` are masked in the logs; values under `variables` are not. Build it in the
+calling workflow and pass it through the `secrets:` block (so the whole blob is masked). Reference each
+secret directly as `"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A
+folded `>-` scalar keeps the source readable while producing a single-line value:
 
 ```yaml
 jobs:
@@ -423,35 +426,35 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKEY }}
-      TestSecrets: >-
-        {
-        "CONFLUENCE_API_TOKEN": ${{ toJSON(secrets.CONFLUENCE_API_TOKEN) }}
-        }
-    with:
-      TestVariables: >-
-        {
-        "CONFLUENCE_API_BASE_URI": ${{ toJSON(vars.CONFLUENCE_API_BASE_URI) }},
+      TestData: >-
+        { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
+        "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},
         "CONFLUENCE_USERNAME": ${{ toJSON(vars.CONFLUENCE_USERNAME) }},
-        "CONFLUENCE_SPACE_KEY": ${{ toJSON(vars.CONFLUENCE_SPACE_KEY) }}
-        }
+        "CONFLUENCE_SPACE_KEY": ${{ toJSON(vars.CONFLUENCE_SPACE_KEY) }} } }
 ```
 
 Each entry becomes an environment variable in the test jobs, so the module's Pester tests read the
 values directly:
 
 ```powershell
-$env:CONFLUENCE_API_TOKEN     # from TestSecrets (masked in logs)
-$env:CONFLUENCE_API_BASE_URI  # from TestVariables (not masked)
+$env:CONFLUENCE_API_TOKEN     # from the "secrets" map (masked in logs)
+$env:CONFLUENCE_SITE          # from the "variables" map (not masked)
 ```
 
 Notes:
 
 - The names are entirely caller-defined; no secret or variable names are hard-coded in the shared workflow.
-- `TestSecrets` values are masked in the logs (`::add-mask::`); `TestVariables` values are not masked.
-- Provide each object as a single-line value (the folded `>-` block above does this). Avoid a literal
+- Reference secrets as `"${{ secrets.<name> }}"` (quoted, directly) rather than
+  `toJSON(secrets.<name>)`. The direct form keeps CodeQL's *excessive secrets exposure* check happy and
+  works for single-line secret values. It cannot carry values that contain `"`, `\` or newlines, so
+  base64-encode a multi-line or special-character secret and decode it in the test (for example
+  `[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:MY_KEY_B64))`).
+- Variables use `toJSON(vars.<name>)` so any characters are JSON-encoded safely; they are never masked.
+- Provide `TestData` as a single-line value (the folded `>-` block above does this). Avoid a literal
   `|` block: GitHub registers every line of a multi-line secret as its own mask, which over-masks
   unrelated log output.
-- Omit `TestSecrets` / `TestVariables` entirely when the module needs no secrets / no non-secret config.
+- Omit `TestData` entirely when the module needs no secrets or variables. Include only the map you
+  need (just `secrets`, just `variables`, or both).
 - Because `secrets: inherit` is not used, only the values you list are ever exposed.
 - Organization and repository secrets and variables are supported. Secrets stored in a GitHub
   *Environment* are not exposed by this mechanism.

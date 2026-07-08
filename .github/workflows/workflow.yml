@@ -6,17 +6,16 @@ on:
       APIKey:
         description: The API key for the PowerShell Gallery.
         required: true
-      TestSecrets:
+      TestData:
         description: |
-          Optional JSON object mapping environment variable names to secret values that are exposed to
-          the module test jobs (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal).
-          The calling workflow decides which secrets to provide and builds a single-line JSON object
-          using toJSON(secrets.<name>) so that quoting and multi-line values (such as private keys) are
-          encoded correctly. Keep the value on a single line: a multi-line secret makes GitHub register
-          each line as a separate mask, which over-masks unrelated log output. Each entry is exposed as
-          an environment variable that the module's Pester tests read via $env:<name>. Values are
-          masked in the logs. Omit it entirely when the module needs no secrets. See the README for a
-          complete example.
+          Optional single-line JSON object carrying all data the module test jobs
+          (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal) need, in two maps:
+            { "secrets": { "NAME": "value", ... }, "variables": { "NAME": "value", ... } }
+          Every entry is exposed as an environment variable the module's Pester tests read via
+          $env:<name>. Values under "secrets" are masked in the logs; values under "variables" are not.
+          Build it from secrets.<name> / vars.<name> in the calling workflow (see the README). Keep it
+          on a single line so GitHub registers one mask for the whole value. Omit it when the module
+          needs no test data.
         required: false
     inputs:
       SettingsPath:
@@ -59,23 +58,13 @@ on:
         default: |
           ^src/
           ^README\.md$
-      TestVariables:
-        type: string
-        description: |
-          Optional JSON object mapping environment variable names to NON-SECRET values that are exposed
-          to the module test jobs (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal).
-          The calling workflow builds it from repository/organization variables using
-          toJSON(vars.<name>). Unlike TestSecrets, these values are NOT masked. Omit it when the module
-          needs no non-secret test configuration. See the README for a complete example.
-        required: false
-        default: ''
 
 permissions:
-  contents: write      # to checkout the repo and create releases on the repo
+  contents: write # to checkout the repo and create releases on the repo
   pull-requests: write # to write comments to PRs
-  statuses: write      # to update the status of the workflow from linter
-  pages: write         # to deploy to Pages
-  id-token: write      # to verify the deployment originates from an appropriate source
+  statuses: write # to update the status of the workflow from linter
+  pages: write # to deploy to Pages
+  id-token: write # to verify the deployment originates from an appropriate source
 
 jobs:
   # Runs on:
@@ -169,13 +158,12 @@ jobs:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
     secrets:
-      TestSecrets: ${{ secrets.TestSecrets }}
+      TestData: ${{ secrets.TestData }}
     needs:
       - Build-Module
       - Get-Settings
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
-      TestVariables: ${{ inputs.TestVariables }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests module in local environment
@@ -190,10 +178,9 @@ jobs:
       - BeforeAll-ModuleLocal
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets:
-      TestSecrets: ${{ secrets.TestSecrets }}
+      TestData: ${{ secrets.TestData }}
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
-      TestVariables: ${{ inputs.TestVariables }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs teardown scripts after local module tests
@@ -204,13 +191,12 @@ jobs:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
     secrets:
-      TestSecrets: ${{ secrets.TestSecrets }}
+      TestData: ${{ secrets.TestData }}
     needs:
       - Get-Settings
       - Test-ModuleLocal
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
-      TestVariables: ${{ inputs.TestVariables }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Collects and reports test results

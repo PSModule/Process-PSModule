@@ -3,23 +3,17 @@ name: AfterAll-ModuleLocal
 on:
   workflow_call:
     secrets:
-      TestSecrets:
+      TestData:
         description: |
-          Optional JSON object mapping environment variable names to secret values. Each entry is
-          exposed as an environment variable available to the AfterAll teardown script.
+          Optional single-line JSON object with 'secrets' and 'variables' maps. Each entry is exposed
+          as an environment variable available to the AfterAll teardown script; 'secrets' values are
+          masked in the logs, 'variables' values are not.
         required: false
     inputs:
       Settings:
         type: string
         description: The complete settings object including test suites.
         required: true
-      TestVariables:
-        type: string
-        description: |
-          Optional JSON object mapping environment variable names to NON-SECRET values, exposed as
-          environment variables (not masked) to the AfterAll teardown script. Built from toJSON(vars.<name>).
-        required: false
-        default: ''
 
 permissions:
   contents: read # to checkout the repo
@@ -37,25 +31,27 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Expose caller-provided test secrets and variables
+      - name: Expose caller-provided test data
         shell: pwsh
         env:
-          PSMODULE_TEST_SECRETS: ${{ secrets.TestSecrets }}
-          PSMODULE_TEST_VARIABLES: ${{ inputs.TestVariables }}
+          PSMODULE_TEST_DATA: ${{ secrets.TestData }}
         run: |
-          function Add-EnvFromJson {
+          if ([string]::IsNullOrWhiteSpace($env:PSMODULE_TEST_DATA)) {
+              Write-Host 'No test data was provided by the calling workflow.'
+              return
+          }
+          try {
+              $data = $env:PSMODULE_TEST_DATA | ConvertFrom-Json -ErrorAction Stop
+          } catch {
+              throw "The 'TestData' secret must be a JSON object with 'secrets' and/or 'variables' maps. $_"
+          }
+          function Add-EnvFromMap {
               param(
-                  [string] $Json,
-                  [string] $Source,
+                  [object] $Map,
                   [switch] $Mask
               )
-              if ([string]::IsNullOrWhiteSpace($Json)) { return }
-              try {
-                  $items = $Json | ConvertFrom-Json -ErrorAction Stop
-              } catch {
-                  throw "The '$Source' value must be a JSON object mapping names to values. $_"
-              }
-              foreach ($item in $items.PSObject.Properties) {
+              if (-not $Map) { return }
+              foreach ($item in $Map.PSObject.Properties) {
                   $name = $item.Name
                   $value = [string]$item.Value
                   if ($Mask) {
@@ -74,12 +70,8 @@ jobs:
               }
           }
 
-          Add-EnvFromJson -Json $env:PSMODULE_TEST_SECRETS -Source 'TestSecrets' -Mask
-          Add-EnvFromJson -Json $env:PSMODULE_TEST_VARIABLES -Source 'TestVariables'
-
-          if ([string]::IsNullOrWhiteSpace($env:PSMODULE_TEST_SECRETS) -and [string]::IsNullOrWhiteSpace($env:PSMODULE_TEST_VARIABLES)) {
-              Write-Host 'No test secrets or variables were provided by the calling workflow.'
-          }
+          Add-EnvFromMap -Map $data.secrets -Mask
+          Add-EnvFromMap -Map $data.variables
 
       - name: Run AfterAll Teardown Scripts
         if: always()
