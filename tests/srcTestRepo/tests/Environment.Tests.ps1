@@ -1,22 +1,24 @@
-﻿Describe 'Environment Variables are available' {
-    It 'Should be available [<_>]' -ForEach @(
-        'TEST_APP_ENT_CLIENT_ID',
-        'TEST_APP_ENT_PRIVATE_KEY',
-        'TEST_APP_ORG_CLIENT_ID',
-        'TEST_APP_ORG_PRIVATE_KEY',
-        'TEST_USER_ORG_FG_PAT',
-        'TEST_USER_USER_FG_PAT',
-        'TEST_USER_PAT'
+﻿# TEMP masking probe (removed after verification): deliberately emits throwaway secret values so
+# the run logs can be inspected to confirm they render as *** (masked).
+Write-Verbose ("MASKPROBE TEST_USER_PAT=[{0}] CUSTOM_TEST_ENV_VAR=[{1}]" -f $env:TEST_USER_PAT, $env:CUSTOM_TEST_ENV_VAR) -Verbose
+
+Describe 'Environment Variables are available' {
+    It 'Exposes [<Name>] with the caller-provided value' -ForEach @(
+        @{ Name = 'TEST_APP_ENT_CLIENT_ID'; Expected = 'tmp-ent-client-id-01' }
+        @{ Name = 'TEST_APP_ORG_CLIENT_ID'; Expected = 'tmp-org-client-id-02' }
+        @{ Name = 'TEST_USER_ORG_FG_PAT'; Expected = 'tmp-user-org-fgpat-03' }
+        @{ Name = 'TEST_USER_USER_FG_PAT'; Expected = 'tmp-user-usr-fgpat-04' }
+        @{ Name = 'TEST_USER_PAT'; Expected = 'tmp-user-pat-05' }
+        @{ Name = 'CUSTOM_TEST_ENV_VAR'; Expected = 'caller-provided-value' }
     ) {
-        $name = $_
-        Write-Verbose "Environment variable: [$name]" -Verbose
-        Get-ChildItem env: | Where-Object { $_.Name -eq $name } | Should -Not -BeNullOrEmpty
+        Write-Verbose "Environment variable: [$Name]" -Verbose
+        [System.Environment]::GetEnvironmentVariable($Name) | Should -Be $Expected
     }
 
-    It 'Exposes caller-defined secret names with their values' {
-        # CUSTOM_TEST_ENV_VAR is provided by the calling workflow through the TestSecrets JSON object.
-        # It proves arbitrary, caller-defined names are plumbed through as environment variables that
-        # the tests read via $env:<name>, without relying on secrets: inherit.
-        $env:CUSTOM_TEST_ENV_VAR | Should -Be 'caller-provided-value'
+    It 'Preserves multi-line values in [<Name>]' -ForEach @(
+        @{ Name = 'TEST_APP_ENT_PRIVATE_KEY'; Expected = "tmp-ent-key-a1`ntmp-ent-key-a2" }
+        @{ Name = 'TEST_APP_ORG_PRIVATE_KEY'; Expected = "tmp-org-key-b1`ntmp-org-key-b2" }
+    ) {
+        [System.Environment]::GetEnvironmentVariable($Name) | Should -Be $Expected
     }
 }

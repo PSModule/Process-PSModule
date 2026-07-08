@@ -28,20 +28,20 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets:
       APIKey: ${{ secrets.APIKey }}
-      # The calling workflow chooses which secrets to expose to the test jobs. Names are
-      # caller-defined and read by the module's Pester tests via $env:<name>. CUSTOM_TEST_ENV_VAR
-      # is a plain literal that proves arbitrary, caller-defined names flow through end to end.
+      # Self-test only: THROWAWAY, non-sensitive placeholder values (not real secrets), so the
+      # framework's own tests never depend on repository secrets and masking can be verified with
+      # known values. A real caller would use `toJSON(secrets.<name>)` for each entry instead.
       # The folded '>-' block with flat indentation produces a SINGLE-LINE secret value; a literal
       # '|' multi-line value makes GitHub register every line as its own mask and over-masks logs.
       TestSecrets: >-
         {
-        "TEST_APP_ENT_CLIENT_ID": ${{ toJSON(secrets.TEST_APP_ENT_CLIENT_ID) }},
-        "TEST_APP_ENT_PRIVATE_KEY": ${{ toJSON(secrets.TEST_APP_ENT_PRIVATE_KEY) }},
-        "TEST_APP_ORG_CLIENT_ID": ${{ toJSON(secrets.TEST_APP_ORG_CLIENT_ID) }},
-        "TEST_APP_ORG_PRIVATE_KEY": ${{ toJSON(secrets.TEST_APP_ORG_PRIVATE_KEY) }},
-        "TEST_USER_ORG_FG_PAT": ${{ toJSON(secrets.TEST_USER_ORG_FG_PAT) }},
-        "TEST_USER_USER_FG_PAT": ${{ toJSON(secrets.TEST_USER_USER_FG_PAT) }},
-        "TEST_USER_PAT": ${{ toJSON(secrets.TEST_USER_PAT) }},
+        "TEST_APP_ENT_CLIENT_ID": "tmp-ent-client-id-01",
+        "TEST_APP_ENT_PRIVATE_KEY": "tmp-ent-key-a1\ntmp-ent-key-a2",
+        "TEST_APP_ORG_CLIENT_ID": "tmp-org-client-id-02",
+        "TEST_APP_ORG_PRIVATE_KEY": "tmp-org-key-b1\ntmp-org-key-b2",
+        "TEST_USER_ORG_FG_PAT": "tmp-user-org-fgpat-03",
+        "TEST_USER_USER_FG_PAT": "tmp-user-usr-fgpat-04",
+        "TEST_USER_PAT": "tmp-user-pat-05",
         "CUSTOM_TEST_ENV_VAR": "caller-provided-value"
         }
     with:
