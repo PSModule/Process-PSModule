@@ -409,9 +409,9 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 
 `TestSecrets` lets a module expose any number of caller-defined secrets to its test jobs
 (`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and `AfterAll-ModuleLocal`) without changing the shared
-workflow. The calling workflow decides exactly which secrets are passed by building a JSON object.
+workflow. The calling workflow decides exactly which secrets are passed by building a single-line JSON object.
 Use `toJSON(secrets.<name>)` so that quoting and multi-line values (such as private keys) are encoded
-correctly:
+correctly. A folded `>-` block keeps the source readable while producing a single-line value:
 
 ```yaml
 jobs:
@@ -419,10 +419,10 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKEY }}
-      TestSecrets: |
+      TestSecrets: >-
         {
-          "TEST_USER_PAT": ${{ toJSON(secrets.TEST_USER_PAT) }},
-          "CONFLUENCE_API_KEY": ${{ toJSON(secrets.CONFLUENCE_API_KEY) }}
+        "TEST_USER_PAT": ${{ toJSON(secrets.TEST_USER_PAT) }},
+        "CONFLUENCE_API_KEY": ${{ toJSON(secrets.CONFLUENCE_API_KEY) }}
         }
 ```
 
@@ -438,6 +438,9 @@ Notes:
 
 - The names are entirely caller-defined; no secret names are hard-coded in the shared workflow.
 - Every value is masked in the logs (`::add-mask::`).
+- Provide the object as a single-line value (the folded `>-` block above does this). Avoid a literal
+  `|` block: GitHub registers every line of a multi-line secret as its own mask, which over-masks
+  unrelated log output.
 - Omit `TestSecrets` entirely when the module needs no secrets.
 - Because `secrets: inherit` is not used, only the secrets you list are ever exposed.
 - Organization and repository secrets are supported. Secrets stored in a GitHub *Environment* are not

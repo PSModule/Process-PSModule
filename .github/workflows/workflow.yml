@@ -10,11 +10,13 @@ on:
         description: |
           Optional JSON object mapping environment variable names to secret values that are exposed to
           the module test jobs (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal).
-          The calling workflow decides which secrets to provide and builds the JSON using
-          toJSON(secrets.<name>) so that quoting and multi-line values are encoded correctly. Each
-          entry is exposed as an environment variable that the module's Pester tests read via
-          $env:<name>. Values are masked in the logs. Omit it entirely when the module needs no
-          secrets. See the README for a complete example.
+          The calling workflow decides which secrets to provide and builds a single-line JSON object
+          using toJSON(secrets.<name>) so that quoting and multi-line values (such as private keys) are
+          encoded correctly. Keep the value on a single line: a multi-line secret makes GitHub register
+          each line as a separate mask, which over-masks unrelated log output. Each entry is exposed as
+          an environment variable that the module's Pester tests read via $env:<name>. Values are
+          masked in the logs. Omit it entirely when the module needs no secrets. See the README for a
+          complete example.
         required: false
     inputs:
       SettingsPath:
