@@ -397,18 +397,51 @@ jobs:
 
 ### Secrets
 
-The following secrets are used by the workflow. They can be automatically provided (if available) by setting `secrets: inherit` in the workflow file.
+The workflow declares only two secrets, which keeps the calling workflow in full control of the
+credentials that are exposed. `secrets: inherit` is intentionally not required.
 
-| Name | Location       | Description                                                               | Default |
-| ---- | -------------- | ------------------------------------------------------------------------- | ------- |
-| `APIKEY`                 | GitHub secrets | The API key for the PowerShell Gallery.                                      | N/A |
-| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests.                 | N/A |
-| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests.             | N/A |
-| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests.              | N/A |
-| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests.           | N/A |
-| `TEST_USER_ORG_FG_PAT`   | GitHub secrets | The fine-grained PAT with organization access for running tests.           | N/A |
-| `TEST_USER_USER_FG_PAT`  | GitHub secrets | The fine-grained PAT with user account access for running tests.           | N/A |
-| `TEST_USER_PAT`          | GitHub secrets | The classic personal access token for running tests.                       | N/A |
+| Name | Location | Description | Required |
+| ---- | -------- | ----------- | -------- |
+| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
+| `TestSecrets` | GitHub secrets | A JSON object mapping environment variable names to secret values, exposed to the module test jobs. | No |
+
+#### Passing secrets to the tests
+
+`TestSecrets` lets a module expose any number of caller-defined secrets to its test jobs
+(`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and `AfterAll-ModuleLocal`) without changing the shared
+workflow. The calling workflow decides exactly which secrets are passed by building a JSON object.
+Use `toJSON(secrets.<name>)` so that quoting and multi-line values (such as private keys) are encoded
+correctly:
+
+```yaml
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    secrets:
+      APIKey: ${{ secrets.APIKEY }}
+      TestSecrets: |
+        {
+          "TEST_USER_PAT": ${{ toJSON(secrets.TEST_USER_PAT) }},
+          "CONFLUENCE_API_KEY": ${{ toJSON(secrets.CONFLUENCE_API_KEY) }}
+        }
+```
+
+Each entry becomes an environment variable in the test jobs, so the module's Pester tests read the
+values directly:
+
+```powershell
+$env:TEST_USER_PAT
+$env:CONFLUENCE_API_KEY
+```
+
+Notes:
+
+- The names are entirely caller-defined; no secret names are hard-coded in the shared workflow.
+- Every value is masked in the logs (`::add-mask::`).
+- Omit `TestSecrets` entirely when the module needs no secrets.
+- Because `secrets: inherit` is not used, only the secrets you list are ever exposed.
+- Organization and repository secrets are supported. Secrets stored in a GitHub *Environment* are not
+  exposed by this mechanism.
 
 ### Permissions
 

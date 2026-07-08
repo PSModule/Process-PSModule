@@ -6,26 +6,15 @@ on:
       APIKey:
         description: The API key for the PowerShell Gallery.
         required: true
-      TEST_APP_ENT_CLIENT_ID:
-        description: The client ID of an Enterprise GitHub App for running tests.
-        required: false
-      TEST_APP_ENT_PRIVATE_KEY:
-        description: The private key of an Enterprise GitHub App for running tests.
-        required: false
-      TEST_APP_ORG_CLIENT_ID:
-        description: The client ID of an Organization GitHub App for running tests.
-        required: false
-      TEST_APP_ORG_PRIVATE_KEY:
-        description: The private key of an Organization GitHub App for running tests.
-        required: false
-      TEST_USER_ORG_FG_PAT:
-        description: The fine-grained personal access token with org access for running tests.
-        required: false
-      TEST_USER_USER_FG_PAT:
-        description: The fine-grained personal access token with user account access for running tests.
-        required: false
-      TEST_USER_PAT:
-        description: The classic personal access token for running tests.
+      TestSecrets:
+        description: |
+          Optional JSON object mapping environment variable names to secret values that are exposed to
+          the module test jobs (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal).
+          The calling workflow decides which secrets to provide and builds the JSON using
+          toJSON(secrets.<name>) so that quoting and multi-line values are encoded correctly. Each
+          entry is exposed as an environment variable that the module's Pester tests read via
+          $env:<name>. Values are masked in the logs. Omit it entirely when the module needs no
+          secrets. See the README for a complete example.
         required: false
     inputs:
       SettingsPath:
@@ -168,13 +157,7 @@ jobs:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
     secrets:
-      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+      TestSecrets: ${{ secrets.TestSecrets }}
     needs:
       - Build-Module
       - Get-Settings
@@ -194,13 +177,7 @@ jobs:
       - BeforeAll-ModuleLocal
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets:
-      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+      TestSecrets: ${{ secrets.TestSecrets }}
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
 
@@ -213,13 +190,7 @@ jobs:
     if: fromJson(needs.Get-Settings.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
     secrets:
-      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+      TestSecrets: ${{ secrets.TestSecrets }}
     needs:
       - Get-Settings
       - Test-ModuleLocal
