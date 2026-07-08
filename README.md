@@ -405,6 +405,33 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 | `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
 | `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
 
+#### Breaking change: fixed test secrets moved to `TestData`
+
+The reusable workflow no longer declares or accepts the old fixed test-secret inputs:
+
+- `TEST_APP_ENT_CLIENT_ID`
+- `TEST_APP_ENT_PRIVATE_KEY`
+- `TEST_APP_ORG_CLIENT_ID`
+- `TEST_APP_ORG_PRIVATE_KEY`
+- `TEST_USER_ORG_FG_PAT`
+- `TEST_USER_USER_FG_PAT`
+- `TEST_USER_PAT`
+
+If a caller passed any of these secrets directly, move them into the `secrets` map inside `TestData`.
+The environment variable names used by the tests can stay the same; only the workflow-call interface
+changes:
+
+```yaml
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    secrets:
+      APIKey: ${{ secrets.APIKEY }}
+      TestData: >-
+        { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
+        "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
+```
+
 #### Passing test data (secrets and variables) to the tests
 
 A single `TestData` secret lets a module expose any number of caller-defined values to its test jobs
