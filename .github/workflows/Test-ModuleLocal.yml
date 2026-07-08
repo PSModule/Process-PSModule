@@ -65,7 +65,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@b06dec0f7c9d94117acb8041a1b85658ebc067a7 # TEMP: fix/install-real-module-version (PSModule/Install-PSModuleHelpers#19)
+        uses: PSModule/Install-PSModuleHelpers@383aa36cd1b9dc838157cc4d08bb98cebc603216 # TEMP: fix/install-real-module-version (PSModule/Install-PSModuleHelpers#19)
 
       - name: Import-Module
         id: import-module
