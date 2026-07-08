@@ -41,6 +41,9 @@ jobs:
         }
     with:
       WorkingDirectory: tests/srcWithManifestTestRepo
+      # Non-secret configuration flows via TestVariables (built from repo/org variables, not masked).
+      TestVariables: >-
+        { "PSMODULE_TEST_VARIABLE": ${{ toJSON(vars.PSMODULE_TEST_VARIABLE) }} }
       ImportantFilePatterns: |
         ^src/
         ^README\.md$

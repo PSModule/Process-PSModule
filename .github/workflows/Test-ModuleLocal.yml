@@ -13,6 +13,13 @@ on:
         type: string
         description: The settings object as a JSON string.
         required: true
+      TestVariables:
+        type: string
+        description: |
+          Optional JSON object mapping environment variable names to NON-SECRET values, exposed as
+          environment variables (not masked). The caller builds it from toJSON(vars.<name>).
+        required: false
+        default: ''
 
 permissions:
   contents: read # to checkout the repo and create releases on the repo
@@ -35,34 +42,48 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Expose caller-provided test secrets
+      - name: Expose caller-provided test secrets and variables
         shell: pwsh
         env:
           PSMODULE_TEST_SECRETS: ${{ secrets.TestSecrets }}
+          PSMODULE_TEST_VARIABLES: ${{ inputs.TestVariables }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:PSMODULE_TEST_SECRETS)) {
-              Write-Host 'No test secrets were provided by the calling workflow.'
-              return
-          }
-          try {
-              $secrets = $env:PSMODULE_TEST_SECRETS | ConvertFrom-Json -ErrorAction Stop
-          } catch {
-              throw "The 'TestSecrets' secret must be a JSON object mapping names to values. $_"
-          }
-          foreach ($secret in $secrets.PSObject.Properties) {
-              $name = $secret.Name
-              $value = [string]$secret.Value
-              foreach ($line in ($value -split "`n")) {
-                  $line = $line.TrimEnd("`r")
-                  if ($line.Length -gt 0) {
-                      Write-Host "::add-mask::$line"
-                  }
+          function Add-EnvFromJson {
+              param(
+                  [string] $Json,
+                  [string] $Source,
+                  [switch] $Mask
+              )
+              if ([string]::IsNullOrWhiteSpace($Json)) { return }
+              try {
+                  $items = $Json | ConvertFrom-Json -ErrorAction Stop
+              } catch {
+                  throw "The '$Source' value must be a JSON object mapping names to values. $_"
               }
-              $delimiter = "GHENV_$([guid]::NewGuid().ToString('N'))"
-              Add-Content -Path $env:GITHUB_ENV -Value "$name<<$delimiter"
-              Add-Content -Path $env:GITHUB_ENV -Value $value
-              Add-Content -Path $env:GITHUB_ENV -Value $delimiter
-              Write-Host "Exposed [$name] as an environment variable."
+              foreach ($item in $items.PSObject.Properties) {
+                  $name = $item.Name
+                  $value = [string]$item.Value
+                  if ($Mask) {
+                      foreach ($line in ($value -split "`n")) {
+                          $line = $line.TrimEnd("`r")
+                          if ($line.Length -gt 0) {
+                              Write-Host "::add-mask::$line"
+                          }
+                      }
+                  }
+                  $delimiter = "GHENV_$([guid]::NewGuid().ToString('N'))"
+                  Add-Content -Path $env:GITHUB_ENV -Value "$name<<$delimiter"
+                  Add-Content -Path $env:GITHUB_ENV -Value $value
+                  Add-Content -Path $env:GITHUB_ENV -Value $delimiter
+                  Write-Host "Exposed [$name] as an environment variable."
+              }
+          }
+
+          Add-EnvFromJson -Json $env:PSMODULE_TEST_SECRETS -Source 'TestSecrets' -Mask
+          Add-EnvFromJson -Json $env:PSMODULE_TEST_VARIABLES -Source 'TestVariables'
+
+          if ([string]::IsNullOrWhiteSpace($env:PSMODULE_TEST_SECRETS) -and [string]::IsNullOrWhiteSpace($env:PSMODULE_TEST_VARIABLES)) {
+              Write-Host 'No test secrets or variables were provided by the calling workflow.'
           }
 
       - name: Download module artifact

@@ -394,6 +394,7 @@ jobs:
 | `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
 | `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `'.'` |
 | `ImportantFilePatterns` | `string` | Newline-separated list of regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `false` | `^src/\n^README\.md$` |
+| `TestVariables` | `string` | A JSON object mapping environment variable names to non-secret values, exposed (unmasked) as environment variables to the module test jobs. Built by the caller from `toJSON(vars.<name>)`. | `false` | `''` |
 
 ### Secrets
 
@@ -405,13 +406,16 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 | `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
 | `TestSecrets` | GitHub secrets | A JSON object mapping environment variable names to secret values, exposed to the module test jobs. | No |
 
-#### Passing secrets to the tests
+#### Passing secrets and variables to the tests
 
-`TestSecrets` lets a module expose any number of caller-defined secrets to its test jobs
-(`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and `AfterAll-ModuleLocal`) without changing the shared
-workflow. The calling workflow decides exactly which secrets are passed by building a single-line JSON object.
-Use `toJSON(secrets.<name>)` so that quoting and multi-line values (such as private keys) are encoded
-correctly. A folded `>-` block keeps the source readable while producing a single-line value:
+`TestSecrets` (a secret) and `TestVariables` (a regular input) let a module expose any number of
+caller-defined values to its test jobs (`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and
+`AfterAll-ModuleLocal`) without changing the shared workflow. Use `TestSecrets` for sensitive values
+(masked in the logs) and `TestVariables` for non-secret configuration such as URLs, usernames and
+identifiers (not masked). The calling workflow decides exactly what is passed by building single-line
+JSON objects. Use `toJSON(secrets.<name>)` / `toJSON(vars.<name>)` so that quoting and multi-line
+values (such as private keys) are encoded correctly. A folded `>-` block keeps the source readable
+while producing a single-line value:
 
 ```yaml
 jobs:
@@ -421,8 +425,14 @@ jobs:
       APIKey: ${{ secrets.APIKEY }}
       TestSecrets: >-
         {
-        "TEST_USER_PAT": ${{ toJSON(secrets.TEST_USER_PAT) }},
-        "CONFLUENCE_API_KEY": ${{ toJSON(secrets.CONFLUENCE_API_KEY) }}
+        "CONFLUENCE_API_TOKEN": ${{ toJSON(secrets.CONFLUENCE_API_TOKEN) }}
+        }
+    with:
+      TestVariables: >-
+        {
+        "CONFLUENCE_API_BASE_URI": ${{ toJSON(vars.CONFLUENCE_API_BASE_URI) }},
+        "CONFLUENCE_USERNAME": ${{ toJSON(vars.CONFLUENCE_USERNAME) }},
+        "CONFLUENCE_SPACE_KEY": ${{ toJSON(vars.CONFLUENCE_SPACE_KEY) }}
         }
 ```
 
@@ -430,21 +440,21 @@ Each entry becomes an environment variable in the test jobs, so the module's Pes
 values directly:
 
 ```powershell
-$env:TEST_USER_PAT
-$env:CONFLUENCE_API_KEY
+$env:CONFLUENCE_API_TOKEN     # from TestSecrets (masked in logs)
+$env:CONFLUENCE_API_BASE_URI  # from TestVariables (not masked)
 ```
 
 Notes:
 
-- The names are entirely caller-defined; no secret names are hard-coded in the shared workflow.
-- Every value is masked in the logs (`::add-mask::`).
-- Provide the object as a single-line value (the folded `>-` block above does this). Avoid a literal
+- The names are entirely caller-defined; no secret or variable names are hard-coded in the shared workflow.
+- `TestSecrets` values are masked in the logs (`::add-mask::`); `TestVariables` values are not masked.
+- Provide each object as a single-line value (the folded `>-` block above does this). Avoid a literal
   `|` block: GitHub registers every line of a multi-line secret as its own mask, which over-masks
   unrelated log output.
-- Omit `TestSecrets` entirely when the module needs no secrets.
-- Because `secrets: inherit` is not used, only the secrets you list are ever exposed.
-- Organization and repository secrets are supported. Secrets stored in a GitHub *Environment* are not
-  exposed by this mechanism.
+- Omit `TestSecrets` / `TestVariables` entirely when the module needs no secrets / no non-secret config.
+- Because `secrets: inherit` is not used, only the values you list are ever exposed.
+- Organization and repository secrets and variables are supported. Secrets stored in a GitHub
+  *Environment* are not exposed by this mechanism.
 
 ### Permissions
 

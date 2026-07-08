@@ -1,8 +1,8 @@
-﻿Describe 'TestSecrets are exposed to the module tests' {
-    # PSMODULE_TEST_SINGLELINE_SECRET and PSMODULE_TEST_MULTILINE_SECRET are dedicated, non-sensitive
-    # repository secrets that exist only to prove the TestSecrets plumbing. The calling workflow passes
-    # them through TestSecrets and the framework exposes them as environment variables; these tests
-    # confirm the values arrive present, complete and correct.
+﻿Describe 'TestSecrets and TestVariables are exposed to the module tests' {
+    # PSMODULE_TEST_SINGLELINE_SECRET / PSMODULE_TEST_MULTILINE_SECRET (secrets, masked) and
+    # PSMODULE_TEST_VARIABLE (a non-secret variable, not masked) are dedicated fixtures that exist only
+    # to prove the TestSecrets/TestVariables plumbing. The calling workflow passes them through and the
+    # framework exposes them as environment variables; these tests confirm they arrive correct.
 
     It 'Exposes the single-line secret with the exact expected value' {
         $expected = 'psmodule-public-nonsecret-test-fixture-single-line'
@@ -26,5 +26,12 @@
         $lines[2] | Should -BeExactly 'psmodule-public-nonsecret-test-fixture-line-3'
         ($actual -replace "`r`n", "`n") | Should -BeExactly $expected
         ($actual -replace "`r`n", "`n").Length | Should -Be 137
+    }
+
+    It 'Exposes a non-secret variable via TestVariables' {
+        $actual = [System.Environment]::GetEnvironmentVariable('PSMODULE_TEST_VARIABLE')
+        $actual | Should -Not -BeNullOrEmpty
+        $actual | Should -BeExactly 'psmodule-public-nonsecret-test-variable'
+        $actual.Length | Should -Be 39
     }
 }

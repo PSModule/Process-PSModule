@@ -59,6 +59,16 @@ on:
         default: |
           ^src/
           ^README\.md$
+      TestVariables:
+        type: string
+        description: |
+          Optional JSON object mapping environment variable names to NON-SECRET values that are exposed
+          to the module test jobs (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal).
+          The calling workflow builds it from repository/organization variables using
+          toJSON(vars.<name>). Unlike TestSecrets, these values are NOT masked. Omit it when the module
+          needs no non-secret test configuration. See the README for a complete example.
+        required: false
+        default: ''
 
 permissions:
   contents: write      # to checkout the repo and create releases on the repo
@@ -165,6 +175,7 @@ jobs:
       - Get-Settings
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      TestVariables: ${{ inputs.TestVariables }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests module in local environment
@@ -182,6 +193,7 @@ jobs:
       TestSecrets: ${{ secrets.TestSecrets }}
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      TestVariables: ${{ inputs.TestVariables }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs teardown scripts after local module tests
@@ -198,6 +210,7 @@ jobs:
       - Test-ModuleLocal
     with:
       Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      TestVariables: ${{ inputs.TestVariables }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Collects and reports test results
