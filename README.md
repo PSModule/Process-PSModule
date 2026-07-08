@@ -418,7 +418,8 @@ workflow. It is one JSON object with two maps, so everything the tests need is v
 Values under `secrets` are masked in the logs; values under `variables` are not. Build it in the
 calling workflow and pass it through the `secrets:` block (so the whole blob is masked). Reference each
 secret directly as `"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A
-folded `>-` scalar keeps the source readable while producing a single-line value:
+folded `>-` scalar keeps the source readable while producing a single-line value, as long as the JSON
+content lines stay at the same indentation level:
 
 ```yaml
 jobs:
@@ -450,9 +451,16 @@ Notes:
   base64-encode a multi-line or special-character secret and decode it in the test (for example
   `[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:MY_KEY_B64))`).
 - Variables use `toJSON(vars.<name>)` so any characters are JSON-encoded safely; they are never masked.
+  You can use the same quoted direct form as secrets (`"${{ vars.<name> }}"`) only for simple values
+  that do not contain `"`, `\` or newlines.
 - Provide `TestData` as a single-line value (the folded `>-` block above does this). Avoid a literal
   `|` block: GitHub registers every line of a multi-line secret as its own mask, which over-masks
   unrelated log output.
+- Do not pretty-print `TestData` with nested indentation. YAML preserves more-indented lines inside a
+  folded scalar, so a fully formatted JSON object can still become a multi-line secret. That makes
+  GitHub register each line as its own mask, including brace-only lines such as `{`, `}` or `},`, which
+  can turn unrelated log output into `***`. Keep the compact form above, or keep every JSON content
+  line at the same indentation level.
 - Omit `TestData` entirely when the module needs no secrets or variables. Include only the map you
   need (just `secrets`, just `variables`, or both).
 - Because `secrets: inherit` is not used, only the values you list are ever exposed.
