@@ -378,7 +378,7 @@ jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
-      APIKEY: ${{ secrets.APIKEY }}
+      APIKey: ${{ secrets.APIKey }}
 ```
 
 </details>
@@ -397,8 +397,9 @@ jobs:
 
 ### Secrets
 
-The workflow declares only two secrets, which keeps the calling workflow in full control of the
-credentials that are exposed. `secrets: inherit` is intentionally not required.
+The reusable workflow at `.github/workflows/workflow.yml` declares only two workflow-call secrets,
+which keeps the calling workflow in full control of the credentials that are exposed.
+`secrets: inherit` is intentionally not required.
 
 | Name | Location | Description | Required |
 | ---- | -------- | ----------- | -------- |
@@ -426,7 +427,7 @@ jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
-      APIKey: ${{ secrets.APIKEY }}
+      APIKey: ${{ secrets.APIKey }}
       TestData: >-
         { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
         "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
@@ -453,7 +454,7 @@ jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
-      APIKey: ${{ secrets.APIKEY }}
+      APIKey: ${{ secrets.APIKey }}
       TestData: >-
         { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
         "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},
@@ -471,7 +472,9 @@ $env:CONFLUENCE_SITE          # from the "variables" map (not masked)
 
 Notes:
 
-- The names are entirely caller-defined; no secret or variable names are hard-coded in the shared workflow.
+- The names are caller-defined; no secret or variable names are hard-coded in the shared workflow.
+  Names must match `^[A-Za-z_][A-Za-z0-9_]*$` and must not override reserved variables such as `PATH`,
+  `CI`, `GITHUB_*`, `RUNNER_*` or `ACTIONS_*`.
 - Reference secrets as `"${{ secrets.<name> }}"` (quoted, directly) rather than
   `toJSON(secrets.<name>)`. The direct form keeps CodeQL's *excessive secrets exposure* check happy and
   works for single-line secret values. It cannot carry values that contain `"`, `\` or newlines, so
@@ -491,8 +494,9 @@ Notes:
 - Omit `TestData` entirely when the module needs no secrets or variables. Include only the map you
   need (just `secrets`, just `variables`, or both).
 - Because `secrets: inherit` is not used, only the values you list are ever exposed.
-- Organization and repository secrets and variables are supported. Secrets stored in a GitHub
-  *Environment* are not exposed by this mechanism.
+- Organization, repository and GitHub *Environment* secrets and variables are supported when they are
+  visible to the calling job. For environment-scoped values, set `environment:` on the calling job and
+  explicitly include those values in `TestData`; they are not exposed automatically.
 
 ### Permissions
 

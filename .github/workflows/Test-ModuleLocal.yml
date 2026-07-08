@@ -48,17 +48,68 @@ jobs:
           try {
               $data = $env:PSMODULE_TEST_DATA | ConvertFrom-Json -ErrorAction Stop
           } catch {
-              throw "The 'TestData' secret must be a JSON object with 'secrets' and/or 'variables' maps. $_"
+              throw "The 'TestData' secret must be valid JSON with 'secrets' and/or 'variables' maps."
+          }
+          if ($null -eq $data -or $data -isnot [pscustomobject]) {
+              throw "The 'TestData' secret must be a JSON object with 'secrets' and/or 'variables' maps."
+          }
+          $allowedTopLevelKeys = @('secrets', 'variables')
+          foreach ($propertyName in $data.PSObject.Properties.Name) {
+              if ($allowedTopLevelKeys -notcontains $propertyName) {
+                  throw "The 'TestData' secret only supports 'secrets' and 'variables' maps."
+              }
+          }
+          $reservedNames = @('CI', 'HOME', 'PATH', 'PWD', 'SHELL', 'PSMODULE_TEST_DATA')
+          $reservedPrefixes = @('GITHUB_', 'RUNNER_', 'ACTIONS_')
+          function Assert-EnvironmentName {
+              param([string] $Name)
+              if ($Name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+                  throw "TestData keys must be valid environment variable names."
+              }
+              $normalized = $Name.ToUpperInvariant()
+              if ($reservedNames -contains $normalized) {
+                  throw "TestData keys must not override reserved environment variables."
+              }
+              foreach ($prefix in $reservedPrefixes) {
+                  if ($normalized.StartsWith($prefix)) {
+                      throw "TestData keys must not override reserved environment variables."
+                  }
+              }
+          }
+          function Assert-Map {
+              param(
+                  [object] $Map,
+                  [string] $Name
+              )
+              if ($null -eq $Map) { return }
+              if ($Map -isnot [pscustomobject]) {
+                  throw "The 'TestData.$Name' value must be a JSON object."
+              }
+          }
+          function Get-EnvironmentValue {
+              param(
+                  [object] $Value,
+                  [string] $Name
+              )
+              if ($null -eq $Value) { return '' }
+              if ($Value -is [pscustomobject] -or ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string])) {
+                  throw "Values in 'TestData.$Name' must be scalar values."
+              }
+              return [string]$Value
           }
           function Add-EnvFromMap {
               param(
                   [object] $Map,
+                  [string] $Name,
                   [switch] $Mask
               )
-              if (-not $Map) { return }
+              Assert-Map -Map $Map -Name $Name
+              if ($null -eq $Map) { return }
+              $count = 0
               foreach ($item in $Map.PSObject.Properties) {
                   $name = $item.Name
-                  $value = [string]$item.Value
+                  Assert-EnvironmentName -Name $name
+                  $value = Get-EnvironmentValue -Value $item.Value -Name $Name
                   if ($Mask) {
                       foreach ($line in ($value -split "`n")) {
                           $line = $line.TrimEnd("`r")
@@ -67,16 +118,25 @@ jobs:
                           }
                       }
                   }
-                  $delimiter = "GHENV_$([guid]::NewGuid().ToString('N'))"
+                  do {
+                      $delimiter = "GHENV_$([guid]::NewGuid().ToString('N'))"
+                  } while ($value.Contains($delimiter))
                   Add-Content -Path $env:GITHUB_ENV -Value "$name<<$delimiter"
                   Add-Content -Path $env:GITHUB_ENV -Value $value
                   Add-Content -Path $env:GITHUB_ENV -Value $delimiter
-                  Write-Host "Exposed [$name] as an environment variable."
+                  $count++
+              }
+              if ($count -gt 0) {
+                  if ($Mask) {
+                      Write-Host "Exposed $count secret value(s) as environment variables."
+                  } else {
+                      Write-Host "Exposed $count variable value(s) as environment variables."
+                  }
               }
           }
 
-          Add-EnvFromMap -Map $data.secrets -Mask
-          Add-EnvFromMap -Map $data.variables
+          Add-EnvFromMap -Map $data.secrets -Name 'secrets' -Mask
+          Add-EnvFromMap -Map $data.variables -Name 'variables'
 
       - name: Download module artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
