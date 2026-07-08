@@ -28,21 +28,16 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets:
       APIKey: ${{ secrets.APIKey }}
-      # Self-test only: THROWAWAY, non-sensitive placeholder values (not real secrets), so the
-      # framework's own tests never depend on repository secrets and masking can be verified with
-      # known values. A real caller would use `toJSON(secrets.<name>)` for each entry instead.
-      # The folded '>-' block with flat indentation produces a SINGLE-LINE secret value; a literal
-      # '|' multi-line value makes GitHub register every line as its own mask and over-masks logs.
+      # Self-test only: two dedicated, NON-SENSITIVE repository secrets (PSMODULE_TEST_*_SECRET) exist
+      # purely to prove the TestSecrets plumbing end to end - a real GitHub secret is masked, passed
+      # through, and exposed as $env:<name>. Their known values are asserted (value + length) in
+      # tests/.../Environment.Tests.ps1.
+      # The folded '>-' block keeps the JSON on a SINGLE line so GitHub registers one mask for the
+      # blob; a multi-line blob makes every line (incl. braces) its own mask and over-masks the logs.
       TestSecrets: >-
         {
-        "TEST_APP_ENT_CLIENT_ID": "tmp-ent-client-id-01",
-        "TEST_APP_ENT_PRIVATE_KEY": "tmp-ent-key-a1\ntmp-ent-key-a2",
-        "TEST_APP_ORG_CLIENT_ID": "tmp-org-client-id-02",
-        "TEST_APP_ORG_PRIVATE_KEY": "tmp-org-key-b1\ntmp-org-key-b2",
-        "TEST_USER_ORG_FG_PAT": "tmp-user-org-fgpat-03",
-        "TEST_USER_USER_FG_PAT": "tmp-user-usr-fgpat-04",
-        "TEST_USER_PAT": "tmp-user-pat-05",
-        "CUSTOM_TEST_ENV_VAR": "caller-provided-value"
+        "PSMODULE_TEST_SINGLELINE_SECRET": ${{ toJSON(secrets.PSMODULE_TEST_SINGLELINE_SECRET) }},
+        "PSMODULE_TEST_MULTILINE_SECRET": ${{ toJSON(secrets.PSMODULE_TEST_MULTILINE_SECRET) }}
         }
     with:
       WorkingDirectory: tests/srcWithManifestTestRepo
