@@ -117,7 +117,7 @@ dependency tree, including diagrams and a reference of every dependency, see [DE
 
 The Plan job is the single decision point of the workflow. It reads the settings file (`.github/PSModule.yml`),
 collects event context from GitHub, and decides what should happen in the rest of the process. Using that
-situational awareness it calculates the next module version. All decisions are captured in a single `Settings`
+situational awareness, it calculates the next module version. All decisions are captured in a single `Settings`
 object — including version data under `Settings.Module` — that every downstream job receives.
 
 ### Lint-Repository
