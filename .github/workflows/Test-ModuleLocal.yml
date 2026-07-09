@@ -64,7 +64,7 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@266d1cf2532f572470b7c4463fa1072f2bfe4455 # v4.2.5
+        uses: PSModule/Invoke-Pester@9cf262a79e7528d5af41c875c35dae91c44d18dd # v4.2.6
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
