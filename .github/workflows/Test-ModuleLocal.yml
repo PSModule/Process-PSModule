@@ -82,4 +82,4 @@ jobs:
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
-            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion ${{ fromJson(inputs.Settings).Module.Version }}
+            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion '${{ fromJson(inputs.Settings).Module.Version }}'

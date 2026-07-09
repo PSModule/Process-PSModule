@@ -33,7 +33,7 @@ jobs:
         uses: PSModule/Build-PSModule@672aaa7a91a379c4c6cd14494d03ab5e87e13c52 # v5.0.0
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
-          Version: ${{ fromJson(inputs.Settings).Module.Version != '' && fromJson(inputs.Settings).Module.Version || '0.0.0' }}
+          Version: ${{ fromJson(inputs.Settings).Module.Version != '' && fromJson(inputs.Settings).Module.Version || '999.0.0' }}
           Prerelease: ${{ fromJson(inputs.Settings).Module.Prerelease }}
           ArtifactName: ${{ inputs.ArtifactName }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
