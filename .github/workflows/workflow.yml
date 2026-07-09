@@ -6,26 +6,16 @@ on:
       APIKEY:
         description: The API key for the PowerShell Gallery.
         required: true
-      TEST_APP_ENT_CLIENT_ID:
-        description: The client ID of an Enterprise GitHub App for running tests.
-        required: false
-      TEST_APP_ENT_PRIVATE_KEY:
-        description: The private key of an Enterprise GitHub App for running tests.
-        required: false
-      TEST_APP_ORG_CLIENT_ID:
-        description: The client ID of an Organization GitHub App for running tests.
-        required: false
-      TEST_APP_ORG_PRIVATE_KEY:
-        description: The private key of an Organization GitHub App for running tests.
-        required: false
-      TEST_USER_ORG_FG_PAT:
-        description: The fine-grained personal access token with org access for running tests.
-        required: false
-      TEST_USER_USER_FG_PAT:
-        description: The fine-grained personal access token with user account access for running tests.
-        required: false
-      TEST_USER_PAT:
-        description: The classic personal access token for running tests.
+      TestData:
+        description: |
+          Optional single-line JSON object carrying all data the module test jobs
+          (BeforeAll-ModuleLocal, Test-ModuleLocal, AfterAll-ModuleLocal) need, in two maps:
+            { "secrets": { "NAME": "value", ... }, "variables": { "NAME": "value", ... } }
+          Every entry is exposed as an environment variable the module's Pester tests read via
+          $env:<name>. Values under "secrets" are masked in the logs; values under "variables" are not.
+          Build it from secrets.<name> / vars.<name> in the calling workflow (see the README). Keep it
+          on a single line so GitHub registers one mask for the whole value. Omit it when the module
+          needs no test data.
         required: false
     inputs:
       SettingsPath:
@@ -168,13 +158,7 @@ jobs:
     if: fromJson(needs.Plan.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
     secrets:
-      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+      TestData: ${{ secrets.TestData }}
     needs:
       - Build-Module
       - Plan
@@ -194,13 +178,7 @@ jobs:
       - BeforeAll-ModuleLocal
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets:
-      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+      TestData: ${{ secrets.TestData }}
     with:
       Settings: ${{ needs.Plan.outputs.Settings }}
 
@@ -213,13 +191,7 @@ jobs:
     if: fromJson(needs.Plan.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
     secrets:
-      TEST_APP_ENT_CLIENT_ID: ${{ secrets.TEST_APP_ENT_CLIENT_ID }}
-      TEST_APP_ENT_PRIVATE_KEY: ${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}
-      TEST_APP_ORG_CLIENT_ID: ${{ secrets.TEST_APP_ORG_CLIENT_ID }}
-      TEST_APP_ORG_PRIVATE_KEY: ${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}
-      TEST_USER_ORG_FG_PAT: ${{ secrets.TEST_USER_ORG_FG_PAT }}
-      TEST_USER_USER_FG_PAT: ${{ secrets.TEST_USER_USER_FG_PAT }}
-      TEST_USER_PAT: ${{ secrets.TEST_USER_PAT }}
+      TestData: ${{ secrets.TestData }}
     needs:
       - Plan
       - Test-ModuleLocal
