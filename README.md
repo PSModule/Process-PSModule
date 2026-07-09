@@ -43,6 +43,7 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
   - [How to get started](#how-to-get-started)
   - [How it works](#how-it-works)
     - [Workflow overview](#workflow-overview)
+    - [Dependency tree](#dependency-tree)
     - [Get-Settings](#get-settings)
     - [Lint-Repository](#lint-repository)
     - [Get settings](#get-settings-1)
@@ -105,6 +106,11 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
     - [Release and feature branches](#release-and-feature-branches)
     - [Colocation of concerns](#colocation-of-concerns)
     - [Compatibility](#compatibility)
+
+### Dependency tree
+
+Process-PSModule composes its work from reusable workflows, actions, a container image, PowerShell modules, and Python packages. For the full
+dependency tree, including diagrams and a reference of every dependency, see [DEPENDENCIES.md](./DEPENDENCIES.md).
 
 ### Get-Settings
 
