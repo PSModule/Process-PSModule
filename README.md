@@ -1072,6 +1072,7 @@ Key expectations:
 - Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/`.
 - Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
 - Markdown files in `src/functions/public` subfolders become documentation pages alongside generated help.
+- A group's overview page (`<Category>/<Category>.md` named after the folder, or `<Category>/index.md`) becomes that group's section landing page in the docs navigation.
 - The build step compiles `src/` into a root module file and removes the original project layout from the artifact.
 - Documentation generation mirrors the `src/functions/public` hierarchy so help content always aligns with source.
 
@@ -1100,7 +1101,7 @@ How the module is built.
 │   │   └── public/                         # Public commands documented and tested
 │   │       ├── Category/                   # Optional: organize commands into categories
 │   │       │   ├── Get-CategoryCommand.ps1 # Command file within category
-│   │       │   └── Category.md             # Category overview merged into docs output
+│   │       │   └── Category.md             # Group overview -> section landing page (or index.md)
 │   │       ├── Get-PSModuleTest.ps1        # Example command captured by Microsoft.PowerShell.PlatyPS
 │   │       ├── New-PSModuleTest.ps1        # Example command exported and tested
 │   │       ├── Set-PSModuleTest.ps1        # Example command exported and tested
