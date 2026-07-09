@@ -44,9 +44,8 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
   - [How it works](#how-it-works)
     - [Workflow overview](#workflow-overview)
     - [Dependency tree](#dependency-tree)
-    - [Get-Settings](#get-settings)
+    - [Plan](#plan)
     - [Lint-Repository](#lint-repository)
-    - [Get settings](#get-settings-1)
     - [Build module](#build-module)
     - [Test source code](#test-source-code)
     - [Lint source code](#lint-source-code)
@@ -112,29 +111,30 @@ Depending on the labels in the pull requests, the [workflow will result in diffe
 Process-PSModule composes its work from reusable workflows, actions, a container image, PowerShell modules, and Python packages. For the full
 dependency tree, including diagrams and a reference of every dependency, see [DEPENDENCIES.md](./DEPENDENCIES.md).
 
-### Get-Settings
+### Plan
 
-[workflow](./.github/workflows/Get-Settings.yml)
+[workflow](./.github/workflows/Plan.yml)
+
+The Plan job is the single decision point of the workflow. It reads the settings file (`.github/PSModule.yml`),
+collects event context from GitHub, and decides what should happen in the rest of the process. Using that
+situational awareness, it calculates the next module version. All decisions are captured in a single `Settings`
+object — including version data under `Settings.Module` — that every downstream job receives.
 
 ### Lint-Repository
 
 [workflow](./.github/workflows/Lint-Repository.yml)
 
-### Get settings
-
-[workflow](#get-settings)
-- Reads the settings file `github/PSModule.yml` in the module repository to configure the workflow.
-- Gathers context for the process from GitHub and the repo files, configuring what tests to run, if and what kind of release to create, and whether
-  to setup testing infrastructure and what operating systems to run the tests on.
-
 ### Build module
 
 [workflow](./.github/workflows/Build-Module.yml)
-- Compiles the module source code into a PowerShell module.
+
+- Compiles the module source code into a PowerShell module, stamping the version from `Settings.Module` into the manifest.
+- Uploads the built artifact.
 
 ### Test source code
 
 [workflow](./.github/workflows/Test-SourceCode.yml)
+
 - Tests the source code in parallel (matrix) using:
   - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
@@ -154,10 +154,10 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 | ParamBlock          | Functions (Generic) | Functions should have a parameter block (`param()`).                                       |
 | FunctionTest        | Functions (Public)  | All public functions/filters should have corresponding tests.                              |
 
-
 ### Lint source code
 
 [workflow](./.github/workflows/Lint-SourceCode.yml)
+
 - Lints the source code in parallel (matrix) using:
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
@@ -165,6 +165,7 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 ### Framework test
 
 [workflow](./.github/workflows/Test-Module.yml)
+
 - Tests and lints the module in parallel (matrix) using:
   - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
@@ -181,6 +182,7 @@ The [PSModule - SourceCode tests](./scripts/tests/SourceCode/PSModule/PSModule.T
 ### Test module
 
 [workflow](./.github/workflows/Test-ModuleLocal.yml)
+
 - Imports and tests the module in parallel (matrix) using Pester tests from the module repository.
 - Module test files declare a Pester **6.x** requirement via `#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.*' }` — a convention module authors add to each `*.Tests.ps1`, not something this pipeline injects. The [Invoke-Pester](https://github.com/PSModule/Invoke-Pester) action installs a matching `6.x`, so minor and patch updates flow in automatically while a new major stays a deliberate, reviewed change.
 - Supports setup and teardown scripts executed via separate dedicated jobs:
@@ -294,7 +296,6 @@ Use a consistent naming scheme so that resources are easy to identify and clean 
 When tests use multiple authentication contexts that share the same runner, include a token or context identifier in
 the name to avoid collisions (for example, `Test-{OS}-{ContextID}-{RunID}`).
 
-
 #### Module tests
 
 The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1) verifies the following coding practices that the framework enforces:
@@ -307,12 +308,14 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Get test results
 
 [workflow](./.github/workflows/Get-TestResults.yml)
+
 - Gathers the test results from the previous steps and creates a summary of the results.
 - If any tests have failed, the workflow will fail here.
 
 ### Get code coverage
 
 [workflow](./.github/workflows/Get-CodeCoverage.yml)
+
 - Gathers the code coverage from the previous steps and creates a summary of the results.
 - Aggregates coverage from the [Framework test](#framework-test) step (framework-generated boilerplate) and the
   [Test module](#test-module) step (module author code). A command executed in either step counts as covered, so
@@ -322,8 +325,10 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Publish module
 
 [workflow](./.github/workflows/Publish-Module.yml)
-- Publishes the module to the PowerShell Gallery.
-- Creates a release on the GitHub repository.
+
+- Publishes the artifact to the PowerShell Gallery exactly as built — no version mutation.
+- Creates a GitHub Release using the version already stamped in the manifest.
+- Attaches the built module as a `.zip` asset on the GitHub Release so consumers can download the exact bytes that were tested and pushed to the PowerShell Gallery.
 - **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
   prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned
   prereleases in the PowerShell Gallery or repository. This behavior is controlled by the `Publish.Module.AutoCleanup`
@@ -332,12 +337,14 @@ The [PSModule - Module tests](./scripts/tests/Module/PSModule/PSModule.Tests.ps1
 ### Build docs
 
 [workflow](./.github/workflows/Build-Docs.yml)
+
 - Generates documentation and lints the documentation using:
   - [super-linter](https://github.com/super-linter/super-linter).
 
 ### Build site
 
 [workflow](./.github/workflows/Build-Site.yml)
+
 - Generates a static site using:
   - [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
@@ -527,7 +534,7 @@ This table shows when each job runs based on the trigger scenario:
 
 | Job                       | Open/Updated PR | Merged PR  | Abandoned PR | Manual Run |
 | ------------------------- | --------------- | ---------- | ------------ | ---------- |
-| **Get-Settings**          | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
+| **Plan**                  | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
 | **Lint-Repository**       | ✅ Yes          | ❌ No      | ❌ No        | ❌ No      |
 | **Build-Module**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
 | **Build-Docs**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
@@ -619,7 +626,7 @@ When a pull request does not contain changes to important files:
 
 1. A comment is automatically added to the PR listing the configured patterns and explaining why build/test stages are
    skipped
-2. The `ReleaseType` output is set to `None`
+2. `Settings.Module.ReleaseType` is set to `None` (and `Settings.Module.CreateRelease` is `false`)
 3. Build, test, and publish stages are skipped
 4. The PR can still be merged for non-release changes (documentation updates, CI improvements, etc.)
 
@@ -636,7 +643,7 @@ The following settings are available in the settings file:
 | Name                                      | Type      | Description                                                                                                                                                          | Default             |
 | ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | `Name`                                    | `String`  | Name of the module to publish. Defaults to the repository name.                                                                                                      | `null`              |
-| `ImportantFilePatterns`                    | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
+| `ImportantFilePatterns`                   | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
 | `Test.Skip`                               | `Boolean` | Skip all tests                                                                                                                                                       | `false`             |
 | `Test.Linux.Skip`                         | `Boolean` | Skip tests on Linux                                                                                                                                                  | `false`             |
 | `Test.MacOS.Skip`                         | `Boolean` | Skip tests on macOS                                                                                                                                                  | `false`             |
@@ -774,7 +781,7 @@ Test:
 
 ### Example 2 - Rapid testing
 
-This example ends up running Get-Settings, Build-Module and Test-Module (tests from the module repo) on **ubuntu-latest** only.
+This example ends up running Plan, Build-Module and Test-Module (tests from the module repo) on **ubuntu-latest** only.
 
 ```yaml
 Test:

@@ -50,7 +50,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@ed79b6e3aa8c9cd3d30ab2bf02ea6bd4687b9c74 # v1.0.7
+        uses: PSModule/Install-PSModuleHelpers@68e8ca76be679bfcb7099aed8cffa911c4ab72af # v1.0.8
 
       - name: Import-Module
         id: import-module
@@ -64,7 +64,7 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@266d1cf2532f572470b7c4463fa1072f2bfe4455 # v4.2.5
+        uses: PSModule/Invoke-Pester@9cf262a79e7528d5af41c875c35dae91c44d18dd # v4.2.6
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
@@ -82,4 +82,4 @@ jobs:
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
-            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion 999.0.0
+            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion '${{ fromJson(inputs.Settings).Module.Version }}'

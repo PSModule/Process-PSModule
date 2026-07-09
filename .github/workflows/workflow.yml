@@ -72,8 +72,8 @@ jobs:
   # - ✅ Merged PR       - Always runs to load configuration
   # - ✅ Abandoned PR    - Always runs to load configuration
   # - ✅ Manual run      - Always runs to load configuration
-  Get-Settings:
-    uses: ./.github/workflows/Get-Settings.yml
+  Plan:
+    uses: ./.github/workflows/Plan.yml
     with:
       SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
@@ -89,12 +89,12 @@ jobs:
   # - ❌ Abandoned PR    - No need to lint abandoned changes
   # - ❌ Manual run      - Only runs for PR events
   Lint-Repository:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.LintRepository
+    if: fromJson(needs.Plan.outputs.Settings).Run.LintRepository
     needs:
-      - Get-Settings
+      - Plan
     uses: ./.github/workflows/Lint-Repository.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
@@ -102,12 +102,12 @@ jobs:
   # - ❌ Abandoned PR    - Skips building abandoned changes
   # - ✅ Manual run      - Builds module when manually triggered
   Build-Module:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BuildModule
+    if: fromJson(needs.Plan.outputs.Settings).Run.BuildModule
     uses: ./.github/workflows/Build-Module.yml
     needs:
-      - Get-Settings
+      - Plan
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests source code changes
@@ -115,12 +115,12 @@ jobs:
   # - ❌ Abandoned PR    - Skips testing abandoned changes
   # - ✅ Manual run      - Tests source code when manually triggered
   Test-SourceCode:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.TestSourceCode
+    if: fromJson(needs.Plan.outputs.Settings).Run.TestSourceCode
     needs:
-      - Get-Settings
+      - Plan
     uses: ./.github/workflows/Test-SourceCode.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints source code changes
@@ -128,12 +128,12 @@ jobs:
   # - ❌ Abandoned PR    - Skips linting abandoned changes
   # - ✅ Manual run      - Lints source code when manually triggered
   Lint-SourceCode:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.LintSourceCode
+    if: fromJson(needs.Plan.outputs.Settings).Run.LintSourceCode
     needs:
-      - Get-Settings
+      - Plan
     uses: ./.github/workflows/Lint-SourceCode.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests built module
@@ -141,13 +141,13 @@ jobs:
   # - ❌ Abandoned PR    - Skips testing abandoned changes
   # - ✅ Manual run      - Tests built module when manually triggered
   Test-Module:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.TestModule && needs.Build-Module.result == 'success' && !cancelled()
+    if: fromJson(needs.Plan.outputs.Settings).Run.TestModule && needs.Build-Module.result == 'success' && !cancelled()
     needs:
       - Build-Module
-      - Get-Settings
+      - Plan
     uses: ./.github/workflows/Test-Module.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs setup scripts before local module tests
@@ -155,15 +155,15 @@ jobs:
   # - ❌ Abandoned PR    - Skips setup for abandoned changes
   # - ✅ Manual run      - Runs setup scripts when manually triggered
   BeforeAll-ModuleLocal:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
+    if: fromJson(needs.Plan.outputs.Settings).Run.BeforeAllModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     uses: ./.github/workflows/BeforeAll-ModuleLocal.yml
     secrets:
       TestData: ${{ secrets.TestData }}
     needs:
       - Build-Module
-      - Get-Settings
+      - Plan
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests module in local environment
@@ -171,16 +171,16 @@ jobs:
   # - ❌ Abandoned PR    - Skips testing abandoned changes
   # - ✅ Manual run      - Tests module in local environment when manually triggered
   Test-ModuleLocal:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.TestModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
+    if: fromJson(needs.Plan.outputs.Settings).Run.TestModuleLocal && needs.Build-Module.result == 'success' && !cancelled()
     needs:
       - Build-Module
-      - Get-Settings
+      - Plan
       - BeforeAll-ModuleLocal
     uses: ./.github/workflows/Test-ModuleLocal.yml
     secrets:
       TestData: ${{ secrets.TestData }}
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs teardown scripts after local module tests
@@ -188,15 +188,15 @@ jobs:
   # - ✅ Abandoned PR    - Runs teardown if tests were started (cleanup)
   # - ✅ Manual run      - Runs teardown scripts after local module tests
   AfterAll-ModuleLocal:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
+    if: fromJson(needs.Plan.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
     secrets:
       TestData: ${{ secrets.TestData }}
     needs:
-      - Get-Settings
+      - Plan
       - Test-ModuleLocal
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Collects and reports test results
@@ -204,16 +204,16 @@ jobs:
   # - ❌ Abandoned PR    - Skips collecting results for abandoned changes
   # - ✅ Manual run      - Collects and reports test results when manually triggered
   Get-TestResults:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.GetTestResults && needs.Get-Settings.result == 'success' && always() && !cancelled()
+    if: fromJson(needs.Plan.outputs.Settings).Run.GetTestResults && needs.Plan.result == 'success' && always() && !cancelled()
     needs:
-      - Get-Settings
+      - Plan
       - Test-SourceCode
       - Lint-SourceCode
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Calculates and reports code coverage
@@ -221,14 +221,14 @@ jobs:
   # - ❌ Abandoned PR    - Skips coverage for abandoned changes
   # - ✅ Manual run      - Calculates and reports code coverage when manually triggered
   Get-CodeCoverage:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.GetCodeCoverage && needs.Get-Settings.result == 'success' && always() && !cancelled()
+    if: fromJson(needs.Plan.outputs.Settings).Run.GetCodeCoverage && needs.Plan.result == 'success' && always() && !cancelled()
     needs:
-      - Get-Settings
+      - Plan
       - Test-Module
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-CodeCoverage.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Only with prerelease label: publishes prerelease version
@@ -236,17 +236,17 @@ jobs:
   # - ✅ Abandoned PR    - Cleans up prereleases for the abandoned branch (no version published)
   # - ❌ Manual run      - Only runs for PR events
   Publish-Module:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishModule && needs.Get-Settings.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
+    if: fromJson(needs.Plan.outputs.Settings).Run.PublishModule && needs.Plan.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
     uses: ./.github/workflows/Publish-Module.yml
     secrets:
       APIKey: ${{ secrets.APIKey }}
     needs:
-      - Get-Settings
+      - Plan
       - Get-TestResults
       - Get-CodeCoverage
       - Build-Site
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds documentation for review
@@ -254,13 +254,13 @@ jobs:
   # - ❌ Abandoned PR    - Skips building docs for abandoned changes
   # - ✅ Manual run      - Builds documentation when manually triggered
   Build-Docs:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BuildDocs
+    if: fromJson(needs.Plan.outputs.Settings).Run.BuildDocs
     needs:
-      - Get-Settings
+      - Plan
       - Build-Module
     uses: ./.github/workflows/Build-Docs.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds site for preview
@@ -268,13 +268,13 @@ jobs:
   # - ❌ Abandoned PR    - Skips building site for abandoned changes
   # - ✅ Manual run      - Builds site when manually triggered
   Build-Site:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.BuildSite
+    if: fromJson(needs.Plan.outputs.Settings).Run.BuildSite
     needs:
-      - Get-Settings
+      - Plan
       - Build-Docs
     uses: ./.github/workflows/Build-Site.yml
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
   # - ❌ Open/Updated PR - Site not published for PRs in progress
@@ -282,12 +282,12 @@ jobs:
   # - ❌ Abandoned PR    - Site not published for abandoned changes
   # - ❌ Manual run      - Only publishes on merged PRs to default branch
   Publish-Site:
-    if: fromJson(needs.Get-Settings.outputs.Settings).Run.PublishSite && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled()
+    if: fromJson(needs.Plan.outputs.Settings).Run.PublishSite && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled()
     uses: ./.github/workflows/Publish-Site.yml
     needs:
-      - Get-Settings
+      - Plan
       - Get-TestResults
       - Get-CodeCoverage
       - Build-Site
     with:
-      Settings: ${{ needs.Get-Settings.outputs.Settings }}
+      Settings: ${{ needs.Plan.outputs.Settings }}
