@@ -291,6 +291,7 @@ Actions maintained outside the PSModule organization, treated as leaves at their
 | [actions/configure-pages](https://github.com/actions/configure-pages) | Configure GitHub Pages |
 | [actions/deploy-pages](https://github.com/actions/deploy-pages) | Deploy the site to GitHub Pages |
 | [super-linter/super-linter](https://github.com/super-linter/super-linter) | Lint the repository and generated docs (Docker image) |
+| [super-linter/super-linter/slim](https://github.com/super-linter/super-linter) | Lint the repository and generated docs (Docker image, slim variant) |
 
 ### PowerShell modules
 
