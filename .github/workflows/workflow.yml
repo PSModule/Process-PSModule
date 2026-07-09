@@ -3,7 +3,7 @@ name: Process-PSModule
 on:
   workflow_call:
     secrets:
-      APIKEY:
+      APIKey:
         description: The API key for the PowerShell Gallery.
         required: true
       TestData:
