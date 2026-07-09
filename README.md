@@ -378,7 +378,7 @@ jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
-      APIKEY: ${{ secrets.APIKEY }}
+      APIKey: ${{ secrets.APIKey }}
 ```
 
 </details>
@@ -397,18 +397,108 @@ jobs:
 
 ### Secrets
 
-The following secrets are used by the workflow. They can be automatically provided (if available) by setting `secrets: inherit` in the workflow file.
+The reusable workflow at `.github/workflows/workflow.yml` declares only two workflow-call secrets,
+which keeps the calling workflow in full control of the credentials that are exposed.
+`secrets: inherit` is intentionally not required.
 
-| Name | Location       | Description                                                               | Default |
-| ---- | -------------- | ------------------------------------------------------------------------- | ------- |
-| `APIKEY`                 | GitHub secrets | The API key for the PowerShell Gallery.                                      | N/A |
-| `TEST_APP_ENT_CLIENT_ID` | GitHub secrets | The client ID of an Enterprise GitHub App for running tests.                 | N/A |
-| `TEST_APP_ENT_PRIVATE_KEY` | GitHub secrets | The private key of an Enterprise GitHub App for running tests.             | N/A |
-| `TEST_APP_ORG_CLIENT_ID` | GitHub secrets | The client ID of an Organization GitHub App for running tests.              | N/A |
-| `TEST_APP_ORG_PRIVATE_KEY` | GitHub secrets | The private key of an Organization GitHub App for running tests.           | N/A |
-| `TEST_USER_ORG_FG_PAT`   | GitHub secrets | The fine-grained PAT with organization access for running tests.           | N/A |
-| `TEST_USER_USER_FG_PAT`  | GitHub secrets | The fine-grained PAT with user account access for running tests.           | N/A |
-| `TEST_USER_PAT`          | GitHub secrets | The classic personal access token for running tests.                       | N/A |
+| Name | Location | Description | Required |
+| ---- | -------- | ----------- | -------- |
+| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
+| `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
+
+#### Breaking change: fixed test secrets moved to `TestData`
+
+The reusable workflow no longer declares or accepts the old fixed test-secret inputs:
+
+- `TEST_APP_ENT_CLIENT_ID`
+- `TEST_APP_ENT_PRIVATE_KEY`
+- `TEST_APP_ORG_CLIENT_ID`
+- `TEST_APP_ORG_PRIVATE_KEY`
+- `TEST_USER_ORG_FG_PAT`
+- `TEST_USER_USER_FG_PAT`
+- `TEST_USER_PAT`
+
+If a caller passed any of these secrets directly, move them into the `secrets` map inside `TestData`.
+The environment variable names used by the tests can stay the same; only the workflow-call interface
+changes:
+
+```yaml
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    secrets:
+      APIKey: ${{ secrets.APIKey }}
+      TestData: >-
+        { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
+        "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
+```
+
+#### Passing test data (secrets and variables) to the tests
+
+A single `TestData` secret lets a module expose any number of caller-defined values to its test jobs
+(`BeforeAll-ModuleLocal`, `Test-ModuleLocal` and `AfterAll-ModuleLocal`) without changing the shared
+workflow. It is one JSON object with two maps, so everything the tests need is visible in one place:
+
+```json
+{ "secrets": { "NAME": "value" }, "variables": { "NAME": "value" } }
+```
+
+Values under `secrets` are masked in the logs; values under `variables` are not. Build it in the
+calling workflow and pass it through the `secrets:` block (so the whole blob is masked). Reference each
+secret directly as `"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A
+folded `>-` scalar keeps the source readable while producing a single-line value, as long as the JSON
+content lines stay at the same indentation level:
+
+```yaml
+jobs:
+  Process-PSModule:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    secrets:
+      APIKey: ${{ secrets.APIKey }}
+      TestData: >-
+        { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
+        "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},
+        "CONFLUENCE_USERNAME": ${{ toJSON(vars.CONFLUENCE_USERNAME) }},
+        "CONFLUENCE_SPACE_KEY": ${{ toJSON(vars.CONFLUENCE_SPACE_KEY) }} } }
+```
+
+Each entry becomes an environment variable in the test jobs, so the module's Pester tests read the
+values directly:
+
+```powershell
+$env:CONFLUENCE_API_TOKEN     # from the "secrets" map (masked in logs)
+$env:CONFLUENCE_SITE          # from the "variables" map (not masked)
+```
+
+Notes:
+
+- The names are caller-defined; no secret or variable names are hard-coded in the shared workflow.
+  Names must match `^[A-Za-z_][A-Za-z0-9_]*$` and must not override reserved variables such as `PATH`,
+  `CI`, `GITHUB_*`, `RUNNER_*` or `ACTIONS_*`.
+- The `TestData` validation, masking and environment export logic is shared by the ModuleLocal workflows
+  through `.github/scripts/Expose-TestData.ps1`.
+- Reference secrets as `"${{ secrets.<name> }}"` (quoted, directly) rather than
+  `toJSON(secrets.<name>)`. The direct form keeps CodeQL's *excessive secrets exposure* check happy and
+  works for single-line secret values. It cannot carry values that contain `"`, `\` or newlines, so
+  base64-encode a multi-line or special-character secret and decode it in the test (for example
+  `[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:MY_KEY_B64))`).
+- Variables use `toJSON(vars.<name>)` so any characters are JSON-encoded safely; they are never masked.
+  You can use the same quoted direct form as secrets (`"${{ vars.<name> }}"`) only for simple values
+  that do not contain `"`, `\` or newlines.
+- Provide `TestData` as a single-line value (the folded `>-` block above does this). Avoid a literal
+  `|` block: GitHub registers every line of a multi-line secret as its own mask, which over-masks
+  unrelated log output.
+- Do not pretty-print `TestData` with nested indentation. YAML preserves more-indented lines inside a
+  folded scalar, so a fully formatted JSON object can still become a multi-line secret. That makes
+  GitHub register each line as its own mask, including brace-only lines such as `{`, `}` or `},`, which
+  can turn unrelated log output into `***`. Keep the compact form above, or keep every JSON content
+  line at the same indentation level.
+- Omit `TestData` entirely when the module needs no secrets or variables. Include only the map you
+  need (just `secrets`, just `variables`, or both).
+- Because `secrets: inherit` is not used, only the values you list are ever exposed.
+- Organization, repository and GitHub *Environment* secrets and variables are supported when they are
+  visible to the calling job. For environment-scoped values, set `environment:` on the calling job and
+  explicitly include those values in `TestData`; they are not exposed automatically.
 
 ### Permissions
 
