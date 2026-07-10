@@ -31,12 +31,15 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@feat/import-testdata # E2E: temporary branch ref (Import-TestData not yet released); pin to a released SHA before merge
+
       - name: Expose caller-provided test data
         shell: pwsh
         env:
           PSMODULE_TEST_DATA: ${{ secrets.TestData }}
         run: |
-          ./.github/scripts/Expose-TestData.ps1
+          Import-TestData
 
       - name: Run BeforeAll Setup Scripts
         uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
