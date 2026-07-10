@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@feat/import-testdata # E2E: temporary branch ref (Import-TestData not yet released); pin to a released SHA before merge
+        uses: PSModule/Install-PSModuleHelpers@8bfb84d557755c67d9b5643efe573bdcae4c1a4a # v1.0.9
 
       - name: Expose caller-provided test data
         shell: pwsh
