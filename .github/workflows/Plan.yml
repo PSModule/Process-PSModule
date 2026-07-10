@@ -85,7 +85,7 @@ jobs:
           ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
 
       - name: Resolve-Version
-        uses: PSModule/Resolve-PSModuleVersion@d53326c7687d20a7949d457fccd71223856b1890 # v1.1.0
+        uses: PSModule/Resolve-PSModuleVersion@feat/always-evaluate-version-labels # E2E: temp branch ref (always-evaluate-labels); pin to a released SHA before merge
         id: Resolve-Version
         env:
           GH_TOKEN: ${{ github.token }}
