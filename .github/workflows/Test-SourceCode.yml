@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
 
       - name: Test-SourceCode
-        uses: PSModule/Test-PSModule@25c9cd89954d558360e5917efbd4dea4ca894144 # v3.0.13
+        uses: PSModule/Test-PSModule@902c5e50774e6606ccf41c125a1fe89f783c1149 # v3.0.14
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
