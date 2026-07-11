@@ -32,7 +32,7 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Test-Module
-        uses: PSModule/Test-PSModule@25c9cd89954d558360e5917efbd4dea4ca894144 # v3.0.13
+        uses: PSModule/Test-PSModule@902c5e50774e6606ccf41c125a1fe89f783c1149 # v3.0.14
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           Debug: ${{ fromJson(inputs.Settings).Debug }}
@@ -62,13 +62,13 @@ jobs:
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
 
       - name: Lint-Module
-        uses: PSModule/Invoke-ScriptAnalyzer@6aeb1bc093b89f9b15c2ac3e5f9ef9e0879dc755 # v4.1.3
+        uses: PSModule/Invoke-ScriptAnalyzer@4d633e4df1f1fa575949a328839d33c3a0838765 # v5.0.0
         with:
           Path: outputs/module
           Debug: ${{ fromJson(inputs.Settings).Debug }}
-          Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
+          GitHubPrerelease: ${{ fromJson(inputs.Settings).Prerelease }}
+          GitHubVersion: ${{ fromJson(inputs.Settings).Version }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
-          Version: ${{ fromJson(inputs.Settings).Version }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           TestResult_Enabled: true
           TestResult_TestSuiteName: PSModuleLint-Module-${{ runner.os }}
