@@ -489,7 +489,8 @@ Notes:
   Names must match `^[A-Za-z_][A-Za-z0-9_]*$` and must not override reserved variables such as `PATH`,
   `CI`, `GITHUB_*`, `RUNNER_*` or `ACTIONS_*`.
 - The `TestData` validation, masking and environment export logic is shared by the ModuleLocal workflows
-  through `.github/scripts/Expose-TestData.ps1`.
+  through the [`PSModule/Install-PSModuleHelpers`](https://github.com/PSModule/Install-PSModuleHelpers)
+  action, which installs the `Import-TestData` command each workflow runs to expose the values.
 - Reference secrets as `"${{ secrets.<name> }}"` (quoted, directly) rather than
   `toJSON(secrets.<name>)`. The direct form keeps CodeQL's *excessive secrets exposure* check happy and
   works for single-line secret values. It cannot carry values that contain `"`, `\` or newlines, so

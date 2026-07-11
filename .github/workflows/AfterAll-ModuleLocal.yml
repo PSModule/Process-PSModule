@@ -31,12 +31,15 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Install-PSModuleHelpers
+        uses: PSModule/Install-PSModuleHelpers@8bfb84d557755c67d9b5643efe573bdcae4c1a4a # v1.0.9
+
       - name: Expose caller-provided test data
         shell: pwsh
         env:
           PSMODULE_TEST_DATA: ${{ secrets.TestData }}
         run: |
-          ./.github/scripts/Expose-TestData.ps1
+          Import-TestData
 
       - name: Run AfterAll Teardown Scripts
         if: always()
