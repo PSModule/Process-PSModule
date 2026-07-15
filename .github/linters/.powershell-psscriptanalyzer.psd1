@@ -51,6 +51,7 @@
     }
     ExcludeRules = @(
         'PSMissingModuleManifestField', # This rule is not applicable until the module is built.
-        'PSUseToExportFieldsInManifest'
+        'PSUseToExportFieldsInManifest',
+        'PSAvoidUsingWriteHost' # All code runs on GitHub-hosted runners with modern hosts that support Write-Host.
     )
 }
