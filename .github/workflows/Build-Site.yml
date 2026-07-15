@@ -22,8 +22,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Checkout Process-PSModule
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: _wf
+          persist-credentials: false
+
       - name: Install-PSModuleHelpers
-        uses: PSModule/Install-PSModuleHelpers@8bfb84d557755c67d9b5643efe573bdcae4c1a4a # v1.0.9
+        uses: ./_wf/.github/actions/Install-PSModuleHelpers
 
       - name: Download docs artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

@@ -16,8 +16,16 @@ jobs:
     name: Get-TestResults
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Process-PSModule
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: _wf
+          persist-credentials: false
+
       - name: Get-TestResults
-        uses: PSModule/Get-PesterTestResults@616387914e439d7b648e3cfaaf73542f5723ff42 # v1.0.8
+        uses: ./_wf/.github/actions/Get-PesterTestResults
         id: Get-TestResults
         with:
           SourceCodeTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.SourceCode) }}

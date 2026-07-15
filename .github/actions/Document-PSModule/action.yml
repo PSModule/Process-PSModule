@@ -1,0 +1,32 @@
+name: Document-PSModule
+description: Build documentation for a PowerShell module.
+author: PSModule
+
+inputs:
+  Name:
+    description: Name of the module to process.
+    required: false
+  ShowSummaryOnSuccess:
+    description: Show GitHub Step Summary even when all commands succeed.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Install-PSModuleHelpers
+      uses: ./_wf/.github/actions/Install-PSModuleHelpers
+
+    - name: Document-PSModule
+      shell: pwsh
+      env:
+        DOCUMENT_PSMODULE_INPUT_Name: ${{ inputs.Name }}
+        DOCUMENT_PSMODULE_INPUT_ShowSummaryOnSuccess: ${{ inputs.ShowSummaryOnSuccess }}
+      working-directory: ${{ inputs.WorkingDirectory }}
+      run: |
+        # Build-PSModuleDocumentation
+        ${{ github.action_path }}/src/main.ps1

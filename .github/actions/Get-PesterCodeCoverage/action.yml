@@ -1,0 +1,54 @@
+name: Get-PesterCodeCoverage
+description: A GitHub Action that is used to gather Code Coverage for the PSModule process.
+author: PSModule
+branding:
+  icon: upload-cloud
+  color: white
+
+inputs:
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  Version:
+    description: Specifies the version of the GitHub module to be installed. Accepts an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
+    required: false
+  Prerelease:
+    description: Allow prerelease versions if available.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: '.'
+  StepSummary_Mode:
+    description: |
+      Controls which sections to show in the GitHub step summary.
+      Use 'Full' for all sections, 'None' to disable, or a comma-separated list of 'Missed, Executed, Files'.
+    required: false
+    default: Missed, Files
+  CodeCoveragePercentTarget:
+    description: The target for code coverage.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Get-PesterCodeCoverage
+      uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
+      env:
+        PSMODULE_GET_PESTERCODECOVERAGE_INPUT_StepSummary_Mode: ${{ inputs.StepSummary_Mode }}
+        PSMODULE_GET_PESTERCODECOVERAGE_INPUT_CodeCoveragePercentTarget: ${{ inputs.CodeCoveragePercentTarget }}
+      with:
+        Name: Get-PesterCodeCoverage
+        Debug: ${{ inputs.Debug }}
+        Prerelease: ${{ inputs.Prerelease }}
+        Verbose: ${{ inputs.Verbose }}
+        Version: ${{ inputs.Version }}
+        WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        ShowInfo: false
+        Script: ${{ github.action_path }}/src/main.ps1

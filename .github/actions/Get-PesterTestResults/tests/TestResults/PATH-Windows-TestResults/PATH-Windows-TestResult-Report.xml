@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="PATH-Windows" total="7" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2025-04-17" time="07:28:53">
+  <environment user-domain="fv-az1797-691" os-version="10.0.20348" clr-version="8.0.12" user="runneradmin" cwd="D:\a\Path\Path" platform="Microsoft Windows Server 2022 Datacenter|C:\Windows|\Device\Harddisk0\Partition2" nunit-version="2.5.8.0" machine-name="fv-az1797-691" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="PATH-Windows" executed="True" result="Success" success="True" time="1.6305" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="D:\a\Path\Path\tests\PATH.Tests.ps1" executed="True" result="Success" success="True" time="1.6305" asserts="0" description="D:\a\Path\Path\tests\PATH.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PATH" executed="True" result="Success" success="True" time="0.6337" asserts="0" description="PATH">
+            <results>
+              <test-suite type="TestFixture" name="PATH.Function: Get-EnvironemntPath" executed="True" result="Success" success="True" time="0.2203" asserts="0" description="PATH.Function: Get-EnvironemntPath">
+                <results>
+                  <test-suite type="TestFixture" name="PATH.Function: Get-EnvironemntPath.CurrentUser" executed="True" result="Success" success="True" time="0.178" asserts="0" description="PATH.Function: Get-EnvironemntPath.CurrentUser">
+                    <results>
+                      <test-case description="Should not throw" name="PATH.Function: Get-EnvironemntPath.CurrentUser.Should not throw" time="0.1087" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should not throw when using '-AsArray'" name="PATH.Function: Get-EnvironemntPath.CurrentUser.Should not throw when using '-AsArray'" time="0.0425" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="PATH.Function: Get-EnvironemntPath.AllUsers" executed="True" result="Success" success="True" time="0.214" asserts="0" description="PATH.Function: Get-EnvironemntPath.AllUsers">
+                    <results>
+                      <test-case description="Should not throw" name="PATH.Function: Get-EnvironemntPath.AllUsers.Should not throw" time="0.0115" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should not throw when using '-AsArray'" name="PATH.Function: Get-EnvironemntPath.AllUsers.Should not throw when using '-AsArray'" time="0.0163" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="PATH.Function: Add-EnvironmentPath" executed="True" result="Success" success="True" time="0.3582" asserts="0" description="PATH.Function: Add-EnvironmentPath">
+                <results>
+                  <test-case description="Should not throw" name="PATH.Function: Add-EnvironmentPath.Should not throw" time="0.1323" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="PATH.Function: Repair-EnvironmentPath" executed="True" result="Success" success="True" time="0.5487" asserts="0" description="PATH.Function: Repair-EnvironmentPath">
+                <results>
+                  <test-case description="Should not throw" name="PATH.Function: Repair-EnvironmentPath.Should not throw" time="0.1621" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="PATH.Function: Remove-EnvironmentPath" executed="True" result="Success" success="True" time="0.6173" asserts="0" description="PATH.Function: Remove-EnvironmentPath">
+                <results>
+                  <test-case description="Should not throw" name="PATH.Function: Remove-EnvironmentPath.Should not throw" time="0.0637" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

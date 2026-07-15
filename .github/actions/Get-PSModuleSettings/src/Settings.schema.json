@@ -1,0 +1,447 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/PSModule/Get-PSModuleSettings/refs/heads/main/scripts/Settings.schema.json",
+  "title": "PSModule Settings",
+  "description": "Configuration schema for PSModule GitHub Action settings",
+  "type": "object",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "The name of the module"
+    },
+    "ImportantFilePatterns": {
+      "type": "array",
+      "description": "Regex patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. Defaults to ['^src/', '^README\\.md$'] when not configured.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "Test": {
+      "type": "object",
+      "description": "Test configuration settings",
+      "properties": {
+        "Skip": {
+          "type": "boolean",
+          "description": "Skip all tests"
+        },
+        "Linux": {
+          "$ref": "#/definitions/osConfig",
+          "description": "Linux-specific test configuration"
+        },
+        "MacOS": {
+          "$ref": "#/definitions/osConfig",
+          "description": "macOS-specific test configuration"
+        },
+        "Windows": {
+          "$ref": "#/definitions/osConfig",
+          "description": "Windows-specific test configuration"
+        },
+        "SourceCode": {
+          "$ref": "#/definitions/testCategory",
+          "description": "Source code test configuration"
+        },
+        "PSModule": {
+          "$ref": "#/definitions/testCategory",
+          "description": "PSModule test configuration"
+        },
+        "Module": {
+          "$ref": "#/definitions/testCategory",
+          "description": "Module test configuration"
+        },
+        "TestResults": {
+          "type": "object",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip test results collection"
+            }
+          }
+        },
+        "CodeCoverage": {
+          "type": "object",
+          "description": "Code coverage configuration",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip code coverage collection"
+            },
+            "PercentTarget": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Target code coverage percentage"
+            },
+            "StepSummaryMode": {
+              "type": "string",
+              "description": "Mode for displaying step summary"
+            }
+          }
+        }
+      }
+    },
+    "Build": {
+      "type": "object",
+      "description": "Build configuration settings",
+      "properties": {
+        "Skip": {
+          "type": "boolean",
+          "description": "Skip all build steps"
+        },
+        "Module": {
+          "type": "object",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip module build"
+            }
+          }
+        },
+        "Docs": {
+          "type": "object",
+          "description": "Documentation build configuration",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip documentation build"
+            },
+            "ShowSummaryOnSuccess": {
+              "type": "boolean",
+              "description": "Show summary on successful build"
+            }
+          }
+        },
+        "Site": {
+          "type": "object",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip site build"
+            }
+          }
+        }
+      }
+    },
+    "Publish": {
+      "type": "object",
+      "description": "Publish configuration settings",
+      "properties": {
+        "Module": {
+          "type": "object",
+          "description": "Module publish configuration",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip module publish"
+            },
+            "AutoCleanup": {
+              "type": "boolean",
+              "description": "When enabled (default: true), automatically cleans up old prerelease tags when merging to main or when a PR is abandoned"
+            },
+            "AutoPatching": {
+              "type": "boolean",
+              "description": "Automatically apply patches"
+            },
+            "IncrementalPrerelease": {
+              "type": "boolean",
+              "description": "Use incremental prerelease versioning"
+            },
+            "DatePrereleaseFormat": {
+              "type": "string",
+              "description": "Date format for prerelease versions"
+            },
+            "VersionPrefix": {
+              "type": "string",
+              "description": "Prefix for version tags"
+            },
+            "MajorLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger major version bump"
+            },
+            "MinorLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger minor version bump"
+            },
+            "PatchLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger patch version bump"
+            },
+            "IgnoreLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that prevent release"
+            },
+            "PrereleaseLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger a prerelease"
+            },
+            "UsePRTitleAsReleaseName": {
+              "type": "boolean",
+              "description": "Use pull request title as the GitHub release name"
+            },
+            "UsePRBodyAsReleaseNotes": {
+              "type": "boolean",
+              "description": "Use pull request body as the release notes content"
+            },
+            "UsePRTitleAsNotesHeading": {
+              "type": "boolean",
+              "description": "Add pull request title as H1 heading in release notes"
+            },
+            "ReleaseType": {
+              "type": "string",
+              "enum": [
+                "Release",
+                "Prerelease",
+                "None"
+              ],
+              "description": "The type of release to create: Release (stable), Prerelease, or None."
+            }
+          }
+        }
+      }
+    },
+    "Linter": {
+      "type": "object",
+      "description": "Linter configuration settings",
+      "properties": {
+        "Skip": {
+          "type": "boolean",
+          "description": "Skip linting"
+        },
+        "ShowSummaryOnSuccess": {
+          "type": "boolean",
+          "description": "Show summary on successful linting"
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables for linter",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "TestSuites": {
+      "type": "object",
+      "description": "Test suite configurations",
+      "properties": {
+        "SourceCode": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/testSuite"
+              }
+            }
+          ]
+        },
+        "PSModule": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/testSuite"
+              }
+            }
+          ]
+        },
+        "Module": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/moduleTestSuite"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "SettingsPath": {
+      "type": "string",
+      "description": "Path to the settings file"
+    },
+    "Debug": {
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "description": "Enable debug mode"
+    },
+    "Verbose": {
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "description": "Enable verbose mode"
+    },
+    "Version": {
+      "type": "string",
+      "description": "Module version"
+    },
+    "Prerelease": {
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "description": "Indicates if this is a prerelease"
+    },
+    "WorkingDirectory": {
+      "type": "string",
+      "description": "Working directory path"
+    },
+    "HasImportantChanges": {
+      "type": "boolean",
+      "description": "Indicates if important files have changed in the PR (src/**, examples/**, README.md, .github/workflows/Process-PSModule.yml)"
+    },
+    "Run": {
+      "type": "object",
+      "description": "Runtime execution flags",
+      "properties": {
+        "LintRepository": {
+          "type": "boolean",
+          "description": "Run repository linting"
+        },
+        "BuildModule": {
+          "type": "boolean",
+          "description": "Build the module"
+        },
+        "TestSourceCode": {
+          "type": "boolean",
+          "description": "Test source code"
+        },
+        "LintSourceCode": {
+          "type": "boolean",
+          "description": "Lint source code"
+        },
+        "TestModule": {
+          "type": "boolean",
+          "description": "Test the module"
+        },
+        "BeforeAllModuleLocal": {
+          "type": "boolean",
+          "description": "Run before all module local tests"
+        },
+        "TestModuleLocal": {
+          "type": "boolean",
+          "description": "Test module locally"
+        },
+        "AfterAllModuleLocal": {
+          "type": "boolean",
+          "description": "Run after all module local tests"
+        },
+        "GetTestResults": {
+          "type": "boolean",
+          "description": "Collect test results"
+        },
+        "GetCodeCoverage": {
+          "type": "boolean",
+          "description": "Collect code coverage"
+        },
+        "PublishModule": {
+          "type": "boolean",
+          "description": "Publish the module"
+        },
+        "BuildDocs": {
+          "type": "boolean",
+          "description": "Build documentation"
+        },
+        "BuildSite": {
+          "type": "boolean",
+          "description": "Build the site"
+        },
+        "PublishSite": {
+          "type": "boolean",
+          "description": "Publish the site"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "osConfig": {
+      "type": "object",
+      "properties": {
+        "Skip": {
+          "type": "boolean",
+          "description": "Skip tests for this OS"
+        }
+      }
+    },
+    "testCategory": {
+      "type": "object",
+      "properties": {
+        "Skip": {
+          "type": "boolean",
+          "description": "Skip this test category"
+        },
+        "Linux": {
+          "$ref": "#/definitions/osConfig",
+          "description": "Linux-specific configuration"
+        },
+        "MacOS": {
+          "$ref": "#/definitions/osConfig",
+          "description": "macOS-specific configuration"
+        },
+        "Windows": {
+          "$ref": "#/definitions/osConfig",
+          "description": "Windows-specific configuration"
+        }
+      }
+    },
+    "testSuite": {
+      "type": "object",
+      "properties": {
+        "RunsOn": {
+          "type": "string",
+          "description": "GitHub Actions runner to use"
+        },
+        "OSName": {
+          "type": "string",
+          "description": "Operating system name"
+        }
+      },
+      "required": [
+        "RunsOn",
+        "OSName"
+      ]
+    },
+    "moduleTestSuite": {
+      "type": "object",
+      "properties": {
+        "RunsOn": {
+          "type": "string",
+          "description": "GitHub Actions runner to use"
+        },
+        "OSName": {
+          "type": "string",
+          "description": "Operating system name"
+        },
+        "TestPath": {
+          "type": "string",
+          "description": "Relative path to the test file"
+        },
+        "TestName": {
+          "type": "string",
+          "description": "Name of the test"
+        }
+      },
+      "required": [
+        "RunsOn",
+        "OSName",
+        "TestPath",
+        "TestName"
+      ]
+    }
+  }
+}

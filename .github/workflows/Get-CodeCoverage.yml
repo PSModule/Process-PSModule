@@ -16,8 +16,16 @@ jobs:
     name: Get-CodeCoverage
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Process-PSModule
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: _wf
+          persist-credentials: false
+
       - name: Get-CodeCoverage
-        uses: PSModule/Get-PesterCodeCoverage@a8280e9a8941438f8fc63a4531c3431e4d49015f # v1.0.4
+        uses: ./_wf/.github/actions/Get-PesterCodeCoverage
         id: Get-CodeCoverage
         with:
           CodeCoveragePercentTarget: ${{ fromJson(inputs.Settings).Test.CodeCoverage.PercentTarget }}
