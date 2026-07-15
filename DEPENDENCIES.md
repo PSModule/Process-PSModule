@@ -15,7 +15,8 @@ action those workflows call.
   - [Non-PowerShell toolchains](#non-powershell-toolchains)
   - [Dependency reference](#dependency-reference)
     - [Reusable workflows](#reusable-workflows)
-    - [PSModule actions](#psmodule-actions)
+    - [Bundled PSModule actions](#bundled-psmodule-actions)
+    - [External PSModule actions](#external-psmodule-actions)
     - [Third-party actions](#third-party-actions)
     - [PowerShell modules](#powershell-modules)
     - [Python packages](#python-packages)
@@ -31,20 +32,22 @@ Process-PSModule depends on several distinct kinds of artifact. The tree tracks 
 | Layer | Type | What it is | Examples |
 | --- | --- | --- | --- |
 | 1 | Reusable workflows | GitHub Actions workflows called with `uses: ./...` | `workflow.yml` and 15 stage workflows |
-| 2 | PSModule actions | Composite actions maintained in the PSModule organization | `GitHub-Script`, `Build-PSModule`, `Invoke-Pester` |
-| 3 | Third-party actions | Actions maintained outside the PSModule organization | `actions/checkout`, `actions/deploy-pages` |
-| 4 | Container image | A Docker action that runs a published image | `super-linter/super-linter` |
-| 5 | PowerShell modules (framework) | Runtime modules that power the PSModule actions | `GitHub`, `Context`, `Sodium` |
-| 6 | PowerShell modules (tooling) | Runtime modules that provide build, test, lint, and docs tools | `Pester`, `PSScriptAnalyzer`, `Microsoft.PowerShell.PlatyPS` |
-| 7 | PowerShell module (bundled) | A module vendored inside an action instead of installed from a registry | `Helpers` |
-| 8 | Python packages | `pip` packages installed to build the documentation site | `mkdocs-material` and MkDocs plugins |
+| 2 | Bundled PSModule actions | Composite actions maintained in `.github/actions/` | `Build-PSModule`, `Get-PSModuleSettings`, `Test-PSModule` |
+| 3 | External PSModule actions | Composite actions consumed from separate PSModule repositories | `GitHub-Script`, `Invoke-Pester`, `Invoke-ScriptAnalyzer` |
+| 4 | Third-party actions | Actions maintained outside the PSModule organization | `actions/checkout`, `actions/deploy-pages` |
+| 5 | Container image | A Docker action that runs a published image | `super-linter/super-linter` |
+| 6 | PowerShell modules (framework) | Runtime modules that power the PSModule actions | `GitHub`, `Context`, `Sodium` |
+| 7 | PowerShell modules (tooling) | Runtime modules that provide build, test, lint, and docs tools | `Pester`, `PSScriptAnalyzer`, `Microsoft.PowerShell.PlatyPS` |
+| 8 | PowerShell module (bundled) | A module vendored inside an action instead of installed from a registry | `Helpers` |
+| 9 | Python packages | `pip` packages installed to build the documentation site | `mkdocs-material` and MkDocs plugins |
 
 ## Where the tree stops
 
 Each layer has a defined boundary so the tree stays finite and stable:
 
 - **Reusable workflows** — the 15 stage workflows called by `workflow.yml`. They do not call further workflows.
-- **PSModule actions** — expanded fully; the leaves are `GitHub-Script` and `Install-PSModuleHelpers`.
+- **Bundled PSModule actions** — expanded fully; the leaves are the bundled `Install-PSModuleHelpers` action and the external actions listed below.
+- **External PSModule actions** — treated as leaves at their pinned commits. Their internal steps are not expanded.
 - **Third-party actions** — treated as leaves at the pinned commit. Their internal steps are not expanded.
 - **Container image** — the leaf is the `super-linter` image. The many linters bundled inside it are not enumerated.
 - **PowerShell modules** — expanded through their `RequiredModules` to the leaf modules. `Helpers` is a leaf because it ships inside the action.
@@ -82,18 +85,22 @@ flowchart LR
         w15["Publish-Site"]
     end
 
-    subgraph PSA["PSModule actions"]
+    subgraph BPSA["Bundled PSModule actions"]
         aSettings["Get-PSModuleSettings"]
         aBuild["Build-PSModule"]
         aTest["Test-PSModule"]
-        aISA["Invoke-ScriptAnalyzer"]
-        aIP["Invoke-Pester"]
         aIH["Install-PSModuleHelpers"]
-        aGitHubScript["GitHub-Script"]
         aResults["Get-PesterTestResults"]
         aCov["Get-PesterCodeCoverage"]
         aPub["Publish-PSModule"]
         aDoc["Document-PSModule"]
+        aVersion["Resolve-PSModuleVersion"]
+    end
+
+    subgraph EPSA["External PSModule actions"]
+        aISA["Invoke-ScriptAnalyzer"]
+        aIP["Invoke-Pester"]
+        aGitHubScript["GitHub-Script"]
     end
 
     subgraph EXT["Third-party actions"]
@@ -112,7 +119,7 @@ flowchart LR
 
     PPM --> w1 & w2 & w3 & w4 & w5 & w6 & w7 & w8 & w9 & w10 & w11 & w12 & w13 & w14 & w15
 
-    w1 --> xCheckout & aSettings
+    w1 --> xCheckout & aSettings & aVersion
     w2 --> xCheckout & xSL
     w3 --> xCheckout & aBuild
     w4 --> xCheckout & aTest
@@ -135,17 +142,14 @@ flowchart LR
 
 ## Action foundation and PowerShell modules
 
-Most PSModule actions build on two foundations: `GitHub-Script`, which runs a script with the `GitHub` module installed and authenticated, and
-`Install-PSModuleHelpers`, which loads a bundled `Helpers` module. The test, lint, and docs actions add their own tooling modules. At the bottom of the
-tree, `GitHub` resolves its own `RequiredModules` from the PowerShell Gallery.
+The bundled actions use two foundations: the local `Install-PSModuleHelpers` action, which loads the bundled `Helpers` module, and external
+`GitHub-Script`, which runs a script with the `GitHub` module installed and authenticated. The test, lint, and docs actions add their own tooling
+modules. At the bottom of the tree, `GitHub` resolves its own `RequiredModules` from the PowerShell Gallery.
 
 ```mermaid
 flowchart LR
-    subgraph PSA["PSModule actions"]
-        aGitHubScript["GitHub-Script"]
+    subgraph BPSA["Bundled PSModule actions"]
         aIH["Install-PSModuleHelpers"]
-        aIP["Invoke-Pester"]
-        aISA["Invoke-ScriptAnalyzer"]
         aDoc["Document-PSModule"]
         aSettings["Get-PSModuleSettings"]
         aCov["Get-PesterCodeCoverage"]
@@ -153,6 +157,13 @@ flowchart LR
         aBuild["Build-PSModule"]
         aPub["Publish-PSModule"]
         aTest["Test-PSModule"]
+        aVersion["Resolve-PSModuleVersion"]
+    end
+
+    subgraph EPSA["External PSModule actions"]
+        aGitHubScript["GitHub-Script"]
+        aIP["Invoke-Pester"]
+        aISA["Invoke-ScriptAnalyzer"]
     end
 
     subgraph EXT["Third-party actions"]
@@ -190,6 +201,7 @@ flowchart LR
     aBuild --> aIH & xUl
     aPub --> aIH & xDl
     aTest --> aIH & aIP
+    aVersion --> aIH
 
     mGitHub --> mContext & mUri & mHash & mSodium & mCasing & mTimeSpan
     mContext --> mSodium
@@ -244,7 +256,7 @@ The 15 stage workflows called by `workflow.yml`, in lifecycle order.
 
 | Workflow | Stage | Key actions used |
 | --- | --- | --- |
-| Get-Settings | Load configuration | Get-PSModuleSettings |
+| Get-Settings | Load configuration and resolve the next version | Get-PSModuleSettings, Resolve-PSModuleVersion |
 | Lint-Repository | Repository linting | super-linter |
 | Build-Module | Build the module | Build-PSModule |
 | Test-SourceCode | Source code tests | Test-PSModule |
@@ -260,23 +272,32 @@ The 15 stage workflows called by `workflow.yml`, in lifecycle order.
 | Build-Site | Build the documentation site | GitHub-Script, Install-PSModuleHelpers, MkDocs |
 | Publish-Site | Deploy to GitHub Pages | actions/configure-pages, actions/deploy-pages |
 
-### PSModule actions
+### Bundled PSModule actions
 
-Composite actions maintained in the [PSModule organization](https://github.com/PSModule).
+Composite actions bundled with Process-PSModule under `.github/actions/`. They are checked out at the invoked reusable workflow revision and called
+from `./_wf/.github/actions/<name>`.
+
+| Action | Purpose | Depends on |
+| --- | --- | --- |
+| Install-PSModuleHelpers | Load the bundled Helpers module | Helpers (bundled) |
+| Get-PSModuleSettings | Read and resolve the settings file | GitHub-Script, powershell-yaml, Hashtable |
+| Resolve-PSModuleVersion | Resolve the next module version | Install-PSModuleHelpers, PSSemVer |
+| Build-PSModule | Compile source into a module | Install-PSModuleHelpers, actions/upload-artifact |
+| Test-PSModule | Run framework and module tests | Install-PSModuleHelpers, Invoke-Pester |
+| Get-PesterTestResults | Aggregate test results | GitHub-Script |
+| Get-PesterCodeCoverage | Aggregate code coverage | GitHub-Script, Markdown |
+| Publish-PSModule | Publish to the PowerShell Gallery | Install-PSModuleHelpers, actions/download-artifact |
+| Document-PSModule | Generate documentation | Install-PSModuleHelpers, Microsoft.PowerShell.PlatyPS |
+
+### External PSModule actions
+
+Composite actions maintained in separate [PSModule organization](https://github.com/PSModule) repositories and consumed at pinned commits.
 
 | Action | Purpose | Depends on |
 | --- | --- | --- |
 | [GitHub-Script](https://github.com/PSModule/GitHub-Script) | Run PowerShell with the GitHub module installed | GitHub module |
-| [Install-PSModuleHelpers](https://github.com/PSModule/Install-PSModuleHelpers) | Load the bundled Helpers module | Helpers (bundled) |
-| [Get-PSModuleSettings](https://github.com/PSModule/Get-PSModuleSettings) | Read and resolve the settings file | GitHub-Script, powershell-yaml, Hashtable |
-| [Build-PSModule](https://github.com/PSModule/Build-PSModule) | Compile source into a module | Install-PSModuleHelpers, actions/upload-artifact |
-| [Test-PSModule](https://github.com/PSModule/Test-PSModule) | Run framework and module tests | Install-PSModuleHelpers, Invoke-Pester |
 | [Invoke-Pester](https://github.com/PSModule/Invoke-Pester) | Run Pester test suites | GitHub-Script, actions/upload-artifact, Pester, Markdown |
 | [Invoke-ScriptAnalyzer](https://github.com/PSModule/Invoke-ScriptAnalyzer) | Run PSScriptAnalyzer rules | GitHub-Script, Invoke-Pester, PSScriptAnalyzer |
-| [Get-PesterTestResults](https://github.com/PSModule/Get-PesterTestResults) | Aggregate test results | GitHub-Script |
-| [Get-PesterCodeCoverage](https://github.com/PSModule/Get-PesterCodeCoverage) | Aggregate code coverage | GitHub-Script, Markdown |
-| [Publish-PSModule](https://github.com/PSModule/Publish-PSModule) | Publish to the PowerShell Gallery | Install-PSModuleHelpers, actions/download-artifact |
-| [Document-PSModule](https://github.com/PSModule/Document-PSModule) | Generate documentation | Install-PSModuleHelpers, Microsoft.PowerShell.PlatyPS |
 
 ### Third-party actions
 
@@ -295,7 +316,7 @@ Actions maintained outside the PSModule organization, treated as leaves at their
 
 ### PowerShell modules
 
-Runtime modules installed from the PowerShell Gallery, except `Helpers`, which is bundled inside `Install-PSModuleHelpers`.
+Runtime modules installed from the PowerShell Gallery, except `Helpers`, which is bundled in `.github/actions/Install-PSModuleHelpers`.
 
 | Module | Owner | Role | Depends on |
 | --- | --- | --- | --- |
