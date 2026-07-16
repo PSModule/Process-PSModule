@@ -1,6 +1,8 @@
 ﻿Write-Warning "=== AFTERALL TEARDOWN SCRIPT EXECUTING ==="
 Write-Warning "Tearing down test environment..."
 
+. "$PSScriptRoot/TestData.Assertions.ps1"
+
 # Example teardown tasks:
 # - Clean up test infrastructure
 # - Remove test data

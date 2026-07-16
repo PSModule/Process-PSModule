@@ -43,11 +43,9 @@ jobs:
         uses: ./_wf/.github/actions/Install-PSModuleHelpers
 
       - name: Expose caller-provided test data
-        shell: pwsh
-        env:
-          PSMODULE_TEST_DATA: ${{ secrets.TestData }}
-        run: |
-          Import-TestData
+        uses: ./_wf/.github/actions/Expose-TestData
+        with:
+          TestData: ${{ secrets.TestData }}
 
       - name: Run AfterAll Teardown Scripts
         if: always()

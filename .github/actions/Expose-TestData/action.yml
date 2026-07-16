@@ -1,0 +1,24 @@
+name: Expose-TestData
+description: Exposes caller-provided Process-PSModule TestData as environment variables.
+author: PSModule
+branding:
+  icon: unlock
+  color: white
+
+inputs:
+  TestData:
+    description: |
+      Optional single-line JSON object with 'secrets' and 'variables' maps. Entries are validated by
+      Import-TestData and exported to GITHUB_ENV for later steps in the same job.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Expose caller-provided test data
+      shell: pwsh
+      env:
+        PSMODULE_TEST_DATA: ${{ inputs.TestData }}
+      run: |
+        Import-TestData

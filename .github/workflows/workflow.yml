@@ -15,7 +15,10 @@ on:
           $env:<name>. Values under "secrets" are masked in the logs; values under "variables" are not.
           Build it from secrets.<name> / vars.<name> in the calling workflow (see the README). Keep it
           on a single line so GitHub registers one mask for the whole value. Omit it when the module
-          needs no test data.
+          needs no test data. The same keys are exported before BeforeAll-ModuleLocal,
+          Test-ModuleLocal, and AfterAll-ModuleLocal run. If setup or teardown scripts see a missing
+          key, confirm the caller explicitly maps a TestData JSON value; secrets: inherit only passes
+          an already-created TestData secret and does not build JSON from individual secrets.
         required: false
     inputs:
       SettingsPath:
