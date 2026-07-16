@@ -1,0 +1,57 @@
+name: Get-PesterTestResults
+description: A GitHub Action that is used to gather test results for the PSModule process.
+author: PSModule
+branding:
+  icon: upload-cloud
+  color: white
+
+inputs:
+  SourceCodeTestSuites:
+    description: The test suites to run for the source code.
+    required: true
+  PSModuleTestSuites:
+    description: The test suites to run for the PSModule.
+    required: true
+  ModuleTestSuites:
+    description: The test suites to run for the module.
+    required: true
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  Version:
+    description: Specifies the version of the GitHub module to be installed. The value must be an exact version.
+    required: false
+  Prerelease:
+    description: Allow prerelease versions if available.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Get-PesterTestResults
+      uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
+      env:
+        PSMODULE_GET_PESTERTESTRESULTS_INPUT_SourceCodeTestSuites: ${{ inputs.SourceCodeTestSuites }}
+        PSMODULE_GET_PESTERTESTRESULTS_INPUT_PSModuleTestSuites: ${{ inputs.PSModuleTestSuites }}
+        PSMODULE_GET_PESTERTESTRESULTS_INPUT_ModuleTestSuites: ${{ inputs.ModuleTestSuites }}
+      with:
+        Name: Get-PesterTestResults
+        Debug: ${{ inputs.Debug }}
+        Prerelease: ${{ inputs.Prerelease }}
+        Verbose: ${{ inputs.Verbose }}
+        Version: ${{ inputs.Version }}
+        WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        ShowInfo: false
+        Script: |
+          # Get Pester test results
+          ${{ github.action_path }}/src/main.ps1

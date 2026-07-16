@@ -29,17 +29,15 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets:
       APIKey: ${{ secrets.APIKey }}
-      # Self-test only: a dedicated, NON-SENSITIVE repository secret + variable exist purely to prove
-      # the TestData plumbing end to end - the "secrets" entry is masked and the "variables" entry is
-      # not, and both are exposed as $env:<name>. Their known values are asserted (value + length) in
-      # tests/.../Environment.Tests.ps1.
-      # Secrets use the direct "${{ secrets.X }}" form (CodeQL-clean; avoids toJSON(secrets.*)), which
-      # requires single-line secret values with no embedded quotes or backslashes; variables use
-      # toJSON(vars.X) so any characters are encoded safely. The folded '>-' scalar keeps the whole blob
-      # on ONE line so GitHub registers a single mask instead of one per line.
       TestData: >-
-        { "secrets": { "PSMODULE_TEST_SINGLELINE_SECRET": "${{ secrets.PSMODULE_TEST_SINGLELINE_SECRET }}" },
-        "variables": { "PSMODULE_TEST_VARIABLE": ${{ toJSON(vars.PSMODULE_TEST_VARIABLE) }} } }
+        {
+          "secrets": {
+            "PSMODULE_TEST_SINGLELINE_SECRET": "${{ secrets.PSMODULE_TEST_SINGLELINE_SECRET }}"
+          },
+          "variables": {
+            "PSMODULE_TEST_VARIABLE": ${{ toJSON(vars.PSMODULE_TEST_VARIABLE) }}
+          }
+        }
     with:
       WorkingDirectory: tests/srcWithManifestTestRepo
       ImportantFilePatterns: |

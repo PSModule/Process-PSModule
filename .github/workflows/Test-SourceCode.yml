@@ -26,8 +26,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Checkout Process-PSModule
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: _wf
+          persist-credentials: false
+
       - name: Test-SourceCode
-        uses: PSModule/Test-PSModule@902c5e50774e6606ccf41c125a1fe89f783c1149 # v3.0.14
+        uses: ./_wf/.github/actions/Test-PSModule
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}

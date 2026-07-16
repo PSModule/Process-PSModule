@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="PSModuleTest-Module-Windows" total="3" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2025-04-17" time="07:28:52">
+  <environment platform="Microsoft Windows Server 2022 Datacenter|C:\Windows|\Device\Harddisk0\Partition2" cwd="D:\a\Path\Path" user="runneradmin" clr-version="8.0.12" os-version="10.0.20348" user-domain="fv-az1111-284" nunit-version="2.5.8.0" machine-name="fv-az1111-284" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="PSModuleTest-Module-Windows" executed="True" result="Success" success="True" time="1.1723" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="D:\a\_actions\PSModule\Test-PSModule\v3\scripts\tests\Module\PSModule\PSModule.Tests.ps1" executed="True" result="Success" success="True" time="1.1723" asserts="0" description="D:\a\_actions\PSModule\Test-PSModule\v3\scripts\tests\Module\PSModule\PSModule.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="PSModule - Module tests" executed="True" result="Success" success="True" time="0.4675" asserts="0" description="PSModule - Module tests">
+            <results>
+              <test-suite type="TestFixture" name="PSModule - Module tests.Module" executed="True" result="Success" success="True" time="0.3149" asserts="0" description="PSModule - Module tests.Module">
+                <results>
+                  <test-case description="The module should be importable" name="PSModule - Module tests.Module.The module should be importable" time="0.2886" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="PSModule - Module tests.Module Manifest" executed="True" result="Success" success="True" time="0.4503" asserts="0" description="PSModule - Module tests.Module Manifest">
+                <results>
+                  <test-case description="Module Manifest exists" name="PSModule - Module tests.Module Manifest.Module Manifest exists" time="0.03" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="Module Manifest is valid" name="PSModule - Module tests.Module Manifest.Module Manifest is valid" time="0.099" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

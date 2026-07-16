@@ -1,0 +1,76 @@
+name: Resolve-PSModuleVersion
+description: Resolves the next module version from settings, PR labels, GitHub releases, and the PowerShell Gallery.
+author: PSModule
+branding:
+  icon: tag
+  color: white
+
+inputs:
+  Settings:
+    description: The complete settings object as a JSON string (output of Get-PSModuleSettings).
+    required: true
+  Name:
+    description: Name of the module. When empty, the repository name is used.
+    required: false
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: '.'
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  EventPath:
+    description: Path to the GitHub event JSON file. Defaults to the standard GitHub event path. Override for testing.
+    required: false
+    default: ''
+  EventJson:
+    description: GitHub event payload as a JSON string. When set, overrides reading from the event file. Use for testing.
+    required: false
+    default: ''
+
+outputs:
+  Version:
+    description: The Major.Minor.Patch portion of the resolved version.
+    value: ${{ steps.resolve.outputs.Version }}
+  Prerelease:
+    description: The prerelease tag, empty when not a prerelease.
+    value: ${{ steps.resolve.outputs.Prerelease }}
+  FullVersion:
+    description: The full version string including version prefix and prerelease tag (for example v1.4.0-alpha001).
+    value: ${{ steps.resolve.outputs.FullVersion }}
+  ReleaseType:
+    description: The resolved release type - Release, Prerelease, or None.
+    value: ${{ steps.resolve.outputs.ReleaseType }}
+  CreateRelease:
+    description: 'true when a release or prerelease should be created from this run.'
+    value: ${{ steps.resolve.outputs.CreateRelease }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install-PSModuleHelpers
+      uses: ./_wf/.github/actions/Install-PSModuleHelpers
+
+    - name: Install PSSemVer
+      shell: pwsh
+      run: |
+        Install-PSResource -Name PSSemVer -Repository PSGallery -TrustRepository
+
+    - name: Resolve module version
+      id: resolve
+      shell: pwsh
+      working-directory: ${{ inputs.WorkingDirectory }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Settings: ${{ inputs.Settings }}
+        PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Name: ${{ inputs.Name }}
+        PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson: ${{ inputs.EventJson }}
+        GITHUB_EVENT_PATH: ${{ inputs.EventPath || github.event_path }}
+      run: |
+        # Resolve module version
+        ${{ github.action_path }}/src/main.ps1

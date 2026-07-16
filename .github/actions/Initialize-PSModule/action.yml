@@ -1,0 +1,42 @@
+name: Initialize-PSModule (by PSModule)
+description: Prepare runner for the PSModule framework.
+author: PSModule
+branding:
+  icon: loader
+  color: gray-dark
+
+inputs:
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  Version:
+    description: Specifies the version of the GitHub module to be installed. Accepts an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
+    required: false
+  Prerelease:
+    description: Allow prerelease versions if available.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: ${{ github.workspace }}
+
+runs:
+  using: composite
+  steps:
+    - name: Initialize-PSModule
+      uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
+      with:
+        Debug: ${{ inputs.Debug }}
+        Prerelease: ${{ inputs.Prerelease }}
+        Verbose: ${{ inputs.Verbose }}
+        Version: ${{ inputs.Version }}
+        WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        Script: |
+          # Initialize-PSModule
+          ${{ github.action_path }}/src/main.ps1

@@ -1,0 +1,73 @@
+name: Get-PSModuleSettings
+description: Get settings for a PowerShell module workflow
+author: PSModule
+branding:
+  icon: settings
+  color: blue
+
+inputs:
+  Name:
+    description: Name of the module.
+    required: false
+  SettingsPath:
+    description: Path to the settings file (json, yaml/yml, or psd1)
+    required: false
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  Version:
+    description: Specifies the version of the GitHub module to be installed. Accepts an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
+    required: false
+  Prerelease:
+    description: Allow prerelease versions if available.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: ${{ github.workspace }}
+  ImportantFilePatterns:
+    description: |
+      Newline-separated list of regex patterns that identify important files.
+      Changes matching these patterns trigger build, test, and publish stages.
+      When set, fully replaces the defaults.
+    required: false
+    default: |
+      ^src/
+      ^README\.md$
+
+outputs:
+  Settings:
+    description: The complete settings object as JSON, including test suites
+    value: ${{ fromJson(steps.Get-PSModuleSettings.outputs.result).Settings }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get-PSModuleSettings
+      uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
+      id: Get-PSModuleSettings
+      env:
+        PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
+        PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
+        PSMODULE_GET_SETTINGS_INPUT_Debug: ${{ inputs.Debug }}
+        PSMODULE_GET_SETTINGS_INPUT_Verbose: ${{ inputs.Verbose }}
+        PSMODULE_GET_SETTINGS_INPUT_Version: ${{ inputs.Version }}
+        PSMODULE_GET_SETTINGS_INPUT_Prerelease: ${{ inputs.Prerelease }}
+        PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
+      with:
+        Name: Get-PSModuleSettings
+        ShowInfo: false
+        ShowOutput: true
+        Debug: ${{ inputs.Debug }}
+        Prerelease: ${{ inputs.Prerelease }}
+        Verbose: ${{ inputs.Verbose }}
+        Version: ${{ inputs.Version }}
+        WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        Script: ${{ github.action_path }}/src/main.ps1

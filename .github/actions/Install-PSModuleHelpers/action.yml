@@ -1,0 +1,15 @@
+name: Install-PSModuleHelpers
+description: Installs the PSModule helpers.
+author: PSModule
+branding:
+  icon: upload-cloud
+  color: white
+
+runs:
+  using: composite
+  steps:
+    - name: Install-PSModuleHelpers
+      shell: pwsh
+      run: |
+        # Install-PSModuleHelpers
+        ${{ github.action_path }}/src/main.ps1
