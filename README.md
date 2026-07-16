@@ -26,7 +26,7 @@ projects.
    documentation on GitHub Pages. By default the process releases a patch version, which you can change by applying labels like `minor` or `major` on
    the PR to bump the version accordingly.
 
-## How it works
+## How it worksasd
 
 Everything is packaged into this single workflow to simplify full configuration of the workflow via this repository. Simplifying management and
 operations across all PowerShell module projects. A user can configure how it works by simply configuring settings using a single file.
