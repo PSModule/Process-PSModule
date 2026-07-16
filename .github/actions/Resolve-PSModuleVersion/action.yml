@@ -73,4 +73,4 @@ runs:
         GITHUB_EVENT_PATH: ${{ inputs.EventPath || github.event_path }}
       run: |
         # Resolve module version
-        ${{ github.action_path }}/scripts/main.ps1
+        ${{ github.action_path }}/src/main.ps1
