@@ -59,7 +59,6 @@ Describe 'Resolve-ReleaseDecision' {
             $pullRequest = [PSCustomObject]@{
                 HeadRef = $HeadRef
                 Labels  = $Labels
-                IsOpen  = $IsOpen
             }
             $result = Resolve-ReleaseDecision -Configuration $config -PullRequest $pullRequest
         }
@@ -154,7 +153,6 @@ Describe 'End-to-end: Resolve-ReleaseDecision + Get-NextModuleVersion' {
             $pullRequest = [PSCustomObject]@{
                 HeadRef = $HeadRef
                 Labels  = $Labels
-                IsOpen  = $IsOpen
             }
             $decision = Resolve-ReleaseDecision -Configuration $config -PullRequest $pullRequest
             $latestVer = New-PSSemVer -Version $LatestVersion
@@ -247,11 +245,10 @@ Describe 'Get-GitHubPullRequest' {
         Get-GitHubPullRequest | Should -BeNullOrEmpty
     }
 
-    It 'returns the head ref, labels, and IsOpen true for an open pull_request event' {
+    It 'returns the head ref and labels for a pull_request event' {
         $eventJson = @{
             pull_request = @{
                 head   = @{ ref = 'feat/example' }
-                state  = 'open'
                 labels = @(@{ name = 'patch' }, @{ name = 'prerelease' })
             }
         } | ConvertTo-Json -Depth 5
@@ -259,22 +256,5 @@ Describe 'Get-GitHubPullRequest' {
         $result = Get-GitHubPullRequest
         $result.HeadRef | Should -Be 'feat/example'
         ($result.Labels -join ',') | Should -Be 'patch,prerelease'
-        $result.IsOpen | Should -BeTrue
-    }
-
-    It 'returns IsOpen false for a merged/closed pull_request event' {
-        $eventJson = @{
-            action       = 'closed'
-            pull_request = @{
-                head   = @{ ref = 'feat/example' }
-                state  = 'closed'
-                merged = $true
-                labels = @(@{ name = 'patch' })
-            }
-        } | ConvertTo-Json -Depth 5
-        $env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson = $eventJson
-        $result = Get-GitHubPullRequest
-        $result.HeadRef | Should -Be 'feat/example'
-        $result.IsOpen | Should -BeFalse
     }
 }

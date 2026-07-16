@@ -1,10 +1,9 @@
 @{
     ReleaseDecision   = @(
         @{
-            Name         = 'Merged PR with a patch label publishes a stable release'
+            Name         = 'Patch label with Release type'
             ReleaseType  = 'Release'
             AutoPatching = $false
-            IsOpen       = $false
             HeadRef      = 'feat/test-patch'
             Labels       = @('patch')
             Expected     = @{
@@ -19,10 +18,9 @@
             }
         }
         @{
-            Name         = 'Merged PR with a minor label publishes a stable release'
+            Name         = 'Minor label with Release type'
             ReleaseType  = 'Release'
             AutoPatching = $false
-            IsOpen       = $false
             HeadRef      = 'feat/test-minor'
             Labels       = @('minor')
             Expected     = @{
@@ -37,10 +35,9 @@
             }
         }
         @{
-            Name         = 'Merged PR with a major label publishes a stable release'
+            Name         = 'Major label with Release type'
             ReleaseType  = 'Release'
             AutoPatching = $false
-            IsOpen       = $false
             HeadRef      = 'feat/test-major'
             Labels       = @('major')
             Expected     = @{
@@ -55,10 +52,9 @@
             }
         }
         @{
-            Name         = 'Merged PR with AutoPatching and no label publishes a stable release'
+            Name         = 'AutoPatching with no label'
             ReleaseType  = 'Release'
             AutoPatching = $true
-            IsOpen       = $false
             HeadRef      = 'feat/test-autopatch'
             Labels       = @()
             Expected     = @{
@@ -73,46 +69,26 @@
             }
         }
         @{
-            Name         = 'Merged PR with an ignore label keeps the current version'
+            Name         = 'Ignore label suppresses release'
             ReleaseType  = 'Release'
             AutoPatching = $false
-            IsOpen       = $false
             HeadRef      = 'feat/test-ignore'
             Labels       = @('patch', 'skip-release')
             Expected     = @{
                 ShouldPublish    = $false
-                CreateRelease    = $false
-                CreatePrerelease = $false
+                CreateRelease    = $true
+                CreatePrerelease = $true
                 MajorRelease     = $false
                 MinorRelease     = $false
-                PatchRelease     = $false
-                HasVersionBump   = $false
+                PatchRelease     = $true
+                HasVersionBump   = $true
                 PrereleaseName   = 'feattestignore'
             }
         }
         @{
-            Name         = 'Merged PR with ReleaseType None keeps the current version'
-            ReleaseType  = 'None'
-            AutoPatching = $true
-            IsOpen       = $false
-            HeadRef      = 'auto-update-20260712'
-            Labels       = @('patch')
-            Expected     = @{
-                ShouldPublish    = $false
-                CreateRelease    = $false
-                CreatePrerelease = $false
-                MajorRelease     = $false
-                MinorRelease     = $false
-                PatchRelease     = $false
-                HasVersionBump   = $false
-                PrereleaseName   = 'autoupdate20260712'
-            }
-        }
-        @{
-            Name         = 'Open PR with ReleaseType None previews a patch prerelease'
+            Name         = 'ReleaseType None produces prerelease'
             ReleaseType  = 'None'
             AutoPatching = $false
-            IsOpen       = $true
             HeadRef      = 'feat/test-none'
             Labels       = @('patch')
             Expected     = @{
@@ -127,10 +103,9 @@
             }
         }
         @{
-            Name         = 'Open PR with ReleaseType None previews a minor prerelease'
+            Name         = 'ReleaseType None with a minor label previews a minor bump'
             ReleaseType  = 'None'
             AutoPatching = $false
-            IsOpen       = $true
             HeadRef      = 'feat/none-minor'
             Labels       = @('minor')
             Expected     = @{
@@ -145,10 +120,9 @@
             }
         }
         @{
-            Name         = 'Open PR with ReleaseType None previews a major prerelease'
+            Name         = 'ReleaseType None with a major label previews a major bump'
             ReleaseType  = 'None'
             AutoPatching = $false
-            IsOpen       = $true
             HeadRef      = 'feat/none-major'
             Labels       = @('major')
             Expected     = @{
@@ -163,10 +137,9 @@
             }
         }
         @{
-            Name         = 'Open PR with ReleaseType Prerelease publishes a prerelease'
+            Name         = 'ReleaseType Prerelease with minor label'
             ReleaseType  = 'Prerelease'
             AutoPatching = $false
-            IsOpen       = $true
             HeadRef      = 'feat/add-prerelease-support'
             Labels       = @('minor')
             Expected     = @{
@@ -181,38 +154,19 @@
             }
         }
         @{
-            Name         = 'Open PR with an ignore label still previews a prerelease'
-            ReleaseType  = 'None'
+            Name         = 'No bump label and no AutoPatching falls back to prerelease'
+            ReleaseType  = 'Release'
             AutoPatching = $false
-            IsOpen       = $true
-            HeadRef      = 'feat/preview-with-ignore'
-            Labels       = @('patch', 'skip-release')
+            HeadRef      = 'feat/no-label'
+            Labels       = @()
             Expected     = @{
                 ShouldPublish    = $false
-                CreateRelease    = $false
+                CreateRelease    = $true
                 CreatePrerelease = $true
                 MajorRelease     = $false
                 MinorRelease     = $false
                 PatchRelease     = $true
                 HasVersionBump   = $true
-                PrereleaseName   = 'featpreviewwithignore'
-            }
-        }
-        @{
-            Name         = 'Merged PR with no bump label and no AutoPatching keeps the current version'
-            ReleaseType  = 'Release'
-            AutoPatching = $false
-            IsOpen       = $false
-            HeadRef      = 'feat/no-label'
-            Labels       = @()
-            Expected     = @{
-                ShouldPublish    = $false
-                CreateRelease    = $false
-                CreatePrerelease = $false
-                MajorRelease     = $false
-                MinorRelease     = $false
-                PatchRelease     = $false
-                HasVersionBump   = $false
                 PrereleaseName   = 'featnolabel'
             }
         }
@@ -403,11 +357,10 @@
 
     EndToEnd          = @(
         @{
-            Name                  = 'Merged PR patch bump produces stable release version'
+            Name                  = 'Patch bump produces release version'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Release'
             AutoPatching          = $false
-            IsOpen                = $false
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/test-patch'
@@ -419,11 +372,10 @@
             ExpectedFullVersion   = 'v1.0.2'
         }
         @{
-            Name                  = 'Merged PR minor bump produces stable release version'
+            Name                  = 'Minor bump produces release version'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Release'
             AutoPatching          = $false
-            IsOpen                = $false
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/test-minor'
@@ -435,11 +387,10 @@
             ExpectedFullVersion   = 'v1.1.0'
         }
         @{
-            Name                  = 'Merged PR major bump produces stable release version'
+            Name                  = 'Major bump produces release version'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Release'
             AutoPatching          = $false
-            IsOpen                = $false
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/test-major'
@@ -451,11 +402,10 @@
             ExpectedFullVersion   = 'v2.0.0'
         }
         @{
-            Name                  = 'Merged PR auto-patch with no label produces stable release version'
+            Name                  = 'Auto-patch with no label produces release version'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Release'
             AutoPatching          = $true
-            IsOpen                = $false
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/test-autopatch'
@@ -467,43 +417,25 @@
             ExpectedFullVersion   = 'v1.0.2'
         }
         @{
-            Name                  = 'Merged PR with an ignore label keeps the current version'
+            Name                  = 'Ignore label suppresses release, produces prerelease'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Release'
             AutoPatching          = $false
-            IsOpen                = $false
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/test-ignore'
             Labels                = @('patch', 'skip-release')
             ExpectedShouldPublish = $false
             ExpectedReleaseType   = 'None'
-            ExpectedVersion       = '1.0.1'
-            ExpectedPrerelease    = ''
-            ExpectedFullVersion   = 'v1.0.1'
+            ExpectedVersion       = '1.0.2'
+            ExpectedPrerelease    = 'feattestignore001'
+            ExpectedFullVersion   = 'v1.0.2-feattestignore001'
         }
         @{
-            Name                  = 'Merged PR with ReleaseType None keeps the current version'
-            LatestVersion         = '1.0.1'
-            ReleaseType           = 'None'
-            AutoPatching          = $true
-            IsOpen                = $false
-            IncrementalPrerelease = $false
-            VersionPrefix         = 'v'
-            HeadRef               = 'auto-update-20260712'
-            Labels                = @('patch')
-            ExpectedShouldPublish = $false
-            ExpectedReleaseType   = 'None'
-            ExpectedVersion       = '1.0.1'
-            ExpectedPrerelease    = ''
-            ExpectedFullVersion   = 'v1.0.1'
-        }
-        @{
-            Name                  = 'Open PR with ReleaseType None previews a patch prerelease'
+            Name                  = 'ReleaseType None produces prerelease with counter'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'None'
             AutoPatching          = $false
-            IsOpen                = $true
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/test-none'
@@ -515,11 +447,10 @@
             ExpectedFullVersion   = 'v1.0.2-feattestnone001'
         }
         @{
-            Name                  = 'Open PR with ReleaseType None previews a minor prerelease'
+            Name                  = 'ReleaseType None with a minor label previews a minor prerelease'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'None'
             AutoPatching          = $false
-            IsOpen                = $true
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/none-minor'
@@ -531,11 +462,10 @@
             ExpectedFullVersion   = 'v1.1.0-featnoneminor001'
         }
         @{
-            Name                  = 'Open PR with ReleaseType None previews a major prerelease'
+            Name                  = 'ReleaseType None with a major label previews a major prerelease'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'None'
             AutoPatching          = $false
-            IsOpen                = $true
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/none-major'
@@ -547,11 +477,10 @@
             ExpectedFullVersion   = 'v2.0.0-featnonemajor001'
         }
         @{
-            Name                  = 'Open PR with ReleaseType Prerelease publishes a prerelease'
+            Name                  = 'Prerelease type with incremental counter'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Prerelease'
             AutoPatching          = $false
-            IsOpen                = $true
             IncrementalPrerelease = $true
             VersionPrefix         = 'v'
             HeadRef               = 'feat/add-prerelease-support'
@@ -563,36 +492,19 @@
             ExpectedFullVersion   = 'v1.1.0-feataddprereleasesupport001'
         }
         @{
-            Name                  = 'Open PR with an ignore label still previews a prerelease'
-            LatestVersion         = '1.0.1'
-            ReleaseType           = 'None'
-            AutoPatching          = $false
-            IsOpen                = $true
-            IncrementalPrerelease = $false
-            VersionPrefix         = 'v'
-            HeadRef               = 'feat/preview-with-ignore'
-            Labels                = @('patch', 'skip-release')
-            ExpectedShouldPublish = $false
-            ExpectedReleaseType   = 'None'
-            ExpectedVersion       = '1.0.2'
-            ExpectedPrerelease    = 'featpreviewwithignore001'
-            ExpectedFullVersion   = 'v1.0.2-featpreviewwithignore001'
-        }
-        @{
-            Name                  = 'Merged PR with no bump and no AutoPatching keeps the current version'
+            Name                  = 'No label and no AutoPatching falls back to prerelease'
             LatestVersion         = '1.0.1'
             ReleaseType           = 'Release'
             AutoPatching          = $false
-            IsOpen                = $false
             IncrementalPrerelease = $false
             VersionPrefix         = 'v'
             HeadRef               = 'feat/no-label'
             Labels                = @()
             ExpectedShouldPublish = $false
             ExpectedReleaseType   = 'None'
-            ExpectedVersion       = '1.0.1'
-            ExpectedPrerelease    = ''
-            ExpectedFullVersion   = 'v1.0.1'
+            ExpectedVersion       = '1.0.2'
+            ExpectedPrerelease    = 'featnolabel001'
+            ExpectedFullVersion   = 'v1.0.2-featnolabel001'
         }
     )
 }

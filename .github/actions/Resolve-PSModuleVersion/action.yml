@@ -70,7 +70,7 @@ runs:
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Settings: ${{ inputs.Settings }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson: ${{ inputs.EventJson }}
-        PSMODULE_ACTION_PATH: ${{ github.action_path }}
         GITHUB_EVENT_PATH: ${{ inputs.EventPath || github.event_path }}
       run: |
-        & "$env:PSMODULE_ACTION_PATH/src/main.ps1"
+        # Resolve module version
+        ${{ github.action_path }}/scripts/main.ps1

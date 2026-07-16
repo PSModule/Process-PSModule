@@ -1,9 +1,0 @@
-paths:
-  .github/workflows/*.yml:
-    # actionlint does not yet know the `job.workflow_repository` / `job.workflow_sha` contexts
-    # (https://docs.github.com/actions/reference/contexts-reference#job-context). GitHub Actions
-    # itself resolves and runs them correctly; this is a central, one-time ignore instead of an
-    # inline suppression on every `uses: actions/checkout` self-checkout step that reads them.
-    ignore:
-      - 'property "workflow_repository" is not defined in object type'
-      - 'property "workflow_sha" is not defined in object type'

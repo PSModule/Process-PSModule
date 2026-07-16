@@ -132,9 +132,8 @@ function Get-GitHubPullRequest {
         returns $null and the caller resolves the current version without a version bump.
 
         .OUTPUTS
-        PSCustomObject with HeadRef, Labels, and IsOpen properties for a pull_request event, or
-        $null when the event has no pull request (non-PR events). IsOpen is $true only while the
-        pull request is open (under review); it is $false once the PR is merged or closed.
+        PSCustomObject with HeadRef and Labels properties for a pull_request event, or
+        $null when the event has no pull request (non-PR events).
 
         .EXAMPLE
         $pullRequest = Get-GitHubPullRequest
@@ -161,17 +160,9 @@ function Get-GitHubPullRequest {
         $labels = @()
         $labels += $pr.labels.name
 
-        # A pull request is OPEN while it is under review (opened/reopened/synchronize/labeled).
-        # Once it is merged or closed its state becomes 'closed'. Only an open pull request may
-        # resolve to a prerelease; a merged/closed PR - like a push to the default branch - never
-        # does. Default to not-open when state is missing so we never accidentally prerelease.
-        $isOpen = $pr.state -eq 'open'
-
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
                 PRHeadRef = $pr.head.ref
-                State     = $pr.state
-                IsOpen    = $isOpen
                 Labels    = $labels -join ', '
             } | Format-List | Out-String)
         Write-Host '-------------------------------------------------'
@@ -179,7 +170,6 @@ function Get-GitHubPullRequest {
         [PSCustomObject]@{
             HeadRef = $pr.head.ref
             Labels  = $labels
-            IsOpen  = $isOpen
         }
     }
 }
@@ -191,12 +181,7 @@ function Resolve-ReleaseDecision {
 
         .DESCRIPTION
         Evaluates the PR labels against the configured label categories and release type
-        to produce a complete release decision. A prerelease - whether a published prerelease or
-        a non-published preview - is only ever resolved for an OPEN pull request, so the artifact
-        built during review can never masquerade as a stable release before the merge decision is
-        made. Once a PR is merged or closed (and likewise for a push to the default branch, which
-        the workflow treats the same as a merged PR) the outcome is final: a full release, or the
-        current version unchanged - never a prerelease.
+        to produce a complete release decision.
 
         .OUTPUTS
         PSCustomObject with ShouldPublish, CreateRelease, CreatePrerelease, MajorRelease,
@@ -223,7 +208,6 @@ function Resolve-ReleaseDecision {
         $prereleaseName = $PullRequest.HeadRef -replace '[^a-zA-Z0-9]'
         $labels = $PullRequest.Labels
         $releaseType = $Configuration.ReleaseType
-        $isOpenPullRequest = [bool]$PullRequest.IsOpen
 
         $validReleaseTypes = @('Release', 'Prerelease', 'None')
         if ([string]::IsNullOrWhiteSpace($releaseType)) {
@@ -233,7 +217,15 @@ function Resolve-ReleaseDecision {
             throw "Invalid ReleaseType: [$releaseType]. Valid values are: $($validReleaseTypes -join ', ')"
         }
 
+        $createRelease = $releaseType -eq 'Release'
+        $createPrerelease = $releaseType -eq 'Prerelease'
+        $shouldPublish = $createRelease -or $createPrerelease
+
         $ignoreRelease = ($labels | Where-Object { $Configuration.IgnoreLabels -contains $_ }).Count -gt 0
+        if ($ignoreRelease -and $shouldPublish) {
+            Write-Host 'Ignoring release creation due to ignore label.'
+            $shouldPublish = $false
+        }
 
         # Always evaluate the version-bump labels so the resolved version reflects what WOULD be
         # created, regardless of whether this run publishes. ReleaseType (and the prerelease label
@@ -243,51 +235,32 @@ function Resolve-ReleaseDecision {
         $patchRelease = (
             (($labels | Where-Object { $Configuration.PatchLabels -contains $_ }).Count -gt 0) -or $Configuration.AutoPatching
         ) -and -not $majorRelease -and -not $minorRelease
-        $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
 
-        # A prerelease - whether a published prerelease or a non-published preview - only makes
-        # sense while a pull request is OPEN. It lets the artifact built during review carry a
-        # prerelease tag so it can never be mistaken for a stable release before the merge decision
-        # is made. Once the change lands on the default branch the outcome is final: a merged pull
-        # request publishes a full release (or, when nothing warrants one, nothing at all), and a
-        # push to the default branch is treated the same as a merged pull request. A merge or push
-        # therefore never resolves to a prerelease.
-        if ($isOpenPullRequest) {
-            # Open pull request: always carry a prerelease tag. ReleaseType 'Prerelease' (the
-            # prerelease label) publishes it; otherwise it is a non-published preview. An ignore
-            # label only suppresses publishing - the reviewed artifact still stays a prerelease.
-            $createRelease = $false
+        $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
+        if (-not $hasVersionBump) {
+            # No explicit bump label and no AutoPatching: still resolve a patch version so the run
+            # can preview what it would create, but do not publish a full release for an unlabeled change.
+            Write-Host 'No version bump label and AutoPatching disabled; previewing a patch version without publishing.'
+            $patchRelease = $true
+            $hasVersionBump = $true
+            $shouldPublish = $false
+        }
+
+        # Anything that is not a published full release is surfaced as a prerelease - either a
+        # published prerelease (ShouldPublish) or a non-published preview.
+        if (-not $shouldPublish) {
             $createPrerelease = $true
-            $shouldPublish = ($releaseType -eq 'Prerelease') -and -not $ignoreRelease
-            if (-not $hasVersionBump) {
-                Write-Host 'No version bump label and AutoPatching disabled; previewing a patch version.'
-                $patchRelease = $true
-                $hasVersionBump = $true
-            }
-        } else {
-            # Merged/closed pull request or a push to the default branch: never a prerelease.
-            $createPrerelease = $false
-            $createRelease = ($releaseType -eq 'Release') -and -not $ignoreRelease -and $hasVersionBump
-            $shouldPublish = $createRelease
-            if (-not $createRelease) {
-                Write-Host 'No open pull request and nothing to release; keeping the current version.'
-                $majorRelease = $false
-                $minorRelease = $false
-                $patchRelease = $false
-                $hasVersionBump = $false
-            }
         }
 
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
-                ReleaseType       = $releaseType
-                IsOpenPullRequest = $isOpenPullRequest
-                ShouldPublish     = $shouldPublish
-                CreateRelease     = $createRelease
-                CreatePrerelease  = $createPrerelease
-                Major             = $majorRelease
-                Minor             = $minorRelease
-                Patch             = $patchRelease
+                ReleaseType      = $releaseType
+                ShouldPublish    = $shouldPublish
+                CreateRelease    = $createRelease
+                CreatePrerelease = $createPrerelease
+                Major            = $majorRelease
+                Minor            = $minorRelease
+                Patch            = $patchRelease
             } | Format-List | Out-String)
         Write-Host '-------------------------------------------------'
 

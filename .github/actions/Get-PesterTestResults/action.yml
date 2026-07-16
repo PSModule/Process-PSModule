@@ -53,4 +53,5 @@ runs:
         WorkingDirectory: ${{ inputs.WorkingDirectory }}
         ShowInfo: false
         Script: |
+          # Get Pester test results
           ${{ github.action_path }}/src/main.ps1
