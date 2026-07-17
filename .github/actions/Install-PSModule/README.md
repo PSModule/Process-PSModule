@@ -1,4 +1,4 @@
-# Install-PSModuleHelpers
+# Install-PSModule
 
 A GitHub Action to install and configure the PSModule helper modules for use in continuous integration and delivery (CI/CD) workflows. This action is
 a critical component for setting up a standardized PowerShell environment across repositories using the PSModule framework.
@@ -18,7 +18,7 @@ This action helps maintain consistency and reliability across workflows that dep
 
 ```yaml
 - name: Install PSModule Helpers
-  uses: PSModule/Install-PSModuleHelpers@v1
+  uses: PSModule/Install-PSModule@v1
 ```
 
 ## Inputs
@@ -35,7 +35,7 @@ This action does not provide any outputs.
 
 ## Example
 
-Here's a complete workflow example demonstrating how to use the Install-PSModuleHelpers action:
+Here's a complete workflow example demonstrating how to use the Install-PSModule action:
 
 ```yaml
 name: CI
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install PSModule Helpers
-        uses: PSModule/Install-PSModuleHelpers@v1
+        uses: PSModule/Install-PSModule@v1
 
       - name: Run additional steps
         shell: pwsh

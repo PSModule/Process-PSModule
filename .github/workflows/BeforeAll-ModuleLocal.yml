@@ -39,8 +39,8 @@ jobs:
           path: _wf
           persist-credentials: false
 
-      - name: Install-PSModuleHelpers
-        uses: ./_wf/.github/actions/Install-PSModuleHelpers
+      - name: Install-PSModule
+        uses: ./_wf/.github/actions/Install-PSModule
 
       - name: Expose caller-provided test data
         uses: ./_wf/.github/actions/Expose-TestData

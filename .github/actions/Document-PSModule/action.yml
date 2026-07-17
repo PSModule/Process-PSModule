@@ -18,8 +18,8 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install-PSModuleHelpers
-      uses: ./_wf/.github/actions/Install-PSModuleHelpers
+    - name: Install-PSModule
+      uses: ./_wf/.github/actions/Install-PSModule
 
     - name: Document-PSModule
       shell: pwsh

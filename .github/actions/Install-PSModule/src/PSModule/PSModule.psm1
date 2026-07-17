@@ -1348,4 +1348,3 @@ function Import-TestData {
     Add-EnvFromMap -Map $data.secrets -Name 'secrets' -Mask
     Add-EnvFromMap -Map $data.variables -Name 'variables'
 }
-
