@@ -36,4 +36,4 @@ jobs:
           persist-credentials: false
 
       - name: Release
-        uses: PSModule/Release-GHRepository@5a5165d66f485d1aad217ef34a190178b214fdcb # v2.0.2
+        uses: PSModule/Release-GHRepository@750abed0ecab02394554b610dc3aa191e75e3248 # v2.0.3
