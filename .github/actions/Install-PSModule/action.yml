@@ -1,0 +1,11 @@
+name: Install-PSModule
+description: Installs PSModule.
+
+runs:
+  using: composite
+  steps:
+    - name: Install-PSModule
+      shell: pwsh
+      run: |
+        # Install-PSModule
+        ${{ github.action_path }}/src/main.ps1

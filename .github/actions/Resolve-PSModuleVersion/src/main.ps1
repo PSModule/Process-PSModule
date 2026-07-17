@@ -3,7 +3,7 @@ param()
 
 $PSStyle.OutputRendering = 'Ansi'
 
-Import-Module -Name 'Helpers' -Force
+Import-Module -Name 'PSModule' -Force
 Import-Module -Name "$PSScriptRoot/Resolve-PSModuleVersion.Helpers.psm1" -Force
 
 $actionInput = Read-ActionInput
