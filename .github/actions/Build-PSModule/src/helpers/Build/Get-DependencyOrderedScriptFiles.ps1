@@ -88,7 +88,8 @@ function Get-DependencyOrderedScriptFiles {
     }
 
     if ($orderedPaths.Count -lt $sortedFiles.Count) {
-        Write-Warning "Detected cyclical or unresolved class/enum dependencies. Falling back to lexical order for remaining files in [$($sortedFiles[0].DirectoryName)]."
+        $remainingNames = ($remainingPaths | ForEach-Object { [System.IO.Path]::GetFileName($_) }) -join ', '
+        Write-Warning "Cyclical class/enum dependencies detected in [$($sortedFiles[0].DirectoryName)]. Falling back to lexical order for unresolved files: $remainingNames"
         $remainingPaths | Sort-Object | ForEach-Object {
             $orderedPaths.Add($_)
         }
