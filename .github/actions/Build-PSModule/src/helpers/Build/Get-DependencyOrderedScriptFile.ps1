@@ -103,10 +103,12 @@ function Get-DependencyOrderedScriptFile {
         $remainingNames = ($remainingPaths | ForEach-Object { [System.IO.Path]::GetFileName($_) }) -join ', '
         $message = @(
             "Cyclical class/enum dependencies detected in [$($sortedFiles[0].DirectoryName)]."
-            "Build cannot continue with unresolved files: $remainingNames"
+            "Falling back to lexical order for unresolved files: $remainingNames"
         ) -join ' '
         Write-Warning $message
-        throw $message
+        $remainingPaths | Sort-Object | ForEach-Object {
+            $orderedPaths.Add($_)
+        }
     }
 
     return [System.IO.FileInfo[]]@($orderedPaths | ForEach-Object { $metadataByPath[$_].File })
