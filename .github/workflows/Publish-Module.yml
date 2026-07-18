@@ -45,6 +45,8 @@ jobs:
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
+          CreateRelease: ${{ fromJson(inputs.Settings).Module.CreateRelease }}
+          ReleaseType: ${{ fromJson(inputs.Settings).Module.ReleaseType }}
           APIKey: ${{ secrets.APIKey }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}

@@ -10,6 +10,14 @@ inputs:
     description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
     required: false
     default: outputs/module
+  CreateRelease:
+    description: When true, downloads the module artifact and runs publish.ps1 (PowerShell Gallery + GitHub Release flow).
+    required: false
+    default: 'false'
+  ReleaseType:
+    description: Resolved release type from settings (Release, Prerelease, None). Used to control prerelease cleanup behavior.
+    required: false
+    default: None
   APIKey:
     description: PowerShell Gallery API Key.
     required: true
@@ -50,12 +58,14 @@ runs:
         Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
 
     - name: Download module artifact
+      if: inputs.CreateRelease == 'true'
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         name: ${{ inputs.ArtifactName }}
         path: ${{ inputs.ModulePath }}
 
     - name: Publish Module
+      if: inputs.CreateRelease == 'true'
       shell: pwsh
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
