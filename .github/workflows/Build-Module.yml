@@ -41,7 +41,7 @@ jobs:
         uses: ./_wf/.github/actions/Build-PSModule
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
-          Version: ${{ fromJson(inputs.Settings).Module.Version != '' && fromJson(inputs.Settings).Module.Version || '999.0.0' }}
-          Prerelease: ${{ fromJson(inputs.Settings).Module.Prerelease }}
+          Version: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.Version != '' && fromJson(inputs.Settings).Publish.Module.Resolution.Version || '999.0.0' }}
+          Prerelease: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.Prerelease }}
           ArtifactName: ${{ inputs.ArtifactName }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
