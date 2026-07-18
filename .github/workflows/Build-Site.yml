@@ -138,8 +138,12 @@ jobs:
                 $docsConfigContent = Get-Content -Path $docsConfigSourcePath -Raw
                 $docsConfigContent = $docsConfigContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
                 $docsConfigContent = $docsConfigContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-                if ($docsConfigFileName -eq 'zensical.toml' -and $docsConfigContent -notmatch '(?m)^\s*site_dir\s*=') {
-                    $docsConfigContent = $docsConfigContent -replace '(?m)^\[project\]\s*$', "[project]`nsite_dir = ""../../_site"""
+                if ($docsConfigFileName -eq 'zensical.toml') {
+                    if ($docsConfigContent -match '(?m)^\s*site_dir\s*=') {
+                        $docsConfigContent = $docsConfigContent -replace '(?m)^\s*site_dir\s*=.*$', 'site_dir = "_site"'
+                    } else {
+                        $docsConfigContent = $docsConfigContent -replace '(?m)^\[project\]\s*$', "[project]`nsite_dir = ""_site"""
+                    }
                 }
                 $docsConfigContent | Set-Content -Path $docsConfigTargetPath -Force
 
@@ -166,6 +170,12 @@ jobs:
           }
 
           LogGroup 'Build docs - verify output' {
+            if (Test-Path -Path '_site') {
+              if (Test-Path -Path '../../_site') {
+                Remove-Item -Path '../../_site' -Recurse -Force
+              }
+              Move-Item -Path '_site' -Destination '../../_site' -Force
+            }
             if (-not (Test-Path -Path '../../_site')) {
               throw "Expected Zensical output at ../../_site but it was not created."
             }
