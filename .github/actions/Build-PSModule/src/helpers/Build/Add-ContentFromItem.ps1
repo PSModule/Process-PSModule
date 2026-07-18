@@ -39,7 +39,7 @@ Write-Debug "[`$scriptName] - $relativeFolderPath - Processing folder"
 
     if ($DependencyAware) {
         $files = $Path | Get-ChildItem -Recurse -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
-        $files = Get-DependencyOrderedScriptFiles -Files $files
+        $files = Get-DependencyOrderedScriptFile -Files $files
     } else {
         $files = $Path | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
     }

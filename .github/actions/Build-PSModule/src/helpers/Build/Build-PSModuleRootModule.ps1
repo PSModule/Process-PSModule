@@ -187,7 +187,13 @@ Write-Debug "[$scriptName] - [data] - Done"
             if (-not (Test-Path -Path $scriptFolderPath)) {
                 continue
             }
-            Add-ContentFromItem -Path $scriptFolderPath -RootModuleFilePath $rootModuleFile -RootPath $ModuleOutputFolder -DependencyAware:$dependencyAware
+            $addContentParams = @{
+                Path               = $scriptFolderPath
+                RootModuleFilePath = $rootModuleFile
+                RootPath           = $ModuleOutputFolder
+                DependencyAware    = $dependencyAware
+            }
+            Add-ContentFromItem @addContentParams
             Remove-Item -Path $scriptFolderPath -Force -Recurse
         }
         #endregion - Add content from subfolders

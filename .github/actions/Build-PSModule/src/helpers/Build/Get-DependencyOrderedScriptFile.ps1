@@ -1,4 +1,16 @@
-function Get-DependencyOrderedScriptFiles {
+function Get-DependencyOrderedScriptFile {
+    <#
+        .SYNOPSIS
+        Sorts script files so class/enum dependencies are loaded before dependents.
+
+        .DESCRIPTION
+        Reads declared class/enum types and type references from each script and returns
+        files in dependency order. When a cyclical dependency is detected, the function
+        warns and throws to fail the build early.
+
+        .EXAMPLE
+        Get-DependencyOrderedScriptFile -Files (Get-ChildItem -Path '.\classes' -Filter '*.ps1')
+    #>
     [OutputType([System.IO.FileInfo[]])]
     [CmdletBinding()]
     param(
@@ -6,7 +18,7 @@ function Get-DependencyOrderedScriptFiles {
         [System.IO.FileInfo[]] $Files
     )
 
-    $sortedFiles = $Files | Sort-Object -Property FullName
+    [System.IO.FileInfo[]]$sortedFiles = $Files | Sort-Object -Property FullName
     if ($sortedFiles.Count -le 1) {
         return $sortedFiles
     }
@@ -67,8 +79,8 @@ function Get-DependencyOrderedScriptFiles {
     $remainingPaths = @($sortedFiles.FullName)
     $ready = @(
         $remainingPaths |
-        Where-Object { $dependenciesByPath[$_].Count -eq 0 } |
-        Sort-Object
+            Where-Object { $dependenciesByPath[$_].Count -eq 0 } |
+            Sort-Object
     )
     $orderedPaths = [System.Collections.Generic.List[string]]::new()
 
@@ -89,11 +101,13 @@ function Get-DependencyOrderedScriptFiles {
 
     if ($orderedPaths.Count -lt $sortedFiles.Count) {
         $remainingNames = ($remainingPaths | ForEach-Object { [System.IO.Path]::GetFileName($_) }) -join ', '
-        Write-Warning "Cyclical class/enum dependencies detected in [$($sortedFiles[0].DirectoryName)]. Falling back to lexical order for unresolved files: $remainingNames"
-        $remainingPaths | Sort-Object | ForEach-Object {
-            $orderedPaths.Add($_)
-        }
+        $message = @(
+            "Cyclical class/enum dependencies detected in [$($sortedFiles[0].DirectoryName)]."
+            "Build cannot continue with unresolved files: $remainingNames"
+        ) -join ' '
+        Write-Warning $message
+        throw $message
     }
 
-    return @($orderedPaths | ForEach-Object { $metadataByPath[$_].File })
+    return [System.IO.FileInfo[]]@($orderedPaths | ForEach-Object { $metadataByPath[$_].File })
 }
