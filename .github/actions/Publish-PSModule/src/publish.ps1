@@ -140,9 +140,7 @@ LogGroup 'Resolve version from manifest' {
         PRHeadRef        = $prHeadRef
     } | Format-List | Out-String
 
-    # Expose publish context to subsequent steps so the cleanup step can gate on release type.
-    $envLine = "PSMODULE_PUBLISH_PSMODULE_CONTEXT_IsPrerelease=$($createPrerelease.ToString().ToLower())"
-    $envLine | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
+    # Expose release tag to subsequent steps so cleanup can exclude the just-published tag.
     "PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
 }
 #endregion Resolve version from manifest
