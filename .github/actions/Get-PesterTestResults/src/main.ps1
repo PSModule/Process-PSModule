@@ -13,7 +13,11 @@ $runId = $env:GITHUB_RUN_ID
 $beforeAllModuleLocalResult = $env:PSMODULE_GET_PESTERTESTRESULTS_INPUT_BeforeAllModuleLocalResult
 
 if ($beforeAllModuleLocalResult -eq 'failure') {
-    Write-GitHubError 'BeforeAll-ModuleLocal failed. Module-local tests were skipped as a safety stop, and AfterAll-ModuleLocal cleanup was still requested. See the BeforeAll-ModuleLocal job log for the root cause.'
+    Write-GitHubError (
+        'BeforeAll-ModuleLocal failed. Module-local tests were skipped as a safety stop, ' +
+        'and AfterAll-ModuleLocal cleanup was still requested. ' +
+        'See the BeforeAll-ModuleLocal job log for the root cause.'
+    )
     exit 1
 }
 
