@@ -1,0 +1,34 @@
+name: Cleanup-PSModulePrereleases
+description: Cleanup prerelease GitHub releases associated with the current pull request branch.
+author: PSModule
+
+inputs:
+  AutoCleanup:
+    description: Control whether to automatically delete prerelease tags.
+    required: false
+    default: 'true'
+  WhatIf:
+    description: If specified, the action will only log the changes it would make.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Install-PSModule
+      uses: ./_wf/.github/actions/Install-PSModule
+
+    - name: Cleanup Prereleases
+      if: inputs.AutoCleanup == 'true' || inputs.WhatIf == 'true'
+      shell: pwsh
+      working-directory: ${{ inputs.WorkingDirectory }}
+      env:
+        PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf: ${{ inputs.WhatIf }}
+        PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag }}
+      run: |
+        # Cleanup prerelease tags
+        ${{ github.action_path }}/src/cleanup.ps1

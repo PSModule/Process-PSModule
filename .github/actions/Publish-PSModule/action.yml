@@ -7,16 +7,12 @@ inputs:
     description: Name of the module to publish.
     required: false
   ModulePath:
-    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule. A module artifact must exist before invoking this action.
+    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
     required: false
     default: outputs/module
   APIKey:
     description: PowerShell Gallery API Key.
     required: true
-  AutoCleanup:
-    description: Control whether to automatically delete the prerelease tags after the stable release is created.
-    required: false
-    default: 'true'
   WhatIf:
     description: If specified, the action will only log the changes it would make, but will not actually create or delete any releases or tags.
     required: false
@@ -71,14 +67,3 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
       run: ${{ github.action_path }}/src/publish.ps1
-
-    - name: Cleanup Prereleases
-      if: env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_IsPrerelease != 'true' && (inputs.AutoCleanup == 'true' || inputs.WhatIf == 'true')
-      shell: pwsh
-      working-directory: ${{ inputs.WorkingDirectory }}
-      env:
-        PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
-        PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag: ${{ env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag }}
-      run: |
-        # Cleanup prerelease tags
-        ${{ github.action_path }}/src/cleanup.ps1
