@@ -138,6 +138,9 @@ jobs:
                 $docsConfigContent = Get-Content -Path $docsConfigSourcePath -Raw
                 $docsConfigContent = $docsConfigContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
                 $docsConfigContent = $docsConfigContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+                if ($docsConfigFileName -eq 'zensical.toml' -and $docsConfigContent -notmatch '(?m)^\s*site_dir\s*=') {
+                    $docsConfigContent = $docsConfigContent -replace '(?m)^\[project\]\s*$', "[project]`nsite_dir = ""../../_site"""
+                }
                 $docsConfigContent | Set-Content -Path $docsConfigTargetPath -Force
 
                 Write-Host "Build Config Type:    $docsConfigFileName"
@@ -159,7 +162,13 @@ jobs:
           }
 
           LogGroup 'Build docs - Zensical build' {
-            zensical build --config-file $configFile --site-dir ../../_site
+            zensical build --config-file $configFile
+          }
+
+          LogGroup 'Build docs - verify output' {
+            if (-not (Test-Path -Path '../../_site')) {
+              throw "Expected Zensical output at ../../_site but it was not created."
+            }
           }
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
