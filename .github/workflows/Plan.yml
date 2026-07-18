@@ -44,11 +44,12 @@ on:
         description: |
           Newline-separated list of regex patterns that identify important files.
           Changes matching these patterns trigger build, test, and publish stages.
-          When set, fully replaces the defaults (^src/ and ^README\.md$).
+          When set, fully replaces the defaults (^src/, ^README\.md$, and ^\.github/actions/).
         required: false
         default: |
           ^src/
           ^README\.md$
+          ^\.github/actions/
 
     outputs:
       Settings:
