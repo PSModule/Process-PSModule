@@ -55,7 +55,7 @@ function Get-DependencyOrderedScriptFiles {
                 continue
             }
 
-            $typePattern = "(?<![\w\.])\[$([Regex]::Escape($typeName))\](?![\w\.])"
+            $typePattern = "(?<![\w\.])\[$([Regex]::Escape($typeName))(?:\[\])?\](?![\w\.])"
             if ([Regex]::IsMatch($metadata.Content, $typePattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
                 $dependencyPath = $typeToPath[$typeName]
                 [void]$dependenciesByPath[$metadata.File.FullName].Add($dependencyPath)
