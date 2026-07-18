@@ -48,8 +48,7 @@
         [System.IO.DirectoryInfo] $ModuleOutputFolder
     )
 
-    # Get the path separator for the current OS
-    $pathSeparator = [System.IO.Path]::DirectorySeparatorChar
+    $separators = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
 
     Set-GitHubLogGroup 'Build root module' {
         $rootModuleFile = New-Item -Path $ModuleOutputFolder -Name "$ModuleName.psm1" -Force
@@ -185,22 +184,21 @@ Write-Debug "[$scriptName] - [data] - Done"
         )
 
         foreach ($scriptFolder in $scriptFoldersToProcess) {
-            $scriptFolder = Join-Path -Path $ModuleOutputFolder -ChildPath $scriptFolder
-            if (-not (Test-Path -Path $scriptFolder)) {
+            $scriptFolderPath = Join-Path -Path $ModuleOutputFolder -ChildPath $scriptFolder
+            if (-not (Test-Path -Path $scriptFolderPath)) {
                 continue
             }
-            Add-ContentFromItem -Path $scriptFolder -RootModuleFilePath $rootModuleFile -RootPath $ModuleOutputFolder
-            Remove-Item -Path $scriptFolder -Force -Recurse
+            Add-ContentFromItem -Path $scriptFolderPath -RootModuleFilePath $rootModuleFile -RootPath $ModuleOutputFolder
+            Remove-Item -Path $scriptFolderPath -Force -Recurse
         }
         #endregion - Add content from subfolders
 
         #region - Add content from *.ps1 files on module root
         $files = $ModuleOutputFolder | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
         foreach ($file in $files) {
-            $relativePath = $file.FullName -replace $ModuleOutputFolder, ''
-            $relativePath = $relativePath -replace $file.Extension, ''
-            $relativePath = $relativePath.TrimStart($pathSeparator)
-            $relativePath = $relativePath -split $pathSeparator | ForEach-Object { "[$_]" }
+            $relativePath = [System.IO.Path]::GetRelativePath($ModuleOutputFolder, $file.FullName)
+            $relativePath = [System.IO.Path]::ChangeExtension($relativePath, $null).TrimEnd('.')
+            $relativePath = $relativePath.Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { "[$_]" }
             $relativePath = $relativePath -join ' - '
 
             Add-Content -Path $rootModuleFile -Force -Value @"

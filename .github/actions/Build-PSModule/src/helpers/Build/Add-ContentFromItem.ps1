@@ -1,4 +1,4 @@
-﻿function Add-ContentFromItem {
+function Add-ContentFromItem {
     <#
         .SYNOPSIS
         Add the content of a folder or file to the root module file.
@@ -22,13 +22,10 @@
         [Parameter(Mandatory)]
         [string] $RootPath
     )
-    # Get the path separator for the current OS
-    $pathSeparator = [System.IO.Path]::DirectorySeparatorChar
+    $separators = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
 
-    $relativeFolderPath = $Path -replace $RootPath, ''
-    $relativeFolderPath = $relativeFolderPath -replace $file.Extension, ''
-    $relativeFolderPath = $relativeFolderPath.TrimStart($pathSeparator)
-    $relativeFolderPath = $relativeFolderPath -split $pathSeparator | ForEach-Object { "[$_]" }
+    $relativeFolderPath = [System.IO.Path]::GetRelativePath($RootPath, $Path)
+    $relativeFolderPath = $relativeFolderPath.Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { "[$_]" }
     $relativeFolderPath = $relativeFolderPath -join ' - '
 
     Add-Content -Path $RootModuleFilePath -Force -Value @"
@@ -37,11 +34,11 @@ Write-Debug "[`$scriptName] - $relativeFolderPath - Processing folder"
 "@
 
     $files = $Path | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
+
     foreach ($file in $files) {
-        $relativeFilePath = $file.FullName -replace $RootPath, ''
-        $relativeFilePath = $relativeFilePath -replace $file.Extension, ''
-        $relativeFilePath = $relativeFilePath.TrimStart($pathSeparator)
-        $relativeFilePath = $relativeFilePath -split $pathSeparator | ForEach-Object { "[$_]" }
+        $relativeFilePath = [System.IO.Path]::GetRelativePath($RootPath, $file.FullName)
+        $relativeFilePath = [System.IO.Path]::ChangeExtension($relativeFilePath, $null).TrimEnd('.')
+        $relativeFilePath = $relativeFilePath.Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { "[$_]" }
         $relativeFilePath = $relativeFilePath -join ' - '
 
         Add-Content -Path $RootModuleFilePath -Force -Value @"
