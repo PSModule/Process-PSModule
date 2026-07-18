@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - '.github/actions/**'
       - '.github/workflows/**'
       - '!.github/workflows/Release.yml'
       - '!.github/workflows/Linter.yml'
@@ -43,4 +44,5 @@ jobs:
       ImportantFilePatterns: |
         ^src/
         ^README\.md$
+        ^\.github/actions/
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
