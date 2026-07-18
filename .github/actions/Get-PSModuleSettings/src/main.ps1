@@ -574,7 +574,9 @@ LogGroup 'Calculate Job Run Conditions:' {
         }) -Force
 
     $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Module.Skip) -Force
-    $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Module.Skip)) -Force
+    $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (
+        $shouldRunBuildTest -and (-not $settings.Build.Module.Skip)
+    ) -Force
     $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Docs.Skip) -Force
     $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Docs.Skip)) -Force
     $settings.Build.Site | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Site.Skip) -Force
