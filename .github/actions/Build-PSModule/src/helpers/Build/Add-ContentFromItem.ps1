@@ -20,11 +20,7 @@ function Add-ContentFromItem {
 
         # The root path of the module.
         [Parameter(Mandatory)]
-        [string] $RootPath,
-
-        # Whether the folder should be loaded using dependency ordering (class/enum aware).
-        [Parameter()]
-        [switch] $DependencyAware
+        [string] $RootPath
     )
     $separators = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
 
@@ -37,12 +33,7 @@ function Add-ContentFromItem {
 Write-Debug "[`$scriptName] - $relativeFolderPath - Processing folder"
 "@
 
-    if ($DependencyAware) {
-        $files = $Path | Get-ChildItem -Recurse -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
-        $files = Get-DependencyOrderedScriptFile -Files $files
-    } else {
-        $files = $Path | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
-    }
+    $files = $Path | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
 
     foreach ($file in $files) {
         $relativeFilePath = [System.IO.Path]::GetRelativePath($RootPath, $file.FullName)
@@ -61,11 +52,9 @@ Write-Debug "[`$scriptName] - $relativeFilePath - Done"
 "@
     }
 
-    if (-not $DependencyAware) {
-        $subFolders = $Path | Get-ChildItem -Directory -Force | Sort-Object -Property Name
-        foreach ($subFolder in $subFolders) {
-            Add-ContentFromItem -Path $subFolder.FullName -RootModuleFilePath $RootModuleFilePath -RootPath $RootPath
-        }
+    $subFolders = $Path | Get-ChildItem -Directory -Force | Sort-Object -Property Name
+    foreach ($subFolder in $subFolders) {
+        Add-ContentFromItem -Path $subFolder.FullName -RootModuleFilePath $RootModuleFilePath -RootPath $RootPath
     }
     Add-Content -Path $RootModuleFilePath -Force -Value @"
 Write-Debug "[`$scriptName] - $relativeFolderPath - Done"

@@ -10,14 +10,15 @@
 
         1. Module header from header.ps1 file. Usually to suppress code analysis warnings/errors and to add [CmdletBinding()] to the module.
         2. Data loader is added if data files are available.
-        3. Combines *.ps1 files from the following folders:
+        3. Combines *.ps1 files from the following folders in alphabetical order from each folder:
             1. init
-            2. classes (dependency-aware ordering for class/enum references)
-            3. functions/private
-            4. functions/public
-            5. variables/private
-            6. variables/public
-            7. Any remaining *.ps1 on module root.
+            2. classes/private
+            3. classes/public
+            4. functions/private
+            5. functions/public
+            6. variables/private
+            7. variables/public
+            8. Any remaining *.ps1 on module root.
         4. Adds a class loader for classes found in the classes/public folder.
         5. Export-ModuleMember by using the functions, cmdlets, variables and aliases found in the source files.
             - `Functions` will only contain functions that are from the `functions/public` folder.
@@ -174,7 +175,8 @@ Write-Debug "[$scriptName] - [data] - Done"
         #region - Add content from subfolders
         $scriptFoldersToProcess = @(
             'init',
-            'classes',
+            'classes/private',
+            'classes/public',
             'functions/private',
             'functions/public',
             'variables/private',
@@ -182,18 +184,11 @@ Write-Debug "[$scriptName] - [data] - Done"
         )
 
         foreach ($scriptFolder in $scriptFoldersToProcess) {
-            $dependencyAware = $scriptFolder -eq 'classes'
             $scriptFolderPath = Join-Path -Path $ModuleOutputFolder -ChildPath $scriptFolder
             if (-not (Test-Path -Path $scriptFolderPath)) {
                 continue
             }
-            $addContentParams = @{
-                Path               = $scriptFolderPath
-                RootModuleFilePath = $rootModuleFile
-                RootPath           = $ModuleOutputFolder
-                DependencyAware    = $dependencyAware
-            }
-            Add-ContentFromItem @addContentParams
+            Add-ContentFromItem -Path $scriptFolderPath -RootModuleFilePath $rootModuleFile -RootPath $ModuleOutputFolder
             Remove-Item -Path $scriptFolderPath -Force -Recurse
         }
         #endregion - Add content from subfolders
