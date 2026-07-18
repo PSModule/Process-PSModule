@@ -375,13 +375,6 @@ if ($settings.Test.Skip) {
     $sourceCodeTestSuites = $null
     $psModuleTestSuites = $null
     $moduleTestSuites = $null
-
-    # Add TestSuites to settings
-    $settings | Add-Member -MemberType NoteProperty -Name TestSuites -Value ([pscustomobject]@{
-            SourceCode = $null
-            PSModule   = $null
-            Module     = $null
-        })
 } else {
 
     # Define test configurations as an array of hashtables.
@@ -529,13 +522,12 @@ if ($settings.Test.Skip) {
         $moduleTestSuites | Format-Table -AutoSize | Out-String
     }
 
-    # Add TestSuites to settings
-    $settings | Add-Member -MemberType NoteProperty -Name TestSuites -Value ([pscustomobject]@{
-            SourceCode = $sourceCodeTestSuites
-            PSModule   = $psModuleTestSuites
-            Module     = $moduleTestSuites
-        })
 }
+
+# Keep test suites with each test phase that owns them.
+$settings.Test.SourceCode | Add-Member -MemberType NoteProperty -Name Suites -Value $sourceCodeTestSuites -Force
+$settings.Test.PSModule | Add-Member -MemberType NoteProperty -Name Suites -Value $psModuleTestSuites -Force
+$settings.Test.Module | Add-Member -MemberType NoteProperty -Name Suites -Value $moduleTestSuites -Force
 
 # Calculate job-specific conditions and add to settings
 LogGroup 'Calculate Job Run Conditions:' {
@@ -565,32 +557,77 @@ LogGroup 'Calculate Job Run Conditions:' {
     Write-Host "  tests/BeforeAll.ps1 exists: $hasBeforeAllScript"
     Write-Host "  tests/AfterAll.ps1 exists:  $hasAfterAllScript"
 
-    # Create Run object with all job-specific conditions
-    $run = [pscustomobject]@{
-        LintRepository       = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
-        BuildModule          = $shouldRunBuildTest -and (-not $settings.Build.Module.Skip)
-        TestSourceCode       = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.SourceCode)
-        LintSourceCode       = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.SourceCode)
-        TestModule           = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.PSModule)
-        BeforeAllModuleLocal = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module) -and $hasBeforeAllScript
-        TestModuleLocal      = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module)
-        AfterAllModuleLocal  = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module) -and $hasAfterAllScript
-        GetTestResults       = $shouldRunBuildTest -and (-not $settings.Test.TestResults.Skip) -and (
-            ($null -ne $settings.TestSuites.SourceCode) -or ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
+    $sourceCodeEnabled = $shouldRunBuildTest -and ($null -ne $settings.Test.SourceCode.Suites)
+    $psModuleEnabled = $shouldRunBuildTest -and ($null -ne $settings.Test.PSModule.Suites)
+    $moduleLocalEnabled = $shouldRunBuildTest -and ($null -ne $settings.Test.Module.Suites)
+    $beforeAllEnabled = $moduleLocalEnabled -and $hasBeforeAllScript
+    $afterAllEnabled = $moduleLocalEnabled -and $hasAfterAllScript
+
+    # Keep desired/computed execution state with each phase.
+    $settings.Linter | Add-Member -MemberType NoteProperty -Name Repository -Value ([pscustomobject]@{
+            Desired = -not $settings.Linter.Skip
+            Enabled = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
+        }) -Force
+    $settings.Linter | Add-Member -MemberType NoteProperty -Name SourceCode -Value ([pscustomobject]@{
+            Desired = -not $settings.Test.SourceCode.Skip
+            Enabled = $sourceCodeEnabled
+        }) -Force
+
+    $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Module.Skip) -Force
+    $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Module.Skip)) -Force
+    $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Docs.Skip) -Force
+    $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Docs.Skip)) -Force
+    $settings.Build.Site | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Site.Skip) -Force
+    $settings.Build.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Site.Skip)) -Force
+
+    $settings.Test.SourceCode | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.SourceCode.Skip) -Force
+    $settings.Test.SourceCode | Add-Member -MemberType NoteProperty -Name Enabled -Value $sourceCodeEnabled -Force
+    $settings.Test.PSModule | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.PSModule.Skip) -Force
+    $settings.Test.PSModule | Add-Member -MemberType NoteProperty -Name Enabled -Value $psModuleEnabled -Force
+    $settings.Test.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.Module.Skip) -Force
+    $settings.Test.Module | Add-Member -MemberType NoteProperty -Name BeforeAllEnabled -Value $beforeAllEnabled -Force
+    $settings.Test.Module | Add-Member -MemberType NoteProperty -Name MainEnabled -Value $moduleLocalEnabled -Force
+    $settings.Test.Module | Add-Member -MemberType NoteProperty -Name AfterAllEnabled -Value $afterAllEnabled -Force
+
+    $settings.Test.TestResults | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.TestResults.Skip) -Force
+    $settings.Test.TestResults | Add-Member -MemberType NoteProperty -Name Enabled -Value (
+        $shouldRunBuildTest -and (-not $settings.Test.TestResults.Skip) -and (
+            ($null -ne $settings.Test.SourceCode.Suites) -or ($null -ne $settings.Test.PSModule.Suites) -or ($null -ne $settings.Test.Module.Suites)
         )
-        GetCodeCoverage      = $shouldRunBuildTest -and (-not $settings.Test.CodeCoverage.Skip) -and (
-            ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
+    ) -Force
+    $settings.Test.CodeCoverage | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.CodeCoverage.Skip) -Force
+    $settings.Test.CodeCoverage | Add-Member -MemberType NoteProperty -Name Enabled -Value (
+        $shouldRunBuildTest -and (-not $settings.Test.CodeCoverage.Skip) -and (
+            ($null -ne $settings.Test.PSModule.Suites) -or ($null -ne $settings.Test.Module.Suites)
         )
-        PublishModule        = ($releaseType -ne 'None') -or $shouldAutoCleanup
-        BuildDocs            = $shouldRunBuildTest -and (-not $settings.Build.Docs.Skip)
-        BuildSite            = $shouldRunBuildTest -and (-not $settings.Build.Site.Skip)
-        PublishSite          = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
-    }
-    $settings | Add-Member -MemberType NoteProperty -Name Run -Value $run
+    ) -Force
+
+    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
+    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
+    $settings.Publish | Add-Member -MemberType NoteProperty -Name Site -Value ([pscustomobject]@{
+            Desired = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
+            Enabled = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
+        }) -Force
+
     $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasImportantChanges
 
-    Write-Host 'Job Run Conditions:'
-    $run | Format-List | Out-String
+    Write-Host 'Phase execution state:'
+    [pscustomobject]@{
+        LintRepository       = $settings.Linter.Repository.Enabled
+        BuildModule          = $settings.Build.Module.Enabled
+        TestSourceCode       = $settings.Test.SourceCode.Enabled
+        LintSourceCode       = $settings.Linter.SourceCode.Enabled
+        TestModule           = $settings.Test.PSModule.Enabled
+        BeforeAllModuleLocal = $settings.Test.Module.BeforeAllEnabled
+        TestModuleLocal      = $settings.Test.Module.MainEnabled
+        AfterAllModuleLocal  = $settings.Test.Module.AfterAllEnabled
+        GetTestResults       = $settings.Test.TestResults.Enabled
+        GetCodeCoverage      = $settings.Test.CodeCoverage.Enabled
+        PublishModule        = $settings.Publish.Module.Enabled
+        BuildDocs            = $settings.Build.Docs.Enabled
+        BuildSite            = $settings.Build.Site.Enabled
+        PublishSite          = $settings.Publish.Site.Enabled
+    } | Format-List | Out-String
 }
 
 LogGroup 'Final settings' {

@@ -220,51 +220,6 @@
         }
       }
     },
-    "TestSuites": {
-      "type": "object",
-      "description": "Test suite configurations",
-      "properties": {
-        "SourceCode": {
-          "oneOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/testSuite"
-              }
-            }
-          ]
-        },
-        "PSModule": {
-          "oneOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/testSuite"
-              }
-            }
-          ]
-        },
-        "Module": {
-          "oneOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/moduleTestSuite"
-              }
-            }
-          ]
-        }
-      }
-    },
     "SettingsPath": {
       "type": "string",
       "description": "Path to the settings file"
@@ -306,66 +261,8 @@
       "description": "Indicates if important files have changed in the PR (src/**, examples/**, README.md, .github/workflows/Process-PSModule.yml)"
     },
     "Run": {
-      "type": "object",
-      "description": "Runtime execution flags",
-      "properties": {
-        "LintRepository": {
-          "type": "boolean",
-          "description": "Run repository linting"
-        },
-        "BuildModule": {
-          "type": "boolean",
-          "description": "Build the module"
-        },
-        "TestSourceCode": {
-          "type": "boolean",
-          "description": "Test source code"
-        },
-        "LintSourceCode": {
-          "type": "boolean",
-          "description": "Lint source code"
-        },
-        "TestModule": {
-          "type": "boolean",
-          "description": "Test the module"
-        },
-        "BeforeAllModuleLocal": {
-          "type": "boolean",
-          "description": "Run before all module local tests"
-        },
-        "TestModuleLocal": {
-          "type": "boolean",
-          "description": "Test module locally"
-        },
-        "AfterAllModuleLocal": {
-          "type": "boolean",
-          "description": "Run after all module local tests"
-        },
-        "GetTestResults": {
-          "type": "boolean",
-          "description": "Collect test results"
-        },
-        "GetCodeCoverage": {
-          "type": "boolean",
-          "description": "Collect code coverage"
-        },
-        "PublishModule": {
-          "type": "boolean",
-          "description": "Publish the module"
-        },
-        "BuildDocs": {
-          "type": "boolean",
-          "description": "Build documentation"
-        },
-        "BuildSite": {
-          "type": "boolean",
-          "description": "Build the site"
-        },
-        "PublishSite": {
-          "type": "boolean",
-          "description": "Publish the site"
-        }
-      }
+      "type": "null",
+      "description": "Deprecated. Runtime execution flags are now stored on each phase object."
     }
   },
   "definitions": {
