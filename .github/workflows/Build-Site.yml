@@ -39,13 +39,10 @@ jobs:
           name: docs
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
 
-      - name: Install mkdocs-material
+      - name: Install Zensical
         shell: pwsh
         run: |
-          pip install mkdocs-material
-          pip install mkdocs-git-authors-plugin
-          pip install mkdocs-git-revision-date-localized-plugin
-          pip install mkdocs-git-committers-plugin-2
+          pip install zensical
 
       - name: Structure site
         uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
@@ -111,49 +108,58 @@ jobs:
                 Write-Host "Readme Target Path:   $readmeTargetPath"
             }
 
-            LogGroup 'Build docs - Create mkdocs.yml' {
+            LogGroup 'Build docs - Create docs config' {
                 $rootPath = Split-Path -Path $ModuleSourcePath -Parent
                 $possiblePaths = @(
-                    '.github/mkdocs.yml',
-                    'docs/mkdocs.yml',
-                    'mkdocs.yml'
+                    '.github/zensical.toml',
+                    'docs/zensical.toml',
+                    'zensical.toml'
                 )
 
-                $mkdocsSourcePath = $null
+                $docsConfigSourcePath = $null
                 foreach ($path in $possiblePaths) {
                     $candidatePath = Join-Path -Path $rootPath -ChildPath $path
                     if (Test-Path -Path $candidatePath) {
-                        $mkdocsSourcePath = $candidatePath
+                        $docsConfigSourcePath = $candidatePath
                         break
                     }
                 }
 
-                if (-not $mkdocsSourcePath) {
-                    throw "Mkdocs source file not found in any of the expected locations: $($possiblePaths -join ', ')"
+                if (-not $docsConfigSourcePath) {
+                    throw "Documentation config file not found. Expected one of: $($possiblePaths -join ', ')"
                 }
 
-                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
+                $docsConfigFileName = [System.IO.Path]::GetFileName($docsConfigSourcePath)
+                $docsConfigTargetPath = Join-Path -Path $SiteOutputPath -ChildPath $docsConfigFileName
 
-                Write-Host "Mkdocs Source Path:   $mkdocsSourcePath"
-                Write-Host "Mkdocs Target Path:   $mkdocsTargetPath"
+                Write-Host "Docs Config Source:   $docsConfigSourcePath"
+                Write-Host "Docs Config Target:   $docsConfigTargetPath"
 
-                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
-                Show-FileContent -Path $mkdocsTargetPath
+                $docsConfigContent = Get-Content -Path $docsConfigSourcePath -Raw
+                $docsConfigContent = $docsConfigContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
+                $docsConfigContent = $docsConfigContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+                $docsConfigContent | Set-Content -Path $docsConfigTargetPath -Force
+
+                Write-Host "Build Config Type:    $docsConfigFileName"
+                Show-FileContent -Path $docsConfigTargetPath
             }
 
-      - name: Build mkdocs-material project
+      - name: Build documentation site with Zensical
         working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/site
         shell: pwsh
         run: |
-          LogGroup 'Build docs - mkdocs build - content' {
-            Show-FileContent -Path mkdocs.yml
+          if (-not (Test-Path -Path 'zensical.toml')) {
+            throw "No documentation config file found in outputs/site. Expected zensical.toml."
+          }
+          $configFile = 'zensical.toml'
+
+          LogGroup 'Build docs - Zensical config content' {
+            Write-Host "Using config: $configFile"
+            Show-FileContent -Path $configFile
           }
 
-          LogGroup 'Build docs - mkdocs build' {
-            mkdocs build --config-file mkdocs.yml --site-dir ../../_site
+          LogGroup 'Build docs - Zensical build' {
+            zensical build --config-file $configFile --site-dir ../../_site
           }
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
