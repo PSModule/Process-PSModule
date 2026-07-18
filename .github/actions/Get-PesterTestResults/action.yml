@@ -15,6 +15,10 @@ inputs:
   ModuleTestSuites:
     description: The test suites to run for the module.
     required: true
+  BeforeAllModuleLocalResult:
+    description: The workflow result for the BeforeAll-ModuleLocal job.
+    required: false
+    default: skipped
   Debug:
     description: Enable debug output.
     required: false
@@ -44,6 +48,7 @@ runs:
         PSMODULE_GET_PESTERTESTRESULTS_INPUT_SourceCodeTestSuites: ${{ inputs.SourceCodeTestSuites }}
         PSMODULE_GET_PESTERTESTRESULTS_INPUT_PSModuleTestSuites: ${{ inputs.PSModuleTestSuites }}
         PSMODULE_GET_PESTERTESTRESULTS_INPUT_ModuleTestSuites: ${{ inputs.ModuleTestSuites }}
+        PSMODULE_GET_PESTERTESTRESULTS_INPUT_BeforeAllModuleLocalResult: ${{ inputs.BeforeAllModuleLocalResult }}
       with:
         Name: Get-PesterTestResults
         Debug: ${{ inputs.Debug }}

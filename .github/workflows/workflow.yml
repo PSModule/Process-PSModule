@@ -186,17 +186,18 @@ jobs:
       Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
-  # - ✅ Open/Updated PR - Runs teardown scripts after local module tests
-  # - ✅ Merged PR       - Runs teardown scripts after local module tests
-  # - ✅ Abandoned PR    - Runs teardown if tests were started (cleanup)
-  # - ✅ Manual run      - Runs teardown scripts after local module tests
+  # - ✅ Open/Updated PR - Runs teardown scripts after local module setup/tests
+  # - ✅ Merged PR       - Runs teardown scripts after local module setup/tests
+  # - ✅ Abandoned PR    - Runs teardown if local module setup/tests were started (cleanup)
+  # - ✅ Manual run      - Runs teardown scripts after local module setup/tests
   AfterAll-ModuleLocal:
-    if: fromJson(needs.Plan.outputs.Settings).Run.AfterAllModuleLocal && needs.Test-ModuleLocal.result != 'skipped' && always()
+    if: fromJson(needs.Plan.outputs.Settings).Run.AfterAllModuleLocal && needs.BeforeAll-ModuleLocal.result != 'skipped' && always()
     uses: ./.github/workflows/AfterAll-ModuleLocal.yml
     secrets:
       TestData: ${{ secrets.TestData }}
     needs:
       - Plan
+      - BeforeAll-ModuleLocal
       - Test-ModuleLocal
     with:
       Settings: ${{ needs.Plan.outputs.Settings }}
@@ -213,10 +214,12 @@ jobs:
       - Test-SourceCode
       - Lint-SourceCode
       - Test-Module
+      - BeforeAll-ModuleLocal
       - Test-ModuleLocal
     uses: ./.github/workflows/Get-TestResults.yml
     with:
       Settings: ${{ needs.Plan.outputs.Settings }}
+      BeforeAllModuleLocalResult: ${{ needs.BeforeAll-ModuleLocal.result }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Calculates and reports code coverage

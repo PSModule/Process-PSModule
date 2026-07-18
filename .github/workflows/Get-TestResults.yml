@@ -7,6 +7,11 @@ on:
         type: string
         description: The complete settings object including test suites.
         required: true
+      BeforeAllModuleLocalResult:
+        type: string
+        description: The workflow result for the BeforeAll-ModuleLocal job.
+        required: false
+        default: skipped
 
 permissions:
   contents: read # to checkout the repo
@@ -31,6 +36,7 @@ jobs:
           SourceCodeTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.SourceCode) }}
           PSModuleTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.PSModule) }}
           ModuleTestSuites: ${{ toJSON(fromJson(inputs.Settings).TestSuites.Module) }}
+          BeforeAllModuleLocalResult: ${{ inputs.BeforeAllModuleLocalResult }}
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}

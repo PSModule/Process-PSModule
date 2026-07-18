@@ -18,6 +18,7 @@ or missing results. It supports three categories of test suites: Source Code, PS
 | `SourceCodeTestSuites`  | JSON array specifying OS names for Source Code test suites. Example: `[{"OSName": "Windows"}]`                                | Yes      |           |
 | `PSModuleTestSuites`    | JSON array specifying OS names for PSModule test suites. Example: `[{"OSName": "Linux"}]`                                     | Yes      |           |
 | `ModuleTestSuites`      | JSON array specifying TestName and OSName for Module test suites. Example: `[{"TestName": "Integration", "OSName": "MacOS"}]` | Yes      |           |
+| `BeforeAllModuleLocalResult` | Workflow result for the `BeforeAll-ModuleLocal` job (`success`, `failure`, `skipped`).                                  | No       | `skipped` |
 | `Debug`                 | Enable debug output (`true`/`false`).                                                                                         | No       | `false`   |
 | `Verbose`               | Enable verbose output (`true`/`false`).                                                                                       | No       | `false`   |
 | `Version`               | Exact version of the GitHub module to install (e.g., `1.0.0`).                                                                | No       | Latest    |
@@ -50,5 +51,6 @@ This action does not define explicit outputs. Instead:
 - **Test Suite Inputs**: Must be valid JSON arrays.
   - `SourceCodeTestSuites` and `PSModuleTestSuites` require `OSName`.
   - `ModuleTestSuites` requires both `TestName` and `OSName`.
+- **BeforeAll module-local failures**: When `BeforeAllModuleLocalResult` is `failure`, the action exits immediately and reports the setup failure as the root cause.
 - **Artifact Names**: The action expects artifacts named `*-TestResults` containing Pester JSON reports.
 - **Failure Conditions**: The action fails if tests are unexecuted, explicitly failed, or if result files are missing.
