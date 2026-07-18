@@ -10,15 +10,14 @@
 
         1. Module header from header.ps1 file. Usually to suppress code analysis warnings/errors and to add [CmdletBinding()] to the module.
         2. Data loader is added if data files are available.
-        3. Combines *.ps1 files from the following folders in alphabetical order from each folder:
+        3. Combines *.ps1 files from the following folders:
             1. init
-            2. classes/private
-            3. classes/public
-            4. functions/private
-            5. functions/public
-            6. variables/private
-            7. variables/public
-            8. Any remaining *.ps1 on module root.
+            2. classes (dependency-aware ordering for class/enum references)
+            3. functions/private
+            4. functions/public
+            5. variables/private
+            6. variables/public
+            7. Any remaining *.ps1 on module root.
         4. Adds a class loader for classes found in the classes/public folder.
         5. Export-ModuleMember by using the functions, cmdlets, variables and aliases found in the source files.
             - `Functions` will only contain functions that are from the `functions/public` folder.
@@ -48,8 +47,7 @@
         [System.IO.DirectoryInfo] $ModuleOutputFolder
     )
 
-    # Get the path separator for the current OS
-    $pathSeparator = [System.IO.Path]::DirectorySeparatorChar
+    $separators = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
 
     Set-GitHubLogGroup 'Build root module' {
         $rootModuleFile = New-Item -Path $ModuleOutputFolder -Name "$ModuleName.psm1" -Force
@@ -176,8 +174,7 @@ Write-Debug "[$scriptName] - [data] - Done"
         #region - Add content from subfolders
         $scriptFoldersToProcess = @(
             'init',
-            'classes/private',
-            'classes/public',
+            'classes',
             'functions/private',
             'functions/public',
             'variables/private',
@@ -185,22 +182,22 @@ Write-Debug "[$scriptName] - [data] - Done"
         )
 
         foreach ($scriptFolder in $scriptFoldersToProcess) {
-            $scriptFolder = Join-Path -Path $ModuleOutputFolder -ChildPath $scriptFolder
-            if (-not (Test-Path -Path $scriptFolder)) {
+            $dependencyAware = $scriptFolder -eq 'classes'
+            $scriptFolderPath = Join-Path -Path $ModuleOutputFolder -ChildPath $scriptFolder
+            if (-not (Test-Path -Path $scriptFolderPath)) {
                 continue
             }
-            Add-ContentFromItem -Path $scriptFolder -RootModuleFilePath $rootModuleFile -RootPath $ModuleOutputFolder
-            Remove-Item -Path $scriptFolder -Force -Recurse
+            Add-ContentFromItem -Path $scriptFolderPath -RootModuleFilePath $rootModuleFile -RootPath $ModuleOutputFolder -DependencyAware:$dependencyAware
+            Remove-Item -Path $scriptFolderPath -Force -Recurse
         }
         #endregion - Add content from subfolders
 
         #region - Add content from *.ps1 files on module root
         $files = $ModuleOutputFolder | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
         foreach ($file in $files) {
-            $relativePath = $file.FullName -replace $ModuleOutputFolder, ''
-            $relativePath = $relativePath -replace $file.Extension, ''
-            $relativePath = $relativePath.TrimStart($pathSeparator)
-            $relativePath = $relativePath -split $pathSeparator | ForEach-Object { "[$_]" }
+            $relativePath = [System.IO.Path]::GetRelativePath($ModuleOutputFolder, $file.FullName)
+            $relativePath = [System.IO.Path]::ChangeExtension($relativePath, $null).TrimEnd('.')
+            $relativePath = $relativePath.Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { "[$_]" }
             $relativePath = $relativePath -join ' - '
 
             Add-Content -Path $rootModuleFile -Force -Value @"

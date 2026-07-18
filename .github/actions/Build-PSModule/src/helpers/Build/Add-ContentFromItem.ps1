@@ -1,4 +1,103 @@
-﻿function Add-ContentFromItem {
+function Get-DependencyOrderedScriptFiles {
+    [OutputType([System.IO.FileInfo[]])]
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [System.IO.FileInfo[]] $Files
+    )
+
+    $sortedFiles = $Files | Sort-Object -Property FullName
+    if ($sortedFiles.Count -le 1) {
+        return $sortedFiles
+    }
+
+    $metadataByPath = @{}
+    $typeToPath = @{}
+    $duplicateTypes = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+    foreach ($file in $sortedFiles) {
+        $content = Get-Content -Path $file.FullName -Raw
+        $declaredTypes = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        [Regex]::Matches($content, '(?im)^\s*(class|enum)\s+([^\s:{]+)') | ForEach-Object {
+            [void] $declaredTypes.Add($_.Groups[2].Value)
+        }
+
+        $metadataByPath[$file.FullName] = [pscustomobject]@{
+            File          = $file
+            Content       = $content
+            DeclaredTypes = $declaredTypes
+        }
+
+        foreach ($typeName in $declaredTypes) {
+            if ($typeToPath.ContainsKey($typeName)) {
+                [void]$duplicateTypes.Add($typeName)
+                continue
+            }
+
+            $typeToPath[$typeName] = $file.FullName
+        }
+    }
+
+    $dependenciesByPath = @{}
+    $dependentsByPath = @{}
+    foreach ($file in $sortedFiles) {
+        $dependenciesByPath[$file.FullName] = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $dependentsByPath[$file.FullName] = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    }
+
+    foreach ($metadata in $metadataByPath.Values) {
+        foreach ($typeName in $typeToPath.Keys) {
+            if ($duplicateTypes.Contains($typeName)) {
+                continue
+            }
+
+            if ($metadata.DeclaredTypes.Contains($typeName)) {
+                continue
+            }
+
+            $typePattern = "(?<![\w\.])\[$([Regex]::Escape($typeName))\](?![\w\.])"
+            if ([Regex]::IsMatch($metadata.Content, $typePattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)) {
+                $dependencyPath = $typeToPath[$typeName]
+                [void]$dependenciesByPath[$metadata.File.FullName].Add($dependencyPath)
+                [void]$dependentsByPath[$dependencyPath].Add($metadata.File.FullName)
+            }
+        }
+    }
+
+    $remainingPaths = @($sortedFiles.FullName)
+    $ready = @(
+        $remainingPaths |
+        Where-Object { $dependenciesByPath[$_].Count -eq 0 } |
+        Sort-Object
+    )
+    $orderedPaths = [System.Collections.Generic.List[string]]::new()
+
+    while ($ready.Count -gt 0) {
+        $currentPath = $ready[0]
+        $ready = @($ready | Select-Object -Skip 1)
+        $orderedPaths.Add($currentPath)
+        $remainingPaths = @($remainingPaths | Where-Object { $_ -ne $currentPath })
+
+        $dependents = @($dependentsByPath[$currentPath] | Sort-Object)
+        foreach ($dependentPath in $dependents) {
+            $null = $dependenciesByPath[$dependentPath].Remove($currentPath)
+            if ($dependenciesByPath[$dependentPath].Count -eq 0) {
+                $ready = @($ready + $dependentPath | Sort-Object -Unique)
+            }
+        }
+    }
+
+    if ($orderedPaths.Count -lt $sortedFiles.Count) {
+        Write-Warning "Detected cyclical or unresolved class/enum dependencies. Falling back to lexical order for remaining files in [$($sortedFiles[0].DirectoryName)]."
+        $remainingPaths | Sort-Object | ForEach-Object {
+            $orderedPaths.Add($_)
+        }
+    }
+
+    return @($orderedPaths | ForEach-Object { $metadataByPath[$_].File })
+}
+
+function Add-ContentFromItem {
     <#
         .SYNOPSIS
         Add the content of a folder or file to the root module file.
@@ -20,15 +119,16 @@
 
         # The root path of the module.
         [Parameter(Mandatory)]
-        [string] $RootPath
-    )
-    # Get the path separator for the current OS
-    $pathSeparator = [System.IO.Path]::DirectorySeparatorChar
+        [string] $RootPath,
 
-    $relativeFolderPath = $Path -replace $RootPath, ''
-    $relativeFolderPath = $relativeFolderPath -replace $file.Extension, ''
-    $relativeFolderPath = $relativeFolderPath.TrimStart($pathSeparator)
-    $relativeFolderPath = $relativeFolderPath -split $pathSeparator | ForEach-Object { "[$_]" }
+        # Whether the folder should be loaded using dependency ordering (class/enum aware).
+        [Parameter()]
+        [switch] $DependencyAware
+    )
+    $separators = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+
+    $relativeFolderPath = [System.IO.Path]::GetRelativePath($RootPath, $Path)
+    $relativeFolderPath = $relativeFolderPath.Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { "[$_]" }
     $relativeFolderPath = $relativeFolderPath -join ' - '
 
     Add-Content -Path $RootModuleFilePath -Force -Value @"
@@ -36,12 +136,17 @@
 Write-Debug "[`$scriptName] - $relativeFolderPath - Processing folder"
 "@
 
-    $files = $Path | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
+    if ($DependencyAware) {
+        $files = $Path | Get-ChildItem -Recurse -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
+        $files = Get-DependencyOrderedScriptFiles -Files $files
+    } else {
+        $files = $Path | Get-ChildItem -File -Force -Filter '*.ps1' | Sort-Object -Property FullName
+    }
+
     foreach ($file in $files) {
-        $relativeFilePath = $file.FullName -replace $RootPath, ''
-        $relativeFilePath = $relativeFilePath -replace $file.Extension, ''
-        $relativeFilePath = $relativeFilePath.TrimStart($pathSeparator)
-        $relativeFilePath = $relativeFilePath -split $pathSeparator | ForEach-Object { "[$_]" }
+        $relativeFilePath = [System.IO.Path]::GetRelativePath($RootPath, $file.FullName)
+        $relativeFilePath = [System.IO.Path]::ChangeExtension($relativeFilePath, $null).TrimEnd('.')
+        $relativeFilePath = $relativeFilePath.Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { "[$_]" }
         $relativeFilePath = $relativeFilePath -join ' - '
 
         Add-Content -Path $RootModuleFilePath -Force -Value @"
@@ -55,9 +160,11 @@ Write-Debug "[`$scriptName] - $relativeFilePath - Done"
 "@
     }
 
-    $subFolders = $Path | Get-ChildItem -Directory -Force | Sort-Object -Property Name
-    foreach ($subFolder in $subFolders) {
-        Add-ContentFromItem -Path $subFolder.FullName -RootModuleFilePath $RootModuleFilePath -RootPath $RootPath
+    if (-not $DependencyAware) {
+        $subFolders = $Path | Get-ChildItem -Directory -Force | Sort-Object -Property Name
+        foreach ($subFolder in $subFolders) {
+            Add-ContentFromItem -Path $subFolder.FullName -RootModuleFilePath $RootModuleFilePath -RootPath $RootPath
+        }
     }
     Add-Content -Path $RootModuleFilePath -Force -Value @"
 Write-Debug "[`$scriptName] - $relativeFolderPath - Done"
