@@ -7,7 +7,7 @@ Import-Module -Name 'Helpers' -Force
 
 #region Load inputs
 LogGroup 'Load inputs' {
-    $whatIf = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf -eq 'true'
+    $whatIf = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf -eq 'true'
 
     $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
     $githubEvent = $githubEventJson | ConvertFrom-Json
@@ -27,7 +27,7 @@ LogGroup 'Load inputs' {
     Write-Host "Prerelease name:  [$prereleaseName]"
     Write-Host "WhatIf:           [$whatIf]"
 
-    $publishedReleaseTag = $env:PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag
+    $publishedReleaseTag = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag
     if (-not [string]::IsNullOrWhiteSpace($publishedReleaseTag)) {
         Write-Host "Published tag:    [$publishedReleaseTag] (excluded from cleanup)"
     }

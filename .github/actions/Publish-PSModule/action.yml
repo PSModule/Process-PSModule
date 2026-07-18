@@ -7,20 +7,12 @@ inputs:
     description: Name of the module to publish.
     required: false
   ModulePath:
-    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule. Required only when ReleaseType is not None.
+    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
     required: false
     default: outputs/module
-  ReleaseType:
-    description: Resolved release type from settings (Release, Prerelease, None). Used to control prerelease cleanup behavior.
-    required: false
-    default: None
   APIKey:
     description: PowerShell Gallery API Key.
     required: true
-  AutoCleanup:
-    description: Control whether to automatically delete the prerelease tags after the stable release is created.
-    required: false
-    default: 'true'
   WhatIf:
     description: If specified, the action will only log the changes it would make, but will not actually create or delete any releases or tags.
     required: false
@@ -58,14 +50,12 @@ runs:
         Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Repository PSGallery -TrustRepository
 
     - name: Download module artifact
-      if: inputs.ReleaseType != 'None'
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         name: ${{ inputs.ArtifactName }}
         path: ${{ inputs.ModulePath }}
 
     - name: Publish Module
-      if: inputs.ReleaseType != 'None'
       shell: pwsh
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
@@ -77,14 +67,3 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
       run: ${{ github.action_path }}/src/publish.ps1
-
-    - name: Cleanup Prereleases
-      if: inputs.ReleaseType != 'Prerelease' && (inputs.AutoCleanup == 'true' || inputs.WhatIf == 'true')
-      shell: pwsh
-      working-directory: ${{ inputs.WorkingDirectory }}
-      env:
-        PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
-        PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag: ${{ env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag }}
-      run: |
-        # Cleanup prerelease tags
-        ${{ github.action_path }}/src/cleanup.ps1
