@@ -15,4 +15,4 @@ runs:
   steps:
     - name: Inject site scripts
       shell: pwsh
-      run: '& "${{ github.action_path }}/src/inject-site-scripts.ps1" -SitePath "${{ inputs.SitePath }}" -WorkflowPath "${{ inputs.WorkflowPath }}"'
+      run: '& "${{ github.action_path }}/src/main.ps1" -SitePath "${{ inputs.SitePath }}" -WorkflowPath "${{ inputs.WorkflowPath }}"'

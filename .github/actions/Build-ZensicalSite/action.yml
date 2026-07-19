@@ -11,4 +11,4 @@ runs:
   steps:
     - name: Build documentation site
       shell: pwsh
-      run: '& "${{ github.action_path }}/src/build-zensical-site.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}"'
+      run: '& "${{ github.action_path }}/src/main.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}"'

@@ -15,4 +15,4 @@ runs:
   steps:
     - name: Structure site content and config
       shell: pwsh
-      run: '& "${{ github.action_path }}/src/structure-site.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}" -Name "${{ inputs.Name }}"'
+      run: '& "${{ github.action_path }}/src/main.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}" -Name "${{ inputs.Name }}"'
