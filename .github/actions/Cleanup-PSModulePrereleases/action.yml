@@ -29,6 +29,4 @@ runs:
       env:
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf: ${{ inputs.WhatIf }}
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag }}
-      run: |
-        # Cleanup prerelease tags
-        ${{ github.action_path }}/src/cleanup.ps1
+      run: ${{ github.action_path }}/src/cleanup.ps1
