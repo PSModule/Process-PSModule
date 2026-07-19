@@ -16,8 +16,8 @@
 
     const topLevelToggles = Array.from(
       primaryList.querySelectorAll(
-        ":scope > li > input.md-nav__toggle.md-toggle[id]"
-      )
+        ":scope > li > input.md-nav__toggle.md-toggle[id]",
+      ),
     );
     const topLevelIds = new Set(topLevelToggles.map((toggle) => toggle.id));
 
@@ -36,7 +36,7 @@
     try {
       const state = JSON.parse(raw);
       for (const toggle of toggles) {
-        if (Object.prototype.hasOwnProperty.call(state, toggle.id)) {
+        if (Object.hasOwn(state, toggle.id)) {
           toggle.checked = !!state[toggle.id];
         }
       }
