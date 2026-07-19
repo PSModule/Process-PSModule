@@ -1,0 +1,14 @@
+name: Build-ZensicalSite
+description: Build Zensical site output and normalize output folder.
+
+inputs:
+  WorkingDirectory:
+    description: Working directory for the repository build.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Build documentation site
+      shell: pwsh
+      run: '& "${{ github.action_path }}/src/build-zensical-site.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}"'

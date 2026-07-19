@@ -1,0 +1,9 @@
+name: Install-Zensical
+description: Install Zensical CLI used for documentation site generation.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Zensical CLI
+      shell: pwsh
+      run: '& "${{ github.action_path }}/src/install-zensical.ps1"'
