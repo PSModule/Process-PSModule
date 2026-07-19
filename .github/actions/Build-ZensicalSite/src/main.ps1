@@ -1,7 +1,25 @@
 #Requires -Version 7.0
 
+<#
+    .SYNOPSIS
+    Builds the Zensical site and normalizes output to the expected _site path.
+
+    .DESCRIPTION
+    Runs zensical build from outputs/site and moves the generated _site directory
+    to <WorkingDirectory>/_site for downstream workflow steps.
+
+    .EXAMPLE
+    ./main.ps1 -WorkingDirectory '.'
+
+    .INPUTS
+    None.
+
+    .OUTPUTS
+    None.
+#>
 [CmdletBinding()]
 param(
+    # Build working directory containing outputs/site and destination _site.
     [Parameter(Mandatory)]
     [string]$WorkingDirectory
 )

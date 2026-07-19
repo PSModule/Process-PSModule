@@ -1,10 +1,29 @@
 #Requires -Version 7.0
 
+<#
+    .SYNOPSIS
+    Structures generated documentation content and writes a resolved site config.
+
+    .DESCRIPTION
+    Copies generated docs, README, and assets into outputs/site and resolves zensical.toml
+    placeholders and site_dir for build execution.
+
+    .EXAMPLE
+    ./main.ps1 -WorkingDirectory '.' -Name 'MyModule'
+
+    .INPUTS
+    None.
+
+    .OUTPUTS
+    None.
+#>
 [CmdletBinding()]
 param(
+    # Build working directory where src/, README.md, and outputs/ exist.
     [Parameter(Mandatory)]
     [string]$WorkingDirectory,
 
+    # Optional module name override used for placeholder replacement.
     [Parameter()]
     [string]$Name
 )
