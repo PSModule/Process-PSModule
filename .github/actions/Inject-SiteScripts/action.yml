@@ -15,4 +15,7 @@ runs:
   steps:
     - name: Inject site scripts
       shell: pwsh
-      run: '& "${{ github.action_path }}/src/main.ps1" -SitePath "${{ inputs.SitePath }}" -WorkflowPath "${{ inputs.WorkflowPath }}"'
+      env:
+        INPUT_SITE_PATH: ${{ inputs.SitePath }}
+        INPUT_WORKFLOW_PATH: ${{ inputs.WorkflowPath }}
+      run: '& "${{ github.action_path }}/src/main.ps1" -SitePath "$env:INPUT_SITE_PATH" -WorkflowPath "$env:INPUT_WORKFLOW_PATH"'

@@ -11,4 +11,6 @@ runs:
   steps:
     - name: Build documentation site
       shell: pwsh
-      run: '& "${{ github.action_path }}/src/main.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}"'
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.WorkingDirectory }}
+      run: '& "${{ github.action_path }}/src/main.ps1" -WorkingDirectory "$env:INPUT_WORKING_DIRECTORY"'

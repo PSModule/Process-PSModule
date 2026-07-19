@@ -15,4 +15,7 @@ runs:
   steps:
     - name: Structure site content and config
       shell: pwsh
-      run: '& "${{ github.action_path }}/src/main.ps1" -WorkingDirectory "${{ inputs.WorkingDirectory }}" -Name "${{ inputs.Name }}"'
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.WorkingDirectory }}
+        INPUT_NAME: ${{ inputs.Name }}
+      run: '& "${{ github.action_path }}/src/main.ps1" -WorkingDirectory "$env:INPUT_WORKING_DIRECTORY" -Name "$env:INPUT_NAME"'
