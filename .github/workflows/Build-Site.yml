@@ -39,122 +39,25 @@ jobs:
           name: docs
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
 
-      - name: Install mkdocs-material
-        shell: pwsh
-        run: |
-          pip install mkdocs-material
-          pip install mkdocs-git-authors-plugin
-          pip install mkdocs-git-revision-date-localized-plugin
-          pip install mkdocs-git-committers-plugin-2
+      - name: Install Zensical
+        uses: ./_wf/.github/actions/Install-Zensical
 
       - name: Structure site
-        uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
+        uses: ./_wf/.github/actions/Structure-Site
         with:
-          Debug: ${{ fromJson(inputs.Settings).Debug }}
-          Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
-          Verbose: ${{ fromJson(inputs.Settings).Verbose }}
-          Version: ${{ fromJson(inputs.Settings).Version }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-          Script: |
-            LogGroup "Get folder structure" {
-                $functionDocsFolder = New-Item -Path "outputs/site/docs/Functions" -ItemType Directory -Force
-                Copy-Item -Path "outputs/docs/*" -Destination "outputs/site/docs/Functions" -Recurse -Force
-                $moduleName = [string]::IsNullOrEmpty('${{ fromJson(inputs.Settings).Name }}') ? $env:GITHUB_REPOSITORY_NAME : '${{ fromJson(inputs.Settings).Name }}'
-                $ModuleSourcePath = Resolve-Path 'src' | Select-Object -ExpandProperty Path
-                $SiteOutputPath = Resolve-Path 'outputs/site' | Select-Object -ExpandProperty Path
+          Name: ${{ fromJson(inputs.Settings).Name }}
 
-                Write-Host "Function Docs Folder: $functionDocsFolder"
-                Write-Host "Module Name:          $moduleName"
-                Write-Host "Module Source Path:   $ModuleSourcePath"
-                Write-Host "Site Output Path:     $SiteOutputPath"
-            }
+      - name: Build documentation site with Zensical
+        uses: ./_wf/.github/actions/Build-ZensicalSite
+        with:
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
-            LogGroup "Get folder structure" {
-                Get-ChildItem -Recurse | Select-Object -ExpandProperty FullName | Sort-Object | Format-List
-            }
-
-            Get-ChildItem -Path $functionDocsFolder -Recurse -Force -Include '*.md' | ForEach-Object {
-                $fileName = $_.Name
-                LogGroup " - $fileName" {
-                    Show-FileContent -Path $_
-                }
-            }
-
-            LogGroup 'Build docs - Process about topics' {
-                $aboutDocsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/About'
-                $aboutDocsFolder = New-Item -Path $aboutDocsFolderPath -ItemType Directory -Force
-                $aboutSourceFolder = Get-ChildItem -Path $ModuleSourcePath -Directory | Where-Object { $_.Name -eq 'en-US' }
-                Get-ChildItem -Path $aboutSourceFolder -Filter *.txt | Copy-Item -Destination $aboutDocsFolder -Force -Verbose -PassThru |
-                    Rename-Item -NewName { $_.Name -replace '.txt', '.md' }
-
-                Write-Host "About Docs Folder:    $aboutDocsFolder"
-                Write-Host "About Source Folder:  $aboutSourceFolder"
-            }
-
-            LogGroup 'Build docs - Copy icon to assets' {
-                $assetsFolderPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/Assets'
-                $assetsFolder = New-Item -Path $assetsFolderPath -ItemType Directory -Force
-                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $iconPath = Resolve-Path 'icon\icon.png' | Select-Object -ExpandProperty Path
-                Copy-Item -Path $iconPath -Destination $assetsFolder -Force -Verbose
-
-                Write-Host "Assets Folder:        $assetsFolder"
-                Write-Host "Icon Path:            $iconPath"
-            }
-
-            LogGroup 'Build docs - Copy readme.md' {
-                $readmePath = Resolve-Path 'README.md' | Select-Object -ExpandProperty Path
-                $readmeTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'docs/README.md'
-                Copy-Item -Path $readmePath -Destination $readmeTargetPath -Force -Verbose
-
-                Write-Host "Readme Path:          $readmePath"
-                Write-Host "Readme Target Path:   $readmeTargetPath"
-            }
-
-            LogGroup 'Build docs - Create mkdocs.yml' {
-                $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $possiblePaths = @(
-                    '.github/mkdocs.yml',
-                    'docs/mkdocs.yml',
-                    'mkdocs.yml'
-                )
-
-                $mkdocsSourcePath = $null
-                foreach ($path in $possiblePaths) {
-                    $candidatePath = Join-Path -Path $rootPath -ChildPath $path
-                    if (Test-Path -Path $candidatePath) {
-                        $mkdocsSourcePath = $candidatePath
-                        break
-                    }
-                }
-
-                if (-not $mkdocsSourcePath) {
-                    throw "Mkdocs source file not found in any of the expected locations: $($possiblePaths -join ', ')"
-                }
-
-                $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
-
-                Write-Host "Mkdocs Source Path:   $mkdocsSourcePath"
-                Write-Host "Mkdocs Target Path:   $mkdocsTargetPath"
-
-                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
-                Show-FileContent -Path $mkdocsTargetPath
-            }
-
-      - name: Build mkdocs-material project
-        working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/site
-        shell: pwsh
-        run: |
-          LogGroup 'Build docs - mkdocs build - content' {
-            Show-FileContent -Path mkdocs.yml
-          }
-
-          LogGroup 'Build docs - mkdocs build' {
-            mkdocs build --config-file mkdocs.yml --site-dir ../../_site
-          }
+      - name: Inject shared site scripts
+        uses: ./_wf/.github/actions/Inject-SiteScripts
+        with:
+          SitePath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/_site
+          WorkflowPath: _wf
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

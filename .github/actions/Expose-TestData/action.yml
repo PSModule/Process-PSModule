@@ -20,5 +20,4 @@ runs:
       shell: pwsh
       env:
         PSMODULE_TEST_DATA: ${{ inputs.TestData }}
-      run: |
-        Import-TestData
+      run: Import-TestData

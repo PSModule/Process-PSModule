@@ -276,9 +276,7 @@ runs:
       env:
         PSMODULE_TEST_PSMODULE_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_TEST_PSMODULE_INPUT_Settings: ${{ inputs.Settings }}
-      run: |
-        # Get test paths
-        ${{ github.action_path }}/src/main.ps1
+      run: ${{ github.action_path }}/src/main.ps1
 
     - name: Invoke-Pester
       uses: PSModule/Invoke-Pester@4ff33199141fdf22568990b6107fe3148ae93a1c # v5.1.0

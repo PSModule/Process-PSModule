@@ -27,6 +27,4 @@ runs:
         DOCUMENT_PSMODULE_INPUT_Name: ${{ inputs.Name }}
         DOCUMENT_PSMODULE_INPUT_ShowSummaryOnSuccess: ${{ inputs.ShowSummaryOnSuccess }}
       working-directory: ${{ inputs.WorkingDirectory }}
-      run: |
-        # Build-PSModuleDocumentation
-        ${{ github.action_path }}/src/main.ps1
+      run: ${{ github.action_path }}/src/main.ps1

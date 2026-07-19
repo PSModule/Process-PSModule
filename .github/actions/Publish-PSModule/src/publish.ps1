@@ -27,7 +27,7 @@ param()
 
 $PSStyle.OutputRendering = 'Ansi'
 
-Import-Module -Name 'Helpers' -Force
+Import-Module -Name 'PSModule' -Force
 
 #region Load inputs
 LogGroup 'Load inputs' {

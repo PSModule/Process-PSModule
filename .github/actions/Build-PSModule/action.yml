@@ -40,9 +40,7 @@ runs:
         PSMODULE_BUILD_PSMODULE_INPUT_OutputFolder: ${{ inputs.OutputFolder }}
         PSMODULE_BUILD_PSMODULE_INPUT_Version: ${{ inputs.Version }}
         PSMODULE_BUILD_PSMODULE_INPUT_Prerelease: ${{ inputs.Prerelease }}
-      run: |
-        # Build-PSModule
-        ${{ github.action_path }}/src/main.ps1
+      run: ${{ github.action_path }}/src/main.ps1
 
     - name: Upload module artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
