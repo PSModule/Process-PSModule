@@ -179,17 +179,13 @@ jobs:
             if (-not (Test-Path -Path '../../_site')) {
               throw "Expected Zensical output at ../../_site but it was not created."
             }
-
-            $navStateScript = '(()=>{const k="zensical-nav-state-v1";let s="";const g=()=>Array.from(document.querySelectorAll("input.md-nav__toggle.md-toggle[id]"));const p=()=>document.querySelector("nav.md-nav--primary > ul.md-nav__list");const d=t=>{const l=p();if(!l)return;const n=new Set(Array.from(l.querySelectorAll(":scope > li > input.md-nav__toggle.md-toggle[id]")).map(x=>x.id));for(const x of t){x.checked=n.has(x.id)}};const r=t=>{const raw=localStorage.getItem(k);if(!raw){d(t);return;}try{const m=JSON.parse(raw);for(const x of t){if(Object.prototype.hasOwnProperty.call(m,x.id))x.checked=!!m[x.id];}}catch{d(t)}};const w=t=>{const m={};for(const x of t){m[x.id]=!!x.checked;}localStorage.setItem(k,JSON.stringify(m));};const i=()=>{const t=g();if(t.length===0)return;const sig=t.map(x=>x.id).join("|");if(sig===s)return;s=sig;r(t);for(const x of t){if(x.dataset.navStateBound==="true")continue;x.dataset.navStateBound="true";x.addEventListener("change",()=>w(g()));}};if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",i,{once:true});}else{i();}setInterval(i,500);})();'
-
-            Get-ChildItem -Path '../../_site' -Filter '*.html' -Recurse | ForEach-Object {
-              $html = Get-Content -Path $_.FullName -Raw
-              if ($html -notmatch 'zensical-nav-state-v1') {
-                $html = $html -replace '</body>', "<script>$navStateScript</script>`n</body>"
-                Set-Content -Path $_.FullName -Value $html -NoNewline
-              }
-            }
           }
+
+      - name: Inject shared site scripts
+        uses: ./_wf/.github/actions/Inject-SiteScripts
+        with:
+          SitePath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/_site
+          WorkflowPath: _wf
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
