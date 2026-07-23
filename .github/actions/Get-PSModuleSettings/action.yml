@@ -54,7 +54,6 @@ runs:
       id: Get-PSModuleSettings
       env:
         GH_TOKEN: ${{ env.GH_TOKEN }}
-        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
         PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         PSMODULE_GET_SETTINGS_INPUT_Debug: ${{ inputs.Debug }}
@@ -65,7 +64,7 @@ runs:
         PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
       with:
         Name: Get-PSModuleSettings
-        Token: ${{ env.GITHUB_TOKEN }}
+        Token: ${{ env.GH_TOKEN }}
         ShowInfo: false
         ShowOutput: true
         Debug: ${{ inputs.Debug }}

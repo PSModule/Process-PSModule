@@ -30,4 +30,4 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.PSMODULE_PRIVATE_KEY }}
 ```
 
-This is a required contract for GitHub operations in the reusable workflow path; `github.token` fallback is intentionally not used.
+This is a required contract for GitHub operations in the reusable workflow path; a GitHub App installation token is minted and used for those steps via `GH_TOKEN`, and `github.token` fallback is intentionally not used.

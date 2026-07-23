@@ -99,7 +99,6 @@ jobs:
         id: Get-Settings
         env:
           GH_TOKEN: ${{ steps.App-Token.outputs.token }}
-          GITHUB_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           SettingsPath: ${{ inputs.SettingsPath }}
           Debug: ${{ inputs.Debug }}
@@ -114,7 +113,6 @@ jobs:
         id: Resolve-Version
         env:
           GH_TOKEN: ${{ steps.App-Token.outputs.token }}
-          GITHUB_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Settings: ${{ steps.Get-Settings.outputs.Settings }}
           Name: ${{ fromJson(steps.Get-Settings.outputs.Settings).Name }}

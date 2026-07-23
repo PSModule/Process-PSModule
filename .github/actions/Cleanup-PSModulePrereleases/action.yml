@@ -28,7 +28,6 @@ runs:
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
         GH_TOKEN: ${{ env.GH_TOKEN }}
-        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf: ${{ inputs.WhatIf }}
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag }}
       run: ${{ github.action_path }}/src/cleanup.ps1
