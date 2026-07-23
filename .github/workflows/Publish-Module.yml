@@ -46,6 +46,18 @@ jobs:
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKey }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+
+      - name: Create GitHub release
+        if: always() && !cancelled() && fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
+        uses: ./_wf/.github/actions/Release-PSModule
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          Name: ${{ fromJson(inputs.Settings).Name }}
+          ModulePath: outputs/module
+          ArtifactName: module
+          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
           UsePRTitleAsNotesHeading: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsNotesHeading }}
@@ -53,7 +65,7 @@ jobs:
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
       - name: Cleanup prereleases
-        if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
+        if: always() && !cancelled() && fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
         uses: ./_wf/.github/actions/Cleanup-PSModulePrereleases
         env:
           GH_TOKEN: ${{ github.token }}
