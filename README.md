@@ -29,3 +29,5 @@ jobs:
       GitHubAppClientId: ${{ secrets.PSMODULE_CLIENT_ID }}
       GitHubAppPrivateKey: ${{ secrets.PSMODULE_PRIVATE_KEY }}
 ```
+
+This is a required contract for GitHub operations in the reusable workflow path; `github.token` fallback is intentionally not used.
