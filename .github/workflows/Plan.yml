@@ -1,6 +1,6 @@
-name: Plan
+name: Orchestrator
 
-# The Plan job is the single decision point for the workflow.
+# The Orchestrator job is the single decision point for the workflow.
 # It runs two steps:
 #   1. Get-PSModuleSettings      - loads and resolves configuration
 #   2. Resolve-PSModuleVersion   - calculates the next version from settings + PR labels
@@ -42,8 +42,9 @@ on:
       ImportantFilePatterns:
         type: string
         description: |
-          Newline-separated list of regex patterns that identify important files.
-          Changes matching these patterns trigger build, test, and publish stages.
+          Newline-separated list of regex patterns that identify module-impacting files.
+          Changes matching these patterns trigger module build, test, and release stages.
+          Docs/site orchestration also includes documentation/layout defaults.
           When set, fully replaces the defaults (^src/ and ^README\.md$).
         required: false
         default: |
@@ -53,15 +54,15 @@ on:
     outputs:
       Settings:
         description: The complete settings object including test suites and resolved module version.
-        value: ${{ jobs.Plan.outputs.Settings }}
+        value: ${{ jobs.Orchestrator.outputs.Settings }}
 
 permissions:
   contents: read # to checkout the repo
   pull-requests: write # to add labels / comments to PRs
 
 jobs:
-  Plan:
-    name: Plan
+  Orchestrator:
+    name: Orchestrator
     runs-on: ubuntu-latest
     outputs:
       Settings: ${{ steps.Enrich-Settings.outputs.Settings }}
