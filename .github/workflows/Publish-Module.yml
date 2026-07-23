@@ -6,6 +6,12 @@ on:
       APIKey:
         description: The API key for the PowerShell Gallery.
         required: true
+      GitHubAppClientId:
+        description: The client ID of the GitHub App used for repository API calls.
+        required: true
+      GitHubAppPrivateKey:
+        description: The private key of the GitHub App used for repository API calls.
+        required: true
     inputs:
       Settings:
         type: string
@@ -37,11 +43,19 @@ jobs:
           path: _wf
           persist-credentials: false
 
+      - name: Create GitHub App token
+        id: App-Token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.GitHubAppClientId }}
+          private-key: ${{ secrets.GitHubAppPrivateKey }}
+
       - name: Publish module
         if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
         uses: ./_wf/.github/actions/Publish-PSModule
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
@@ -56,7 +70,8 @@ jobs:
         if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
         uses: ./_wf/.github/actions/Cleanup-PSModulePrereleases
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
