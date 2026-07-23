@@ -6,6 +6,12 @@ on:
       APIKey:
         description: The API key for the PowerShell Gallery.
         required: true
+      GitHubAppClientId:
+        description: Generic GitHub App client ID secret for caller mapping.
+        required: true
+      GitHubAppPrivateKey:
+        description: Generic GitHub App private key secret for caller mapping.
+        required: true
       TestData:
         description: |
           Optional single-line JSON object carrying all data the module test jobs
@@ -77,6 +83,9 @@ jobs:
   # - ✅ Manual run      - Always runs to load configuration
   Plan:
     uses: ./.github/workflows/Plan.yml
+    secrets:
+      GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
+      GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     with:
       SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
@@ -246,6 +255,8 @@ jobs:
     uses: ./.github/workflows/Publish-Module.yml
     secrets:
       APIKey: ${{ secrets.APIKey }}
+      GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
+      GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     needs:
       - Plan
       - Get-TestResults
