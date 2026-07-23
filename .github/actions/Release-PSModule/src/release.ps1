@@ -18,6 +18,14 @@
     'PSUseDeclaredVarsMoreThanAssignments', 'prHeadRef',
     Justification = 'Variable is used in script blocks.'
 )]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments', 'releaseType',
+    Justification = 'Variable is used in script blocks.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments', 'publishPSVersion',
+    Justification = 'Variable is used in script blocks.'
+)]
 [CmdletBinding()]
 param()
 
