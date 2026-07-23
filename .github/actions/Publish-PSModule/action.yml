@@ -58,6 +58,8 @@ runs:
       shell: pwsh
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
+        GH_TOKEN: ${{ env.GH_TOKEN || env.GITHUB_TOKEN || github.token }}
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN || env.GH_TOKEN || github.token }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey: ${{ inputs.APIKey }}
