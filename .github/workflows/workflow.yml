@@ -54,14 +54,12 @@ on:
       ImportantFilePatterns:
         type: string
         description: |
-          Newline-separated list of regex patterns that identify module-impacting files.
-          Changes matching these patterns trigger module build, test, and release stages.
-          Docs/site orchestration also includes documentation/layout defaults.
-          When set, fully replaces the defaults (^src/ and ^README\.md$).
+          Newline-separated list of regex patterns for module-impacting/code changes.
+          This input configures the Code pattern list only.
+          Docs patterns are configured in .github/PSModule.yml via ImportantFilePatterns.Docs.
         required: false
         default: |
-          ^src/
-          ^README\.md$
+          ^src/(?!.*\.md$).*
 
 permissions:
   contents: write # to checkout the repo and create releases on the repo

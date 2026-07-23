@@ -10,12 +10,20 @@
       "description": "The name of the module"
     },
     "ImportantFilePatterns": {
-      "type": "array",
-      "description": "Regex patterns that identify module-impacting files. Changes matching these patterns trigger module build, test, and release stages. Docs/site orchestration adds documentation/layout defaults on top of these patterns. Defaults to ['^src/', '^README\\.md$'] when not configured.",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "description": "Patterns that classify important code/docs changes for orchestration.",
+      "oneOf": [
+        {
+          "type": "array",
+          "description": "Backward-compatible format. Treated as code patterns.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "$ref": "#/definitions/importantFilePatternGroups"
+        }
+      ]
     },
     "Test": {
       "type": "object",
@@ -347,6 +355,29 @@
         "TestPath",
         "TestName"
       ]
+    },
+    "importantFilePatternGroups": {
+      "type": "object",
+      "description": "Pattern groups used by the orchestrator.",
+      "properties": {
+        "Code": {
+          "type": "array",
+          "description": "Regex patterns for module-impacting/code changes.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "Docs": {
+          "type": "array",
+          "description": "Regex patterns for docs/layout/config changes.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

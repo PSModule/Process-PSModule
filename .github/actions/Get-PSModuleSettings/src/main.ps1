@@ -91,20 +91,49 @@ LogGroup 'Name' {
 }
 
 LogGroup 'ImportantFilePatterns' {
-    $defaultImportantFilePatterns = @('^src/', '^README\.md$')
+    $defaultCodePatterns = @(
+        '^src/(?!.*\.md$).*'
+    )
+    $defaultDocsPatterns = @(
+        '^README\.md$',
+        '^src/.*\.md$',
+        '^docs/',
+        '^\.github/zensical\.toml$',
+        '^zensical\.toml$',
+        '^mkdocs\.yml$',
+        '^docs\.(ya?ml|json|toml)$'
+    )
+
     if ($null -ne $settings.ImportantFilePatterns) {
-        $importantFilePatterns = @($settings.ImportantFilePatterns)
-        Write-Host "Using ImportantFilePatterns from settings file: [$($importantFilePatterns -join ', ')]"
+        $configuredCodePatterns = @($settings.ImportantFilePatterns.Code | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        $configuredDocsPatterns = @($settings.ImportantFilePatterns.Docs | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if (($configuredCodePatterns.Count -gt 0) -or ($configuredDocsPatterns.Count -gt 0)) {
+            $codeFilePatterns = if ($configuredCodePatterns.Count -gt 0) { $configuredCodePatterns } else { $defaultCodePatterns }
+            $docsFilePatterns = if ($configuredDocsPatterns.Count -gt 0) { $configuredDocsPatterns } else { $defaultDocsPatterns }
+            Write-Host "Using code patterns from ImportantFilePatterns.Code: [$($codeFilePatterns -join ', ')]"
+            Write-Host "Using docs patterns from ImportantFilePatterns.Docs: [$($docsFilePatterns -join ', ')]"
+        } else {
+            # Backward-compatible format: array is treated as code patterns.
+            $codeFilePatterns = @($settings.ImportantFilePatterns)
+            $docsFilePatterns = $defaultDocsPatterns
+            Write-Host "Using code patterns from legacy ImportantFilePatterns array: [$($codeFilePatterns -join ', ')]"
+            Write-Host "Using default docs patterns: [$($docsFilePatterns -join ', ')]"
+        }
     } elseif (-not [string]::IsNullOrWhiteSpace($importantFilePatternsInput)) {
-        $importantFilePatterns = @($importantFilePatternsInput -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-        Write-Host "Using ImportantFilePatterns from action input: [$($importantFilePatterns -join ', ')]"
+        # Action input remains code-focused for backward compatibility.
+        $codeFilePatterns = @($importantFilePatternsInput -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        $docsFilePatterns = $defaultDocsPatterns
+        Write-Host "Using code patterns from action input: [$($codeFilePatterns -join ', ')]"
+        Write-Host "Using default docs patterns: [$($docsFilePatterns -join ', ')]"
     } else {
-        $importantFilePatterns = $defaultImportantFilePatterns
-        Write-Host "Using default ImportantFilePatterns: [$($importantFilePatterns -join ', ')]"
+        $codeFilePatterns = $defaultCodePatterns
+        $docsFilePatterns = $defaultDocsPatterns
+        Write-Host "Using default code patterns: [$($codeFilePatterns -join ', ')]"
+        Write-Host "Using default docs patterns: [$($docsFilePatterns -join ', ')]"
     }
 
-    # Validate that all patterns are valid regular expressions
-    foreach ($pattern in $importantFilePatterns) {
+    # Validate that all patterns are valid regular expressions.
+    foreach ($pattern in @($codeFilePatterns + $docsFilePatterns | Select-Object -Unique)) {
         try {
             [void][regex]::new($pattern)
         } catch {
@@ -115,7 +144,10 @@ LogGroup 'ImportantFilePatterns' {
 
 $settings = [pscustomobject]@{
     Name                  = $name
-    ImportantFilePatterns = $importantFilePatterns
+    ImportantFilePatterns = [pscustomobject]@{
+        Code = $codeFilePatterns
+        Docs = $docsFilePatterns
+    }
     Test                  = [pscustomobject]@{
         Skip         = $settings.Test.Skip ?? $false
         Linux        = [pscustomobject]@{
@@ -256,19 +288,12 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
     # Classify changed files for orchestration decisions.
-    # Module-impacting files come from ImportantFilePatterns.
-    # Docs-impacting files include module-impacting files plus docs/layout/config defaults.
+    # Module-impacting files come from ImportantFilePatterns.Code.
+    # Docs-impacting files come from ImportantFilePatterns.Docs and always include module changes.
     $hasModuleChanges = $false
     $hasDocsChanges = $false
-    $modulePatterns = $settings.ImportantFilePatterns
-    $docsOnlyPatterns = @(
-        '^docs/',
-        '^\.github/zensical\.toml$',
-        '^zensical\.toml$',
-        '^mkdocs\.yml$',
-        '^docs\.(ya?ml|json|toml)$'
-    )
-    $docsPatterns = @($modulePatterns + $docsOnlyPatterns | Select-Object -Unique)
+    $modulePatterns = @($settings.ImportantFilePatterns.Code)
+    $docsPatterns = @($settings.ImportantFilePatterns.Docs)
 
     if ($isPR -and $pullRequest.Number) {
         LogGroup 'Classify Changed Files' {
@@ -303,6 +328,11 @@ LogGroup 'Calculate Job Run Conditions:' {
                 }
 
                 if ($hasModuleChanges -and $hasDocsChanges) { break }
+            }
+
+            # Source-code changes are docs-impacting because generated docs depend on code.
+            if ($hasModuleChanges) {
+                $hasDocsChanges = $true
             }
 
             if ($hasModuleChanges) {
