@@ -2,6 +2,13 @@ name: Build-Module
 
 on:
   workflow_call:
+    secrets:
+      GitHubAppClientId:
+        description: The client ID of the GitHub App used for repository API calls.
+        required: true
+      GitHubAppPrivateKey:
+        description: The private key of the GitHub App used for repository API calls.
+        required: true
     inputs:
       Settings:
         type: string
@@ -20,8 +27,6 @@ jobs:
   Build-Module:
     name: Build-Module
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -37,8 +42,17 @@ jobs:
           path: _wf
           persist-credentials: false
 
+      - name: Create GitHub App token
+        id: App-Token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.GitHubAppClientId }}
+          private-key: ${{ secrets.GitHubAppPrivateKey }}
+
       - name: Build module
         uses: ./_wf/.github/actions/Build-PSModule
+        env:
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           Version: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.Version != '' && fromJson(inputs.Settings).Publish.Module.Resolution.Version || '999.0.0' }}

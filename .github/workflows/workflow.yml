@@ -116,6 +116,9 @@ jobs:
   Build-Module:
     if: fromJson(needs.Plan.outputs.Settings).Build.Module.Enabled
     uses: ./.github/workflows/Build-Module.yml
+    secrets:
+      GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
+      GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     needs:
       - Plan
     with:
