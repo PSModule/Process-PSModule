@@ -93,6 +93,9 @@ jobs:
         with:
           app-id: ${{ secrets.GitHubAppClientId }}
           private-key: ${{ secrets.GitHubAppPrivateKey }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-pull-requests: write
 
       - name: Get-Settings
         uses: ./_wf/.github/actions/Get-PSModuleSettings

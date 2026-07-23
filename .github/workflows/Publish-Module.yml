@@ -49,6 +49,9 @@ jobs:
         with:
           app-id: ${{ secrets.GitHubAppClientId }}
           private-key: ${{ secrets.GitHubAppPrivateKey }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Publish module
         if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
