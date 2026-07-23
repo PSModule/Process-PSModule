@@ -65,6 +65,8 @@ runs:
         PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
       with:
         Name: Get-PSModuleSettings
+        # Prefer a caller-provided GitHub App token when available.
+        Token: ${{ env.PSMODULE_GITHUB_APP_TOKEN || env.GITHUB_APP_TOKEN || env.GH_APP_TOKEN || env.GH_TOKEN || github.token }}
         ShowInfo: false
         ShowOutput: true
         Debug: ${{ inputs.Debug }}
