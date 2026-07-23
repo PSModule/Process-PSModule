@@ -9,6 +9,13 @@ name: Plan
 
 on:
   workflow_call:
+    secrets:
+      GitHubAppClientId:
+        description: The client ID of the GitHub App used for repository API calls.
+        required: true
+      GitHubAppPrivateKey:
+        description: The private key of the GitHub App used for repository API calls.
+        required: true
     inputs:
       SettingsPath:
         type: string
@@ -80,9 +87,19 @@ jobs:
           path: _wf
           persist-credentials: false
 
+      - name: Create GitHub App token
+        id: App-Token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.GitHubAppClientId }}
+          private-key: ${{ secrets.GitHubAppPrivateKey }}
+
       - name: Get-Settings
         uses: ./_wf/.github/actions/Get-PSModuleSettings
         id: Get-Settings
+        env:
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           SettingsPath: ${{ inputs.SettingsPath }}
           Debug: ${{ inputs.Debug }}
@@ -96,7 +113,8 @@ jobs:
         uses: ./_wf/.github/actions/Resolve-PSModuleVersion
         id: Resolve-Version
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Settings: ${{ steps.Get-Settings.outputs.Settings }}
           Name: ${{ fromJson(steps.Get-Settings.outputs.Settings).Name }}
