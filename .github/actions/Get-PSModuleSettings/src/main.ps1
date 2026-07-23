@@ -255,11 +255,23 @@ LogGroup 'Calculate Job Run Conditions:' {
     $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
     $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
-    # Check if important files have changed in the PR
-    # Important files are determined by the configured ImportantFilePatterns setting
-    $hasImportantChanges = $false
+    # Classify changed files for orchestration decisions.
+    # Module-impacting files come from ImportantFilePatterns.
+    # Docs-impacting files include module-impacting files plus docs/layout/config defaults.
+    $hasModuleChanges = $false
+    $hasDocsChanges = $false
+    $modulePatterns = $settings.ImportantFilePatterns
+    $docsOnlyPatterns = @(
+        '^docs/',
+        '^\.github/zensical\.toml$',
+        '^zensical\.toml$',
+        '^mkdocs\.yml$',
+        '^docs\.(ya?ml|json|toml)$'
+    )
+    $docsPatterns = @($modulePatterns + $docsOnlyPatterns | Select-Object -Unique)
+
     if ($isPR -and $pullRequest.Number) {
-        LogGroup 'Check for Important File Changes' {
+        LogGroup 'Classify Changed Files' {
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
             $prNumber = $pullRequest.Number
@@ -272,29 +284,35 @@ LogGroup 'Calculate Job Run Conditions:' {
             Write-Host "Changed files ($($changedFiles.Count)):"
             $changedFiles | ForEach-Object { Write-Host "  - $_" }
 
-            # Use configured important file patterns
-            $importantPatterns = $settings.ImportantFilePatterns
-
-            # Check if any changed file matches an important pattern
+            # Check module-impacting and docs-impacting patterns independently.
             foreach ($file in $changedFiles) {
-                foreach ($pattern in $importantPatterns) {
+                foreach ($pattern in $modulePatterns) {
                     if ($file -match $pattern) {
-                        $hasImportantChanges = $true
-                        Write-Host "Important file changed: [$file] (matches pattern: $pattern)"
+                        $hasModuleChanges = $true
+                        Write-Host "Module-impacting file changed: [$file] (matches pattern: $pattern)"
                         break
                     }
                 }
-                if ($hasImportantChanges) { break }
+
+                foreach ($pattern in $docsPatterns) {
+                    if ($file -match $pattern) {
+                        $hasDocsChanges = $true
+                        Write-Host "Docs-impacting file changed: [$file] (matches pattern: $pattern)"
+                        break
+                    }
+                }
+
+                if ($hasModuleChanges -and $hasDocsChanges) { break }
             }
 
-            if ($hasImportantChanges) {
-                Write-Host '✓ Important files have changed - build/test stages will run'
+            if ($hasModuleChanges) {
+                Write-Host '✓ Module-impacting files have changed - module build/test/release stages will run'
             } else {
-                Write-Host '✗ No important files changed - build/test stages will be skipped'
+                Write-Host '✗ No module-impacting files changed - module build/test/release stages will be skipped'
 
-                # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
+                # Add a comment to open PRs explaining why module stages are skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
-                    $patternRows = ($importantPatterns | ForEach-Object {
+                    $patternRows = ($modulePatterns | ForEach-Object {
                             $escapedPattern = $_.Replace('|', '\|')
                             $backtickMatches = [regex]::Matches($escapedPattern, '`+')
                             $maxRun = 0
@@ -305,15 +323,17 @@ LogGroup 'Calculate Job Run Conditions:' {
                             "| ${codeDelimiter}${escapedPattern}${codeDelimiter} | Matches files where path matches this pattern |"
                         }) -join "`n"
                     $commentBody = @"
-### No Significant Changes Detected
+### No Module-Impacting Changes Detected
 
-This PR does not contain changes to files that would trigger a new release:
+This PR does not contain changes to files that trigger module build/test/release stages:
 
 | Pattern | Description |
 | :--- | :---------- |
 $patternRows
 
-**Build, test, and publish stages will be skipped** for this PR.
+**Module build, test, and release stages will be skipped** for this PR.
+
+Documentation/site stages may still run when docs/layout/config files change.
 
 If you believe this is incorrect, please verify that your changes are in the correct locations.
 "@
@@ -333,20 +353,21 @@ If you believe this is incorrect, please verify that your changes are in the cor
             }
         }
     } else {
-        # Not a PR event or no PR number - consider as having important changes (e.g., workflow_dispatch, schedule)
-        $hasImportantChanges = $true
-        Write-Host 'Not a PR event or missing PR number - treating as having important changes'
+        # Not a PR event or no PR number - run both module and docs orchestration paths.
+        $hasModuleChanges = $true
+        $hasDocsChanges = $true
+        Write-Host 'Not a PR event or missing PR number - treating as module/docs impacting changes'
     }
 
-    # Prerelease requires both: prerelease label AND important file changes
+    # Prerelease requires both: prerelease label AND module-impacting changes
     # No point creating a prerelease if only non-module files changed
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasImportantChanges
+    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasModuleChanges
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
-    # Release only happens when important files changed (actual module code/docs)
-    # Merged PRs without important changes should only trigger cleanup, not a new release
-    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges) {
+    # Release only happens when module-impacting files changed.
+    # Merged PRs without module-impacting changes should only trigger cleanup, not a new release.
+    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch -and $hasModuleChanges) {
         'Release'
     } elseif ($shouldPrerelease) {
         'Prerelease'
@@ -365,7 +386,9 @@ If you believe this is incorrect, please verify that your changes are in the cor
         hasPrereleaseLabel    = $hasPrereleaseLabel
         shouldPrerelease      = $shouldPrerelease
         ReleaseType           = $releaseType
-        HasImportantChanges   = $hasImportantChanges
+        HasImportantChanges   = $hasModuleChanges
+        HasModuleChanges      = $hasModuleChanges
+        HasDocsChanges        = $hasDocsChanges
     } | Format-List | Out-String
 }
 
@@ -545,10 +568,10 @@ LogGroup 'Calculate Job Run Conditions:' {
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
     $settings.Publish.Module.AutoCleanup = $shouldAutoCleanup
 
-    # For open PRs, we only want to run build/test stages if important files changed.
-    # For merged PRs, workflow_dispatch, schedule - $hasImportantChanges is already true.
-    # Note: $shouldPrerelease already requires $hasImportantChanges, so no separate check needed.
-    $shouldRunBuildTest = $isNotAbandonedPR -and $hasImportantChanges
+    # Route execution by change classification.
+    $shouldRunModulePipeline = $isNotAbandonedPR -and $hasModuleChanges
+    $shouldRunDocsPipeline = $isNotAbandonedPR -and $hasDocsChanges
+    $docsNeedModuleBuild = $shouldRunDocsPipeline -and (-not $settings.Build.Docs.Skip)
 
     # Check if setup/teardown scripts exist in the repository
     $hasBeforeAllScript = Test-Path -Path 'tests/BeforeAll.ps1'
@@ -557,9 +580,9 @@ LogGroup 'Calculate Job Run Conditions:' {
     Write-Host "  tests/BeforeAll.ps1 exists: $hasBeforeAllScript"
     Write-Host "  tests/AfterAll.ps1 exists:  $hasAfterAllScript"
 
-    $sourceCodeEnabled = $shouldRunBuildTest -and ($null -ne $settings.Test.SourceCode.Suites)
-    $psModuleEnabled = $shouldRunBuildTest -and ($null -ne $settings.Test.PSModule.Suites)
-    $moduleLocalEnabled = $shouldRunBuildTest -and ($null -ne $settings.Test.Module.Suites)
+    $sourceCodeEnabled = $shouldRunModulePipeline -and ($null -ne $settings.Test.SourceCode.Suites)
+    $psModuleEnabled = $shouldRunModulePipeline -and ($null -ne $settings.Test.PSModule.Suites)
+    $moduleLocalEnabled = $shouldRunModulePipeline -and ($null -ne $settings.Test.Module.Suites)
     $beforeAllEnabled = $moduleLocalEnabled -and $hasBeforeAllScript
     $afterAllEnabled = $moduleLocalEnabled -and $hasAfterAllScript
 
@@ -575,12 +598,12 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Module.Skip) -Force
     $settings.Build.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (
-        $shouldRunBuildTest -and (-not $settings.Build.Module.Skip)
+        (-not $settings.Build.Module.Skip) -and ($shouldRunModulePipeline -or $docsNeedModuleBuild)
     ) -Force
     $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Docs.Skip) -Force
-    $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Docs.Skip)) -Force
+    $settings.Build.Docs | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunDocsPipeline -and (-not $settings.Build.Docs.Skip)) -Force
     $settings.Build.Site | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Build.Site.Skip) -Force
-    $settings.Build.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunBuildTest -and (-not $settings.Build.Site.Skip)) -Force
+    $settings.Build.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value ($shouldRunDocsPipeline -and (-not $settings.Build.Site.Skip)) -Force
 
     $settings.Test.SourceCode | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.SourceCode.Skip) -Force
     $settings.Test.SourceCode | Add-Member -MemberType NoteProperty -Name Enabled -Value $sourceCodeEnabled -Force
@@ -593,13 +616,13 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     $settings.Test.TestResults | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.TestResults.Skip) -Force
     $settings.Test.TestResults | Add-Member -MemberType NoteProperty -Name Enabled -Value (
-        $shouldRunBuildTest -and (-not $settings.Test.TestResults.Skip) -and (
+        $shouldRunModulePipeline -and (-not $settings.Test.TestResults.Skip) -and (
             ($null -ne $settings.Test.SourceCode.Suites) -or ($null -ne $settings.Test.PSModule.Suites) -or ($null -ne $settings.Test.Module.Suites)
         )
     ) -Force
     $settings.Test.CodeCoverage | Add-Member -MemberType NoteProperty -Name Desired -Value (-not $settings.Test.CodeCoverage.Skip) -Force
     $settings.Test.CodeCoverage | Add-Member -MemberType NoteProperty -Name Enabled -Value (
-        $shouldRunBuildTest -and (-not $settings.Test.CodeCoverage.Skip) -and (
+        $shouldRunModulePipeline -and (-not $settings.Test.CodeCoverage.Skip) -and (
             ($null -ne $settings.Test.PSModule.Suites) -or ($null -ne $settings.Test.Module.Suites)
         )
     ) -Force
@@ -607,14 +630,18 @@ LogGroup 'Calculate Job Run Conditions:' {
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
     $settings.Publish | Add-Member -MemberType NoteProperty -Name Site -Value ([pscustomobject]@{
-            Desired = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
-            Enabled = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
+            Desired = $isMergedPR -and $isTargetDefaultBranch -and $hasDocsChanges
+            Enabled = $isMergedPR -and $isTargetDefaultBranch -and $hasDocsChanges
         }) -Force
 
-    $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasImportantChanges
+    $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasModuleChanges -Force
+    $settings | Add-Member -MemberType NoteProperty -Name HasModuleChanges -Value $hasModuleChanges -Force
+    $settings | Add-Member -MemberType NoteProperty -Name HasDocsChanges -Value $hasDocsChanges -Force
 
     Write-Host 'Phase execution state:'
     [pscustomobject]@{
+        HasModuleChanges     = $settings.HasModuleChanges
+        HasDocsChanges       = $settings.HasDocsChanges
         LintRepository       = $settings.Linter.Repository.Enabled
         BuildModule          = $settings.Build.Module.Enabled
         TestSourceCode       = $settings.Test.SourceCode.Enabled

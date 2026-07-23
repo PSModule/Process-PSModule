@@ -11,7 +11,7 @@
     },
     "ImportantFilePatterns": {
       "type": "array",
-      "description": "Regex patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. Defaults to ['^src/', '^README\\.md$'] when not configured.",
+      "description": "Regex patterns that identify module-impacting files. Changes matching these patterns trigger module build, test, and release stages. Docs/site orchestration adds documentation/layout defaults on top of these patterns. Defaults to ['^src/', '^README\\.md$'] when not configured.",
       "items": {
         "type": "string",
         "minLength": 1
@@ -258,7 +258,15 @@
     },
     "HasImportantChanges": {
       "type": "boolean",
-      "description": "Indicates if important files have changed in the PR (src/**, examples/**, README.md, .github/workflows/Process-PSModule.yml)"
+      "description": "Backward-compatible alias for HasModuleChanges."
+    },
+    "HasModuleChanges": {
+      "type": "boolean",
+      "description": "Indicates whether module-impacting files changed in the PR."
+    },
+    "HasDocsChanges": {
+      "type": "boolean",
+      "description": "Indicates whether docs-impacting files changed in the PR (for example docs content, docs config, or site layout files)."
     },
     "Run": {
       "type": "null",

@@ -33,8 +33,9 @@ inputs:
     default: ${{ github.workspace }}
   ImportantFilePatterns:
     description: |
-      Newline-separated list of regex patterns that identify important files.
-      Changes matching these patterns trigger build, test, and publish stages.
+      Newline-separated list of regex patterns that identify module-impacting files.
+      Changes matching these patterns trigger module build, test, and release stages.
+      Docs/site orchestration also includes documentation/layout defaults.
       When set, fully replaces the defaults.
     required: false
     default: |
