@@ -11,3 +11,21 @@ The full documentation lives on the MSX / Docs site:
 📖 **[Process-PSModule documentation](https://msxorg.github.io/docs/Frameworks/Process-PSModule/)**
 
 It covers getting started, the pipeline stages, usage, configuration, repository structure, and the principles behind the framework.
+
+## Reusable workflow secrets (GitHub App auth)
+
+When calling `./.github/workflows/workflow.yml`, pass GitHub App credentials using these generic reusable-workflow secret names:
+
+- `GitHubAppClientId`
+- `GitHubAppPrivateKey`
+
+Consumer repositories can keep their own secret names and map them in the caller workflow, for example:
+
+```yaml
+jobs:
+  ProcessPSModule:
+    uses: ./.github/workflows/workflow.yml
+    secrets:
+      GitHubAppClientId: ${{ secrets.PSMODULE_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.PSMODULE_PRIVATE_KEY }}
+```
