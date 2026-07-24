@@ -72,8 +72,8 @@ permissions:
 jobs:
   # Runs on:
   # - ✅ Open/Updated PR - Always runs to load configuration
-  # - ✅ Merged PR       - Always runs to load configuration
-  # - ✅ Abandoned PR    - Always runs to load configuration
+  # - ✅ Push to default - Always runs to resolve stable-release context
+  # - ✅ Closed PR       - Always runs to resolve prerelease cleanup
   # - ✅ Manual run      - Always runs to load configuration
   Plan:
     uses: ./.github/workflows/Plan.yml
@@ -88,8 +88,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints code changes in active PRs
-  # - ❌ Merged PR       - No need to lint after merge + its a merge commit that causes issues with super-linter
-  # - ❌ Abandoned PR    - No need to lint abandoned changes
+  # - ❌ Push to default - No need to lint after merge + its a merge commit that causes issues with super-linter
+  # - ❌ Closed PR       - No need to lint closed changes
   # - ❌ Manual run      - Only runs for PR events
   Lint-Repository:
     if: fromJson(needs.Plan.outputs.Settings).Linter.Repository.Enabled
@@ -101,8 +101,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
-  # - ✅ Merged PR       - Builds module for publishing
-  # - ❌ Abandoned PR    - Skips building abandoned changes
+  # - ✅ Push to default - Builds module for publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Builds module when manually triggered
   Build-Module:
     if: fromJson(needs.Plan.outputs.Settings).Build.Module.Enabled
@@ -114,8 +114,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests source code changes
-  # - ✅ Merged PR       - Tests source code before publishing
-  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Push to default - Tests source code before publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Tests source code when manually triggered
   Test-SourceCode:
     if: fromJson(needs.Plan.outputs.Settings).Test.SourceCode.Enabled
@@ -127,8 +127,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints source code changes
-  # - ✅ Merged PR       - Lints source code before publishing
-  # - ❌ Abandoned PR    - Skips linting abandoned changes
+  # - ✅ Push to default - Lints source code before publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Lints source code when manually triggered
   Lint-SourceCode:
     if: fromJson(needs.Plan.outputs.Settings).Linter.SourceCode.Enabled
@@ -140,8 +140,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests built module
-  # - ✅ Merged PR       - Tests built module before publishing
-  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Push to default - Tests built module before publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Tests built module when manually triggered
   Test-Module:
     if: fromJson(needs.Plan.outputs.Settings).Test.PSModule.Enabled && needs.Build-Module.result == 'success' && !cancelled()
@@ -154,8 +154,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs setup scripts before local module tests
-  # - ✅ Merged PR       - Runs setup scripts before local module tests
-  # - ❌ Abandoned PR    - Skips setup for abandoned changes
+  # - ✅ Push to default - Runs setup scripts before local module tests
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Runs setup scripts when manually triggered
   BeforeAll-ModuleLocal:
     if: fromJson(needs.Plan.outputs.Settings).Test.Module.BeforeAllEnabled && needs.Build-Module.result == 'success' && !cancelled()
@@ -170,8 +170,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests module in local environment
-  # - ✅ Merged PR       - Tests module in local environment before publishing
-  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Push to default - Tests module in local environment before publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Tests module in local environment when manually triggered
   Test-ModuleLocal:
     if: fromJson(needs.Plan.outputs.Settings).Test.Module.MainEnabled && needs.Build-Module.result == 'success' && !cancelled()
@@ -187,8 +187,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs teardown scripts after local module setup/tests
-  # - ✅ Merged PR       - Runs teardown scripts after local module setup/tests
-  # - ✅ Abandoned PR    - Runs teardown if local module setup/tests were started (cleanup)
+  # - ✅ Push to default - Runs teardown scripts after local module setup/tests
+  # - ❌ Closed PR       - Workflow cleanup does not start module-local tests
   # - ✅ Manual run      - Runs teardown scripts after local module setup/tests
   AfterAll-ModuleLocal:
     if: fromJson(needs.Plan.outputs.Settings).Test.Module.AfterAllEnabled && needs.BeforeAll-ModuleLocal.result != 'skipped' && always()
@@ -204,8 +204,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Collects and reports test results
-  # - ✅ Merged PR       - Collects and reports test results before publishing
-  # - ❌ Abandoned PR    - Skips collecting results for abandoned changes
+  # - ✅ Push to default - Collects and reports test results before publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Collects and reports test results when manually triggered
   Get-TestResults:
     if: fromJson(needs.Plan.outputs.Settings).Test.TestResults.Enabled && needs.Plan.result == 'success' && always() && !cancelled()
@@ -223,8 +223,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Calculates and reports code coverage
-  # - ✅ Merged PR       - Calculates and reports code coverage before publishing
-  # - ❌ Abandoned PR    - Skips coverage for abandoned changes
+  # - ✅ Push to default - Calculates and reports code coverage before publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Calculates and reports code coverage when manually triggered
   Get-CodeCoverage:
     if: fromJson(needs.Plan.outputs.Settings).Test.CodeCoverage.Enabled && needs.Plan.result == 'success' && always() && !cancelled()
@@ -238,9 +238,9 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Only with prerelease label: publishes prerelease version
-  # - ✅ Merged PR       - To default branch only: publishes release when all tests/coverage/build succeed
-  # - ✅ Abandoned PR    - Cleans up prereleases for the abandoned branch (no version published)
-  # - ❌ Manual run      - Only runs for PR events
+  # - ✅ Push to default - Publishes stable release when associated PR has important changes
+  # - ✅ Closed PR       - Cleans up prereleases only (no stable version published)
+  # - ❌ Manual run      - Does not publish without resolved release context
   Publish-Module:
     if: fromJson(needs.Plan.outputs.Settings).Publish.Module.Enabled && needs.Plan.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
     uses: ./.github/workflows/Publish-Module.yml
@@ -256,8 +256,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds documentation for review
-  # - ✅ Merged PR       - Builds documentation for publishing
-  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
+  # - ✅ Push to default - Builds documentation for publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Builds documentation when manually triggered
   Build-Docs:
     if: fromJson(needs.Plan.outputs.Settings).Build.Docs.Enabled
@@ -270,8 +270,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds site for preview
-  # - ✅ Merged PR       - Builds site for publishing
-  # - ❌ Abandoned PR    - Skips building site for abandoned changes
+  # - ✅ Push to default - Builds site for publishing
+  # - ❌ Closed PR       - Cleanup only
   # - ✅ Manual run      - Builds site when manually triggered
   Build-Site:
     if: fromJson(needs.Plan.outputs.Settings).Build.Site.Enabled
@@ -284,9 +284,9 @@ jobs:
 
   # Runs on:
   # - ❌ Open/Updated PR - Site not published for PRs in progress
-  # - ✅ Merged PR       - To default branch only: deploys site to GitHub Pages
-  # - ❌ Abandoned PR    - Site not published for abandoned changes
-  # - ❌ Manual run      - Only publishes on merged PRs to default branch
+  # - ✅ Push to default - Deploys site to GitHub Pages with stable releases
+  # - ❌ Closed PR       - Site not published for closed changes
+  # - ❌ Manual run      - Requires stable push release context
   Publish-Site:
     if: fromJson(needs.Plan.outputs.Settings).Publish.Site.Enabled && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled()
     uses: ./.github/workflows/Publish-Site.yml

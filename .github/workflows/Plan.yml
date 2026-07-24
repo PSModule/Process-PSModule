@@ -3,7 +3,7 @@ name: Plan
 # The Plan job is the single decision point for the workflow.
 # It runs two steps:
 #   1. Get-PSModuleSettings      - loads and resolves configuration
-#   2. Resolve-PSModuleVersion   - calculates the next version from settings + PR labels
+#   2. Resolve-PSModuleVersion   - calculates the next version from settings + normalized PR context
 # The resolved version is merged into the publish phase object (Settings.Publish.Module.Resolution.*) by the Enrich-Settings step.
 # All downstream jobs receive one self-contained Settings JSON with no separate version outputs.
 
