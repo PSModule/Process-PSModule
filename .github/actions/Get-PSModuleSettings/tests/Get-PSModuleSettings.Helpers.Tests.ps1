@@ -73,3 +73,41 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.ShouldCleanupEvent | Should -BeTrue
     }
 }
+
+Describe 'Select-PullRequestForPush' {
+    It 'selects the merged PR whose merge commit matches the push SHA' {
+        $pullRequests = @(
+            [pscustomobject]@{
+                Number           = 411
+                Base             = [pscustomobject]@{ Ref = 'main' }
+                merged_at        = $null
+                merge_commit_sha = 'open-pr-sha'
+            },
+            [pscustomobject]@{
+                Number           = 390
+                Base             = [pscustomobject]@{ Ref = 'main' }
+                merged_at        = '2026-07-24T00:00:00Z'
+                merge_commit_sha = 'pushed-sha'
+            }
+        )
+
+        $result = Select-PullRequestForPush -PullRequest $pullRequests -DefaultBranch main -CommitSha pushed-sha
+
+        $result.Number | Should -Be 390
+    }
+
+    It 'does not use an open PR association as stable release context' {
+        $pullRequests = @(
+            [pscustomobject]@{
+                Number           = 411
+                Base             = [pscustomobject]@{ Ref = 'main' }
+                merged_at        = $null
+                merge_commit_sha = 'pushed-sha'
+            }
+        )
+
+        $result = Select-PullRequestForPush -PullRequest $pullRequests -DefaultBranch main -CommitSha pushed-sha
+
+        $result | Should -BeNullOrEmpty
+    }
+}

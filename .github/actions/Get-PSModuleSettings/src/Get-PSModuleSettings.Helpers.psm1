@@ -75,3 +75,33 @@ function Resolve-WorkflowEventRouting {
         )
     }
 }
+
+function Select-PullRequestForPush {
+    <#
+        .SYNOPSIS
+        Selects the merged default-branch pull request associated with a pushed commit.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
+        Justification = 'Parameter is used inside a Sort-Object script block.')]
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        [Parameter()]
+        [object[]] $PullRequest,
+
+        [Parameter(Mandatory)]
+        [string] $DefaultBranch,
+
+        [Parameter(Mandatory)]
+        [string] $CommitSha
+    )
+
+    $PullRequest |
+        Where-Object {
+            $_.Base.Ref -eq $DefaultBranch -and
+            -not [string]::IsNullOrWhiteSpace($_.'merged_at')
+        } |
+        Sort-Object -Property @{ Expression = { $_.'merge_commit_sha' -eq $CommitSha }; Descending = $true },
+        @{ Expression = { $_.'merged_at' }; Descending = $true } |
+        Select-Object -First 1
+}

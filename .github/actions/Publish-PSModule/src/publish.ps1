@@ -14,6 +14,10 @@
     'PSUseDeclaredVarsMoreThanAssignments', 'usePRTitleAsNotesHeading',
     Justification = 'Variable is used in script blocks.'
 )]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments', 'commitSha',
+    Justification = 'Variable is used in script blocks.'
+)]
 [CmdletBinding()]
 param()
 
@@ -47,6 +51,7 @@ LogGroup 'Load inputs' {
     $modulePath = Resolve-Path -Path $modulePathCandidate | Select-Object -ExpandProperty Path
     $apiKey = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey
     $whatIf = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf -eq 'true'
+    $commitSha = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha
     $usePRBodyAsReleaseNotes = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes -eq 'true'
     $usePRTitleAsReleaseName = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
@@ -239,6 +244,8 @@ LogGroup 'Create GitHub release' {
 
     if ($createPrerelease) {
         $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
+    } elseif (-not [string]::IsNullOrWhiteSpace($commitSha)) {
+        $releaseCreateCommand += @('--target', $commitSha)
     }
 
     if ($whatIf) {

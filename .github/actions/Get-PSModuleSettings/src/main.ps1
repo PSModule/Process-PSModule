@@ -244,11 +244,9 @@ LogGroup 'Calculate Job Run Conditions:' {
             $repo = $env:GITHUB_REPOSITORY_NAME
             $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$commitSha/pulls" -Method GET
             $associatedPullRequests = @($response.Response)
-            $pullRequest = $associatedPullRequests |
-                Where-Object { $_.Base.Ref -eq $defaultBranch } |
-                Sort-Object -Property @{ Expression = { $_.'merge_commit_sha' -eq $commitSha }; Descending = $true },
-                @{ Expression = { $_.'merged_at' }; Descending = $true } |
-                Select-Object -First 1
+            $pullRequest = Select-PullRequestForPush -PullRequest $associatedPullRequests `
+                -DefaultBranch $defaultBranch `
+                -CommitSha $commitSha
 
             if ($pullRequest) {
                 Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$commitSha]."

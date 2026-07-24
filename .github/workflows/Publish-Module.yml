@@ -47,6 +47,7 @@ jobs:
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKey }}
           PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
+          CommitSha: ${{ fromJson(inputs.Settings).Context.CommitSha }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
