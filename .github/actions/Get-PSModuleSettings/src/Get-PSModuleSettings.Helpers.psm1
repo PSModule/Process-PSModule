@@ -99,9 +99,9 @@ function Select-PullRequestForPush {
     $PullRequest |
         Where-Object {
             $_.Base.Ref -eq $DefaultBranch -and
-            -not [string]::IsNullOrWhiteSpace($_.'merged_at')
+            -not [string]::IsNullOrWhiteSpace($_.'merged_at') -and
+            $_.'merge_commit_sha' -eq $CommitSha
         } |
-        Sort-Object -Property @{ Expression = { $_.'merge_commit_sha' -eq $CommitSha }; Descending = $true },
-        @{ Expression = { $_.'merged_at' }; Descending = $true } |
+        Sort-Object -Property @{ Expression = { $_.'merged_at' }; Descending = $true } |
         Select-Object -First 1
 }

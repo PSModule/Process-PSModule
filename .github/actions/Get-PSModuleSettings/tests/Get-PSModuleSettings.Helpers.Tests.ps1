@@ -110,4 +110,19 @@ Describe 'Select-PullRequestForPush' {
 
         $result | Should -BeNullOrEmpty
     }
+
+    It 'does not use a merged PR whose merge commit differs from the push SHA' {
+        $pullRequests = @(
+            [pscustomobject]@{
+                Number           = 390
+                Base             = [pscustomobject]@{ Ref = 'main' }
+                merged_at        = '2026-07-24T00:00:00Z'
+                merge_commit_sha = 'different-sha'
+            }
+        )
+
+        $result = Select-PullRequestForPush -PullRequest $pullRequests -DefaultBranch main -CommitSha direct-push-sha
+
+        $result | Should -BeNullOrEmpty
+    }
 }
