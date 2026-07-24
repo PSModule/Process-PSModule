@@ -142,6 +142,10 @@
               "type": "boolean",
               "description": "Automatically apply patches"
             },
+            "AllowDirectPushRelease": {
+              "type": "boolean",
+              "description": "Allow a stable release from a default-branch push that has no associated pull request. Defaults to false."
+            },
             "IncrementalPrerelease": {
               "type": "boolean",
               "description": "Use incremental prerelease versioning"
