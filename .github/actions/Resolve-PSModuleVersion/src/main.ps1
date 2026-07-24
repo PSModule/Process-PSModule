@@ -8,7 +8,7 @@ Import-Module -Name "$PSScriptRoot/Resolve-PSModuleVersion.Helpers.psm1" -Force
 
 $actionInput = Read-ActionInput
 $config = Get-PublishConfiguration -SettingsJson $actionInput.SettingsJson
-$pullRequest = Get-GitHubPullRequest
+$pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
 
 $decision = if ($null -eq $pullRequest) {
     # Non-PR event (for example workflow_dispatch or schedule): there are no pull request

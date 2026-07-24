@@ -123,26 +123,63 @@ function Get-PublishConfiguration {
 function Get-GitHubPullRequest {
     <#
         .SYNOPSIS
-        Reads and validates the GitHub pull request from the event payload.
+        Reads normalized pull request context from settings, with event payload fallback.
 
         .DESCRIPTION
-        Loads the GitHub event from the input override or from the event path file. On a
-        pull_request event it returns the pull request head ref and labels. On any other
-        event (for example workflow_dispatch or schedule) there is no pull request, so it
-        returns $null and the caller resolves the current version without a version bump.
+        Uses the normalized context produced by Get-PSModuleSettings so push events can use
+        pull request labels and head ref resolved from the commit SHA. Raw pull_request event
+        payloads remain supported for callers that invoke this action directly.
 
         .OUTPUTS
-        PSCustomObject with HeadRef and Labels properties for a pull_request event, or
-        $null when the event has no pull request (non-PR events).
+        PSCustomObject with HeadRef and Labels properties, or $null when no release context
+        is available.
 
         .EXAMPLE
         $pullRequest = Get-GitHubPullRequest
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
-    param()
+    param(
+        # The JSON string containing normalized workflow settings.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $SettingsJson
+    )
 
     LogGroup 'Event information' {
+        $settings = $SettingsJson | ConvertFrom-Json
+        $pr = $settings.Context.PullRequest
+        if ($pr) {
+            $labels = @($pr.Labels)
+
+            Write-Host 'Using normalized pull request context from settings.'
+            Write-Host '-------------------------------------------------'
+            Write-Host ([PSCustomObject]@{
+                    PRNumber  = $pr.Number
+                    PRHeadRef = $pr.HeadRef
+                    Labels    = $labels -join ', '
+                } | Format-List | Out-String)
+            Write-Host '-------------------------------------------------'
+
+            return [PSCustomObject]@{
+                Number  = $pr.Number
+                HeadRef = $pr.HeadRef
+                Labels  = $labels
+            }
+        }
+
+        if (
+            $settings.Context.IsPushToDefaultBranch -and
+            $settings.Publish.Module.ReleaseType -eq 'Release'
+        ) {
+            Write-Host 'Using explicitly enabled direct-push release context from settings.'
+            return [PSCustomObject]@{
+                Number  = $null
+                HeadRef = $settings.Context.DefaultBranch
+                Labels  = @()
+            }
+        }
+
         $eventJsonInput = $env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson
         $githubEvent = if (-not [string]::IsNullOrWhiteSpace($eventJsonInput)) {
             $eventJsonInput | ConvertFrom-Json
@@ -152,8 +189,8 @@ function Get-GitHubPullRequest {
 
         $pr = $githubEvent.pull_request
         if (-not $pr) {
-            Write-Host 'GitHub event does not contain pull_request data (non-PR event, e.g. workflow_dispatch or schedule).'
-            Write-Host 'No pull request context is available; the caller keeps the current version without a bump.'
+            Write-Host 'No normalized or event pull request context is available.'
+            Write-Host 'The caller keeps the current version without a bump.'
             return $null
         }
 
@@ -168,6 +205,7 @@ function Get-GitHubPullRequest {
         Write-Host '-------------------------------------------------'
 
         [PSCustomObject]@{
+            Number  = $pr.number
             HeadRef = $pr.head.ref
             Labels  = $labels
         }
