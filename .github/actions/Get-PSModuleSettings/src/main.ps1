@@ -391,11 +391,13 @@ If you believe this is incorrect, please verify that your changes are in the cor
             }
         }
     } elseif ($isPush) {
-        $hasImportantChanges = $isPushToDefaultBranch -and $settings.Publish.Module.AllowDirectPushRelease
-        if ($hasImportantChanges) {
-            Write-Host 'Direct push release is explicitly enabled; treating the push as having important changes.'
+        # Without PR files to compare, preserve push CI by running build/test. Publication is
+        # independently gated by AllowDirectPushRelease.
+        $hasImportantChanges = $true
+        if ($settings.Publish.Module.AllowDirectPushRelease) {
+            Write-Host 'Direct push release is explicitly enabled.'
         } else {
-            Write-Host 'Push has no associated pull request; stable publishing is disabled by default.'
+            Write-Host 'Push has no associated pull request; build/test will run but stable publishing is disabled by default.'
         }
     } else {
         # Preserve build/test behavior for workflow_dispatch and schedule events.
