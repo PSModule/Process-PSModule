@@ -1,4 +1,5 @@
 ﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
+Import-Module -Name "$PSScriptRoot/Get-PSModuleSettings.Helpers.psm1" -Force
 
 $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
 $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
@@ -300,21 +301,17 @@ LogGroup 'Calculate Job Run Conditions:' {
         TargetBranch                     = $targetBranch
         DefaultBranch                    = $defaultBranch
         IsTargetDefaultBranch            = $isTargetDefaultBranch
-        IsPushToDefaultBranch             = $isPushToDefaultBranch
-        AssociatedPullRequest             = $pullRequestContext.Number
+        IsPushToDefaultBranch            = $isPushToDefaultBranch
+        AssociatedPullRequest            = $pullRequestContext.Number
     } | Format-List | Out-String
 
     $isOpenOrUpdatedPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
-    $isClosedPR = $isPR -and $pullRequestAction -eq 'closed'
-    $isAbandonedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -ne $true
-    $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
     $hasPullRequestContext = $null -ne $pullRequestContext
 
     # Check if a prerelease label exists on the PR
     $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
     $prLabels = @($pullRequestContext.Labels)
     $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
-    $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
     # Check if important files have changed in the PR
     # Important files are determined by the configured ImportantFilePatterns setting
@@ -406,35 +403,28 @@ If you believe this is incorrect, please verify that your changes are in the cor
         Write-Host 'Non-PR event - treating as having important changes'
     }
 
-    # Prerelease requires both: prerelease label AND important file changes
-    # No point creating a prerelease if only non-module files changed
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasImportantChanges
-
-    # Determine ReleaseType - what type of release to create
-    # Values: 'Release', 'Prerelease', 'None'
-    # Stable releases are push-driven. A direct push requires explicit opt-in.
-    $releaseType = if (
-        $isPushToDefaultBranch -and
-        $hasImportantChanges -and
-        ($hasPullRequestContext -or $settings.Publish.Module.AllowDirectPushRelease)
-    ) {
-        'Release'
-    } elseif ($shouldPrerelease) {
-        'Prerelease'
-    } else {
-        'None'
-    }
+    $routing = Resolve-WorkflowEventRouting -EventName $eventName `
+        -EventAction $pullRequestAction `
+        -PullRequestIsMerged $pullRequestIsMerged `
+        -IsTargetDefaultBranch $isTargetDefaultBranch `
+        -IsPushToDefaultBranch $isPushToDefaultBranch `
+        -HasPullRequestContext $hasPullRequestContext `
+        -HasImportantChanges $hasImportantChanges `
+        -HasPrereleaseLabel $hasPrereleaseLabel `
+        -AllowDirectPushRelease $settings.Publish.Module.AllowDirectPushRelease
+    $shouldPrerelease = $routing.ShouldPrerelease
+    $releaseType = $routing.ReleaseType
 
     [pscustomobject]@{
-        isPR                  = $isPR
-        isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
-        isOpenOrLabeledPR     = $isOpenOrLabeledPR
-        isClosedPR            = $isClosedPR
-        isAbandonedPR         = $isAbandonedPR
-        isMergedPR            = $isMergedPR
-        isPush                = $isPush
-        isPushToDefaultBranch = $isPushToDefaultBranch
-        isTargetDefaultBranch = $isTargetDefaultBranch
+        isPR                  = $routing.IsPR
+        isOpenOrUpdatedPR     = $routing.IsOpenOrUpdatedPR
+        isOpenOrLabeledPR     = $routing.IsOpenOrLabeledPR
+        isClosedPR            = $routing.IsClosedPR
+        isAbandonedPR         = $routing.IsAbandonedPR
+        isMergedPR            = $routing.IsMergedPR
+        isPush                = $routing.IsPush
+        isPushToDefaultBranch = $routing.IsPushToDefaultBranch
+        isTargetDefaultBranch = $routing.IsTargetDefaultBranch
         hasPullRequestContext = $hasPullRequestContext
         hasPrereleaseLabel    = $hasPrereleaseLabel
         shouldPrerelease      = $shouldPrerelease
@@ -607,11 +597,7 @@ $settings.Test.Module | Add-Member -MemberType NoteProperty -Name Suites -Value 
 LogGroup 'Calculate Job Run Conditions:' {
     # Calculate if prereleases should be cleaned up:
     # Closed PRs only clean up prereleases. Push runs also clean up the associated PR channel.
-    $shouldCleanupEvent = (
-        ($releaseType -eq 'Release') -or
-        $isClosedPR -or
-        ($isPushToDefaultBranch -and $hasPullRequestContext)
-    )
+    $shouldCleanupEvent = $routing.ShouldCleanupEvent
     $shouldAutoCleanup = $shouldCleanupEvent -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
@@ -621,7 +607,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     # For open PRs, we only want to run build/test stages if important files changed.
     # Closed PR events are cleanup-only. workflow_dispatch and schedule retain build/test behavior.
     # Note: $shouldPrerelease already requires $hasImportantChanges, so no separate check needed.
-    $shouldRunBuildTest = (-not $isClosedPR) -and $hasImportantChanges
+    $shouldRunBuildTest = $routing.ShouldRunBuildTest
 
     # Check if setup/teardown scripts exist in the repository
     $hasBeforeAllScript = Test-Path -Path 'tests/BeforeAll.ps1'
