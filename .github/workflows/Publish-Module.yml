@@ -46,6 +46,7 @@ jobs:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKey }}
+          PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
@@ -60,4 +61,5 @@ jobs:
         with:
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
+          PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

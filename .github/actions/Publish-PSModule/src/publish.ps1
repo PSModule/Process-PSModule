@@ -65,18 +65,37 @@ LogGroup 'Load inputs' {
 }
 #endregion Load inputs
 
-#region Load PR information
-LogGroup 'Load PR information' {
-    $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
-    $githubEvent = $githubEventJson | ConvertFrom-Json
-    $pull_request = $githubEvent.pull_request
-    if (-not $pull_request) {
-        throw 'GitHub event does not contain pull_request data. This script must be run from a pull_request event.'
+#region Load release context
+LogGroup 'Load release context' {
+    $pullRequestJson = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest
+    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequestJson | ConvertFrom-Json
+    } else {
+        $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
+        $githubEvent = $githubEventJson | ConvertFrom-Json
+        if ($githubEvent.pull_request) {
+            [pscustomobject]@{
+                Number  = $githubEvent.pull_request.number
+                Title   = $githubEvent.pull_request.title
+                Body    = $githubEvent.pull_request.body
+                HeadRef = $githubEvent.pull_request.head.ref
+            }
+        }
     }
-    $prNumber = $pull_request.number
-    $prHeadRef = $pull_request.head.ref
+
+    if ($pullRequest) {
+        $prNumber = $pullRequest.Number
+        $prHeadRef = $pullRequest.HeadRef
+        Write-Host "Pull request:  [#$prNumber]"
+        Write-Host "PR head ref:   [$prHeadRef]"
+    } else {
+        $prNumber = $null
+        $prHeadRef = $env:GITHUB_REF_NAME
+        Write-Host 'No pull request context is available; PR-derived release metadata and comments are disabled.'
+        Write-Host "Release ref:   [$prHeadRef]"
+    }
 }
-#endregion Load PR information
+#endregion Load release context
 
 #region Resolve version from manifest
 # The manifest was stamped with the final version during Build-PSModule. This step is read-only
@@ -129,6 +148,11 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
+    if ($createPrerelease -and [string]::IsNullOrWhiteSpace($prHeadRef)) {
+        Write-Error 'A prerelease requires pull request context with a head ref.'
+        exit 1
+    }
+
     $releaseTag = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
 
     [PSCustomObject]@{
@@ -169,18 +193,20 @@ LogGroup 'Publish to PSGallery' {
         }
     }
 
-    if ($whatIf) {
+    if ($whatIf -and $prNumber) {
         Write-Host (
             "gh pr comment $prNumber -b " +
             "'✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)'"
         )
-    } else {
+    } elseif (-not $whatIf -and $prNumber) {
         Write-Host "::notice title=✅ $releaseType`: PowerShell Gallery - $name $publishPSVersion::$psGalleryReleaseLink"
         gh pr comment $prNumber -b "✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)"
         if ($LASTEXITCODE -ne 0) {
             Write-Error 'Failed to comment on the pull request.'
             exit $LASTEXITCODE
         }
+    } else {
+        Write-Host "::notice title=✅ $releaseType`: PowerShell Gallery - $name $publishPSVersion::$psGalleryReleaseLink"
     }
 }
 #endregion Publish to PSGallery
@@ -192,9 +218,9 @@ LogGroup 'Create GitHub release' {
     $releaseCreateCommand = @('release', 'create', $releaseTag)
     $notesFilePath = $null
 
-    if ($usePRTitleAsReleaseName -and $pull_request.title) {
-        $releaseCreateCommand += @('--title', $pull_request.title)
-        Write-Host "Using PR title as release name: [$($pull_request.title)]"
+    if ($usePRTitleAsReleaseName -and $pullRequest.Title) {
+        $releaseCreateCommand += @('--title', $pullRequest.Title)
+        Write-Host "Using PR title as release name: [$($pullRequest.Title)]"
     } else {
         $releaseCreateCommand += @('--title', $releaseTag)
     }
@@ -204,15 +230,15 @@ LogGroup 'Create GitHub release' {
     #   1. UsePRTitleAsNotesHeading + UsePRBodyAsReleaseNotes: Creates "# Title (#PR)\n\nBody" format.
     #   2. UsePRBodyAsReleaseNotes only: Uses PR body as-is.
     #   3. Fallback: Auto-generates notes via GitHub's --generate-notes.
-    if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pull_request.title -and $pull_request.body) {
-        $notes = "# $($pull_request.title) (#$prNumber)`n`n$($pull_request.body)"
+    if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pullRequest.Title -and $pullRequest.Body) {
+        $notes = "# $($pullRequest.Title) (#$prNumber)`n`n$($pullRequest.Body)"
         $notesFilePath = [System.IO.Path]::GetTempFileName()
         Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
         $releaseCreateCommand += @('--notes-file', $notesFilePath)
         Write-Host 'Using PR title as H1 heading with link and body as release notes'
-    } elseif ($usePRBodyAsReleaseNotes -and $pull_request.body) {
+    } elseif ($usePRBodyAsReleaseNotes -and $pullRequest.Body) {
         $notesFilePath = [System.IO.Path]::GetTempFileName()
-        Set-Content -Path $notesFilePath -Value $pull_request.body -Encoding utf8
+        Set-Content -Path $notesFilePath -Value $pullRequest.Body -Encoding utf8
         $releaseCreateCommand += @('--notes-file', $notesFilePath)
         Write-Host 'Using PR body as release notes'
     } else {
@@ -267,9 +293,9 @@ LogGroup 'Create GitHub release' {
         }
     }
 
-    if ($whatIf) {
+    if ($whatIf -and $prNumber) {
         Write-Host "gh pr comment $prNumber -b '✅ $($releaseType): GitHub - $name $releaseTag'"
-    } else {
+    } elseif (-not $whatIf -and $prNumber) {
         gh pr comment $prNumber -b "✅ $releaseType`: GitHub - [$name $releaseTag]($releaseURL)"
         if ($LASTEXITCODE -ne 0) {
             Write-Error 'Failed to comment on the pull request.'

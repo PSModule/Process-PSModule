@@ -7,6 +7,10 @@ inputs:
     description: Control whether to automatically delete prerelease tags.
     required: false
     default: 'true'
+  PullRequest:
+    description: Normalized pull request context JSON from Get-PSModuleSettings.
+    required: false
+    default: ''
   WhatIf:
     description: If specified, the action will only log the changes it would make.
     required: false
@@ -28,5 +32,6 @@ runs:
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf: ${{ inputs.WhatIf }}
+        PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest: ${{ inputs.PullRequest }}
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ env.PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag }}
       run: ${{ github.action_path }}/src/cleanup.ps1

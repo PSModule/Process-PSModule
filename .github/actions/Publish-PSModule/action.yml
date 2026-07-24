@@ -13,6 +13,10 @@ inputs:
   APIKey:
     description: PowerShell Gallery API Key.
     required: true
+  PullRequest:
+    description: Normalized pull request context JSON from Get-PSModuleSettings.
+    required: false
+    default: ''
   WhatIf:
     description: If specified, the action will only log the changes it would make, but will not actually create or delete any releases or tags.
     required: false
@@ -61,6 +65,7 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey: ${{ inputs.APIKey }}
+        PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest: ${{ inputs.PullRequest }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes: ${{ inputs.UsePRBodyAsReleaseNotes }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
