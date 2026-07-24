@@ -14,14 +14,6 @@
     'PSUseDeclaredVarsMoreThanAssignments', 'usePRTitleAsNotesHeading',
     Justification = 'Variable is used in script blocks.'
 )]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'prNumber',
-    Justification = 'Variable is used in script blocks.'
-)]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'prHeadRef',
-    Justification = 'Variable is used in script blocks.'
-)]
 [CmdletBinding()]
 param()
 

@@ -137,6 +137,8 @@ function Get-GitHubPullRequest {
         .EXAMPLE
         $pullRequest = Get-GitHubPullRequest
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
+        Justification = 'Parameter is used inside LogGroup script block.')]
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
