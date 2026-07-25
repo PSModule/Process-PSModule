@@ -163,24 +163,6 @@ Describe 'PSModule - SourceCode tests' {
             $issues -join [Environment]::NewLine |
                 Should -BeNullOrEmpty -Because "the script should use '`$null = ...' instead of '... | Out-Null'"
         }
-        It 'Should not use ternary operations for compatibility reasons (ID: NoTernary)' -Skip {
-            $issues = @('')
-            $scriptFiles | ForEach-Object {
-                $filePath = $_.FullName
-                $relativePath = $filePath.Replace($Path, '').Trim('\').Trim('/')
-                $skipTest = Select-String -Path $filePath -Pattern '#SkipTest:NoTernary:(?<Reason>.+)' -AllMatches
-                if ($skipTest.Matches.Count -gt 0) {
-                    $skipReason = $skipTest.Matches.Groups | Where-Object { $_.Name -eq 'Reason' } | Select-Object -ExpandProperty Value
-                    Write-Host "::warning title=Skipping NoTernary test:: - $relativePath - $skipReason"
-                } else {
-                    Select-String -Path $filePath -Pattern '(?<!\|)\s+\?\s' -AllMatches | ForEach-Object {
-                        $issues += " - $relativePath`:L$($_.LineNumber) - $($_.Line)"
-                    }
-                }
-            }
-            $issues -join [Environment]::NewLine |
-                Should -BeNullOrEmpty -Because 'the script should not use ternary operations for compatibility with PS 5.1 and below'
-        }
         It 'all powershell keywords are lowercase (ID: LowercaseKeywords)' {
             $issues = @('')
             $scriptFiles | ForEach-Object {
