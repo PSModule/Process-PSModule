@@ -1,35 +1,38 @@
 # Agents
 
-## Purpose
+## Main directive
 
-Use this file to understand how agents should gather context and execute work in
-this repository.
+Everything is a work in progress and can be improved.
+If you find a problem or improvement, fix if small; otherwise open an issue.
 
-## Core operating standard
+## Repo guidance
 
-1. Treat repository controls (linters, security checks, policies) as correct by
-   default.
-2. Align implementation with controls before considering exceptions.
-3. If an exception is needed, make it explicit, minimal, and documented in code
-   and PR context. Never bypass controls silently.
+- [`README.md`](README.md) — what this repository is and its purpose as the
+  Process-PSModule framework.
 
-## Canonical context resolution
+## PSModule Framework guidance
 
-Determine repository identity from Git metadata (for example, `origin` remote and
-repository settings). Do not hardcode a specific owner or host unless the task
-explicitly requires it.
+Regarding repo structure, module source code, and how the Process-PSModule workflow
+works. For PSModule-specific build, layout, and process guidance:
 
-Process context in this order:
+- [Process-PSModule docs](https://psmodule.github.io/docs/Modules/Process-PSModule/) —
+  repository structure, module anatomy, and the build/test/pack/publish pipeline.
+- [Repository defaults](https://psmodule.github.io/docs/Modules/Repository-Defaults/) —
+  the expected repository layout and required files.
+- [Standards](https://psmodule.github.io/docs/Modules/Standards/) — PowerShell module
+  coding standards.
+- [PSModule/memory](https://github.com/PSModule/memory) — durable cross-session agent
+  working memory for the PSModule organization.
 
-| Order | Source | What to read first | Why |
-| --- | --- | --- | --- |
-| 1 | Local repository | `README.md`, `CONTRIBUTING.md`, local docs index/start page | Local behavior and contribution rules are authoritative for this repo. |
-| 2 | Project/framework guidance | Framework or shared project docs referenced by this repo | Align with shared implementation patterns used by sibling repos. |
-| 3 | Central organization guidance | Organization-level docs and standards | Apply global policy after local/project specifics are known. |
+## Org-wide guidance
 
-## Documentation standards for commands and repos
+For cross-cutting ways of working and standards:
 
-1. Use canonical repository URLs in docs (full URLs such as
-   `https://github.com/owner/repo`) instead of ambiguous short names.
-2. For install and synchronization instructions, provide equivalent examples for
-   native shells on Windows, macOS, and Linux.
+- [Agentic Development](https://msxorg.github.io/docs/Ways-of-Working/Agentic-Development/) —
+  how agents and humans collaborate in this ecosystem.
+- [Ways of Working](https://msxorg.github.io/docs/Ways-of-Working/) — contribution
+  workflow, branching, PRs, issues.
+- [Coding Standards](https://msxorg.github.io/docs/Coding-Standards/) — language-level
+  conventions.
+- [MSXOrg/memory](https://github.com/MSXOrg/memory) — durable agent working memory:
+  gotchas, knowledge, and agent role notes.
