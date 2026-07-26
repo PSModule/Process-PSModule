@@ -171,13 +171,9 @@ $missedPaths = $codeCoverage.CommandsMissed |
             ForEach-Object { [int]$_.Line } |
             Sort-Object -Unique
         [pscustomobject]@{
-            Path = $_.Name
+            Path           = $_.Name
             MissedCommands = [int]$_.Count
-            MissedLines = if ($lines.Count -eq 0) {
-                ''
-            } else {
-                $lines -join ', '
-            }
+            MissedLines    = if ($lines.Count -eq 0) { '' } else { $lines -join ', ' }
         }
     }
 
