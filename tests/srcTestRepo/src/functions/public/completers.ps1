@@ -1,4 +1,8 @@
-﻿Register-ArgumentCompleter -CommandName New-PSModuleTest -ParameterName Name -ScriptBlock {
+﻿<#
+    .LINK
+    https://psmodule.io/PSModuleTest2/Functions/completers/
+#>
+Register-ArgumentCompleter -CommandName New-PSModuleTest -ParameterName Name -ScriptBlock {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $null = $commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters
 
