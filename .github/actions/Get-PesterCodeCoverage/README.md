@@ -9,9 +9,9 @@ This GitHub Action is a part of the [PSModule framework](https://github.com/PSMo
 ## Features
 
 - Combines multiple code coverage reports from parallel test runs
-- Generates markdown/HTML tables showing missed & executed commands
+- Generates Markdown/HTML tables showing missed & executed commands
 - Displays analyzed files and coverage statistics
-- Generates a generic missed-path report (markdown + json)
+- Generates a generic missed-path report (Markdown + JSON)
 - Configurable step summary sections
 - Threshold enforcement for minimum code coverage
 

@@ -171,9 +171,13 @@ $missedPaths = $codeCoverage.CommandsMissed |
             ForEach-Object { [int]$_.Line } |
             Sort-Object -Unique
         [pscustomobject]@{
-            Path           = $_.Name
+            Path = $_.Name
             MissedCommands = [int]$_.Count
-            MissedLines    = if ($lines.Count -eq 0) { '' } else { ($lines -join ', ') }
+            MissedLines = if ($lines.Count -eq 0) {
+                ''
+            } else {
+                $lines -join ', '
+            }
         }
     }
 
@@ -196,7 +200,12 @@ $null = $missedPathMarkdown.Add('# Code Coverage Missed Paths')
 $null = $missedPathMarkdown.Add('')
 $null = $missedPathMarkdown.Add("| Coverage | Target | Missed Paths | Missed Commands |")
 $null = $missedPathMarkdown.Add("| --- | --- | --- | --- |")
-$null = $missedPathMarkdown.Add("| $([Math]::Round($coveragePercent, 2))% | $([Math]::Round($coveragePercentTarget, 2))% | $($missedPaths.Count) | $($codeCoverage.CommandsMissedCount) |")
+$coverageSummaryRow = '| {0}% | {1}% | {2} | {3} |' -f (
+    [Math]::Round($coveragePercent, 2)
+), (
+    [Math]::Round($coveragePercentTarget, 2)
+), $missedPaths.Count, $codeCoverage.CommandsMissedCount
+$null = $missedPathMarkdown.Add($coverageSummaryRow)
 $null = $missedPathMarkdown.Add('')
 $null = $missedPathMarkdown.Add('## Paths')
 $null = $missedPathMarkdown.Add('| Path | Missed Commands | Missed Lines |')
