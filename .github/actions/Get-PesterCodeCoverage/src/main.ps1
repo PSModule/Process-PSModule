@@ -158,6 +158,66 @@ $success = $coveragePercent -ge $coveragePercentTarget
 $statusIcon = $success ? '✅' : '❌'
 $stats | Format-Table -AutoSize | Out-String
 
+$missedPaths = $codeCoverage.CommandsMissed |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_.File) } |
+    Group-Object -Property File |
+    Sort-Object -Property @(
+        @{ Expression = 'Count'; Descending = $true },
+        @{ Expression = 'Name'; Descending = $false }
+    ) |
+    ForEach-Object {
+        $lines = $_.Group |
+            Where-Object { $_.Line -is [ValueType] } |
+            ForEach-Object { [int]$_.Line } |
+            Sort-Object -Unique
+        [pscustomobject]@{
+            Path           = $_.Name
+            MissedCommands = [int]$_.Count
+            MissedLines    = if ($lines.Count -eq 0) { '' } else { ($lines -join ', ') }
+        }
+    }
+
+$missedPathReportPath = 'CodeCoverage-MissedPaths'
+$null = New-Item -Path $missedPathReportPath -ItemType Directory -Force
+
+$missedPathReport = [ordered]@{
+    GeneratedAtUtc  = [DateTime]::UtcNow.ToString('o')
+    CoveragePercent = [double]$coveragePercent
+    CoverageTarget  = [double]$coveragePercentTarget
+    MissedPaths     = @($missedPaths)
+}
+
+$missedPathReportJsonPath = Join-Path -Path $missedPathReportPath -ChildPath 'CodeCoverage-MissedPaths.json'
+$missedPathReportMarkdownPath = Join-Path -Path $missedPathReportPath -ChildPath 'CodeCoverage-MissedPaths.md'
+$missedPathReport | ConvertTo-Json -Depth 10 | Set-Content -Path $missedPathReportJsonPath -Encoding utf8NoBOM
+
+$missedPathMarkdown = [System.Collections.Generic.List[string]]::new()
+$null = $missedPathMarkdown.Add('# Code Coverage Missed Paths')
+$null = $missedPathMarkdown.Add('')
+$null = $missedPathMarkdown.Add("| Coverage | Target | Missed Paths | Missed Commands |")
+$null = $missedPathMarkdown.Add("| --- | --- | --- | --- |")
+$null = $missedPathMarkdown.Add("| $([Math]::Round($coveragePercent, 2))% | $([Math]::Round($coveragePercentTarget, 2))% | $($missedPaths.Count) | $($codeCoverage.CommandsMissedCount) |")
+$null = $missedPathMarkdown.Add('')
+$null = $missedPathMarkdown.Add('## Paths')
+$null = $missedPathMarkdown.Add('| Path | Missed Commands | Missed Lines |')
+$null = $missedPathMarkdown.Add('| --- | ---: | --- |')
+if ($missedPaths.Count -eq 0) {
+    $null = $missedPathMarkdown.Add('| _None_ | 0 |  |')
+} else {
+    foreach ($pathEntry in $missedPaths) {
+        $safePath = ([string]$pathEntry.Path).Replace('|', '\|')
+        $safeLines = ([string]$pathEntry.MissedLines).Replace('|', '\|')
+        $null = $missedPathMarkdown.Add("| $safePath | $($pathEntry.MissedCommands) | $safeLines |")
+    }
+}
+
+$missedPathMarkdown | Set-Content -Path $missedPathReportMarkdownPath -Encoding utf8NoBOM
+Write-Output 'Missed path report generated:'
+$missedPaths | Select-Object -First 20 | Format-Table -Property Path, MissedCommands, MissedLines -AutoSize | Out-String
+if ($env:GITHUB_OUTPUT) {
+    "MissedPathReportPath=$missedPathReportPath" >> $env:GITHUB_OUTPUT
+}
+
 # Build HTML table for 'missed' commands
 $tableheader = @'
 <table>
@@ -297,6 +357,18 @@ LogGroup 'Step Summary - Set step summary' {
                         $codeCoverage.FilesAnalyzed | ForEach-Object {
                             Write-Output "- $_"
                         }
+                    }
+                }
+            }
+
+            Details "Missed paths [$($missedPaths.Count)]" {
+                if ($missedPaths.Count -eq 0) {
+                    Paragraph {
+                        Write-Output 'No missed paths were detected.'
+                    }
+                } else {
+                    Table {
+                        $missedPaths | Select-Object -First 100
                     }
                 }
             }
