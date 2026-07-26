@@ -43,6 +43,12 @@ BeforeDiscovery {
         Get-ChildItem -Path $publicFunctionsPath -Filter '*.ps1' -Recurse -File |
             Sort-Object -Property FullName |
             ForEach-Object {
+                $ast = [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$null)
+                $functionTokens = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)
+                if ($functionTokens.Count -eq 0) {
+                    return
+                }
+
                 $relativePath = [IO.Path]::GetRelativePath($publicFunctionsPath, $_.FullName)
                 $relativeDirectory = Split-Path -Path $relativePath -Parent
                 $documentationPath = if ($relativeDirectory) {
