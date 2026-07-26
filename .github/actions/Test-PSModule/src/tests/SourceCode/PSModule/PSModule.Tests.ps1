@@ -11,6 +11,10 @@
     Justification = 'Variables are used in the test.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments', 'publicHelpLinkTestCases',
+    Justification = 'Variable is used during Pester test discovery.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSAvoidUsingWriteHost', '',
     Justification = 'Logging to Github Actions.'
 )]
@@ -20,6 +24,10 @@
 )]
 [CmdLetBinding()]
 param(
+    # The name of the module.
+    [Parameter(Mandatory)]
+    [string] $ModuleName,
+
     # The path to the 'src' folder of the repo.
     [Parameter(Mandatory)]
     [string] $Path,
@@ -28,6 +36,37 @@ param(
     [Parameter(Mandatory)]
     [string] $TestsPath
 )
+
+BeforeDiscovery {
+    $publicFunctionsPath = Join-Path -Path $Path -ChildPath 'functions/public'
+    $publicHelpLinkTestCases = if (Test-Path -Path $publicFunctionsPath) {
+        Get-ChildItem -Path $publicFunctionsPath -Filter '*.ps1' -Recurse -File |
+            Sort-Object -Property FullName |
+            ForEach-Object {
+                $ast = [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$null)
+                $functionTokens = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)
+                if ($functionTokens.Count -eq 0) {
+                    return
+                }
+
+                $relativePath = [IO.Path]::GetRelativePath($publicFunctionsPath, $_.FullName)
+                $relativeDirectory = Split-Path -Path $relativePath -Parent
+                $documentationPath = if ($relativeDirectory) {
+                    '{0}/{1}' -f ($relativeDirectory -replace '[\\/]', '/'), $_.BaseName
+                } else {
+                    $_.BaseName
+                }
+
+                @{
+                    DocumentationPath = $documentationPath
+                    ExpectedLink      = "https://psmodule.io/$ModuleName/Functions/$documentationPath/"
+                    FilePath          = $_.FullName
+                }
+            }
+    } else {
+        @()
+    }
+}
 
 BeforeAll {
     $scriptFiles = Get-ChildItem -Path $Path -Include *.psm1, *.ps1 -Recurse -File
@@ -162,24 +201,6 @@ Describe 'PSModule - SourceCode tests' {
             }
             $issues -join [Environment]::NewLine |
                 Should -BeNullOrEmpty -Because "the script should use '`$null = ...' instead of '... | Out-Null'"
-        }
-        It 'Should not use ternary operations for compatibility reasons (ID: NoTernary)' -Skip {
-            $issues = @('')
-            $scriptFiles | ForEach-Object {
-                $filePath = $_.FullName
-                $relativePath = $filePath.Replace($Path, '').Trim('\').Trim('/')
-                $skipTest = Select-String -Path $filePath -Pattern '#SkipTest:NoTernary:(?<Reason>.+)' -AllMatches
-                if ($skipTest.Matches.Count -gt 0) {
-                    $skipReason = $skipTest.Matches.Groups | Where-Object { $_.Name -eq 'Reason' } | Select-Object -ExpandProperty Value
-                    Write-Host "::warning title=Skipping NoTernary test:: - $relativePath - $skipReason"
-                } else {
-                    Select-String -Path $filePath -Pattern '(?<!\|)\s+\?\s' -AllMatches | ForEach-Object {
-                        $issues += " - $relativePath`:L$($_.LineNumber) - $($_.Line)"
-                    }
-                }
-            }
-            $issues -join [Environment]::NewLine |
-                Should -BeNullOrEmpty -Because 'the script should not use ternary operations for compatibility with PS 5.1 and below'
         }
         It 'all powershell keywords are lowercase (ID: LowercaseKeywords)' {
             $issues = @('')
@@ -338,6 +359,16 @@ Describe 'PSModule - SourceCode tests' {
                     $tokens = $Ast.FindAll( { $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] } , $true )
                     $tokens.count -ne 0
                 }
+            }
+            It 'Should put the canonical documentation link first for <DocumentationPath> (ID: PublicHelpLink)' -ForEach $publicHelpLinkTestCases {
+                param($DocumentationPath, $ExpectedLink, $FilePath)
+
+                $content = Get-Content -Path $FilePath -Raw
+                $links = [regex]::Matches($content, '(?ms)^\s*\.LINK\s*\r?\n\s*(?<Uri>\S+)')
+
+                $links.Count | Should -BeGreaterThan 0 -Because "$DocumentationPath should have a documentation link"
+                $links[0].Groups['Uri'].Value |
+                    Should -BeExactly $ExpectedLink -Because "$DocumentationPath should put its canonical documentation link first"
             }
             It 'All public functions/filters have tests (ID: FunctionTest)' {
                 $issues = @('')
