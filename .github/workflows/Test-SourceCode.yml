@@ -37,6 +37,7 @@ jobs:
       - name: Test-SourceCode
         uses: ./_wf/.github/actions/Test-PSModule
         with:
+          Name: ${{ fromJson(inputs.Settings).Name }}
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
