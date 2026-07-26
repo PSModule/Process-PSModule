@@ -158,24 +158,26 @@ $success = $coveragePercent -ge $coveragePercentTarget
 $statusIcon = $success ? '✅' : '❌'
 $stats | Format-Table -AutoSize | Out-String
 
-$missedPaths = $codeCoverage.CommandsMissed |
+$missedPathGroups = $codeCoverage.CommandsMissed |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_.File) } |
     Group-Object -Property File |
     Sort-Object -Property @(
         @{ Expression = 'Count'; Descending = $true },
         @{ Expression = 'Name'; Descending = $false }
-    ) |
-    ForEach-Object {
-        $lines = $_.Group |
-            Where-Object { $_.Line -is [ValueType] } |
-            ForEach-Object { [int]$_.Line } |
-            Sort-Object -Unique
-        [pscustomobject]@{
-            Path           = $_.Name
-            MissedCommands = [int]$_.Count
-            MissedLines    = if ($lines.Count -eq 0) { '' } else { $lines -join ', ' }
-        }
+    )
+
+$missedPaths = foreach ($group in $missedPathGroups) {
+    $lines = $group.Group |
+        Where-Object { $_.Line -is [ValueType] } |
+        ForEach-Object { [int]$_.Line } |
+        Sort-Object -Unique
+    $missedLines = if ($lines.Count -eq 0) { '' } else { $lines -join ', ' }
+    [pscustomobject]@{
+        Path           = $group.Name
+        MissedCommands = [int]$group.Count
+        MissedLines    = $missedLines
     }
+}
 
 $missedPathReportPath = 'CodeCoverage-MissedPaths'
 $null = New-Item -Path $missedPathReportPath -ItemType Directory -Force
