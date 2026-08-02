@@ -282,8 +282,12 @@ function Get-GitHubRelease {
         .SYNOPSIS
         Retrieves all releases from the current GitHub repository.
 
+        .DESCRIPTION
+        Lists the releases of the current repository. A repository that has no releases yet
+        returns an empty array rather than $null, so callers can treat the result uniformly.
+
         .OUTPUTS
-        Array of release objects.
+        Array of release objects. Empty when the repository has no releases.
 
         .EXAMPLE
         $releases = Get-GitHubRelease
@@ -298,14 +302,16 @@ function Get-GitHubRelease {
             Write-Error 'Failed to list releases for the repo.'
             exit $LASTEXITCODE
         }
-        $releases = $releasesJson | ConvertFrom-Json
+        $releases = @($releasesJson | ConvertFrom-Json)
 
         Write-Host '-------------------------------------------------'
+        Write-Host "Found [$($releases.Count)] releases."
         Write-Host ($releases | Select-Object -Property name, isPrerelease, isLatest, publishedAt |
                 Format-Table | Out-String)
         Write-Host '-------------------------------------------------'
 
-        $releases
+        # -NoEnumerate keeps an empty or single-element result an array through the pipeline.
+        Write-Output -NoEnumerate $releases
     }
 }
 
@@ -313,6 +319,11 @@ function Get-LatestGitHubVersion {
     <#
         .SYNOPSIS
         Extracts the latest stable version from a GitHub releases list.
+
+        .DESCRIPTION
+        Returns the version of the release marked as latest. A repository that has no releases
+        yet - or that has releases but none marked as latest - resolves to '0.0.0' so a brand-new
+        module can still be versioned before its first release exists.
 
         .OUTPUTS
         PSSemVer representing the latest GitHub release version.
@@ -325,9 +336,11 @@ function Get-LatestGitHubVersion {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        # The GitHub releases array to search.
-        [Parameter(Mandatory)]
-        [array] $Releases
+        # The GitHub releases array to search. Empty or null when the repository has no releases.
+        [Parameter()]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [array] $Releases = @()
     )
 
     LogGroup 'Get latest version - GitHub' {
@@ -409,6 +422,11 @@ function Get-LatestPublishedVersion {
         .SYNOPSIS
         Returns the highest version between GitHub and the PowerShell Gallery.
 
+        .DESCRIPTION
+        Compares the two known published versions and returns the highest one. A missing
+        (null) version is treated as '0.0.0', so a module that has never been released to
+        GitHub or published to the PowerShell Gallery resolves to a '0.0.0' baseline.
+
         .OUTPUTS
         PSSemVer representing the highest known published version.
 
@@ -420,19 +438,27 @@ function Get-LatestPublishedVersion {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        # The latest version found in GitHub releases.
-        [Parameter(Mandatory)]
+        # The latest version found in GitHub releases. Null when the repository has no releases.
+        [Parameter()]
+        [AllowNull()]
         [object] $GitHubVersion,
 
-        # The latest version found in the PowerShell Gallery.
-        [Parameter(Mandatory)]
+        # The latest version found in the PowerShell Gallery. Null when the module is unpublished.
+        [Parameter()]
+        [AllowNull()]
         [object] $PSGalleryVersion
     )
 
     LogGroup 'Latest version' {
-        $latestVersion = New-PSSemVer -Version (
-            $PSGalleryVersion, $GitHubVersion | Sort-Object -Descending | Select-Object -First 1
-        )
+        $candidates = @($PSGalleryVersion, $GitHubVersion) |
+            Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace([string]$_) }
+
+        $latestVersion = if ($candidates.Count -gt 0) {
+            New-PSSemVer -Version ($candidates | Sort-Object -Descending | Select-Object -First 1)
+        } else {
+            Write-Warning "No published version found in GitHub or the PowerShell Gallery. Using '0.0.0'."
+            New-PSSemVer -Version '0.0.0'
+        }
         Write-Host "Latest version: [$($latestVersion.ToString())]"
         $latestVersion
     }
@@ -472,9 +498,11 @@ function Get-NextPrereleaseNumber {
         [ValidateNotNullOrEmpty()]
         [string] $PrereleaseName,
 
-        # The GitHub releases list.
-        [Parameter(Mandatory)]
-        [array] $Releases
+        # The GitHub releases list. Empty or null when the repository has no releases.
+        [Parameter()]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [array] $Releases = @()
     )
 
     $params = @{
@@ -532,8 +560,9 @@ function Get-NextModuleVersion {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        # The current latest published version.
-        [Parameter(Mandatory)]
+        # The current latest published version. Null resolves to a '0.0.0' baseline.
+        [Parameter()]
+        [AllowNull()]
         [object] $LatestVersion,
 
         # The release decision object.
@@ -550,12 +579,21 @@ function Get-NextModuleVersion {
         [string] $ModuleName,
 
         # The GitHub releases list, used for incremental prerelease calculation.
-        [Parameter(Mandatory)]
-        [array] $Releases
+        # Empty or null when the repository has no releases.
+        [Parameter()]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [array] $Releases = @()
     )
 
     LogGroup 'Calculate new version' {
-        $newVersion = New-PSSemVer -Version $LatestVersion
+        $baseVersion = if ($null -eq $LatestVersion -or [string]::IsNullOrWhiteSpace([string]$LatestVersion)) {
+            Write-Warning "No latest version was resolved. Using '0.0.0' as the baseline."
+            '0.0.0'
+        } else {
+            $LatestVersion
+        }
+        $newVersion = New-PSSemVer -Version $baseVersion
         $newVersion.Prefix = $Configuration.VersionPrefix
 
         if ($Decision.MajorRelease) {
