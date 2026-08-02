@@ -277,6 +277,38 @@ function Resolve-ReleaseDecision {
     }
 }
 
+function ConvertFrom-GitHubReleaseJson {
+    <#
+        .SYNOPSIS
+        Converts the JSON output of 'gh release list' into a flat array of release objects.
+
+        .DESCRIPTION
+        Normalizes the release listing so a repository with no releases, or a command that
+        produced no output at all, yields an empty array instead of $null.
+
+        .OUTPUTS
+        Array of release objects. Empty when there are no releases.
+
+        .EXAMPLE
+        $releases = ConvertFrom-GitHubReleaseJson -Json '[{"tagName":"v1.0.0"}]'
+    #>
+    [CmdletBinding()]
+    [OutputType([object[]], [array])]
+    param(
+        # The raw JSON returned by 'gh release list'. Empty or null when the command produced no output.
+        [Parameter()]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string] $Json
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Json)) {
+        return @()
+    }
+
+    @($Json | ConvertFrom-Json)
+}
+
 function Get-GitHubRelease {
     <#
         .SYNOPSIS
@@ -284,13 +316,13 @@ function Get-GitHubRelease {
 
         .DESCRIPTION
         Lists the releases of the current repository. A repository that has no releases yet
-        returns an empty array rather than $null, so callers can treat the result uniformly.
+        produces no output, so callers normalize the result with @() before using it.
 
         .OUTPUTS
-        Array of release objects. Empty when the repository has no releases.
+        Array of release objects. Nothing when the repository has no releases.
 
         .EXAMPLE
-        $releases = Get-GitHubRelease
+        $releases = @(Get-GitHubRelease)
     #>
     [CmdletBinding()]
     [OutputType([array])]
@@ -302,7 +334,7 @@ function Get-GitHubRelease {
             Write-Error 'Failed to list releases for the repo.'
             exit $LASTEXITCODE
         }
-        $releases = @($releasesJson | ConvertFrom-Json)
+        $releases = ConvertFrom-GitHubReleaseJson -Json $releasesJson
 
         Write-Host '-------------------------------------------------'
         Write-Host "Found [$($releases.Count)] releases."
@@ -310,8 +342,7 @@ function Get-GitHubRelease {
                 Format-Table | Out-String)
         Write-Host '-------------------------------------------------'
 
-        # -NoEnumerate keeps an empty or single-element result an array through the pipeline.
-        Write-Output -NoEnumerate -InputObject $releases
+        $releases
     }
 }
 

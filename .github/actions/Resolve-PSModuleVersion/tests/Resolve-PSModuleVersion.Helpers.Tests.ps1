@@ -91,6 +91,54 @@ BeforeAll {
 }
 
 Describe 'Resolve-PSModuleVersion' {
+    Describe 'ConvertFrom-GitHubReleaseJson' {
+        Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
+            It 'ConvertFrom-GitHubReleaseJson - returns an empty array for an empty JSON array' {
+                $result = ConvertFrom-GitHubReleaseJson -Json '[]'
+                @($result).Count | Should -Be 0
+            }
+
+            It 'ConvertFrom-GitHubReleaseJson - returns an empty array when the command produced no output' {
+                $result = ConvertFrom-GitHubReleaseJson -Json ''
+                @($result).Count | Should -Be 0
+            }
+
+            It 'ConvertFrom-GitHubReleaseJson - returns an empty array for null input' {
+                $result = ConvertFrom-GitHubReleaseJson -Json $null
+                @($result).Count | Should -Be 0
+            }
+        }
+
+        Context 'ConvertFrom-GitHubReleaseJson - releases present' {
+            It 'ConvertFrom-GitHubReleaseJson - returns a flat array of release objects' {
+                $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
+                $result = @(ConvertFrom-GitHubReleaseJson -Json $json)
+                $result.Count | Should -Be 2
+                $result[0].tagName | Should -Be 'v1.2.3'
+            }
+
+            It 'ConvertFrom-GitHubReleaseJson - returns a single release without nesting it in an inner array' {
+                $result = @(ConvertFrom-GitHubReleaseJson -Json '[{"tagName":"v0.0.1","isLatest":true}]')
+                $result.Count | Should -Be 1
+                $result[0].tagName | Should -Be 'v0.0.1'
+            }
+
+            It 'ConvertFrom-GitHubReleaseJson - output binds to the Releases parameter without nesting' {
+                $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
+                $releases = @(ConvertFrom-GitHubReleaseJson -Json $json)
+                $result = Get-LatestGitHubVersion -Releases $releases
+                $result.ToString() | Should -Be 'v1.2.3'
+            }
+
+            It 'ConvertFrom-GitHubReleaseJson - survives the log group wrapper without nesting' {
+                $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
+                $releases = @(LogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
+                $releases.Count | Should -Be 2
+                $releases[0].tagName | Should -Be 'v1.2.3'
+            }
+        }
+    }
+
     Describe 'Get-LatestGitHubVersion' {
         Context 'Get-LatestGitHubVersion - repository without releases' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when the releases list is null' {
