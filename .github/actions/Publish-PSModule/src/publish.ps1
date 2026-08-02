@@ -28,6 +28,7 @@ param()
 $PSStyle.OutputRendering = 'Ansi'
 
 Import-Module -Name 'PSModule' -Force
+Import-Module -Name "$PSScriptRoot/Publish-PSModule.Helpers.psm1" -Force
 
 #region Load inputs
 LogGroup 'Load inputs' {
@@ -129,7 +130,7 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
-    $releaseTag = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
+    $releaseTag = Get-ReleaseTag -ModuleVersion $moduleVersion -Prerelease $prerelease
 
     [PSCustomObject]@{
         ModuleVersion    = $moduleVersion
