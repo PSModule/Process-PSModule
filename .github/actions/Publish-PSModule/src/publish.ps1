@@ -59,10 +59,14 @@ LogGroup 'Load inputs' {
     $usePRBodyAsReleaseNotes = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes -eq 'true'
     $usePRTitleAsReleaseName = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
+    # The prefix the repository tags releases with, resolved by the Plan job from
+    # Settings.Publish.Module.VersionPrefix. Empty means the repository tags without a prefix.
+    $versionPrefix = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix
 
-    Write-Host "Module name: [$name]"
-    Write-Host "Module path: [$modulePath]"
-    Write-Host "WhatIf:      [$whatIf]"
+    Write-Host "Module name:    [$name]"
+    Write-Host "Module path:    [$modulePath]"
+    Write-Host "Version prefix: [$versionPrefix]"
+    Write-Host "WhatIf:         [$whatIf]"
 }
 #endregion Load inputs
 
@@ -130,10 +134,11 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
-    $releaseTag = Get-ReleaseTag -ModuleVersion $moduleVersion -Prerelease $prerelease
+    $releaseTag = Get-ReleaseTag -VersionPrefix $versionPrefix -ModuleVersion $moduleVersion -Prerelease $prerelease
 
     [PSCustomObject]@{
         ModuleVersion    = $moduleVersion
+        VersionPrefix    = $versionPrefix
         Prerelease       = $prerelease
         CreatePrerelease = $createPrerelease
         ReleaseTag       = $releaseTag
