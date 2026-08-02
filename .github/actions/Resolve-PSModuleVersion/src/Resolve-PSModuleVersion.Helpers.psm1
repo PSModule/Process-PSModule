@@ -311,7 +311,7 @@ function Get-GitHubRelease {
         Write-Host '-------------------------------------------------'
 
         # -NoEnumerate keeps an empty or single-element result an array through the pipeline.
-        Write-Output -NoEnumerate $releases
+        Write-Output -NoEnumerate -InputObject $releases
     }
 }
 
