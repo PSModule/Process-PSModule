@@ -298,7 +298,9 @@ function Get-GitHubRelease {
             Write-Error 'Failed to list releases for the repo.'
             exit $LASTEXITCODE
         }
-        $releases = $releasesJson | ConvertFrom-Json
+        # A repository that has never released returns '[]', which deserializes to nothing. Wrap the
+        # result so callers always receive an array, even for a module being bootstrapped.
+        $releases = @($releasesJson | ConvertFrom-Json)
 
         Write-Host '-------------------------------------------------'
         Write-Host ($releases | Select-Object -Property name, isPrerelease, isLatest, publishedAt |
@@ -327,6 +329,7 @@ function Get-LatestGitHubVersion {
     param(
         # The GitHub releases array to search.
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array] $Releases
     )
 
@@ -474,6 +477,7 @@ function Get-NextPrereleaseNumber {
 
         # The GitHub releases list.
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array] $Releases
     )
 
@@ -551,6 +555,7 @@ function Get-NextModuleVersion {
 
         # The GitHub releases list, used for incremental prerelease calculation.
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array] $Releases
     )
 
