@@ -134,6 +134,10 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
+    # The PowerShell Gallery and the module manifest only accept plain SemVer, so the configured
+    # VersionPrefix is applied to the GitHub release tag and to nothing else. Both strings are derived
+    # from the same composition here, so the prefix is the only difference between them.
+    $publishPSVersion = Get-ModuleVersionString -ModuleVersion $moduleVersion -Prerelease $prerelease
     $releaseTag = Get-ReleaseTag -VersionPrefix $versionPrefix -ModuleVersion $moduleVersion -Prerelease $prerelease
 
     [PSCustomObject]@{
@@ -141,6 +145,7 @@ LogGroup 'Resolve version from manifest' {
         VersionPrefix    = $versionPrefix
         Prerelease       = $prerelease
         CreatePrerelease = $createPrerelease
+        GalleryVersion   = $publishPSVersion
         ReleaseTag       = $releaseTag
         PRNumber         = $prNumber
         PRHeadRef        = $prHeadRef
@@ -160,7 +165,6 @@ LogGroup 'Install module dependencies' {
 #region Publish to PSGallery
 LogGroup 'Publish to PSGallery' {
     $releaseType = if ($createPrerelease) { 'New prerelease' } else { 'New release' }
-    $publishPSVersion = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
     $psGalleryReleaseLink = "https://www.powershellgallery.com/packages/$name/$publishPSVersion"
 
     Write-Host 'Publish module to PowerShell Gallery using API key from environment.'
@@ -286,4 +290,4 @@ LogGroup 'Create GitHub release' {
 }
 #endregion Create GitHub release
 
-Write-Host "Publishing complete. Version: [$releaseTag]"
+Write-Host "Publishing complete. PowerShell Gallery version: [$publishPSVersion]. GitHub release tag: [$releaseTag]."

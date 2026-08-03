@@ -11,6 +11,40 @@ BeforeAll {
 }
 
 Describe 'Publish-PSModule.Helpers' {
+    Describe 'Get-ModuleVersionString' {
+        Context 'Get-ModuleVersionString - SemVer only, never prefixed' {
+            It 'Get-ModuleVersionString - returns the module version for a stable release' {
+                Get-ModuleVersionString -ModuleVersion '1.1.10' | Should -Be '1.1.10'
+            }
+
+            It 'Get-ModuleVersionString - appends the prerelease label' {
+                Get-ModuleVersionString -ModuleVersion '1.1.10' -Prerelease 'mybranch001' |
+                    Should -Be '1.1.10-mybranch001'
+            }
+
+            It 'Get-ModuleVersionString - treats an empty prerelease label as a stable release' {
+                Get-ModuleVersionString -ModuleVersion '1.1.10' -Prerelease '' | Should -Be '1.1.10'
+            }
+
+            It 'Get-ModuleVersionString - treats a whitespace-only prerelease label as a stable release' {
+                Get-ModuleVersionString -ModuleVersion '1.1.10' -Prerelease '   ' | Should -Be '1.1.10'
+            }
+
+            It 'Get-ModuleVersionString - trims whitespace around the prerelease label' {
+                Get-ModuleVersionString -ModuleVersion '1.1.10' -Prerelease ' mybranch001 ' |
+                    Should -Be '1.1.10-mybranch001'
+            }
+
+            It 'Get-ModuleVersionString - takes no version prefix parameter at all' {
+                (Get-Command Get-ModuleVersionString).Parameters.Keys | Should -Not -Contain 'VersionPrefix'
+            }
+
+            It 'Get-ModuleVersionString - requires a module version' {
+                { Get-ModuleVersionString -ModuleVersion '' } | Should -Throw
+            }
+        }
+    }
+
     Describe 'Get-ReleaseTag' {
         Context 'Get-ReleaseTag - repository with a version prefix' {
             It 'Get-ReleaseTag - prefixes a stable release tag with the configured prefix' {
@@ -88,6 +122,45 @@ Describe 'Publish-PSModule.Helpers' {
                 $first = Get-ReleaseTag -VersionPrefix 'v' -ModuleVersion '1.1.10' -Prerelease 'mybranch001'
                 $second = Get-ReleaseTag -VersionPrefix 'v' -ModuleVersion '1.1.10' -Prerelease 'mybranch001'
                 $first | Should -Be $second
+            }
+        }
+
+        # The PowerShell Gallery and the module manifest only accept plain SemVer. The prefix therefore
+        # belongs to the GitHub release tag and to nothing else, and the two strings must differ by exactly
+        # the prefix - never by anything else, and never in the other direction.
+        Context 'Get-ReleaseTag - the prefix reaches the release tag and nothing else' {
+            It 'Get-ReleaseTag - the tag is the prefix followed by the module version string' -ForEach @(
+                @{ Prefix = 'v'; Version = '1.1.10'; Label = '' }
+                @{ Prefix = 'v'; Version = '1.1.10'; Label = 'mybranch001' }
+                @{ Prefix = ''; Version = '1.1.10'; Label = '' }
+                @{ Prefix = ''; Version = '1.1.10'; Label = 'mybranch001' }
+                @{ Prefix = 'release-v'; Version = '2.0.0'; Label = 'mybranch001' }
+            ) {
+                $moduleVersion = Get-ModuleVersionString -ModuleVersion $Version -Prerelease $Label
+                $tag = Get-ReleaseTag -VersionPrefix $Prefix -ModuleVersion $Version -Prerelease $Label
+                $tag | Should -Be "$Prefix$moduleVersion"
+            }
+
+            It 'Get-ReleaseTag - the module version string never gains the prefix' -ForEach @(
+                @{ Prefix = 'v'; Version = '1.1.10'; Label = '' }
+                @{ Prefix = 'v'; Version = '1.1.10'; Label = 'mybranch001' }
+                @{ Prefix = 'release-v'; Version = '2.0.0'; Label = 'mybranch001' }
+            ) {
+                $moduleVersion = Get-ModuleVersionString -ModuleVersion $Version -Prerelease $Label
+                $moduleVersion | Should -Not -BeLike "$Prefix*"
+                $moduleVersion | Should -Match '^\d+\.\d+\.\d+(-[0-9A-Za-z\-.]+)?$'
+            }
+
+            It 'Get-ReleaseTag - an unprefixed repository gets identical strings' {
+                $moduleVersion = Get-ModuleVersionString -ModuleVersion '1.1.10' -Prerelease 'mybranch001'
+                $tag = Get-ReleaseTag -VersionPrefix '' -ModuleVersion '1.1.10' -Prerelease 'mybranch001'
+                $tag | Should -Be $moduleVersion
+            }
+
+            It 'Get-ReleaseTag - stripping the prefix from the tag yields the module version string' {
+                $moduleVersion = Get-ModuleVersionString -ModuleVersion '1.1.10' -Prerelease 'mybranch001'
+                $tag = Get-ReleaseTag -VersionPrefix 'v' -ModuleVersion '1.1.10' -Prerelease 'mybranch001'
+                $tag -replace '^v' | Should -Be $moduleVersion
             }
         }
     }
