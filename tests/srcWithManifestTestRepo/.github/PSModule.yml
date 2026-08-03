@@ -12,23 +12,6 @@ Test:
 Publish:
   Module:
     AutoCleanup: false
-    # 'Fix' is here so that Process-PSModule's own self-test exercises the publish path. The framework
-    # repository labels its bugfix pull requests 'Fix', which makes Get-PSModuleSettings resolve
-    # ReleaseType to 'Prerelease' for this fixture, so Publish-PSModule actually runs and the release tag
-    # it resolves is visible in the workflow log. Publish-Module.yml sets WhatIf whenever the workflow runs
-    # in PSModule/Process-PSModule, so nothing is published and no release is created.
-    #
-    # Never add a label that PSModule/Auto-Release recognises. It matches the literal string 'prerelease'
-    # with -Contains, which is case-insensitive in PowerShell, and would make this repository create a
-    # real prerelease release and tag of itself.
-    #
-    # This fixture carries it rather than srcTestRepo so that the Default fixture, which leaves AutoCleanup
-    # at its default of true, keeps resolving ReleaseType to 'None' and stays available as the fixture that
-    # can exercise Cleanup-PSModulePrereleases - that step is gated on ReleaseType != 'Prerelease'.
-    #
-    # This is a stopgap that covers the Settings -> action input -> environment variable hop until the
-    # end-to-end publish harness in PSModule/Process-PSModule#436 exists.
-    PrereleaseLabels: 'prerelease, Fix'
 Linter:
   env:
     VALIDATE_BIOME_FORMAT: false
