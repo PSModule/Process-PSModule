@@ -1,5 +1,4 @@
 ---
-title: Functions
 description: A fully authored landing page for the exported function surface.
 ---
 

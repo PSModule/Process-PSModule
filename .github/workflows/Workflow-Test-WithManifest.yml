@@ -76,7 +76,6 @@ jobs:
 
           $content = Get-Content -Path $path -Raw
           $expectedSnippets = @(
-              'ms.title: Functions'
               '# Functions'
               'This landing page is authored from the root of `src/functions/public`.'
               'Use it to introduce the module''s function surface before readers drill into each group.'
