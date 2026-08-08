@@ -21,7 +21,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
 
       - name: Checkout Process-PSModule
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -98,6 +97,7 @@ jobs:
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
+          USE_FIND_ALGORITHM: true
           SAVE_SUPER_LINTER_SUMMARY: true
 
       - name: Post super-linter summary
