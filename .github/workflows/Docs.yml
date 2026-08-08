@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
 
       - name: Update index
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: ./.github/actions/update-index
         with:
           ClientID: ${{ secrets.SCRIBBLER_BOT_CLIENT_ID }} # zizmor: ignore[secrets-outside-env]
