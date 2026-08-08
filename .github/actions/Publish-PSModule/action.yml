@@ -37,6 +37,13 @@ inputs:
     description: Name of the uploaded artifact to download. Must match the name used in the upstream upload-artifact step.
     required: false
     default: module
+  VersionPrefix:
+    description: |
+      Prefix put in front of the version in the git tag of the GitHub release, for example 'v'.
+      Comes from Settings.Publish.Module.VersionPrefix, which the Plan job resolves. The compiled manifest carries the module version as
+      Major.Minor.Patch and cannot carry the prefix, so it is supplied here. An empty value tags the release without a prefix.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -65,4 +72,5 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes: ${{ inputs.UsePRBodyAsReleaseNotes }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
+        PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix: ${{ inputs.VersionPrefix }}
       run: ${{ github.action_path }}/src/publish.ps1
