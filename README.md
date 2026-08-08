@@ -6,8 +6,8 @@ Documentation site generation is powered by Zensical. Repositories define site c
 
 ## Documentation
 
-The full documentation lives on the MSX / Docs site:
+The full documentation is published at:
 
-📖 **[Process-PSModule documentation](https://msxorg.github.io/docs/Frameworks/Process-PSModule/)**
+📖 **[Process-PSModule documentation](https://psmodule.io/docs/)**
 
 It covers getting started, the pipeline stages, usage, configuration, repository structure, and the principles behind the framework.
