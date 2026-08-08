@@ -87,18 +87,40 @@ function Convert-VersionSpec {
         [string] $RequiredVersion
     )
 
+    $maximumVersionIsWildcard = $MaximumVersion -and ($MaximumVersion -match '[*]')
+    if ($maximumVersionIsWildcard) {
+        $versionParts = @($MaximumVersion -split '\.')
+        $wildcardIndex = [Array]::IndexOf($versionParts, '*')
+        if ($wildcardIndex -lt 0) {
+            throw "MaximumVersion '$MaximumVersion' contains an unsupported wildcard pattern."
+        }
+
+        if ($wildcardIndex -eq 0) {
+            throw "MaximumVersion '$MaximumVersion' contains an unsupported wildcard pattern."
+        }
+
+        $upperBoundParts = @(0, 0, 0)
+        for ($i = 0; $i -lt $wildcardIndex; $i++) {
+            $upperBoundParts[$i] = [int]$versionParts[$i]
+        }
+        $upperBoundParts[$wildcardIndex - 1]++
+        $MaximumVersion = $upperBoundParts -join '.'
+    }
+
     if ($RequiredVersion) {
         # Use exact match in bracket notation.
         return "[$RequiredVersion]"
     } elseif ($MinimumVersion -and $MaximumVersion) {
-        # Both bounds provided; both are inclusive.
-        return "[$MinimumVersion,$MaximumVersion]"
+        # Wildcard maximum versions are translated to an exclusive upper bound.
+        $upperBound = $maximumVersionIsWildcard ? ')' : ']'
+        return "[$MinimumVersion,$MaximumVersion$upperBound"
     } elseif ($MinimumVersion) {
         # Only a minimum is provided. Use a minimum-inclusive range.
         return "[$MinimumVersion, ]"
     } elseif ($MaximumVersion) {
-        # Only a maximum is provided; lower bound open.
-        return "(, $MaximumVersion]"
+        # Only a maximum is provided; lower bound open. Wildcards are exclusive upper bounds.
+        $upperBound = $maximumVersionIsWildcard ? ')' : ']'
+        return "(, $MaximumVersion$upperBound"
     } else {
         return $null
     }
