@@ -78,39 +78,7 @@ jobs:
             }
 
       - name: Lint documentation
-        id: super-linter
-        uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
-        env:
-          RUN_LOCAL: true
-          DEFAULT_BRANCH: main
-          DEFAULT_WORKSPACE: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-          FILTER_REGEX_INCLUDE: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
-          ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
-          GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_ALL_CODEBASE: true
-          VALIDATE_BIOME_FORMAT: false
-          VALIDATE_BIOME_LINT: false
-          VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
-          VALIDATE_GITLEAKS: false
-          VALIDATE_JSCPD: false
-          VALIDATE_JSON_PRETTIER: false
-          VALIDATE_MARKDOWN_PRETTIER: false
-          VALIDATE_YAML_PRETTIER: false
-          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
-          USE_FIND_ALGORITHM: true
-          SAVE_SUPER_LINTER_SUMMARY: true
-
-      - name: Post super-linter summary
-        if: failure() || fromJson(inputs.Settings).Build.Docs.ShowSummaryOnSuccess == true
-        shell: pwsh
-        env:
-          SUPER_LINTER_OUTCOME: ${{ steps.super-linter.outcome }}
-        run: |
-          $summaryPath = Join-Path $env:GITHUB_WORKSPACE 'super-linter-output' 'super-linter-summary.md'
-          Get-Content $summaryPath | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
-
-          $failed = $env:SUPER_LINTER_OUTCOME -eq 'failure'
-          if ($failed) {
-              Write-Host "::error::Super-linter found issues. Please review the summary above."
-              exit 1
-          }
+        uses: DavidAnson/markdownlint-cli2-action@83c6b49590003d85b71ea0e478b36aa0a9bb3cd4 # main
+        with:
+          config: .github/linters/.markdown-lint.yml
+          globs: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs/**/*.{md,markdown}
