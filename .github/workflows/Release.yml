@@ -13,6 +13,7 @@ on:
       - synchronize
       - labeled
     paths:
+      - '.github/actions/**'
       - '.github/workflows/**'
       - '!.github/workflows/Release.yml'
       - '!.github/workflows/Linter.yml'

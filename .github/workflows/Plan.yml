@@ -4,7 +4,7 @@ name: Plan
 # It runs two steps:
 #   1. Get-PSModuleSettings      - loads and resolves configuration
 #   2. Resolve-PSModuleVersion   - calculates the next version from settings + PR labels
-# The resolved version is merged into the Settings object (Settings.Module.*) by the Enrich-Settings step.
+# The resolved version is merged into the publish phase object (Settings.Publish.Module.Resolution.*) by the Enrich-Settings step.
 # All downstream jobs receive one self-contained Settings JSON with no separate version outputs.
 
 on:
@@ -118,12 +118,12 @@ jobs:
           CREATE_RELEASE: ${{ steps.Resolve-Version.outputs.CreateRelease }}
         run: |
           $settings = $env:SETTINGS | ConvertFrom-Json
-          $settings | Add-Member -MemberType NoteProperty -Name Module -Value ([pscustomobject]@{
+          $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Resolution -Value ([pscustomobject]@{
               Version       = $env:VERSION
               Prerelease    = $env:PRERELEASE
               FullVersion   = $env:FULL_VERSION
               ReleaseType   = if ([string]::IsNullOrEmpty($env:RELEASE_TYPE)) { 'None' } else { $env:RELEASE_TYPE }
               CreateRelease = $env:CREATE_RELEASE -eq 'true'
-          })
+          }) -Force
           $enriched = $settings | ConvertTo-Json -Depth 10 -Compress
           "Settings=$enriched" >> $env:GITHUB_OUTPUT

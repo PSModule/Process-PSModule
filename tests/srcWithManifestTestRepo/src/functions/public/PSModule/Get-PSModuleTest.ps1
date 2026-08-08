@@ -15,6 +15,9 @@ function Get-PSModuleTest {
         Test-PSModule -Name 'World'
 
         "Hello, World!"
+
+        .LINK
+        https://psmodule.io/PSModuleTest/Functions/PSModule/Get-PSModuleTest/
     #>
     [CmdletBinding()]
     param (

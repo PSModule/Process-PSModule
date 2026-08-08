@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(inputs.Settings).TestSuites.Module }}
+        include: ${{ fromJson(inputs.Settings).Test.Module.Suites }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -88,4 +88,4 @@ jobs:
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
-            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion '${{ fromJson(inputs.Settings).Module.Version }}'
+            Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion '${{ fromJson(inputs.Settings).Publish.Module.Resolution.Version }}'

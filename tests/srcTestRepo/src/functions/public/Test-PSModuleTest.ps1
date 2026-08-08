@@ -10,6 +10,9 @@
         Test-PSModule -Name 'World'
 
         "Hello, World!"
+
+        .LINK
+        https://psmodule.io/PSModuleTest2/Functions/Test-PSModuleTest/
     #>
     [CmdletBinding()]
     param (

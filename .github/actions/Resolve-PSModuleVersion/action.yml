@@ -58,8 +58,7 @@ runs:
 
     - name: Install PSSemVer
       shell: pwsh
-      run: |
-        Install-PSResource -Name PSSemVer -Repository PSGallery -TrustRepository
+      run: Install-PSResource -Name PSSemVer -Repository PSGallery -TrustRepository
 
     - name: Resolve module version
       id: resolve
@@ -71,6 +70,4 @@ runs:
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson: ${{ inputs.EventJson }}
         GITHUB_EVENT_PATH: ${{ inputs.EventPath || github.event_path }}
-      run: |
-        # Resolve module version
-        ${{ github.action_path }}/src/main.ps1
+      run: ${{ github.action_path }}/src/main.ps1

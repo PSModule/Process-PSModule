@@ -27,7 +27,8 @@ param()
 
 $PSStyle.OutputRendering = 'Ansi'
 
-Import-Module -Name 'Helpers' -Force
+Import-Module -Name 'PSModule' -Force
+Import-Module -Name "$PSScriptRoot/Publish-PSModule.Helpers.psm1" -Force
 
 #region Load inputs
 LogGroup 'Load inputs' {
@@ -58,10 +59,14 @@ LogGroup 'Load inputs' {
     $usePRBodyAsReleaseNotes = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes -eq 'true'
     $usePRTitleAsReleaseName = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
+    # The prefix the repository tags releases with, resolved by the Plan job from
+    # Settings.Publish.Module.VersionPrefix. Empty means the repository tags without a prefix.
+    $versionPrefix = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix
 
-    Write-Host "Module name: [$name]"
-    Write-Host "Module path: [$modulePath]"
-    Write-Host "WhatIf:      [$whatIf]"
+    Write-Host "Module name:    [$name]"
+    Write-Host "Module path:    [$modulePath]"
+    Write-Host "Version prefix: [$versionPrefix]"
+    Write-Host "WhatIf:         [$whatIf]"
 }
 #endregion Load inputs
 
@@ -129,20 +134,24 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
-    $releaseTag = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
+    # The PowerShell Gallery and the module manifest only accept plain SemVer, so the configured
+    # VersionPrefix is applied to the GitHub release tag and to nothing else. Both strings are derived
+    # from the same composition here, so the prefix is the only difference between them.
+    $publishPSVersion = Get-ModuleVersionString -ModuleVersion $moduleVersion -Prerelease $prerelease
+    $releaseTag = Get-ReleaseTag -VersionPrefix $versionPrefix -ModuleVersion $moduleVersion -Prerelease $prerelease
 
     [PSCustomObject]@{
         ModuleVersion    = $moduleVersion
+        VersionPrefix    = $versionPrefix
         Prerelease       = $prerelease
         CreatePrerelease = $createPrerelease
+        GalleryVersion   = $publishPSVersion
         ReleaseTag       = $releaseTag
         PRNumber         = $prNumber
         PRHeadRef        = $prHeadRef
     } | Format-List | Out-String
 
-    # Expose publish context to subsequent steps so the cleanup step can gate on release type.
-    $envLine = "PSMODULE_PUBLISH_PSMODULE_CONTEXT_IsPrerelease=$($createPrerelease.ToString().ToLower())"
-    $envLine | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
+    # Expose release tag to subsequent steps so cleanup can exclude the just-published tag.
     "PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
 }
 #endregion Resolve version from manifest
@@ -156,7 +165,6 @@ LogGroup 'Install module dependencies' {
 #region Publish to PSGallery
 LogGroup 'Publish to PSGallery' {
     $releaseType = if ($createPrerelease) { 'New prerelease' } else { 'New release' }
-    $publishPSVersion = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
     $psGalleryReleaseLink = "https://www.powershellgallery.com/packages/$name/$publishPSVersion"
 
     Write-Host 'Publish module to PowerShell Gallery using API key from environment.'
@@ -282,4 +290,4 @@ LogGroup 'Create GitHub release' {
 }
 #endregion Create GitHub release
 
-Write-Host "Publishing complete. Version: [$releaseTag]"
+Write-Host "Publishing complete. PowerShell Gallery version: [$publishPSVersion]. GitHub release tag: [$releaseTag]."

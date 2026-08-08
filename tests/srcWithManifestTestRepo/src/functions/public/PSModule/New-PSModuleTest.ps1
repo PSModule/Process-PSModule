@@ -13,6 +13,9 @@ function New-PSModuleTest {
 
         "Hello, World!"
 
+        .LINK
+        https://psmodule.io/PSModuleTest/Functions/PSModule/New-PSModuleTest/
+
         .NOTES
         Testing if a module can have a [Markdown based link](https://example.com).
         !"#¤%&/()=?`´^¨*'-_+§½{[]}<>|@£$€¥¢:;.,"

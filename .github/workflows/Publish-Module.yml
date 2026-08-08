@@ -38,6 +38,7 @@ jobs:
           persist-credentials: false
 
       - name: Publish module
+        if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
         uses: ./_wf/.github/actions/Publish-PSModule
         env:
           GH_TOKEN: ${{ github.token }}
@@ -46,8 +47,18 @@ jobs:
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKey }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
-          AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
           UsePRTitleAsNotesHeading: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsNotesHeading }}
+          VersionPrefix: ${{ fromJson(inputs.Settings).Publish.Module.VersionPrefix }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+
+      - name: Cleanup prereleases
+        if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
+        uses: ./_wf/.github/actions/Cleanup-PSModulePrereleases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
+          AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

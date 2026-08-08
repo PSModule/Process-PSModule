@@ -10,6 +10,16 @@ param()
 $owner = $env:GITHUB_REPOSITORY_OWNER
 $repo = $env:GITHUB_REPOSITORY_NAME
 $runId = $env:GITHUB_RUN_ID
+$beforeAllModuleLocalResult = $env:PSMODULE_GET_PESTERTESTRESULTS_INPUT_BeforeAllModuleLocalResult
+
+if ($beforeAllModuleLocalResult -eq 'failure') {
+    Write-GitHubError (
+        'BeforeAll-ModuleLocal failed. Module-local tests were skipped as a safety stop, ' +
+        'and AfterAll-ModuleLocal cleanup was still requested. ' +
+        'See the BeforeAll-ModuleLocal job log for the root cause.'
+    )
+    exit 1
+}
 
 $files = Get-GitHubArtifact -Owner $owner -Repository $repo -WorkflowRunID $runId -Name '*-TestResults' |
     Save-GitHubArtifact -Path 'TestResults' -Force -Expand -PassThru | Get-ChildItem -Recurse -Filter *.json | Sort-Object Name -Unique

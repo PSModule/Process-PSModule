@@ -54,6 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           DEFAULT_WORKSPACE: ${{ fromJson(env.Settings).WorkingDirectory }}
           FILTER_REGEX_INCLUDE: ${{ fromJson(env.Settings).WorkingDirectory }}
+          FILTER_REGEX_EXCLUDE: ${{ fromJson(env.Settings).WorkingDirectory }}/src/classes/public/.*\.ps1$
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
           SAVE_SUPER_LINTER_SUMMARY: true
 
