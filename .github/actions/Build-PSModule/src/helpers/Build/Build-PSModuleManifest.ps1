@@ -260,7 +260,8 @@
             Write-Host "Processing required module [$requiredModuleName]"
             $requiredVersion = $group.Group.RequiredVersion | ForEach-Object { [Version]$_ } | Sort-Object -Unique
             $minimumVersion = $group.Group.Version | ForEach-Object { [Version]$_ } | Sort-Object -Unique | Select-Object -Last 1
-            $maximumVersion = $group.Group.MaximumVersion | ForEach-Object { [Version]$_ } | Sort-Object -Unique | Select-Object -First 1
+            $maximumVersion = $group.Group.MaximumVersion | Sort-Object -Unique | Select-Object -First 1
+            $maximumVersionBound = if ($maximumVersion -and ($maximumVersion -notmatch '[*]')) { [Version]$maximumVersion } else { $null }
             Write-Host "RequiredVersion: [$($requiredVersion -join ', ')]"
             Write-Host "ModuleVersion:   [$minimumVersion]"
             Write-Host "MaximumVersion:  [$maximumVersion]"
@@ -274,17 +275,17 @@
             }
 
             if (-not $maximumVersion) {
-                $maximumVersion = [Version]'9999.9999.9999'
+                $maximumVersionBound = [Version]'9999.9999.9999'
             }
 
             if ($requiredVersion -and ($minimumVersion -gt $requiredVersion)) {
                 throw 'ModuleVersion is higher than RequiredVersion.'
             }
 
-            if ($minimumVersion -gt $maximumVersion) {
+            if ($maximumVersionBound -and ($minimumVersion -gt $maximumVersionBound)) {
                 throw 'ModuleVersion is higher than MaximumVersion.'
             }
-            if ($requiredVersion -and ($requiredVersion -gt $maximumVersion)) {
+            if ($requiredVersion -and $maximumVersionBound -and ($requiredVersion -gt $maximumVersionBound)) {
                 throw 'RequiredVersion is higher than MaximumVersion.'
             }
 
@@ -294,7 +295,7 @@
                     ModuleName      = $requiredModuleName
                     RequiredVersion = $requiredVersion
                 }
-            } elseif (($minimumVersion -ne [Version]'0.0.0') -or ($maximumVersion -ne [Version]'9999.9999.9999')) {
+            } elseif (($minimumVersion -ne [Version]'0.0.0') -or ($maximumVersionBound -ne [Version]'9999.9999.9999')) {
                 Write-Host '[RequiredModules] - ModuleVersion/MaximumVersion'
                 $uniqueModule = @{
                     ModuleName = $requiredModuleName
@@ -302,7 +303,7 @@
                 if ($minimumVersion -ne [Version]'0.0.0') {
                     $uniqueModule['ModuleVersion'] = $minimumVersion
                 }
-                if ($maximumVersion -ne [Version]'9999.9999.9999') {
+                if ($maximumVersionBound -ne [Version]'9999.9999.9999') {
                     $uniqueModule['MaximumVersion'] = $maximumVersion
                 }
             } else {
