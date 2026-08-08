@@ -39,13 +39,15 @@ jobs:
           name: docs
           path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
 
-      - name: Install mkdocs-material
+      - name: Install site dependencies
         shell: pwsh
         run: |
           pip install mkdocs-material
           pip install mkdocs-git-authors-plugin
           pip install mkdocs-git-revision-date-localized-plugin
           pip install mkdocs-git-committers-plugin-2
+          pip install pyyaml
+          pip install tomli
 
       - name: Structure site
         uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
@@ -111,36 +113,28 @@ jobs:
                 Write-Host "Readme Target Path:   $readmeTargetPath"
             }
 
-            LogGroup 'Build docs - Create mkdocs.yml' {
+            LogGroup 'Build docs - Create mkdocs.yml from zensical.toml' {
                 $rootPath = Split-Path -Path $ModuleSourcePath -Parent
-                $possiblePaths = @(
-                    '.github/mkdocs.yml',
-                    'docs/mkdocs.yml',
-                    'mkdocs.yml'
-                )
+                $zensicalSourcePath = Join-Path -Path $rootPath -ChildPath '.github/zensical.toml'
 
-                $mkdocsSourcePath = $null
-                foreach ($path in $possiblePaths) {
-                    $candidatePath = Join-Path -Path $rootPath -ChildPath $path
-                    if (Test-Path -Path $candidatePath) {
-                        $mkdocsSourcePath = $candidatePath
-                        break
-                    }
-                }
-
-                if (-not $mkdocsSourcePath) {
-                    throw "Mkdocs source file not found in any of the expected locations: $($possiblePaths -join ', ')"
+                if (-not (Test-Path -Path $zensicalSourcePath)) {
+                    throw "Zensical source file not found at expected location: .github/zensical.toml"
                 }
 
                 $mkdocsTargetPath = Join-Path -Path $SiteOutputPath -ChildPath 'mkdocs.yml'
 
-                Write-Host "Mkdocs Source Path:   $mkdocsSourcePath"
+                Write-Host "Zensical Source Path: $zensicalSourcePath"
                 Write-Host "Mkdocs Target Path:   $mkdocsTargetPath"
 
-                $mkdocsContent = Get-Content -Path $mkdocsSourcePath -Raw
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
-                $mkdocsContent = $mkdocsContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
-                $mkdocsContent | Set-Content -Path $mkdocsTargetPath -Force
+                $zensicalContent = Get-Content -Path $zensicalSourcePath -Raw
+                $zensicalContent = $zensicalContent.Replace('-{{ REPO_NAME }}-', $ModuleName)
+                $zensicalContent = $zensicalContent.Replace('-{{ REPO_OWNER }}-', $env:GITHUB_REPOSITORY_OWNER)
+
+                $zensicalInputPath = Join-Path -Path $SiteOutputPath -ChildPath 'zensical.toml'
+                $zensicalContent | Set-Content -Path $zensicalInputPath -Force
+
+                python3 -c "import pathlib, yaml;`ntry:`n import tomllib`nexcept ModuleNotFoundError:`n import tomli as tomllib`nsource_path = pathlib.Path('outputs/site/zensical.toml'); target_path = pathlib.Path('outputs/site/mkdocs.yml')`nwith source_path.open('rb') as source_file:`n zensical = tomllib.load(source_file)`nproject = zensical.get('project', {}); theme = dict(project.get('theme', {})); theme.pop('variant', None); theme = {'name': 'material', **theme}`nmarkdown_extensions = [{name: value} if value else name for name, value in project.get('markdown_extensions', {}).items()]`nmkdocs = {'site_name': project.get('site_name'), 'repo_name': project.get('repo_name'), 'repo_url': project.get('repo_url'), 'theme': theme, 'plugins': project.get('plugins', ['search']), 'markdown_extensions': markdown_extensions}`nif 'extra' in project:`n mkdocs['extra'] = project['extra']`nwith target_path.open('w', encoding='utf-8') as target_file:`n yaml.safe_dump(mkdocs, target_file, sort_keys=False, allow_unicode=True)"
+
                 Show-FileContent -Path $mkdocsTargetPath
             }
 
