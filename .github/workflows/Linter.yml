@@ -2,7 +2,9 @@ name: Linter
 
 run-name: "Linter - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
-on: [pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,6 +32,7 @@ jobs:
           FILTER_REGEX_EXCLUDE: 'tests/src(TestRepo|WithManifestTestRepo)/src/classes/public/.*\.ps1$'
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_GITHUB_ACTIONS: false
+          VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
           VALIDATE_JSCPD: false
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_MARKDOWN_PRETTIER: false
