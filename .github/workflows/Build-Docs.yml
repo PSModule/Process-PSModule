@@ -78,7 +78,31 @@ jobs:
             }
 
       - name: Lint documentation
-        uses: DavidAnson/markdownlint-cli2-action@28a7e8bdb81fd8ad675883de92c758ab78e0ce10 # v24
+        id: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
         with:
           config: .github/linters/.markdown-lint.yml
           globs: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs/**/*.md
+
+      - name: Summarize documentation lint
+        if: always()
+        shell: pwsh
+        env:
+          LINT_OUTCOME: ${{ steps.markdownlint.outcome }}
+          WORKING_DIRECTORY: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+        run: |
+          $docsPath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "$env:WORKING_DIRECTORY/outputs/docs"
+          $fileCount = if (Test-Path -Path $docsPath) {
+              @(Get-ChildItem -Path $docsPath -Recurse -File -Include '*.md', '*.markdown').Count
+          } else {
+              0
+          }
+
+          @(
+              '## Documentation lint'
+              ''
+              '- Tool: `markdownlint-cli2-action v24.2.0`'
+              '- Configuration: `.github/linters/.markdown-lint.yml`'
+              "- Files checked: $fileCount"
+              "- Result: **$env:LINT_OUTCOME**"
+          ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
