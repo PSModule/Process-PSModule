@@ -1,0 +1,19 @@
+name: Update index
+description: Run repository index update script via GitHub-Script.
+inputs:
+  ClientID:
+    description: GitHub App client ID used by GitHub-Script.
+    required: true
+  PrivateKey:
+    description: GitHub App private key used by GitHub-Script.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Update index
+      uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
+      with:
+        ClientID: ${{ inputs.ClientID }}
+        PrivateKey: ${{ inputs.PrivateKey }}
+        Script: |
+          ${{ github.action_path }}/src/main.ps1
