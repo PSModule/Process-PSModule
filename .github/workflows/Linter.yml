@@ -29,7 +29,7 @@ jobs:
         uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          FILTER_REGEX_EXCLUDE: 'tests/src(TestRepo|WithManifestTestRepo)/src/classes/public/.*\.ps1$'
+          FILTER_REGEX_EXCLUDE: '(tests/src(TestRepo|WithManifestTestRepo)/src/classes/public/.*\.ps1|docs/.*)$'
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_GITHUB_ACTIONS: false
           VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
