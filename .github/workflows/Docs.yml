@@ -16,6 +16,7 @@ on:
       - main
     paths:
       - docs/**
+      - .github/actions/update-index/**
       - .github/workflows/Docs.yml
 
 concurrency:
