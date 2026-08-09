@@ -41,7 +41,7 @@ Each job mints its own token with the repository that triggered the workflow:
 | Workflow | Requested repository permissions | GitHub operations |
 | --- | --- | --- |
 | Plan | `contents: read`, `pull-requests: write` | Read repository settings and version data, inspect pull-request files and labels, and write planning comments or labels. |
-| Build-Module | No explicit `permission-*` inputs | Read repository metadata while building the module manifest. |
+| Build-Module | `metadata: read` | Read repository metadata while building the module manifest. |
 | Publish-Module | `contents: write`, `pull-requests: write` | Create and upload releases, write pull-request comments, and clean up prereleases. |
 
 The GitHub App installation must grant the permissions requested by each job. Keep the installation and token scope
@@ -68,6 +68,7 @@ The token action is pinned and exposes its output only to the steps that need Gi
     app-id: ${{ secrets.GitHubAppClientId }}
     private-key: ${{ secrets.GitHubAppPrivateKey }}
     repositories: ${{ github.event.repository.name }}
+    permission-metadata: read
 
 - name: Use the token
   env:
