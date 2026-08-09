@@ -20,6 +20,7 @@ MD029: false # Ordered list item prefix
 MD033: false # Allow inline HTML
 MD036: false # Emphasis used instead of a heading
 MD041: false # First line in file should be a top level heading, PULL_REQUEST_TEMPLATE.md is an exception
+MD060: false # Documentation uses both compact and aligned table styles
 
 #################
 # Rules by tags #
