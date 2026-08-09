@@ -1,0 +1,7 @@
+/* Dictionary stays in the build navigation so glossary links remain published. */
+.md-tabs__item:has(.md-tabs__link[href*="Dictionary/"]),
+.md-nav__item:has(.md-nav__link[href*="Dictionary/"]),
+html:has(link[rel="canonical"][href*="/Dictionary/"]) .md-tabs__item--active,
+html:has(link[rel="canonical"][href*="/Dictionary/"]) .md-nav__item--active {
+    display: none;
+}

@@ -13,6 +13,9 @@ extra_javascript = [
   "https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js",
   "assets/javascripts/tablesort.js",
 ]
+extra_css = [
+  "assets/stylesheets/navigation.css",
+]
 watch = ["includes"]
 nav = [
   "index.md",
@@ -52,6 +55,9 @@ nav = [
     {"Principles and practices" = "specification/principles-and-practices.md"},
   ]},
   {"Modules" = "Modules/index.md"},
+  {"Dictionary" = [
+    "Dictionary/index.md",
+  ]},
 ]
 
 [project.theme]
