@@ -54,13 +54,13 @@ The goal is a stable repository anatomy so both humans and automation know exact
 └── README.md                                  # Repository overview rendered on GitHub and docs landing
 ```
 
-The tree shows the [Simple PowerShell test profile](https://msxorg.github.io/docs/Coding-Standards/PowerShell/Testing/#simple), not an exclusive test-file shape. Standard keeps one root-level `tests/<Group>.Tests.ps1` file per public function group. Advanced uses recursively discovered subdirectories, and layouts may mix across directories. Process-PSModule defines the exact [per-directory precedence and sibling suppression](writing-module-tests.md#test-discovery).
+The tree shows the [Simple PowerShell test profile](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#simple), not an exclusive test-file shape. Standard keeps one root-level `tests/<Group>.Tests.ps1` file per public function group. Advanced uses recursively discovered subdirectories, and layouts may mix across directories. Process-PSModule defines the exact [per-directory precedence and sibling suppression](writing-module-tests.md#test-discovery).
 
 These names describe repository conventions, not settings. `.github/PSModule.yml` does not select a test profile. The optional `tests/BeforeAll.ps1` and `tests/AfterAll.ps1` files are root-only workflow phases and are not discovered recursively.
 
 Key expectations:
 
-- Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/` using a [documented test profile](https://msxorg.github.io/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles).
+- Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/` using a [documented test profile](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles).
 - Keep documentation site configuration in `.github/zensical.toml`.
 - Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
 - Markdown files in `src/functions/public` subfolders become documentation pages alongside generated help.

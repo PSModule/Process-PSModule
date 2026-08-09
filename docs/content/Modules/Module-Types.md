@@ -1,7 +1,7 @@
 # Module types
 
 Most PSModule modules fall into one of a few archetypes. The general rules in
-[PowerShell module standard](Standards.md) and [MSX PowerShell Standards](https://msxorg.github.io/docs/Coding-Standards/PowerShell/) always apply; this
+[PowerShell module standard](Standards.md) and [MSX PowerShell Standards](https://msx.no/docs/Coding-Standards/PowerShell/) always apply; this
 page adds the conventions that are specific to a module's type so that modules of the same kind feel
 the same to use.
 

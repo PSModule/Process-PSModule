@@ -2,7 +2,7 @@
 
 Process-PSModule is the framework for building, testing, versioning, documenting, and publishing PowerShell modules. These foundations define the repository, source, test, and release conventions that the framework supports and validates.
 
-Start with the [Process-PSModule overview](Process-PSModule/index.md) to understand the workflow. Use these pages when creating or maintaining a module that runs through it.
+Start with the [Process-PSModule overview](../index.md) to understand the workflow. Use these pages when creating or maintaining a module that runs through it.
 
 | Page | Use it for |
 | --- | --- |

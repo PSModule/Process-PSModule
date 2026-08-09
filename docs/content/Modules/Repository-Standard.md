@@ -2,7 +2,7 @@
 
 This is the PSModule organization's Repository Standard. It applies to the PSModule organization and is the standard for PowerShell module repositories. It describes what a newly created or maintained module repository should look like before module-specific code, tests, documentation, and managed repository files are considered.
 
-This standard operates at the same altitude as the [MSX Enterprise Repository Standard](https://msxorg.github.io/docs/Ways-of-Working/Repository-Standard/): MSX sets the enterprise-wide default, and this standard adds to and adjusts that default for PowerShell module repositories. Rules this standard does not change are inherited from the MSX default; where this standard adds or overrides a rule, it governs PowerShell module repositories.
+This standard operates at the same altitude as the [MSX Enterprise Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/): MSX sets the enterprise-wide default, and this standard adds to and adjusts that default for PowerShell module repositories. Rules this standard does not change are inherited from the MSX default; where this standard adds or overrides a rule, it governs PowerShell module repositories.
 
 The implementation standard still lives in [PowerShell module standard](Standards.md). Type-specific conventions for integration (API) and data modules live in [Module types](Module-Types.md). This page covers the repository standard for module repositories: files, metadata, README shape, release integration, placeholder handling, shared community files, and managed-file distribution.
 
@@ -70,7 +70,7 @@ Local work should use the organization worktree convention:
 - `main/` tracks the default branch.
 - Feature worktrees use `<type>-<slug>` directories and `<type>/<slug>` branches.
 
-For branch and worktree details, see [Git Worktrees](https://msxorg.github.io/docs/Ways-of-Working/Git-Worktrees/).
+For branch and worktree details, see [Git Worktrees](https://msx.no/docs/Ways-of-Working/Git-Worktrees/).
 
 ## Default repository layout
 
@@ -173,7 +173,7 @@ See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule) 
 
 `AGENTS.md` and `CLAUDE.md` are the required set. `AGENTS.md` is the entry point that AGENTS.md-aware runtimes read directly, so a repository is usable by an agent without a per-runtime copy of the same pointer.
 
-Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msxorg.github.io/docs/Ways-of-Working/Agentic-Development/) and its [capability specification](https://msxorg.github.io/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
+Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 

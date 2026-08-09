@@ -24,7 +24,7 @@ flow in automatically while a new major stays a deliberate, reviewed change.
 ## Test discovery
 
 Simple, Standard, and Advanced are
-[documentation profiles](https://msxorg.github.io/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles), not
+[documentation profiles](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles), not
 selectable workflow modes. The same discovery engine handles every profile. `.github/PSModule.yml` has no test-layout
 or suite-matrix setting; `Settings.Test.Module.Suites` is computed internally from the repository files.
 

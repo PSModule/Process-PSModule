@@ -11,11 +11,11 @@ A PowerShell module's lifecycle — from source code to versioned, published art
 
 ### Principles
 
-This capability rests on the [MSX principles](https://msxorg.github.io/docs/Ways-of-Working/Principles/):
+This capability rests on the [MSX principles](https://msx.no/docs/Ways-of-Working/Principles/):
 
-- **[Everything as Code](https://msxorg.github.io/docs/Ways-of-Working/Principles/Engineering-Practices/#everything-as-code).** The pipeline and versioning are version-controlled, never a GUI action or manual tag.
-- **[Decision before change](https://msxorg.github.io/docs/Ways-of-Working/Principles/AI-First-Development/#decision-before-change).** The pull request is the decision point; its review and labels encode both code acceptance and release intent.
-- **[Extensible by default](https://msxorg.github.io/docs/Ways-of-Working/Principles/Software-Design/#extensible-by-default).** The pipeline is technology-agnostic at its core, configurable via a single settings file.
+- **[Everything as Code](https://msx.no/docs/Ways-of-Working/Principles/Engineering-Practices/#everything-as-code).** The pipeline and versioning are version-controlled, never a GUI action or manual tag.
+- **[Decision before change](https://msx.no/docs/Ways-of-Working/Principles/AI-First-Development/#decision-before-change).** The pull request is the decision point; its review and labels encode both code acceptance and release intent.
+- **[Extensible by default](https://msx.no/docs/Ways-of-Working/Principles/Software-Design/#extensible-by-default).** The pipeline is technology-agnostic at its core, configurable via a single settings file.
 
 ## Scope
 
@@ -150,4 +150,4 @@ Scenario: Handle documentation generation failure
 - [Calling the workflow](../guides/calling-the-workflow.md) — how to invoke the workflow.
 - [Settings](../reference/settings.md) — the settings file and its options.
 - [Principles and practices](principles-and-practices.md) — versioning, branching, and development practices.
-- [Documentation Model](https://msxorg.github.io/docs/Ways-of-Working/Documentation-Model/) — why this spec holds only the why and what.
+- [Documentation Model](https://msx.no/docs/Ways-of-Working/Documentation-Model/) — why this spec holds only the why and what.
