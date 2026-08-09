@@ -1,11 +1,29 @@
 ---
-title: Repository structure
-description: The repository and module source layout Process-PSModule expects, and how to declare module dependencies with #Requires -Modules.
+title: Structuring your module
+description: The repository and module source layout Process-PSModule expects, what goes where, and how to declare module dependencies with #Requires -Modules.
 ---
 
-# Repository structure
+# Structuring your module
 
 Process-PSModule expects repositories to follow the staged layout produced by Template-PSModule. The workflow inspects this structure to decide what to compile, document, and publish.
+
+The goal is a stable repository anatomy so both humans and automation know exactly where to place and find module concerns.
+
+## What goes where
+
+| Concern | Location |
+| --- | --- |
+| Public command surface — the module API | `src/functions/public/<Group>/` |
+| Private implementation — not exported | `src/functions/private/<Group>/` |
+| Public and private classes | `src/classes/` |
+| Formatting definitions | `src/formats/` |
+| Type extensions | `src/types/` |
+| Import-time setup | `src/init/` |
+| Scoped variables | `src/variables/private/` and `src/variables/public/` |
+| Behavior tests | `tests/` |
+| Representative usage | `examples/` |
+
+## Repository layout
 
 ```plaintext
 <ModuleName>/
@@ -36,7 +54,7 @@ Process-PSModule expects repositories to follow the staged layout produced by Te
 └── README.md                                  # Repository overview rendered on GitHub and docs landing
 ```
 
-The tree shows the [Simple PowerShell test profile](https://msxorg.github.io/docs/Coding-Standards/PowerShell/Testing/#simple), not an exclusive test-file shape. Standard keeps one root-level `tests/<Group>.Tests.ps1` file per public function group. Advanced uses recursively discovered subdirectories, and layouts may mix across directories. Process-PSModule defines the exact [per-directory precedence and sibling suppression](pipeline-stages.md#module-local-test-discovery).
+The tree shows the [Simple PowerShell test profile](https://msxorg.github.io/docs/Coding-Standards/PowerShell/Testing/#simple), not an exclusive test-file shape. Standard keeps one root-level `tests/<Group>.Tests.ps1` file per public function group. Advanced uses recursively discovered subdirectories, and layouts may mix across directories. Process-PSModule defines the exact [per-directory precedence and sibling suppression](writing-module-tests.md#test-discovery).
 
 These names describe repository conventions, not settings. `.github/PSModule.yml` does not select a test profile. The optional `tests/BeforeAll.ps1` and `tests/AfterAll.ps1` files are root-only workflow phases and are not discovered recursively.
 

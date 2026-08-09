@@ -1,3 +1,0 @@
-[codespell]
-skip = ./docs/.github/linters
-ignore-words-list = afterall,skelton,erformance

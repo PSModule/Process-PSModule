@@ -1,12 +1,15 @@
 ---
-title: Usage
-description: How to call the Process-PSModule workflow — inputs, secrets, permissions, the scenario matrix, and important-file change detection.
+title: Calling the workflow
+description: How to call the Process-PSModule reusable workflow — the caller workflow, passing test secrets and variables with TestData, and important-file change detection.
 ---
 
-# Usage
+# Calling the workflow
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
 For documentation site generation, use `zensical.toml` as the active site contract.
+
+For the exact inputs, secrets, and permissions the reusable workflow declares, see
+[Workflow inputs](../reference/workflow-inputs.md).
 
 <details>
 <summary>Workflow suggestion</summary>
@@ -48,28 +51,12 @@ jobs:
 
 </details>
 
-## Inputs
-
-| Name | Type | Description | Required | Default |
-| ---- | ---- | ----------- | -------- | ------- |
-| `SettingsPath` | `string` | The path to the settings file. All workflow configuration is controlled through this settings file. | `false` | `.github/PSModule.yml` |
-| `Debug` | `boolean` | Enable debug output. | `false` | `false` |
-| `Verbose` | `boolean` | Enable verbose output. | `false` | `false` |
-| `Version` | `string` | Specifies the version of the GitHub module to be installed. The value must be an exact version. | `false` | `''` |
-| `Prerelease` | `boolean` | Whether to use a prerelease version of the 'GitHub' module. | `false` | `false` |
-| `WorkingDirectory` | `string` | The path to the root of the repo. | `false` | `'.'` |
-| `ImportantFilePatterns` | `string` | Newline-separated list of regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `false` | `^src/\n^README\.md$` |
-
-## Secrets
+## Passing test data
 
 The reusable workflow at `.github/workflows/workflow.yml` declares only two workflow-call secrets,
 which keeps the calling workflow in full control of the credentials that are exposed.
-`secrets: inherit` is intentionally not required.
-
-| Name | Location | Description | Required |
-| ---- | -------- | ----------- | -------- |
-| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
-| `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
+`secrets: inherit` is intentionally not required. `APIKey` publishes to the PowerShell Gallery; `TestData` carries
+everything the module's own tests need.
 
 ### Breaking change: fixed test secrets use `TestData`
 
@@ -179,48 +166,6 @@ Notes:
   visible to the calling job. For environment-scoped values, set `environment:` on the calling job and
   explicitly include those values in `TestData`; they are not exposed automatically.
 
-## Permissions
-
-The following permissions are needed for the workflow to be able to perform all tasks.
-
-```yaml
-permissions:
-  contents: write      # to checkout the repo and create releases on the repo
-  pull-requests: write # to write comments to PRs
-  statuses: write      # to update the status of the workflow from linter
-  pages: write         # to deploy to Pages
-  id-token: write      # to verify the Pages deployment originates from an appropriate source
-```
-
-For more info, see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
-
-## Scenario Matrix
-
-This table shows when each job runs based on the trigger scenario:
-
-| Job                       | Open/Updated PR | Merged PR  | Abandoned PR | Manual Run |
-| ------------------------- | --------------- | ---------- | ------------ | ---------- |
-| **Plan**                  | ✅ Always       | ✅ Always  | ✅ Always    | ✅ Always  |
-| **Lint-Repository**       | ✅ Yes          | ❌ No      | ❌ No        | ❌ No      |
-| **Build-Module**          | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Build-Docs**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Build-Site**            | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Test-SourceCode**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Lint-SourceCode**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Test-Module**           | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **BeforeAll-ModuleLocal** | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Test-ModuleLocal**      | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **AfterAll-ModuleLocal**  | ✅ Yes          | ✅ Yes     | ✅ Yes*      | ✅ Yes     |
-| **Get-TestResults**       | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Get-CodeCoverage**      | ✅ Yes          | ✅ Yes     | ❌ No        | ✅ Yes     |
-| **Publish-Site**          | ❌ No           | ✅ Yes     | ❌ No        | ❌ No      |
-| **Publish-Module**        | ✅ Yes**        | ✅ Yes**   | ✅ Yes***    | ✅ Yes**   |
-
-- \* Runs for cleanup if tests were started
-- \*\* Only when all tests/coverage/build succeed
-- \*\*\* Cleans up prerelease versions and tags created for the abandoned PR (when `Publish.Module.AutoCleanup` is
-  enabled)
-
 ## Important file change detection
 
 The workflow automatically detects whether a pull request contains changes to "important" files that should enter the
@@ -252,7 +197,7 @@ ImportantFilePatterns:
 When configured, the provided list fully replaces the defaults. Include the default patterns in your list if you still
 want them to trigger the build, test, and publish path.
 
-Recursive [module-local test discovery](pipeline-stages.md#module-local-test-discovery) does not change this trigger.
+Recursive [module-local test discovery](writing-module-tests.md#test-discovery) does not change this trigger.
 With the defaults, a test-only change does not run the important-change build, test, and publish stages because
 `^tests/` is not matched. Add `^tests/` when those changes must exercise the path, plus each settings, workflow, or
 other automation path whose changes need the same validation. Include only paths that should trigger all three stages.

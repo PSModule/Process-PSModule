@@ -3,7 +3,7 @@ title: Skipping framework tests
 description: How to skip individual PSModule framework tests on a per-file basis, the available test IDs, and the broader configuration alternatives.
 ---
 
-# Skipping Individual Framework Tests
+# Skipping individual framework tests
 
 The PSModule framework tests run automatically as part of the `Test-Module` and `Test-SourceCode` jobs. While you can skip entire test categories using the configuration settings (e.g., `Test.PSModule.Skip`), you can also skip individual framework tests on a per-file basis when needed.
 
@@ -20,33 +20,13 @@ To skip an individual framework test for a specific file, add a special comment 
 
 The skip comment will cause the framework to skip that specific test for that file only, and will log a warning in the build output with the reason provided.
 
-## Available Framework Tests
+## Available framework tests
 
-### SourceCode Tests
+Every source-code test ID, its meaning, and an example skip comment are listed in
+[Framework test IDs](../reference/framework-test-ids.md#source-code-tests).
 
-These tests run against your source code files in the `src` directory:
-
-| Test ID | Description | Example Skip Comment |
-|---------|-------------|---------------------|
-| `NumberOfProcessors` | Enforces use of `[System.Environment]::ProcessorCount` instead of `$env:NUMBER_OF_PROCESSORS` | `#SkipTest:NumberOfProcessors:Legacy code compatibility required` |
-| `Verbose` | Ensures code does not pass `-Verbose` to other commands (which would override user preference), unless explicitly disabled with `-Verbose:$false` | `#SkipTest:Verbose:Required for debugging output` |
-| `OutNull` | Enforces use of `$null = ...` instead of `... \| Out-Null` for better performance | `#SkipTest:OutNull:Pipeline processing required` |
-| `NoTernary` | Prohibits ternary operators for PowerShell 5.1 compatibility (this test is skipped by default in the framework) | `#SkipTest:NoTernary:PowerShell 7+ only module` |
-| `LowercaseKeywords` | Ensures all PowerShell keywords are lowercase | `#SkipTest:LowercaseKeywords:Generated code` |
-| `FunctionCount` | Ensures each file contains exactly one function | `#SkipTest:FunctionCount:Helper functions included` |
-| `FunctionName` | Ensures the filename matches the function name | `#SkipTest:FunctionName:Legacy naming convention` |
-| `CmdletBinding` | Requires all functions to have `[CmdletBinding()]` attribute | `#SkipTest:CmdletBinding:Simple helper function` |
-| `ParamBlock` | Requires all functions to have a `param()` block | `#SkipTest:ParamBlock:No parameters needed` |
-| `FunctionTest` | Ensures all public functions have corresponding tests | `#SkipTest:FunctionTest:Test in development` |
-
-### Module Tests
-
-These tests run against the compiled module in the `outputs/module` directory:
-
-- Module import validation
-- Module manifest validation
-
-Module tests typically don't need to be skipped as they validate the final built module.
+[Module tests](../reference/framework-test-ids.md#module-tests) run against the compiled module in the
+`outputs/module` directory and typically don't need to be skipped, as they validate the final built module.
 
 ## Example Usage
 
@@ -202,4 +182,5 @@ For broader test control, use the configuration file settings:
 - Skip only source code tests: `Test.SourceCode.Skip: true`
 - Skip framework tests on specific OS: `Test.PSModule.Windows.Skip: true`
 
-See the [Configuration](configuration.md) section for more details.
+See [Settings](../reference/settings.md) for the full list and
+[Configuring the pipeline](configuring-the-pipeline.md) for worked examples.

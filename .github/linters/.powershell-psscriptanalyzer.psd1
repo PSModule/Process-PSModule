@@ -50,7 +50,7 @@
         }
     }
     ExcludeRules = @(
-        'PSAvoidUsingWriteHost',        # Write-Host is acceptable in GitHub Actions runners
+        'PSAvoidUsingWriteHost',        # Write-Host is acceptable in GitHub Actions runners and docs tooling scripts
         'PSMissingModuleManifestField', # This rule is not applicable until the module is built.
         'PSUseToExportFieldsInManifest'
     )

@@ -91,7 +91,7 @@ Scenario: Compute the next version from the PR label
   Given a pull request with the label "Minor"
   When the PR is merged to main and the current version is v1.2.3
   Then the new version is computed as v1.3.0
-  
+
 Scenario: Reject ambiguous version labels
   Given a pull request with both "Major" and "Minor" labels
   When the merge is attempted
@@ -118,7 +118,7 @@ Scenario: Publish a prerelease version
   When the PR runs the pipeline
   Then a prerelease version is published (e.g., v1.2.3-pr.1.N)
   And it is available for testing before the PR is merged
-  
+
 Scenario: Promote a prerelease to stable
   Given a prerelease PR that is merged to main with a version label
   When the PR is merged
@@ -146,8 +146,8 @@ Scenario: Handle documentation generation failure
 ## Where this connects
 
 - [Design](design.md) — how these requirements are delivered.
-- [Pipeline stages](pipeline-stages.md) — the job-by-job breakdown of the workflow.
-- [Usage](usage.md) — how to invoke and configure the workflow.
-- [Configuration](configuration.md) — the settings file and its options.
+- [Pipeline stages](../reference/pipeline-stages.md) — the job-by-job breakdown of the workflow.
+- [Calling the workflow](../guides/calling-the-workflow.md) — how to invoke the workflow.
+- [Settings](../reference/settings.md) — the settings file and its options.
 - [Principles and practices](principles-and-practices.md) — versioning, branching, and development practices.
 - [Documentation Model](https://msxorg.github.io/docs/Ways-of-Working/Documentation-Model/) — why this spec holds only the why and what.

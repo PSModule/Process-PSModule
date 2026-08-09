@@ -39,7 +39,7 @@ This site covers PSModule organization-specific documentation:
 
 - [Modules](Modules/index.md): module catalog and module-specific standards
 - [Process-PSModule](Modules/Process-PSModule/index.md): how modules are structured and built
-- [Template onboarding](Modules/Process-PSModule/template-quickstart.md): how to start from the template
+- [Template onboarding](Modules/Process-PSModule/get-started/index.md): how to start from the template
 
 ## Cross-org guidance
 
