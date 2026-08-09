@@ -31,8 +31,8 @@ jobs:
     uses: ./.github/workflows/workflow.yml
     secrets:
       APIKey: ${{ secrets.APIKey }}
-      GitHubAppClientId: ${{ secrets.PSMODULE_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.PSMODULE_PRIVATE_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
       TestData: >-
         {
           "secrets": {
