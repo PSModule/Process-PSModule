@@ -85,7 +85,7 @@ The token action is pinned and exposes its output only to the steps that need Gi
 ```yaml
 - name: Create GitHub App token
   id: App-Token
-  uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+  uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
   with:
     client-id: ${{ secrets.GitHubAppClientId }}
     private-key: ${{ secrets.GitHubAppPrivateKey }}
