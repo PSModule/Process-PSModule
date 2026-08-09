@@ -35,9 +35,10 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 
 See [passing test data](../guides/calling-the-workflow.md#passing-test-data) for how to build the `TestData` value.
 
-## Permissions
+## Workflow `github.token` permissions
 
-The following permissions are needed for the workflow to be able to perform all tasks.
+The following permissions are needed by the caller workflow's default `github.token` for operations that do not use
+Shelly, such as linting and GitHub Pages deployment:
 
 ```yaml
 permissions:
@@ -49,3 +50,10 @@ permissions:
 ```
 
 For more info, see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
+
+## GitHub App permissions
+
+The `permissions:` block above does not apply to Shelly's installation tokens. Shelly needs only the repository
+permissions documented in [GitHub App authentication](../guides/github-app-authentication.md#github-app-installation-permissions):
+Contents: write, Pull requests: write, and automatically granted Metadata: read. Each job requests a smaller,
+repository-scoped subset when it mints its token.

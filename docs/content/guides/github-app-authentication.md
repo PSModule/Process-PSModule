@@ -33,11 +33,30 @@ jobs:
 The root reusable workflow forwards these two values to the Plan, Build-Module, and Publish-Module reusable jobs.
 Do not use `secrets: inherit` as a substitute for this mapping.
 
-For Dependabot pull requests, create `SHELLY_CLIENT_ID` and `SHELLY_PRIVATE_KEY` as Dependabot secrets as well as
-Actions secrets. Dependabot-triggered workflows cannot read regular Actions secrets, so the GitHub App token cannot
-be minted without separate Dependabot secret values.
+Dependabot-triggered workflows cannot read regular Actions secrets. Do not duplicate Shelly's private key into
+Dependabot secrets by default: a compromised dependency update could alter workflow code that receives the key before
+human review. If an organization requires the Process-PSModule workflow to run on Dependabot pull requests, its
+security owners must explicitly accept that trust boundary and provision separate Dependabot secrets. Otherwise,
+skip token-consuming jobs for Dependabot pull requests and run the full workflow after review or merge.
 
-## Token scope
+## GitHub App installation permissions
+
+Install Shelly only on repositories that the process must manage. The complete permission baseline for the current
+Process-PSModule GitHub App path is:
+
+| Repository permission | Access | Why it is needed |
+| --- | --- | --- |
+| Contents | Write | Read releases during version resolution; create, upload to, and delete releases during publish and cleanup. |
+| Pull requests | Write | Read pull-request files and labels; add process and release comments to pull requests. |
+| Metadata | Read | Read repository description, topics, and URL while building the module manifest. This permission is granted automatically to GitHub Apps. |
+
+Do not grant Shelly Actions, Issues, Statuses, Pages, Workflows, or administration permissions for the current
+Process-PSModule GitHub App path. Those permissions are not used by installation tokens minted here.
+
+The caller workflow's `permissions:` block is separate: it scopes only `github.token` for non-App operations such as
+artifact handling, linting, and Pages deployment. It cannot expand or restrict Shelly's installation token.
+
+## Per-workflow token scope
 
 Each job mints its own token with the repository that triggered the workflow:
 `${{ github.event.repository.name }}`.
