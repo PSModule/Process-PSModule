@@ -57,6 +57,7 @@ Look up the framework's exact contracts and the module-development standards it 
 | [Scenario matrix](reference/scenario-matrix.md) | Which jobs run for each trigger scenario. |
 | [Framework test IDs](reference/framework-test-ids.md) | The framework tests enforced on source code and on the built module. |
 | [Dependencies](reference/dependencies.md) | The actions, modules, and services the workflow composes. |
+| [PowerShell guidance scripts](reference/guidance-scripts.md) | Runnable reference scripts for common PowerShell implementation patterns. |
 
 ## Specification
 
