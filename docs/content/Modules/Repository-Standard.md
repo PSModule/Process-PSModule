@@ -187,12 +187,6 @@ For PSModule module repositories, the requirements are:
 - Managed copies of those files are treated as generated distribution artifacts, not repository-specific source.
 - Standard changes to managed-file content are made in the distribution engine, not by patching generated copies in receiving repositories.
 
-### Migration for existing repositories
-
-Repositories still aligned to `PSModule/Distributor` (the previous distribution engine) should migrate to Custo as the runtime implementation.
-
-This page defines the required target state (the file requirements). Runtime migration mechanics and rollout design (repository targeting, update flow, overwrite behavior, and deletion behavior) are owned by Custo and should be documented and executed from the Custo repository.
-
 ## Supply-chain defaults
 
 Every module repository must include `.github/dependabot.yml`. Dependabot is part of the repository supply-chain control, not an optional convenience.

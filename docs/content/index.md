@@ -33,15 +33,15 @@ We empower PowerShell-savvy developers to effortlessly transform their ideas int
 
 Where we are headed is tracked as [objectives and initiatives](https://msxorg.github.io/docs/Ways-of-Working/Goal-Setting/).
 
-## What this docs site now owns
+## PSModule documentation
 
-This site is now focused on PSModule-org specific documentation:
+This site covers PSModule organization-specific documentation:
 
 - [Modules](Modules/index.md): module catalog and module-specific standards
 - [Process-PSModule](Modules/Process-PSModule/index.md): how modules are structured and built
 - [Template onboarding](Modules/Process-PSModule/template-quickstart.md): how to start from the template
 
-## Cross-org guidance has moved
+## Cross-org guidance
 
 Cross-org standards and reusable solution documentation are now canonical in [MSXOrg/docs](https://msxorg.github.io/docs/):
 

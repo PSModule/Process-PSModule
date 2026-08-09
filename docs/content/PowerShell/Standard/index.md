@@ -1,6 +1,6 @@
-# PowerShell Standards (Moved)
+# PowerShell Standards
 
-Cross-org PowerShell standards are now canonical in MSXOrg/docs.
+Cross-org PowerShell standards are maintained in MSXOrg/docs.
 
 Use:
 

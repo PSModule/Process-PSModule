@@ -2,7 +2,7 @@
 
 Process-PSModule is the module delivery framework used in PSModule repositories.
 
-This section documents how module repositories are formed and how they move from source to published artifact.
+This section documents module repository structure and the build and publication lifecycle.
 
 ## In this section
 
