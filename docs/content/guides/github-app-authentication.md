@@ -80,12 +80,13 @@ The scopes have separate ceilings:
 
 ## Token injection
 
-The token action is pinned and exposes its output only to the steps that need GitHub API access:
+Use the latest released version of the token action, resolved to its full immutable commit SHA. Record the exact
+release tag in the trailing comment. The token action exposes its output only to the steps that need GitHub API access:
 
 ```yaml
 - name: Create GitHub App token
   id: App-Token
-  uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+  uses: actions/create-github-app-token@<sha> # vx.y.z
   with:
     client-id: ${{ secrets.GitHubAppClientId }}
     private-key: ${{ secrets.GitHubAppPrivateKey }}
