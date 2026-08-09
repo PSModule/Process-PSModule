@@ -10,12 +10,20 @@
       "description": "The name of the module"
     },
     "ImportantFilePatterns": {
-      "type": "array",
-      "description": "Regex patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. Defaults to ['^src/', '^README\\.md$'] when not configured.",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "description": "Patterns that classify important code/docs changes for orchestration.",
+      "oneOf": [
+        {
+          "type": "array",
+          "description": "Backward-compatible format. Treated as code patterns.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "$ref": "#/definitions/importantFilePatternGroups"
+        }
+      ]
     },
     "Test": {
       "type": "object",
@@ -258,7 +266,15 @@
     },
     "HasImportantChanges": {
       "type": "boolean",
-      "description": "Indicates if important files have changed in the PR (src/**, examples/**, README.md, .github/workflows/Process-PSModule.yml)"
+      "description": "Backward-compatible alias for HasModuleChanges."
+    },
+    "HasModuleChanges": {
+      "type": "boolean",
+      "description": "Indicates whether module-impacting files changed in the PR."
+    },
+    "HasDocsChanges": {
+      "type": "boolean",
+      "description": "Indicates whether docs-impacting files changed in the PR (for example docs content, docs config, or site layout files)."
     },
     "Run": {
       "type": "null",
@@ -339,6 +355,29 @@
         "TestPath",
         "TestName"
       ]
+    },
+    "importantFilePatternGroups": {
+      "type": "object",
+      "description": "Pattern groups used by the orchestrator.",
+      "properties": {
+        "Code": {
+          "type": "array",
+          "description": "Regex patterns for module-impacting/code changes.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "Docs": {
+          "type": "array",
+          "description": "Regex patterns for docs/layout/config changes.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
