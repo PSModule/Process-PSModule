@@ -23,19 +23,22 @@ interface it exposes to a caller workflow. For how to wire it up, see
 
 ## Secrets
 
-The workflow declares only two workflow-call secrets, which keeps the calling workflow in full control of the
+The workflow declares four workflow-call secrets, which keeps the calling workflow in full control of the
 credentials that are exposed. `secrets: inherit` is intentionally not required.
 
 | Name | Location | Description | Required |
 | ---- | -------- | ----------- | -------- |
-| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
+| `PSGALLERY_API_KEY` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
+| `GitHubAppClientId` | GitHub secrets | The GitHub App client ID used to mint scoped installation tokens for GitHub API operations. Map Shelly's `SHELLY_CLIENT_ID` in the caller and Dependabot secret store. | Yes |
+| `GitHubAppPrivateKey` | GitHub secrets | The GitHub App private key used to mint scoped installation tokens for GitHub API operations. Map Shelly's `SHELLY_PRIVATE_KEY` in the caller and Dependabot secret store. | Yes |
 | `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
 
 See [passing test data](../guides/calling-the-workflow.md#passing-test-data) for how to build the `TestData` value.
 
-## Permissions
+## Workflow `github.token` permissions
 
-The following permissions are needed for the workflow to be able to perform all tasks.
+The following permissions are needed by the caller workflow's default `github.token` for operations that do not use
+Shelly, such as linting and GitHub Pages deployment:
 
 ```yaml
 permissions:
@@ -47,3 +50,10 @@ permissions:
 ```
 
 For more info, see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
+
+## GitHub App permissions
+
+The `permissions:` block above does not apply to Shelly's installation tokens. Shelly needs only the repository
+permissions documented in [GitHub App authentication](../guides/github-app-authentication.md#github-app-installation-permissions):
+Contents: write, Pull requests: write, and automatically granted Metadata: read. Each job requests a smaller,
+repository-scoped subset when it mints its token.

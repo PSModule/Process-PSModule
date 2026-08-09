@@ -10,7 +10,7 @@ inputs:
     description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
     required: false
     default: outputs/module
-  APIKey:
+  PSGALLERY_API_KEY:
     description: PowerShell Gallery API Key.
     required: true
   WhatIf:
@@ -46,8 +46,9 @@ runs:
       shell: pwsh
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
+        GH_TOKEN: ${{ env.GH_TOKEN }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
-        PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey: ${{ inputs.APIKey }}
+        PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY: ${{ inputs.PSGALLERY_API_KEY }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
       run: ${{ github.action_path }}/src/publish.ps1
