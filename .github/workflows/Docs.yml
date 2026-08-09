@@ -1,0 +1,116 @@
+name: Docs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - .github/actions/update-index/**
+      - .github/workflows/Docs.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - .github/actions/update-index/**
+      - .github/workflows/Docs.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read # super-linter: read packages
+      statuses: write # super-linter: report status checks
+      pull-requests: write # super-linter: post PR summary comment
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Lint code base
+        uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
+          FILTER_REGEX_INCLUDE: '.*(docs/.*|\.github/actions/update-index/.*|\.github/workflows/Docs\.yml)$'
+          LINTER_RULES_PATH: docs/.github/linters
+          SAVE_SUPER_LINTER_SUMMARY: true
+          VALIDATE_BIOME_LINT: false
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_JSCPD: false
+          VALIDATE_JSON_PRETTIER: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
+          VALIDATE_HTML_PRETTIER: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Update index
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: ./.github/actions/update-index
+        with:
+          ClientID: ${{ secrets.SCRIBBLER_BOT_CLIENT_ID }} # zizmor: ignore[secrets-outside-env]
+          PrivateKey: ${{ secrets.SCRIBBLER_BOT_PRIVATE_KEY }} # zizmor: ignore[secrets-outside-env]
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: 3.x
+
+      - name: Install Zensical
+        run: pip install zensical
+
+      - name: Build Zensical project
+        run: zensical build --clean
+        working-directory: docs
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs/site
+
+  publish:
+    name: Publish
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write # deploy to GitHub Pages
+      id-token: write # OIDC token for actions/deploy-pages
+    steps:
+      - name: Configure pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+        id: deployment
