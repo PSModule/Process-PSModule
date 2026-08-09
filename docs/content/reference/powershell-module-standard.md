@@ -115,7 +115,9 @@ The release process treats each merged PR as a release on a single linear ancest
 
 ### Release and feature branches
 
-For large work, open a release branch and target it from feature branches. Apply the `Prerelease` label on the release branch PR to publish preview versions before the final merge to `main`.
+For large work, follow the [release branch pattern](../guides/versioning-and-releases.md#release-branch-pattern):
+open a release branch and target it from feature branches. Apply the `Prerelease` label on
+the release branch PR to publish preview versions before the final merge to `main`.
 
 ## CI/CD pipeline
 
