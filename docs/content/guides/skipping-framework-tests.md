@@ -165,7 +165,7 @@ function Format-ComplexData {
 
 Replace `<ModuleName>` with the module's published name. If the public function belongs to a group, insert `<Group>/` between `Functions/` and `Get-ComplexData`.
 
-The skip exempts only `FunctionCount`. Every function in the file must still follow the [PowerShell function standard](https://msxorg.github.io/docs/Coding-Standards/PowerShell/Functions/), including complete comment-based help, matching `[OutputType()]` and `.OUTPUTS` metadata, typed parameters, and implicit output.
+The skip exempts only `FunctionCount`. Every function in the file must still follow the [PowerShell function standard](https://msx.no/docs/Coding-Standards/PowerShell/Functions/), including complete comment-based help, matching `[OutputType()]` and `.OUTPUTS` metadata, typed parameters, and implicit output.
 
 ## Best Practices
 

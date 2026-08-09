@@ -34,4 +34,4 @@ If the module needs several interdependent commands before it is usable at all, 
 | [Your first release](your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
 | [Module bootstrap](module-bootstrap.md) | Getting a brand-new module to its first release with an integration branch. |
 
-For framework-level practices, refer to [MSX Ways of Working](https://msxorg.github.io/docs/Ways-of-Working/).
+For framework-level practices, refer to [MSX Ways of Working](https://msx.no/docs/Ways-of-Working/).

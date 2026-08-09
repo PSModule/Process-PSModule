@@ -1,28 +1,70 @@
 ---
-hide:
-  - navigation
+title: Process-PSModule
+description: An end-to-end PowerShell module pipeline that builds, tests, versions, documents, and publishes a module from a single reusable GitHub Actions workflow.
 ---
 
-# Make it **easy**, to move **fast**, in a **safe** way
+# Process-PSModule
 
-Every decision — from architecture to commit message — is filtered through those three words.
+An end-to-end PowerShell module pipeline that automates the entire lifecycle of a module: building from source, running cross-platform tests, enforcing code quality and coverage, generating documentation, and publishing the versioned module to the PowerShell Gallery and its documentation site to GitHub Pages. It is the core workflow used across all PowerShell modules in the [PSModule organization](https://github.com/PSModule), ensuring reliable, automated, and maintainable delivery of PowerShell projects.
 
-## Easy
+## How it works
 
-Simplicity is a feature. Make the right thing the easy thing — for users, contributors, and agents alike.
-Prefer the obvious and limited over the powerful and confusing. Automate what is mechanical so that human attention is saved for decisions that require judgment, context, and care.
+The workflow is triggered on pull requests to the repository's default branch. When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow runs. Depending on the labels on the pull request, the [workflow results in different outcomes](reference/scenario-matrix.md).
 
-The safe and smart choice should be the default choice. Design systems, tools, and workflows so that doing the right thing requires no extra effort — while allowing a deliberate override when necessary.
+Everything is packaged into a single reusable workflow so that a module repository only needs a small caller workflow and one settings file. A user configures the behaviour by editing `.github/PSModule.yml`.
 
-## Fast
+![Process diagram](media/Process-PSModule.png)
 
-Shift left, ship early, learn fast, iterate. Work flows in small increments — draft PRs, micro-commits, quick reviews.
-The faster we close the loop between intention and observation, the faster we improve and evolve what we are building.
+## Start here
 
-## Safe
+New to Process-PSModule? Work through these in order.
 
-Every decision should be reversible. Every release should be observable. Every failure should teach.
-Speed requires safety — we can only iterate fast when changes are cheap to undo, easy to monitor, and failures produce learning rather than blame.
+| Page | Description |
+| --- | --- |
+| [Get started](get-started/index.md) | Create a module repository from the template and get the pipeline running. |
+| [Repository setup](get-started/repository-setup.md) | Configure GitHub Pages, the PowerShell Gallery API key, permissions, and the caller workflow. |
+| [Your first release](get-started/your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
+
+## Guides
+
+Task-oriented deep dives into the pipeline's functionality.
+
+| Page | Description |
+| --- | --- |
+| [Calling the workflow](guides/calling-the-workflow.md) | The caller workflow, passing test secrets and variables with `TestData`, and important-file change detection. |
+| [Configuring the pipeline](guides/configuring-the-pipeline.md) | Worked examples for coverage targets, rapid testing, linting, and PR-based release notes. |
+| [Structuring your module](guides/structuring-your-module.md) | The repository and module source layout the workflow expects, and how to declare dependencies. |
+| [Writing module tests](guides/writing-module-tests.md) | Test discovery, setup and teardown phases, and shared test infrastructure. |
+| [Skipping framework tests](guides/skipping-framework-tests.md) | Skip individual framework tests on a per-file basis. |
+| [Versioning and releases](guides/versioning-and-releases.md) | Label-driven versioning, prereleases, and what a release produces. |
+| [Validating before review](guides/validating-before-review.md) | The PSModule validation pass before a draft pull request is marked ready. |
+
+## Reference
+
+Look up the framework's exact contracts and the module-development standards it supports.
+
+| Page | Description |
+| --- | --- |
+| [Module development foundations](reference/module-development-foundations.md) | The full set of module-authoring conventions supported by the framework. |
+| [Repository Standard](reference/repository-standard.md) | Required repository files, metadata, onboarding, and workflow wiring. |
+| [PowerShell module standard](reference/powershell-module-standard.md) | Source layout, function design, and module-specific implementation conventions. |
+| [Module types](reference/module-types.md) | Conventions for integration (API) and data modules. |
+| [Test Specification](reference/test-specification.md) | Consistent Pester test structure and coverage expectations. |
+| [Versioning](reference/versioning.md) | Semantic version changes based on public API impact. |
+| [Settings](reference/settings.md) | Every available setting in `.github/PSModule.yml` and the full defaults. |
+| [Workflow inputs](reference/workflow-inputs.md) | Inputs, secrets, and permissions of the reusable workflow. |
+| [Pipeline stages](reference/pipeline-stages.md) | The job-by-job breakdown, from Plan through Publish Docs. |
+| [Scenario matrix](reference/scenario-matrix.md) | Which jobs run for each trigger scenario. |
+| [Framework test IDs](reference/framework-test-ids.md) | The framework tests enforced on source code and on the built module. |
+| [Dependencies](reference/dependencies.md) | The actions, modules, and services the workflow composes. |
+
+## Specification
+
+The requirements and architecture behind the pipeline. Primarily for those maintaining Process-PSModule itself.
+
+| Page | Description |
+| --- | --- |
+| [Specification](specification/index.md) | Spec, design, and the principles that guide both. |
 
 ## A GitHub & PowerShell development framework
 
@@ -31,20 +73,12 @@ The framework is two things in one: a collection of reusable PowerShell modules,
 
 We empower PowerShell-savvy developers to effortlessly transform their ideas into impactful solutions, automating the repetitive tasks so developers — whether consumers or contributors — can concentrate on coding without distractions.
 
-Where we are headed is tracked as [objectives and initiatives](https://msxorg.github.io/docs/Ways-of-Working/Goal-Setting/).
-
-## PSModule documentation
-
-This site covers PSModule organization-specific documentation:
-
-- [Modules](Modules/index.md): module catalog and module-specific standards
-- [Process-PSModule](Modules/Process-PSModule/index.md): how modules are structured and built
-- [Template onboarding](Modules/Process-PSModule/get-started/index.md): how to start from the template
+Where we are headed is tracked as [objectives and initiatives](https://msx.no/docs/Ways-of-Working/Goal-Setting/).
 
 ## Cross-org guidance
 
-Cross-org standards and reusable solution documentation are now canonical in [MSXOrg/docs](https://msxorg.github.io/docs/):
+Cross-org standards and reusable solution documentation are now canonical in [MSXOrg/docs](https://msx.no/docs/):
 
-- [Coding Standards](https://msxorg.github.io/docs/Coding-Standards/)
-- [Capabilities](https://msxorg.github.io/docs/Capabilities/)
-- [Frameworks](https://msxorg.github.io/docs/Frameworks/)
+- [Coding Standards](https://msx.no/docs/Coding-Standards/)
+- [Capabilities](https://msx.no/docs/Capabilities/)
+- [Frameworks](https://msx.no/docs/Frameworks/)
