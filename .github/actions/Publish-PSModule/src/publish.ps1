@@ -1,5 +1,5 @@
 ﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'apiKey',
+    'PSUseDeclaredVarsMoreThanAssignments', 'psGalleryApiKey',
     Justification = 'Variable is used in script blocks.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
@@ -38,7 +38,7 @@ LogGroup 'Load inputs' {
         exit 1
     }
     $modulePath = Resolve-Path -Path $modulePathCandidate | Select-Object -ExpandProperty Path
-    $apiKey = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey
+    $psGalleryApiKey = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY
     $whatIf = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf -eq 'true'
 
     Write-Host "Module name: [$name]"
@@ -138,7 +138,7 @@ LogGroup 'Publish to PSGallery' {
         Write-Host "Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey ***"
     } else {
         try {
-            Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey $apiKey
+            Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey $psGalleryApiKey
         } catch {
             Write-Error $_.Exception.Message
             exit 1

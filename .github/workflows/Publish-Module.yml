@@ -61,7 +61,7 @@ jobs:
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
-          APIKey: ${{ secrets.PSGALLERY_API_KEY }}
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
