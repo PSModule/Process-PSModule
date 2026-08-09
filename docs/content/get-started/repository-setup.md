@@ -22,7 +22,7 @@ This creates an environment called `github-pages` that GitHub deploys the docume
 
 1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission
    to manage the module you are working on.
-2. Create a repository secret called `APIKEY` and set the API key as its value.
+2. Create a repository secret called `PSGALLERY_API_KEY` and set the API key as its value.
 
 If you plan to create many modules, use a glob pattern for the API key permissions in the PowerShell Gallery and store
 the secret on the organization instead of on each repository.
@@ -63,7 +63,7 @@ jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```

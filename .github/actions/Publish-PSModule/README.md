@@ -26,7 +26,7 @@ This action does not provide outputs.
     Name: ExampleModule
     ModulePath: outputs/module
     ArtifactName: module
-    APIKey: ${{ secrets.APIKEY }}
+    APIKey: ${{ secrets.PSGALLERY_API_KEY }}
 ```
 
 Use [Release-PSModule](../Release-PSModule/README.md) in a separate workflow step to create the GitHub release from the same artifact.

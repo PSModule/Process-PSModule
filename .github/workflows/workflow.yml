@@ -3,7 +3,7 @@ name: Process-PSModule
 on:
   workflow_call:
     secrets:
-      APIKey:
+      PSGALLERY_API_KEY:
         description: The API key for the PowerShell Gallery.
         required: true
       GitHubAppClientId:
@@ -257,7 +257,7 @@ jobs:
     if: fromJson(needs.Plan.outputs.Settings).Publish.Module.Enabled && needs.Plan.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
     uses: ./.github/workflows/Publish-Module.yml
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
       GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     needs:

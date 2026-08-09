@@ -14,8 +14,9 @@ It covers getting started, the pipeline stages, usage, configuration, repository
 
 ## Reusable workflow secrets (GitHub App auth)
 
-When calling `./.github/workflows/workflow.yml`, pass GitHub App credentials using these generic reusable-workflow secret names:
+When calling `./.github/workflows/workflow.yml`, pass the PowerShell Gallery API key and GitHub App credentials using these reusable-workflow secret names:
 
+- `PSGALLERY_API_KEY`
 - `GitHubAppClientId`
 - `GitHubAppPrivateKey`
 
@@ -26,10 +27,11 @@ jobs:
   ProcessPSModule:
     uses: ./.github/workflows/workflow.yml
     secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-This is a required contract for GitHub operations in the reusable workflow path; a GitHub App installation token is minted and used for those steps via `GH_TOKEN`, and `github.token` fallback is intentionally not used.
+This is a required contract. `PSGALLERY_API_KEY` publishes the module to the PowerShell Gallery; the GitHub App credentials mint an installation token for GitHub operations via `GH_TOKEN`, with no `github.token` fallback in that path. This is a breaking rename from the previous `APIKey`/`APIKEY` workflow secret.
 
 See the [GitHub App authentication guide](https://psmodule.io/docs/guides/github-app-authentication/) for the caller mapping, per-workflow permissions and repository scoping, and token injection details.

@@ -3,7 +3,7 @@ name: Publish-Module
 on:
   workflow_call:
     secrets:
-      APIKey:
+      PSGALLERY_API_KEY:
         description: The API key for the PowerShell Gallery.
         required: true
       GitHubAppClientId:
@@ -61,7 +61,7 @@ jobs:
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
-          APIKey: ${{ secrets.APIKey }}
+          APIKey: ${{ secrets.PSGALLERY_API_KEY }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 

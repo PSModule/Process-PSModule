@@ -28,7 +28,7 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 
 | Name | Location | Description | Required |
 | ---- | -------- | ----------- | -------- |
-| `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
+| `PSGALLERY_API_KEY` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
 | `GitHubAppClientId` | GitHub secrets | The GitHub App client ID used to mint scoped installation tokens for GitHub API operations. Map Shelly's `SHELLY_CLIENT_ID` in the caller and Dependabot secret store. | Yes |
 | `GitHubAppPrivateKey` | GitHub secrets | The GitHub App private key used to mint scoped installation tokens for GitHub API operations. Map Shelly's `SHELLY_PRIVATE_KEY` in the caller and Dependabot secret store. | Yes |
 | `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
