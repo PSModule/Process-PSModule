@@ -36,6 +36,7 @@ jobs:
         run: |
           Install-PSResource -Name Pester -Version '[5.7.1,6.0.0)' -Repository PSGallery -TrustRepository
           Install-PSResource -Name PSSemVer -Repository PSGallery -TrustRepository
+          Install-PSResource -Name GitHub -Version '[0.43.1,0.44.0)' -Repository PSGallery -TrustRepository
 
       - name: Run action unit tests
         shell: pwsh
