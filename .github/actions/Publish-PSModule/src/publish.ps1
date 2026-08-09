@@ -3,23 +3,7 @@
     Justification = 'Variable is used in script blocks.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'usePRBodyAsReleaseNotes',
-    Justification = 'Variable is used in script blocks.'
-)]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'usePRTitleAsReleaseName',
-    Justification = 'Variable is used in script blocks.'
-)]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'usePRTitleAsNotesHeading',
-    Justification = 'Variable is used in script blocks.'
-)]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', 'prNumber',
-    Justification = 'Variable is used in script blocks.'
-)]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'prHeadRef',
     Justification = 'Variable is used in script blocks.'
 )]
 [CmdletBinding()]
@@ -56,17 +40,10 @@ LogGroup 'Load inputs' {
     $modulePath = Resolve-Path -Path $modulePathCandidate | Select-Object -ExpandProperty Path
     $apiKey = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey
     $whatIf = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf -eq 'true'
-    $usePRBodyAsReleaseNotes = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes -eq 'true'
-    $usePRTitleAsReleaseName = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
-    $usePRTitleAsNotesHeading = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
-    # The prefix the repository tags releases with, resolved by the Plan job from
-    # Settings.Publish.Module.VersionPrefix. Empty means the repository tags without a prefix.
-    $versionPrefix = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix
 
-    Write-Host "Module name:    [$name]"
-    Write-Host "Module path:    [$modulePath]"
-    Write-Host "Version prefix: [$versionPrefix]"
-    Write-Host "WhatIf:         [$whatIf]"
+    Write-Host "Module name: [$name]"
+    Write-Host "Module path: [$modulePath]"
+    Write-Host "WhatIf:      [$whatIf]"
 }
 #endregion Load inputs
 
@@ -79,7 +56,6 @@ LogGroup 'Load PR information' {
         throw 'GitHub event does not contain pull_request data. This script must be run from a pull_request event.'
     }
     $prNumber = $pull_request.number
-    $prHeadRef = $pull_request.head.ref
 }
 #endregion Load PR information
 
@@ -134,25 +110,15 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
-    # The PowerShell Gallery and the module manifest only accept plain SemVer, so the configured
-    # VersionPrefix is applied to the GitHub release tag and to nothing else. Both strings are derived
-    # from the same composition here, so the prefix is the only difference between them.
     $publishPSVersion = Get-ModuleVersionString -ModuleVersion $moduleVersion -Prerelease $prerelease
-    $releaseTag = Get-ReleaseTag -VersionPrefix $versionPrefix -ModuleVersion $moduleVersion -Prerelease $prerelease
 
     [PSCustomObject]@{
         ModuleVersion    = $moduleVersion
-        VersionPrefix    = $versionPrefix
         Prerelease       = $prerelease
         CreatePrerelease = $createPrerelease
         GalleryVersion   = $publishPSVersion
-        ReleaseTag       = $releaseTag
         PRNumber         = $prNumber
-        PRHeadRef        = $prHeadRef
     } | Format-List | Out-String
-
-    # Expose release tag to subsequent steps so cleanup can exclude the just-published tag.
-    "PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
 }
 #endregion Resolve version from manifest
 
@@ -194,100 +160,4 @@ LogGroup 'Publish to PSGallery' {
     }
 }
 #endregion Publish to PSGallery
-
-#region Create GitHub release with module artifact attached
-# A zip of the published module is uploaded so the GitHub Release page exposes the exact bytes
-# that were tested and pushed to the PowerShell Gallery.
-LogGroup 'Create GitHub release' {
-    $releaseCreateCommand = @('release', 'create', $releaseTag)
-    $notesFilePath = $null
-
-    if ($usePRTitleAsReleaseName -and $pull_request.title) {
-        $releaseCreateCommand += @('--title', $pull_request.title)
-        Write-Host "Using PR title as release name: [$($pull_request.title)]"
-    } else {
-        $releaseCreateCommand += @('--title', $releaseTag)
-    }
-
-    # Build release notes content. Uses temp file to avoid escaping issues with special characters.
-    # Precedence rules for the three UsePR* parameters:
-    #   1. UsePRTitleAsNotesHeading + UsePRBodyAsReleaseNotes: Creates "# Title (#PR)\n\nBody" format.
-    #   2. UsePRBodyAsReleaseNotes only: Uses PR body as-is.
-    #   3. Fallback: Auto-generates notes via GitHub's --generate-notes.
-    if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pull_request.title -and $pull_request.body) {
-        $notes = "# $($pull_request.title) (#$prNumber)`n`n$($pull_request.body)"
-        $notesFilePath = [System.IO.Path]::GetTempFileName()
-        Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
-        $releaseCreateCommand += @('--notes-file', $notesFilePath)
-        Write-Host 'Using PR title as H1 heading with link and body as release notes'
-    } elseif ($usePRBodyAsReleaseNotes -and $pull_request.body) {
-        $notesFilePath = [System.IO.Path]::GetTempFileName()
-        Set-Content -Path $notesFilePath -Value $pull_request.body -Encoding utf8
-        $releaseCreateCommand += @('--notes-file', $notesFilePath)
-        Write-Host 'Using PR body as release notes'
-    } else {
-        $releaseCreateCommand += @('--generate-notes')
-    }
-
-    if ($createPrerelease) {
-        $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
-    }
-
-    if ($whatIf) {
-        Write-Host "WhatIf: gh $($releaseCreateCommand -join ' ')"
-        $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
-    } else {
-        try {
-            $releaseURL = gh @releaseCreateCommand
-            if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to create the release [$releaseTag]."
-                exit $LASTEXITCODE
-            }
-        } finally {
-            if ($notesFilePath -and (Test-Path -Path $notesFilePath)) {
-                Remove-Item -Path $notesFilePath -Force
-            }
-        }
-    }
-
-    # Attach the built module as a release artifact so consumers can download the exact
-    # bytes that were tested and published to the PowerShell Gallery.
-    $zipFileName = "$name-$publishPSVersion.zip"
-    $zipPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $zipFileName
-    if (Test-Path -Path $zipPath) {
-        Remove-Item -Path $zipPath -Force
-    }
-    if ($whatIf) {
-        Write-Host "WhatIf: Compress-Archive -Path $modulePath -DestinationPath $zipPath -Force"
-        Write-Host "WhatIf: gh release upload $releaseTag $zipPath --clobber"
-    } else {
-        Write-Host "Compressing module to [$zipPath]"
-        Compress-Archive -Path $modulePath -DestinationPath $zipPath -Force
-        try {
-            gh release upload $releaseTag $zipPath --clobber
-            if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to upload module artifact to release [$releaseTag]."
-                exit $LASTEXITCODE
-            }
-            Write-Host "::notice title=📦 Attached module artifact to release::$zipFileName"
-        } finally {
-            if (Test-Path -Path $zipPath) {
-                Remove-Item -Path $zipPath -Force
-            }
-        }
-    }
-
-    if ($whatIf) {
-        Write-Host "gh pr comment $prNumber -b '✅ $($releaseType): GitHub - $name $releaseTag'"
-    } else {
-        gh pr comment $prNumber -b "✅ $releaseType`: GitHub - [$name $releaseTag]($releaseURL)"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error 'Failed to comment on the pull request.'
-            exit $LASTEXITCODE
-        }
-    }
-    Write-Host "::notice title=✅ $releaseType`: GitHub - $name $releaseTag::$releaseURL"
-}
-#endregion Create GitHub release
-
-Write-Host "Publishing complete. PowerShell Gallery version: [$publishPSVersion]. GitHub release tag: [$releaseTag]."
+Write-Host "Gallery publishing complete. Version: [$publishPSVersion]"
