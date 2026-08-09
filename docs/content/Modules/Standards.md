@@ -2,7 +2,7 @@
 
 Standards for implementing and reviewing PowerShell modules in the PSModule organization. These rules apply to modules built with the [PSModule framework](https://github.com/PSModule/Process-PSModule).
 
-For general PowerShell coding standards (naming, style, function structure, documentation, readability, error handling), see [PowerShell Standards](../PowerShell/Standard/index.md). This page covers only module-specific conventions.
+For general PowerShell coding standards (naming, style, function structure, documentation, readability, error handling), see [MSX PowerShell Standards](https://msxorg.github.io/docs/Coding-Standards/PowerShell/). This page covers only module-specific conventions.
 
 ## Supported PowerShell version
 

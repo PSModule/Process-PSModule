@@ -146,8 +146,8 @@ Scenario: Handle documentation generation failure
 ## Where this connects
 
 - [Design](design.md) — how these requirements are delivered.
-- [Pipeline stages](pipeline-stages.md) — the job-by-job breakdown of the workflow.
-- [Usage](usage.md) — how to invoke and configure the workflow.
-- [Configuration](configuration.md) — the settings file and its options.
+- [Pipeline stages](../reference/pipeline-stages.md) — the job-by-job breakdown of the workflow.
+- [Calling the workflow](../guides/calling-the-workflow.md) — how to invoke the workflow.
+- [Settings](../reference/settings.md) — the settings file and its options.
 - [Principles and practices](principles-and-practices.md) — versioning, branching, and development practices.
 - [Documentation Model](https://msxorg.github.io/docs/Ways-of-Working/Documentation-Model/) — why this spec holds only the why and what.
