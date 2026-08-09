@@ -31,3 +31,5 @@ jobs:
 ```
 
 This is a required contract for GitHub operations in the reusable workflow path; a GitHub App installation token is minted and used for those steps via `GH_TOKEN`, and `github.token` fallback is intentionally not used.
+
+See the [GitHub App authentication guide](https://psmodule.io/docs/guides/github-app-authentication/) for the caller mapping, per-workflow permissions and repository scoping, and token injection details.

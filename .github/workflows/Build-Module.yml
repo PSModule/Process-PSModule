@@ -48,6 +48,7 @@ jobs:
           app-id: ${{ secrets.GitHubAppClientId }}
           private-key: ${{ secrets.GitHubAppPrivateKey }}
           repositories: ${{ github.event.repository.name }}
+          permission-metadata: read
 
       - name: Build module
         uses: ./_wf/.github/actions/Build-PSModule
