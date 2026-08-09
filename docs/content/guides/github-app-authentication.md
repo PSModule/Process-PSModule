@@ -33,11 +33,10 @@ jobs:
 The root reusable workflow forwards these two values to the Plan, Build-Module, and Publish-Module reusable jobs.
 Do not use `secrets: inherit` as a substitute for this mapping.
 
-Dependabot-triggered workflows cannot read regular Actions secrets. Do not duplicate Shelly's private key into
-Dependabot secrets by default: a compromised dependency update could alter workflow code that receives the key before
-human review. If an organization requires the Process-PSModule workflow to run on Dependabot pull requests, its
-security owners must explicitly accept that trust boundary and provision separate Dependabot secrets. Otherwise,
-skip token-consuming jobs for Dependabot pull requests and run the full workflow after review or merge.
+Dependabot-triggered workflows cannot read regular Actions secrets. To run Process-PSModule on Dependabot pull
+requests, create `SHELLY_CLIENT_ID` and `SHELLY_PRIVATE_KEY` as Dependabot secrets in addition to Actions secrets.
+This is a deliberate trust boundary: review the App's installation scope and every dependency update carefully,
+because the workflow can mint a Shelly token before human review.
 
 ## GitHub App installation permissions
 
