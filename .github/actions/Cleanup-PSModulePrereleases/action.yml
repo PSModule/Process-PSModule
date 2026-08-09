@@ -7,6 +7,10 @@ inputs:
     description: Control whether to automatically delete prerelease tags.
     required: false
     default: 'true'
+  ReleaseTag:
+    description: GitHub release tag to retain during cleanup.
+    required: false
+    default: ''
   WhatIf:
     description: If specified, the action will only log the changes it would make.
     required: false
@@ -28,5 +32,5 @@ runs:
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf: ${{ inputs.WhatIf }}
-        PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ env.PSMODULE_RELEASE_PSMODULE_CONTEXT_ReleaseTag }}
+        PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ inputs.ReleaseTag }}
       run: ${{ github.action_path }}/src/cleanup.ps1

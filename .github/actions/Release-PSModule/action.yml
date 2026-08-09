@@ -38,6 +38,14 @@ inputs:
     description: Full GitHub release tag resolved by Resolve-PSModuleVersion.
     required: true
 
+outputs:
+  ReleaseTag:
+    description: Full GitHub release tag created or resumed by this action.
+    value: ${{ steps.release.outputs.ReleaseTag }}
+  ReleaseUrl:
+    description: URL of the GitHub release created or resumed by this action.
+    value: ${{ steps.release.outputs.ReleaseUrl }}
+
 runs:
   using: composite
   steps:
@@ -51,6 +59,7 @@ runs:
         path: ${{ inputs.ModulePath }}
 
     - name: Create GitHub release
+      id: release
       shell: pwsh
       working-directory: ${{ inputs.WorkingDirectory }}
       env:

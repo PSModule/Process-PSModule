@@ -1,4 +1,26 @@
-﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+﻿#Requires -Version 7.0
+#Requires -Modules PSModule
+
+<#
+    .SYNOPSIS
+    Creates or resumes a GitHub release for a versioned PowerShell module artifact.
+
+    .DESCRIPTION
+    Validates the supplied module artifact, creates a GitHub release when its tag does not
+    already exist, uploads the artifact ZIP, and reports the result on the source pull request.
+
+    .EXAMPLE
+    ./release.ps1
+
+    Creates or resumes the release using inputs supplied by the Release-PSModule action.
+
+    .INPUTS
+    None. The Release-PSModule composite action supplies values through environment variables.
+
+    .OUTPUTS
+    None. The script writes ReleaseTag and ReleaseUrl to the GitHub Actions output file.
+#>
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', 'usePRBodyAsReleaseNotes',
     Justification = 'Variable is used in script blocks.'
 )]
@@ -25,11 +47,11 @@
 [CmdletBinding()]
 param()
 
+$ErrorActionPreference = 'Stop'
 $PSStyle.OutputRendering = 'Ansi'
 
 Import-Module -Name 'PSModule' -Force
 
-#region Load inputs
 LogGroup 'Load inputs' {
     $env:GITHUB_REPOSITORY_NAME = $env:GITHUB_REPOSITORY -replace '.+/'
 
@@ -67,9 +89,7 @@ LogGroup 'Load inputs' {
     Write-Host "Release tag: [$releaseTag]"
     Write-Host "WhatIf:      [$whatIf]"
 }
-#endregion Load inputs
 
-#region Load PR information
 LogGroup 'Load PR information' {
     $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
     $githubEvent = $githubEventJson | ConvertFrom-Json
@@ -80,9 +100,7 @@ LogGroup 'Load PR information' {
     $prNumber = $pull_request.number
     $prHeadRef = $pull_request.head.ref
 }
-#endregion Load PR information
 
-#region Resolve version from manifest
 LogGroup 'Resolve version from manifest' {
     Add-PSModulePath -Path (Split-Path -Path $modulePath -Parent)
     $manifestFilePath = Join-Path -Path $modulePath -ChildPath "$name.psd1"
@@ -101,22 +119,15 @@ LogGroup 'Resolve version from manifest' {
         Write-Host '::warning::Test-ModuleManifest returned warnings (e.g. unresolved RequiredModules). Continuing with data-file validation.'
     }
 
-    try {
-        $manifestData = Import-PowerShellDataFile -Path $manifestFilePath
-    } catch {
-        Write-Error "Failed to import manifest data file [$manifestFilePath]: $($_.Exception.Message)"
-        exit 1
-    }
+    $manifestData = Import-PowerShellDataFile -Path $manifestFilePath -ErrorAction Stop
     $moduleVersion = $manifestData.ModuleVersion
     if (-not ($moduleVersion -match '^\d+\.\d+\.\d+$')) {
-        Write-Error ("ModuleVersion [$moduleVersion] must be in Major.Minor.Patch format. " +
+        throw ("ModuleVersion [$moduleVersion] must be in Major.Minor.Patch format. " +
             'Ensure Build-PSModule has stamped the artifact with a final version.')
-        exit 1
     }
     if ($moduleVersion -eq '999.0.0') {
-        Write-Error ('ModuleVersion is the placeholder [999.0.0]. ' +
+        throw ('ModuleVersion is the placeholder [999.0.0]. ' +
             'The artifact was not stamped with a real version by the build step.')
-        exit 1
     }
     $prerelease = $manifestData.PrivateData.PSData.Prerelease
     if ([string]::IsNullOrWhiteSpace($prerelease)) {
@@ -124,9 +135,8 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $false
     } else {
         if ($prerelease -notmatch '^[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$') {
-            Write-Error ("Prerelease label [$prerelease] is not a valid SemVer prerelease identifier. " +
+            throw ("Prerelease label [$prerelease] is not a valid SemVer prerelease identifier. " +
                 'It must contain only alphanumerics, hyphens, and dots as separators.')
-            exit 1
         }
         $createPrerelease = $true
     }
@@ -134,67 +144,76 @@ LogGroup 'Resolve version from manifest' {
     $releaseType = if ($createPrerelease) { 'New prerelease' } else { 'New release' }
     $publishPSVersion = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
 
-    [PSCustomObject]@{
-        ModuleVersion    = $moduleVersion
-        Prerelease       = $prerelease
-        CreatePrerelease = $createPrerelease
-        GalleryVersion   = $publishPSVersion
-        ReleaseTag       = $releaseTag
-        PRNumber         = $prNumber
-        PRHeadRef        = $prHeadRef
-    } | Format-List | Out-String
-
-    # Expose release tag to subsequent steps so cleanup can exclude the just-created tag.
-    "PSMODULE_RELEASE_PSMODULE_CONTEXT_ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
+    Write-Host (
+        [PSCustomObject]@{
+            ModuleVersion    = $moduleVersion
+            Prerelease       = $prerelease
+            CreatePrerelease = $createPrerelease
+            GalleryVersion   = $publishPSVersion
+            ReleaseTag       = $releaseTag
+            PRNumber         = $prNumber
+            PRHeadRef        = $prHeadRef
+        } | Format-List | Out-String
+    )
 }
-#endregion Resolve version from manifest
 
-#region Create GitHub release with module artifact attached
 # A zip of the built module is uploaded so the GitHub Release page exposes the exact bytes.
 LogGroup 'Create GitHub release' {
     $releaseCreateCommand = @('release', 'create', $releaseTag)
     $notesFilePath = $null
+    $releaseExists = $false
 
-    if ($usePRTitleAsReleaseName -and $pull_request.title) {
-        $releaseCreateCommand += @('--title', $pull_request.title)
-        Write-Host "Using PR title as release name: [$($pull_request.title)]"
-    } else {
-        $releaseCreateCommand += @('--title', $releaseTag)
+    if (-not $whatIf) {
+        $encodedReleaseTag = [System.Uri]::EscapeDataString($releaseTag)
+        $releaseLookupResult = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$encodedReleaseTag" --jq '.html_url' 2>&1
+        $releaseLookupExitCode = $LASTEXITCODE
+
+        if ($releaseLookupExitCode -eq 0) {
+            $releaseURL = ($releaseLookupResult | Out-String).Trim()
+            $releaseExists = $true
+            Write-Host "GitHub release [$releaseTag] already exists. Resuming its artifact upload."
+        } elseif (($releaseLookupResult | Out-String) -notmatch 'HTTP 404') {
+            throw "Unable to determine whether release [$releaseTag] exists: $($releaseLookupResult | Out-String)"
+        }
     }
 
-    # Build release notes content. Uses temp file to avoid escaping issues with special characters.
-    # Precedence rules for the three UsePR* parameters:
-    #   1. UsePRTitleAsNotesHeading + UsePRBodyAsReleaseNotes: Creates "# Title (#PR)\n\nBody" format.
-    #   2. UsePRBodyAsReleaseNotes only: Uses PR body as-is.
-    #   3. Fallback: Auto-generates notes via GitHub's --generate-notes.
-    if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pull_request.title -and $pull_request.body) {
-        $notes = "# $($pull_request.title) (#$prNumber)`n`n$($pull_request.body)"
-        $notesFilePath = [System.IO.Path]::GetTempFileName()
-        Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
-        $releaseCreateCommand += @('--notes-file', $notesFilePath)
-        Write-Host 'Using PR title as H1 heading with link and body as release notes'
-    } elseif ($usePRBodyAsReleaseNotes -and $pull_request.body) {
-        $notesFilePath = [System.IO.Path]::GetTempFileName()
-        Set-Content -Path $notesFilePath -Value $pull_request.body -Encoding utf8
-        $releaseCreateCommand += @('--notes-file', $notesFilePath)
-        Write-Host 'Using PR body as release notes'
-    } else {
-        $releaseCreateCommand += @('--generate-notes')
-    }
+    if (-not $releaseExists) {
+        if ($usePRTitleAsReleaseName -and $pull_request.title) {
+            $releaseCreateCommand += @('--title', $pull_request.title)
+            Write-Host "Using PR title as release name: [$($pull_request.title)]"
+        } else {
+            $releaseCreateCommand += @('--title', $releaseTag)
+        }
 
-    if ($createPrerelease) {
-        $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
-    }
+        # Build release notes content. Uses a file to preserve special characters.
+        if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pull_request.title -and $pull_request.body) {
+            $notes = "# $($pull_request.title) (#$prNumber)`n`n$($pull_request.body)"
+            $notesFilePath = [System.IO.Path]::GetTempFileName()
+            Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
+            $releaseCreateCommand += @('--notes-file', $notesFilePath)
+            Write-Host 'Using PR title as H1 heading with link and body as release notes'
+        } elseif ($usePRBodyAsReleaseNotes -and $pull_request.body) {
+            $notesFilePath = [System.IO.Path]::GetTempFileName()
+            Set-Content -Path $notesFilePath -Value $pull_request.body -Encoding utf8
+            $releaseCreateCommand += @('--notes-file', $notesFilePath)
+            Write-Host 'Using PR body as release notes'
+        } else {
+            $releaseCreateCommand += @('--generate-notes')
+        }
 
-    if ($whatIf) {
-        Write-Host "WhatIf: gh $($releaseCreateCommand -join ' ')"
-        $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
-    } else {
+        if ($createPrerelease) {
+            $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
+        }
+
         try {
-            $releaseURL = gh @releaseCreateCommand
-            if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to create the release [$releaseTag]."
-                exit $LASTEXITCODE
+            if ($whatIf) {
+                Write-Host "WhatIf: gh $($releaseCreateCommand -join ' ')"
+                $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
+            } else {
+                $releaseURL = gh @releaseCreateCommand
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Failed to create the release [$releaseTag]."
+                }
             }
         } finally {
             if ($notesFilePath -and (Test-Path -Path $notesFilePath)) {
@@ -218,8 +237,7 @@ LogGroup 'Create GitHub release' {
         try {
             gh release upload $releaseTag $zipPath --clobber
             if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to upload module artifact to release [$releaseTag]."
-                exit $LASTEXITCODE
+                throw "Failed to upload module artifact to release [$releaseTag]."
             }
             Write-Host "::notice title=📦 Attached module artifact to release::$zipFileName"
         } finally {
@@ -234,12 +252,14 @@ LogGroup 'Create GitHub release' {
     } else {
         gh pr comment $prNumber -b "✅ $releaseType`: GitHub - [$name $releaseTag]($releaseURL)"
         if ($LASTEXITCODE -ne 0) {
-            Write-Error 'Failed to comment on the pull request.'
-            exit $LASTEXITCODE
+            throw 'Failed to comment on the pull request.'
         }
+    }
+    if ($env:GITHUB_OUTPUT) {
+        "ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_OUTPUT -Append -Encoding utf8NoBOM
+        "ReleaseUrl=$releaseURL" | Out-File -Path $env:GITHUB_OUTPUT -Append -Encoding utf8NoBOM
     }
     Write-Host "::notice title=✅ $releaseType`: GitHub - $name $releaseTag::$releaseURL"
 }
-#endregion Create GitHub release
 
 Write-Host "Release creation complete. Version: [$releaseTag]"
