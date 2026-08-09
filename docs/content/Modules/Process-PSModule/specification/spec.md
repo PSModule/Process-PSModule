@@ -25,49 +25,49 @@ Applies to any PowerShell module in the PSModule ecosystem that produces a versi
 
 ### Functional Requirements
 
-### FR1 — Build the module from source { #fr1 }
+### FR1 — Build the module from source {#fr1}
 
 The pipeline MUST compile the PowerShell module source code into a module artifact, stamping it with the resolved semantic version and making it available for downstream testing and publication.
 
-### FR2 — Run cross-platform tests { #fr2 }
+### FR2 — Run cross-platform tests {#fr2}
 
 The pipeline MUST execute the module's test suites against multiple platforms — at minimum Windows, Linux, and macOS — and fail the build if any platform's tests fail. Tests MUST include source-code validation (style, standards), framework tests (module structure, common issues), and module-local tests (user-written Pester tests).
 
-### FR3 — Enforce code quality and coverage gates { #fr3 }
+### FR3 — Enforce code quality and coverage gates {#fr3}
 
 The pipeline MUST measure and enforce code coverage thresholds and static-analysis results. A build MUST NOT proceed to publication if quality or coverage targets are missed; the gate MUST prevent merge unless explicitly overridden by a label.
 
-### FR4 — Generate and publish documentation { #fr4 }
+### FR4 — Generate and publish documentation {#fr4}
 
 The pipeline MUST generate module documentation from the source (cmdlet help, README, schema) and publish it to a static documentation site. Documentation MUST be versioned and deployable alongside the module release.
 
-### FR5 — Support label-driven versioning and publication { #fr5 }
+### FR5 — Support label-driven versioning and publication {#fr5}
 
 The pipeline MUST read pull-request labels (`Major`, `Minor`, `Patch`, `Prerelease`, `NoRelease`) to decide the semantic-version bump. It MUST compute the next version automatically, never reading or writing a hand-edited version file. A merge to the release branch MUST trigger publication to the PowerShell Gallery and documentation site; a prerelease label MUST result in a prerelease version available for testing before stable release.
 
-### FR6 — Produce immutable, linkable releases { #fr6 }
+### FR6 — Produce immutable, linkable releases {#fr6}
 
 Each publication MUST produce a GitHub Release, a git tag, and a PowerShell Gallery package version — all linked and versioned together so they are discoverable and pinnable for consumers.
 
 ### Non-Functional Requirements
 
-### NFR1 — Semantic versioning compliance { #nfr1 }
+### NFR1 — Semantic versioning compliance {#nfr1}
 
 Versions MUST follow [SemVer 2.0.0](https://semver.org/) (`vMAJOR.MINOR.PATCH` or `vMAJOR.MINOR.PATCH-prerelease.N`). Breaking changes MUST increment `MAJOR`; new functionality MUST increment `MINOR`; bugfixes MUST increment `PATCH`. Prerelease versions MUST be obtainable but not promoted as the latest stable release.
 
-### NFR2 — Serialized releases { #nfr2 }
+### NFR2 — Serialized releases {#nfr2}
 
 Only one release process MUST run against a given version of the codebase at a time. Concurrent releases to the same ref MUST be prevented, so the tag, version counter, and published artifact remain consistent.
 
-### NFR3 — Single production authority { #nfr3 }
+### NFR3 — Single production authority {#nfr3}
 
 Exactly one branch (typically `main`) MUST be authorized to publish stable releases. All other release branches MUST publish only prerelease versions. This ensures consumers have one unambiguous latest stable version.
 
-### NFR4 — Rapid feedback on failure { #nfr4 }
+### NFR4 — Rapid feedback on failure {#nfr4}
 
 Pipeline failures MUST be visible in the pull request and block merge. Contributors MUST know within minutes whether their changes pass quality and test gates, not hours or days later.
 
-### NFR5 — Reproducible and auditable { #nfr5 }
+### NFR5 — Reproducible and auditable {#nfr5}
 
 The entire pipeline and its decisions MUST be stored in git, so the build is reproducible and auditable from the commit alone. No external configuration, API calls, or out-of-band decisions.
 
