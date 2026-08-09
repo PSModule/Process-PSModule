@@ -18,13 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
 
       - name: Checkout Process-PSModule
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
@@ -83,9 +82,8 @@ jobs:
         uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
         env:
           RUN_LOCAL: true
-          DEFAULT_BRANCH: main
           DEFAULT_WORKSPACE: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-          FILTER_REGEX_INCLUDE: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
+          FILTER_REGEX_INCLUDE: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs/.*\.(md|markdown)$
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_ALL_CODEBASE: true
@@ -98,6 +96,7 @@ jobs:
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: false
+          USE_FIND_ALGORITHM: true
           SAVE_SUPER_LINTER_SUMMARY: true
 
       - name: Post super-linter summary

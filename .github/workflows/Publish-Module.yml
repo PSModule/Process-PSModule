@@ -18,25 +18,25 @@ on:
         description: The complete settings object.
         required: true
 
-permissions:
-  contents: write # to checkout the repo, create releases, and upload release artifacts
-  pull-requests: write # to comment on PRs
+permissions: {}
 
 jobs:
   Publish-Module:
     name: Publish-Module
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # Create releases and upload release artifacts.
+      pull-requests: write # Comment on pull requests.
     env:
       SETTINGS: ${{ inputs.Settings }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
 
       - name: Checkout Process-PSModule
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
@@ -63,17 +63,36 @@ jobs:
           ModulePath: outputs/module
           APIKey: ${{ secrets.APIKey }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+
+      - name: Create GitHub release
+        id: create-github-release
+        if: always() && !cancelled() && fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
+        uses: ./_wf/.github/actions/Release-PSModule
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          Name: ${{ fromJson(inputs.Settings).Name }}
+          ModulePath: outputs/module
+          ArtifactName: module
+          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
           UsePRTitleAsNotesHeading: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsNotesHeading }}
+          ReleaseTag: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.FullVersion }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
       - name: Cleanup prereleases
-        if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
+        if: >-
+          always() && !cancelled() &&
+          fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease' &&
+          (fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType == 'None' ||
+          steps.create-github-release.outcome == 'success')
         uses: ./_wf/.github/actions/Cleanup-PSModulePrereleases
         env:
           GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
+          ReleaseTag: ${{ steps.create-github-release.outputs.ReleaseTag }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

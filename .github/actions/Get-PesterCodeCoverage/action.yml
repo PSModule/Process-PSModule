@@ -35,6 +35,11 @@ inputs:
     description: The target for code coverage.
     required: false
 
+outputs:
+  MissedPathReportPath:
+    description: Path to the generated missed-path report folder.
+    value: ${{ steps.Get-PesterCodeCoverage.outputs.MissedPathReportPath }}
+
 runs:
   using: composite
   steps:

@@ -6,7 +6,7 @@ Documentation site generation is powered by Zensical. Repositories define site c
 
 ## Documentation
 
-The full documentation lives on the MSX / Docs site:
+The full documentation is published at:
 
 📖 **[Process-PSModule documentation](https://psmodule.io/docs/)**
 
@@ -26,8 +26,8 @@ jobs:
   ProcessPSModule:
     uses: ./.github/workflows/workflow.yml
     secrets:
-      GitHubAppClientId: ${{ secrets.PSMODULE_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.PSMODULE_PRIVATE_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
 This is a required contract for GitHub operations in the reusable workflow path; a GitHub App installation token is minted and used for those steps via `GH_TOKEN`, and `github.token` fallback is intentionally not used.

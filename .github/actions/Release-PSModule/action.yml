@@ -1,0 +1,73 @@
+name: Release-PSModule
+description: Create a GitHub release from a pre-versioned PowerShell module artifact.
+author: PSModule
+
+inputs:
+  Name:
+    description: Name of the module to release.
+    required: false
+  ModulePath:
+    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
+    required: false
+    default: outputs/module
+  ArtifactName:
+    description: Name of the uploaded artifact to download. Must match the name used in the upstream upload-artifact step.
+    required: false
+    default: module
+  WhatIf:
+    description: If specified, the action will only log the changes it would make, but will not actually create the release or upload artifacts.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: '.'
+  UsePRTitleAsReleaseName:
+    description: When enabled, uses the pull request title as the name for the GitHub release. If not set, the version string is used.
+    required: false
+    default: 'false'
+  UsePRBodyAsReleaseNotes:
+    description: When enabled, uses the pull request body as the release notes for the GitHub release. If not set, the release notes are auto-generated.
+    required: false
+    default: 'true'
+  UsePRTitleAsNotesHeading:
+    description: When enabled along with UsePRBodyAsReleaseNotes, the release notes will begin with the pull request title as a H1 heading followed by the pull request body. The title will reference the pull request number.
+    required: false
+    default: 'true'
+  ReleaseTag:
+    description: Full GitHub release tag resolved by Resolve-PSModuleVersion.
+    required: true
+
+outputs:
+  ReleaseTag:
+    description: Full GitHub release tag created or resumed by this action.
+    value: ${{ steps.release.outputs.ReleaseTag }}
+  ReleaseUrl:
+    description: URL of the GitHub release created or resumed by this action.
+    value: ${{ steps.release.outputs.ReleaseUrl }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install-PSModule
+      uses: ./_wf/.github/actions/Install-PSModule
+
+    - name: Download module artifact
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        name: ${{ inputs.ArtifactName }}
+        path: ${{ inputs.ModulePath }}
+
+    - name: Create GitHub release
+      id: release
+      shell: pwsh
+      working-directory: ${{ inputs.WorkingDirectory }}
+      env:
+        PSMODULE_RELEASE_PSMODULE_INPUT_Name: ${{ inputs.Name }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes: ${{ inputs.UsePRBodyAsReleaseNotes }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag: ${{ inputs.ReleaseTag }}
+      run: ${{ github.action_path }}/src/release.ps1

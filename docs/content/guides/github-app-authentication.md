@@ -26,8 +26,8 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKey }}
-      GitHubAppClientId: ${{ secrets.PSMODULE_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.PSMODULE_PRIVATE_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
 The root reusable workflow forwards these two values to the Plan, Build-Module, and Publish-Module reusable jobs.

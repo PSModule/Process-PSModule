@@ -1,5 +1,5 @@
 name: Publish-PSModule
-description: Publish a pre-versioned PowerShell module artifact to the PowerShell Gallery and GitHub Releases.
+description: Publish a pre-versioned PowerShell module artifact to the PowerShell Gallery.
 author: PSModule
 
 inputs:
@@ -14,25 +14,13 @@ inputs:
     description: PowerShell Gallery API Key.
     required: true
   WhatIf:
-    description: If specified, the action will only log the changes it would make, but will not actually create or delete any releases or tags.
+    description: If specified, the action will only log the changes it would make, but will not publish the module.
     required: false
     default: 'false'
   WorkingDirectory:
     description: The working directory where the script will run from.
     required: false
     default: '.'
-  UsePRTitleAsReleaseName:
-    description: When enabled, uses the pull request title as the name for the GitHub release. If not set, the version string is used.
-    required: false
-    default: 'false'
-  UsePRBodyAsReleaseNotes:
-    description: When enabled, uses the pull request body as the release notes for the GitHub release. If not set, the release notes are auto-generated.
-    required: false
-    default: 'true'
-  UsePRTitleAsNotesHeading:
-    description: When enabled along with UsePRBodyAsReleaseNotes, the release notes will begin with the pull request title as a H1 heading followed by the pull request body. The title will reference the pull request number.
-    required: false
-    default: 'true'
   ArtifactName:
     description: Name of the uploaded artifact to download. Must match the name used in the upstream upload-artifact step.
     required: false
@@ -63,7 +51,4 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_APIKey: ${{ inputs.APIKey }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
-        PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRBodyAsReleaseNotes: ${{ inputs.UsePRBodyAsReleaseNotes }}
-        PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
-        PSMODULE_PUBLISH_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
       run: ${{ github.action_path }}/src/publish.ps1

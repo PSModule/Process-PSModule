@@ -11,6 +11,9 @@
 
         "Hello, World!"
 
+        .LINK
+        https://psmodule.io/PSModuleTest/Functions/SomethingElse/Set-PSModuleTest/
+
         .NOTES
         Controls:
         - i       : Enter INSERT mode
