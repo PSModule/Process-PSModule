@@ -1,7 +1,7 @@
 # Module types
 
 Most PSModule modules fall into one of a few archetypes. The general rules in
-[PowerShell module standard](Standards.md) and [MSX PowerShell Standards](https://msx.no/docs/Coding-Standards/PowerShell/) always apply; this
+[PowerShell module standard](powershell-module-standard.md) and [MSX PowerShell Standards](https://msx.no/docs/Coding-Standards/PowerShell/) always apply; this
 page adds the conventions that are specific to a module's type so that modules of the same kind feel
 the same to use.
 
@@ -41,7 +41,7 @@ or hide this abstraction is a design choice:
 
 - **Private transport** (common): Keep REST, GraphQL, and HTTP helpers private. Public functions
   accept resolved inputs and typed objects. This follows the Dependency Inversion rule from
-  [Standards](Standards.md#solid-applied) applied to the network boundary.
+  [Standards](powershell-module-standard.md#solid-applied) applied to the network boundary.
 - **Public transport**: Expose REST or GraphQL functions publicly for power users or module
   composition.
 - **Public Context**: Expose the `Context` module as public so users can configure and manage
@@ -102,5 +102,5 @@ The `Hashtable` module demonstrates the full set: `ConvertFrom-Hashtable`, `Conv
 
 ## Where this connects
 
-- [PowerShell module standard](Standards.md): layout, private functions, and the mandatory context parameter.
-- [Repository Standard](Repository-Standard.md): repository files, README shape, and agent onboarding.
+- [PowerShell module standard](powershell-module-standard.md): layout, private functions, and the mandatory context parameter.
+- [Repository Standard](repository-standard.md): repository files, README shape, and agent onboarding.

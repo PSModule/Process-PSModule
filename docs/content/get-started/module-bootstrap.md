@@ -9,7 +9,7 @@ A brand-new module usually has a small **load-bearing core**: the piece(s) every
 
 ## Identify the load-bearing core first
 
-What counts as "load-bearing" follows the module's archetype from [Module types](../Modules/Module-Types.md):
+What counts as "load-bearing" follows the module's archetype from [Module types](../reference/module-types.md):
 
 - **Data modules** — the conversion pivot: `ConvertFrom-<Format>` / `ConvertTo-<Format>` (and whatever parser/serializer they wrap). Every other function (`Import-`, `Export-`, `Format-`, `Merge-`, ...) is built on top of this pivot and is meaningless without it.
 - **Integration (API) modules** — a [`Context`](https://github.com/PSModule/Context)-backed credential/config store, the client setup that uses it, and at least one API function that consumes the context end-to-end. Every other API function needs the same context and client to do anything.
@@ -25,7 +25,7 @@ Scope the integration branch to exactly that core, not to everything planned for
 
 ## After the core lands
 
-Once the core has merged as `v1.0.0`, ordinary [SemVer](../Modules/Versioning.md) applies: a new function built on the stable core is a **minor** bump, a fix is a **patch** bump, and only a change to the core's own contract (signature, exported class shape, behavior) is a **major** bump. No special versioning exception is needed once the core is in place — the bootstrap phase exists only to get that core to a first release quickly.
+Once the core has merged as `v1.0.0`, ordinary [SemVer](../reference/versioning.md) applies: a new function built on the stable core is a **minor** bump, a fix is a **patch** bump, and only a change to the core's own contract (signature, exported class shape, behavior) is a **major** bump. No special versioning exception is needed once the core is in place — the bootstrap phase exists only to get that core to a first release quickly.
 
 ```mermaid
 gitGraph

@@ -4,7 +4,7 @@ This is the PSModule organization's Repository Standard. It applies to the PSMod
 
 This standard operates at the same altitude as the [MSX Enterprise Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/): MSX sets the enterprise-wide default, and this standard adds to and adjusts that default for PowerShell module repositories. Rules this standard does not change are inherited from the MSX default; where this standard adds or overrides a rule, it governs PowerShell module repositories.
 
-The implementation standard still lives in [PowerShell module standard](Standards.md). Type-specific conventions for integration (API) and data modules live in [Module types](Module-Types.md). This page covers the repository standard for module repositories: files, metadata, README shape, release integration, placeholder handling, shared community files, and managed-file distribution.
+The implementation standard still lives in [PowerShell module standard](powershell-module-standard.md). Type-specific conventions for integration (API) and data modules live in [Module types](module-types.md). This page covers the repository standard for module repositories: files, metadata, README shape, release integration, placeholder handling, shared community files, and managed-file distribution.
 
 ## Scope
 
@@ -106,7 +106,7 @@ Module repositories use the PSModule framework layout:
 | `tests/` | Pester tests and test data. |
 | `icon/` | Module icon assets. |
 
-Detailed source layout rules live in [PowerShell module standard](Standards.md#repository-layout).
+Detailed source layout rules live in [PowerShell module standard](powershell-module-standard.md#repository-layout).
 
 ### Caller workflow and reusable workflow
 
@@ -227,7 +227,7 @@ Dependabot PRs still go through normal review. Automated dependency updates are 
 
 Dependabot's valid `package-ecosystem` values are enumerated in its configuration parser ([`common/lib/dependabot/config/file.rb`](https://github.com/dependabot/dependabot-core/blob/main/common/lib/dependabot/config/file.rb)) and listed in the [Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#package-ecosystem). Configure only values from that list: `powershell` is not among them, and an unsupported value makes `.github/dependabot.yml` invalid, which puts the repository's whole Dependabot configuration at risk, including the `github-actions` entry that does work.
 
-PowerShell module dependencies are therefore declared with `#Requires -Modules` in the function files that use them, as described in [PowerShell module standard](Standards.md), and the build collects them into the compiled manifest. Keeping those declarations current is a review responsibility.
+PowerShell module dependencies are therefore declared with `#Requires -Modules` in the function files that use them, as described in [PowerShell module standard](powershell-module-standard.md), and the build collects them into the compiled manifest. Keeping those declarations current is a review responsibility.
 
 A PowerShell ecosystem is proposed in [dependabot/dependabot-core#15501](https://github.com/dependabot/dependabot-core/issues/15501) and implemented in [dependabot/dependabot-core#15666](https://github.com/dependabot/dependabot-core/pull/15666), covering PowerShell's native declarations — `#Requires -Modules` in `.ps1` and `.psm1` files, and `RequiredModules` in a `.psd1` manifest — resolved against the PowerShell Gallery. Adopt it once it ships and `powershell` appears in the options reference, updating this section and the `dependabot.yml` that `Template-PSModule` distributes together.
 
@@ -379,7 +379,7 @@ Default expectations:
 - Source changes under `src/` are module-impacting and should trigger the full module workflow.
 - README and documentation changes should update the site without pretending to be module API changes.
 
-See [Versioning](Versioning.md) for semantic version rules and [PowerShell module standard](Standards.md#cicd-pipeline) for the Process-PSModule pipeline.
+See [Versioning](versioning.md) for semantic version rules and [PowerShell module standard](powershell-module-standard.md#cicd-pipeline) for the Process-PSModule pipeline.
 
 ## Template maintenance
 

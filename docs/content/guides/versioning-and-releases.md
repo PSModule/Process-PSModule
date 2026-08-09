@@ -74,4 +74,4 @@ pattern used for larger efforts.
 
 - [Your first release](../get-started/your-first-release.md) — the pull request flow end-to-end.
 - [Pipeline stages](../reference/pipeline-stages.md#publish-module) — what the publish job does.
-- [Versioning](../Modules/Versioning.md) — the PSModule versioning policy.
+- [Versioning](../reference/versioning.md) — the PSModule versioning policy.

@@ -25,19 +25,6 @@ New to Process-PSModule? Work through these in order.
 | [Repository setup](get-started/repository-setup.md) | Configure GitHub Pages, the PowerShell Gallery API key, permissions, and the caller workflow. |
 | [Your first release](get-started/your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
 
-## Module development foundations
-
-The framework automates a module's lifecycle; these conventions define the module it builds and releases.
-
-| Page | Description |
-| --- | --- |
-| [Module development foundations](Modules/index.md) | The full set of module-authoring conventions supported by the framework. |
-| [Repository Standard](Modules/Repository-Standard.md) | Required repository files, metadata, onboarding, and workflow wiring. |
-| [PowerShell module standard](Modules/Standards.md) | Source layout, function design, and module-specific implementation conventions. |
-| [Module types](Modules/Module-Types.md) | Conventions for integration (API) and data modules. |
-| [Test Specification](Modules/Test-Specification.md) | Consistent Pester test structure and coverage expectations. |
-| [Versioning](Modules/Versioning.md) | Semantic version changes based on public API impact. |
-
 ## Guides
 
 Task-oriented deep dives into the pipeline's functionality.
@@ -54,10 +41,16 @@ Task-oriented deep dives into the pipeline's functionality.
 
 ## Reference
 
-Look up the exact contract.
+Look up the framework's exact contracts and the module-development standards it supports.
 
 | Page | Description |
 | --- | --- |
+| [Module development foundations](reference/module-development-foundations.md) | The full set of module-authoring conventions supported by the framework. |
+| [Repository Standard](reference/repository-standard.md) | Required repository files, metadata, onboarding, and workflow wiring. |
+| [PowerShell module standard](reference/powershell-module-standard.md) | Source layout, function design, and module-specific implementation conventions. |
+| [Module types](reference/module-types.md) | Conventions for integration (API) and data modules. |
+| [Test Specification](reference/test-specification.md) | Consistent Pester test structure and coverage expectations. |
+| [Versioning](reference/versioning.md) | Semantic version changes based on public API impact. |
 | [Settings](reference/settings.md) | Every available setting in `.github/PSModule.yml` and the full defaults. |
 | [Workflow inputs](reference/workflow-inputs.md) | Inputs, secrets, and permissions of the reusable workflow. |
 | [Pipeline stages](reference/pipeline-stages.md) | The job-by-job breakdown, from Plan through Publish Docs. |
