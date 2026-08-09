@@ -47,16 +47,19 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKey }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
 </details>
 
 ## Passing test data
 
-The reusable workflow at `.github/workflows/workflow.yml` declares only two workflow-call secrets,
+The reusable workflow at `.github/workflows/workflow.yml` declares four workflow-call secrets,
 which keeps the calling workflow in full control of the credentials that are exposed.
-`secrets: inherit` is intentionally not required. `APIKey` publishes to the PowerShell Gallery; `TestData` carries
-everything the module's own tests need.
+`secrets: inherit` is intentionally not required. `APIKey` publishes to the PowerShell Gallery,
+`GitHubAppClientId` and `GitHubAppPrivateKey` authenticate GitHub API operations, and `TestData`
+carries everything the module's own tests need.
 
 ### Breaking change: fixed test secrets use `TestData`
 
@@ -80,6 +83,8 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKey }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
       TestData: >-
         { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
         "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
@@ -107,6 +112,8 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKey }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
       TestData: >-
         { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
         "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},

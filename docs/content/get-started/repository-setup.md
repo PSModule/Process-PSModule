@@ -64,6 +64,8 @@ jobs:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       APIKey: ${{ secrets.APIKey }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
 Every permission in that block is required. See [Workflow inputs](../reference/workflow-inputs.md) for what each one is

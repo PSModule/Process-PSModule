@@ -70,7 +70,7 @@ jobs:
         if: always() && !cancelled() && fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
         uses: ./_wf/.github/actions/Release-PSModule
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module

@@ -33,6 +33,10 @@ jobs:
 The root reusable workflow forwards these two values to the Plan, Build-Module, and Publish-Module reusable jobs.
 Do not use `secrets: inherit` as a substitute for this mapping.
 
+For Dependabot pull requests, create `SHELLY_CLIENT_ID` and `SHELLY_PRIVATE_KEY` as Dependabot secrets as well as
+Actions secrets. Dependabot-triggered workflows cannot read regular Actions secrets, so the GitHub App token cannot
+be minted without separate Dependabot secret values.
+
 ## Token scope
 
 Each job mints its own token with the repository that triggered the workflow:

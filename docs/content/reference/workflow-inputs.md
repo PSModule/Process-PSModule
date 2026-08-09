@@ -23,12 +23,14 @@ interface it exposes to a caller workflow. For how to wire it up, see
 
 ## Secrets
 
-The workflow declares only two workflow-call secrets, which keeps the calling workflow in full control of the
+The workflow declares four workflow-call secrets, which keeps the calling workflow in full control of the
 credentials that are exposed. `secrets: inherit` is intentionally not required.
 
 | Name | Location | Description | Required |
 | ---- | -------- | ----------- | -------- |
 | `APIKey` | GitHub secrets | The API key for the PowerShell Gallery, used to publish the module. | Yes |
+| `GitHubAppClientId` | GitHub secrets | The GitHub App client ID used to mint scoped installation tokens for GitHub API operations. Map Shelly's `SHELLY_CLIENT_ID` in the caller. | Yes |
+| `GitHubAppPrivateKey` | GitHub secrets | The GitHub App private key used to mint scoped installation tokens for GitHub API operations. Map Shelly's `SHELLY_PRIVATE_KEY` in the caller. | Yes |
 | `TestData` | GitHub secrets | A single-line JSON object with `secrets` and `variables` maps, exposed as environment variables to the module test jobs. Values under `secrets` are masked; values under `variables` are not. | No |
 
 See [passing test data](../guides/calling-the-workflow.md#passing-test-data) for how to build the `TestData` value.
