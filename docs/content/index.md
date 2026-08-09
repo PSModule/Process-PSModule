@@ -33,13 +33,13 @@ We empower PowerShell-savvy developers to effortlessly transform their ideas int
 
 Where we are headed is tracked as [objectives and initiatives](https://msxorg.github.io/docs/Ways-of-Working/Goal-Setting/).
 
-## PSModule documentation
+## Process-PSModule framework
 
-This site covers PSModule organization-specific documentation:
+This site is the documentation home for the Process-PSModule framework: the reusable workflow that builds, tests, versions, documents, and publishes PowerShell modules.
 
-- [Modules](Modules/index.md): module catalog and module-specific standards
-- [Process-PSModule](Modules/Process-PSModule/index.md): how modules are structured and built
-- [Template onboarding](Modules/Process-PSModule/get-started/index.md): how to start from the template
+- [Process-PSModule](Modules/Process-PSModule/index.md): start with the workflow, then follow its getting-started path, guides, reference, and specification.
+- [Module development foundations](Modules/index.md): the repository, source, module-type, test, and versioning conventions that the framework supports.
+- [Catalog](Modules/Catalog/index.md): discover modules maintained in the PSModule organization.
 
 ## Cross-org guidance
 

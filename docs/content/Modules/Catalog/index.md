@@ -2,6 +2,8 @@
 
 This catalog tracks modules maintained in the PSModule organization and what each module does.
 
+The catalog is separate from the [Process-PSModule framework](../Process-PSModule/index.md). Use the framework documentation to build and release a module; use this page to discover the modules available to install and use.
+
 ## Scope
 
 Each module page should capture:

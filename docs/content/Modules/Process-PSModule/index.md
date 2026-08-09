@@ -32,6 +32,19 @@ New to Process-PSModule? Work through these in order.
 | [Repository setup](get-started/repository-setup.md) | Configure GitHub Pages, the PowerShell Gallery API key, permissions, and the caller workflow. |
 | [Your first release](get-started/your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
 
+## Module development foundations
+
+The framework automates a module's lifecycle; these conventions define the module it builds and releases.
+
+| Page | Description |
+| --- | --- |
+| [Module development foundations](../index.md) | The full set of module-authoring conventions supported by the framework. |
+| [Repository Standard](../Repository-Standard.md) | Required repository files, metadata, onboarding, and workflow wiring. |
+| [PowerShell module standard](../Standards.md) | Source layout, function design, and module-specific implementation conventions. |
+| [Module types](../Module-Types.md) | Conventions for integration (API) and data modules. |
+| [Test Specification](../Test-Specification.md) | Consistent Pester test structure and coverage expectations. |
+| [Versioning](../Versioning.md) | Semantic version changes based on public API impact. |
+
 ## Guides
 
 Task-oriented deep dives into the pipeline's functionality.

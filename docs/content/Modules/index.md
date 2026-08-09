@@ -1,19 +1,13 @@
-# Modules
+# Module development foundations
 
-Process-PSModule now hosts PSModule-org module documentation.
+Process-PSModule is the framework for building, testing, versioning, documenting, and publishing PowerShell modules. These foundations define the repository, source, test, and release conventions that the framework supports and validates.
 
-This section is the local source of truth for:
+Start with the [Process-PSModule overview](Process-PSModule/index.md) to understand the workflow. Use these pages when creating or maintaining a module that runs through it.
 
-- module catalog and module-level specs
-- Process-PSModule structure and build flow
-- repository anatomy and template onboarding
-
-## Sections
-
-- [Repository Standard](Repository-Standard.md)
-- [Standards](Standards.md)
-- [Module types](Module-Types.md)
-- [Test Specification](Test-Specification.md)
-- [Versioning](Versioning.md)
-- [Catalog](Catalog/index.md) (auto-generated from PSModule repo metadata, release data, and README summaries)
-- [Process-PSModule](Process-PSModule/index.md)
+| Page | Use it for |
+| --- | --- |
+| [Repository Standard](Repository-Standard.md) | Creating a module repository with the required metadata, files, and framework wiring. |
+| [PowerShell module standard](Standards.md) | Structuring source code, designing functions, and applying module-specific conventions. |
+| [Module types](Module-Types.md) | Applying conventions for integration (API) and data modules. |
+| [Test Specification](Test-Specification.md) | Writing consistent, comprehensive Pester tests for module functions. |
+| [Versioning](Versioning.md) | Choosing semantic version changes from the module's public API impact. |
