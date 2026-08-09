@@ -34,6 +34,9 @@ inputs:
     description: When enabled along with UsePRBodyAsReleaseNotes, the release notes will begin with the pull request title as a H1 heading followed by the pull request body. The title will reference the pull request number.
     required: false
     default: 'true'
+  ReleaseTag:
+    description: Full GitHub release tag resolved by Resolve-PSModuleVersion.
+    required: true
 
 runs:
   using: composite
@@ -57,4 +60,5 @@ runs:
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes: ${{ inputs.UsePRBodyAsReleaseNotes }}
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag: ${{ inputs.ReleaseTag }}
       run: ${{ github.action_path }}/src/release.ps1

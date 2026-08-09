@@ -22,10 +22,6 @@
     'PSUseDeclaredVarsMoreThanAssignments', 'releaseType',
     Justification = 'Variable is used in script blocks.'
 )]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'publishPSVersion',
-    Justification = 'Variable is used in script blocks.'
-)]
 [CmdletBinding()]
 param()
 
@@ -61,9 +57,14 @@ LogGroup 'Load inputs' {
     $usePRBodyAsReleaseNotes = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes -eq 'true'
     $usePRTitleAsReleaseName = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
+    $releaseTag = $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag
+    if ([string]::IsNullOrWhiteSpace($releaseTag)) {
+        throw 'ReleaseTag is required. Ensure Publish.Module.Resolution.FullVersion is passed from the Plan job.'
+    }
 
     Write-Host "Module name: [$name]"
     Write-Host "Module path: [$modulePath]"
+    Write-Host "Release tag: [$releaseTag]"
     Write-Host "WhatIf:      [$whatIf]"
 }
 #endregion Load inputs
@@ -130,7 +131,6 @@ LogGroup 'Resolve version from manifest' {
         $createPrerelease = $true
     }
 
-    $releaseTag = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
     $releaseType = if ($createPrerelease) { 'New prerelease' } else { 'New release' }
     $publishPSVersion = if ($createPrerelease) { "$moduleVersion-$prerelease" } else { $moduleVersion }
 
@@ -138,13 +138,14 @@ LogGroup 'Resolve version from manifest' {
         ModuleVersion    = $moduleVersion
         Prerelease       = $prerelease
         CreatePrerelease = $createPrerelease
+        GalleryVersion   = $publishPSVersion
         ReleaseTag       = $releaseTag
         PRNumber         = $prNumber
         PRHeadRef        = $prHeadRef
     } | Format-List | Out-String
 
     # Expose release tag to subsequent steps so cleanup can exclude the just-created tag.
-    "PSMODULE_PUBLISH_PSMODULE_CONTEXT_ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
+    "PSMODULE_RELEASE_PSMODULE_CONTEXT_ReleaseTag=$releaseTag" | Out-File -Path $env:GITHUB_ENV -Append -Encoding utf8NoBOM
 }
 #endregion Resolve version from manifest
 

@@ -49,6 +49,7 @@ jobs:
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
       - name: Create GitHub release
+        id: Create-GitHub-Release
         if: always() && !cancelled() && fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
         uses: ./_wf/.github/actions/Release-PSModule
         env:
@@ -61,11 +62,15 @@ jobs:
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
           UsePRTitleAsNotesHeading: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsNotesHeading }}
-          VersionPrefix: ${{ fromJson(inputs.Settings).Publish.Module.VersionPrefix }}
+          ReleaseTag: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.FullVersion }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
       - name: Cleanup prereleases
-        if: always() && !cancelled() && fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
+        if: >-
+          always() && !cancelled() &&
+          fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease' &&
+          (fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType == 'None' ||
+          steps.Create-GitHub-Release.outcome == 'success')
         uses: ./_wf/.github/actions/Cleanup-PSModulePrereleases
         env:
           GH_TOKEN: ${{ github.token }}
