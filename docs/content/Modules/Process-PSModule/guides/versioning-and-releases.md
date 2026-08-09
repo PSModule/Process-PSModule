@@ -61,7 +61,7 @@ Each publication produces three linked, immutable artifacts:
 - a git tag.
 
 Release names and notes can be generated from the pull request — see
-[Configuring the pipeline](configuring-the-pipeline.md#example-4---configuring-pr-based-release-notes).
+[Configuring the pipeline](configuring-the-pipeline.md).
 
 ## Linear versioning
 
