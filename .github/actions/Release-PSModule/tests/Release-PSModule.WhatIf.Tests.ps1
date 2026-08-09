@@ -63,9 +63,9 @@ Describe 'Release-PSModule WhatIf' {
         @{
             pull_request = @{
                 number = 42
-                title = 'Create test release'
-                body = 'Release notes'
-                head = @{
+                title  = 'Create test release'
+                body   = 'Release notes'
+                head   = @{
                     ref = 'feature/release'
                 }
             }
