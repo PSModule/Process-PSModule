@@ -12,7 +12,7 @@ The behaviour in the [spec](spec.md) is delivered by a **single reusable GitHub 
 ### Single entry point
 
 The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job that
-calls `workflow.yml` and passes the `APIKey` secret. The full caller template is in
+calls `workflow.yml` and passes the `PSGALLERY_API_KEY` secret. The full caller template is in
 [Repository setup](../get-started/repository-setup.md#3-add-the-caller-workflow), and the interface it targets is
 documented in [Workflow inputs](../reference/workflow-inputs.md).
 

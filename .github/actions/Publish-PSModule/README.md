@@ -9,7 +9,7 @@ Publishes a pre-versioned PowerShell module artifact to the PowerShell Gallery. 
 | `Name` | Name of the module to publish. | No | Repository name |
 | `ModulePath` | Path containing the built `<Name>/` module directory. | No | `outputs/module` |
 | `ArtifactName` | Name of the module artifact to download. | No | `module` |
-| `APIKey` | PowerShell Gallery API key. | Yes | N/A |
+| `APIKey` | PowerShell Gallery API key supplied from the caller's `PSGALLERY_API_KEY` secret. | Yes | N/A |
 | `WhatIf` | Logs publishing operations without publishing the module. | No | `false` |
 | `WorkingDirectory` | Directory where the publishing script runs. | No | `.` |
 

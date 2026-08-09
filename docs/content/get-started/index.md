@@ -11,7 +11,7 @@ Start new modules from the PSModule template repository:
 ## Quickstart
 
 1. [Create a new repository from the template](https://github.com/new?template_name=Template-PSModule&template_owner=PSModule&description=Add%20a%20description%20(required)&name=%3CModule%20name%3E).
-2. [Configure the repository](repository-setup.md) — GitHub Pages, the PowerShell Gallery API key, and the caller workflow.
+2. [Configure the repository](repository-setup.md) — GitHub Pages, `PSGALLERY_API_KEY`, and the caller workflow.
 3. Replace placeholder metadata and remove scaffold sample files.
 4. Add your first public command and tests.
 5. Validate `.github/PSModule.yml` defaults for your module.
@@ -30,7 +30,7 @@ If the module needs several interdependent commands before it is usable at all, 
 
 | Page | Description |
 | --- | --- |
-| [Repository setup](repository-setup.md) | GitHub Pages, the PowerShell Gallery API key, permissions, and the caller workflow. |
+| [Repository setup](repository-setup.md) | GitHub Pages, `PSGALLERY_API_KEY`, permissions, and the caller workflow. |
 | [Your first release](your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
 | [Module bootstrap](module-bootstrap.md) | Getting a brand-new module to its first release with an integration branch. |
 

@@ -1,6 +1,6 @@
 ---
 title: Repository setup
-description: Configure GitHub Pages, the PowerShell Gallery API key, permissions, and the caller workflow so Process-PSModule can build and publish the module.
+description: Configure GitHub Pages, `PSGALLERY_API_KEY`, permissions, and the caller workflow so Process-PSModule can build and publish the module.
 ---
 
 # Repository setup
@@ -18,14 +18,14 @@ This creates an environment called `github-pages` that GitHub deploys the docume
   <img src="../media/pagesEnvironment.png" alt="Remove the branch protection on main">
 </details>
 
-## 2. Create a PowerShell Gallery API key
+## 2. Create `PSGALLERY_API_KEY`
 
 1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission
    to manage the module you are working on.
-2. Create a repository secret called `PSGALLERY_API_KEY` and set the API key as its value.
+2. Create a repository or organization secret called `PSGALLERY_API_KEY` and set the API key as its value.
 
 If you plan to create many modules, use a glob pattern for the API key permissions in the PowerShell Gallery and store
-the secret on the organization instead of on each repository.
+`PSGALLERY_API_KEY` on the organization instead of on each repository.
 
 ## 3. Add the caller workflow
 

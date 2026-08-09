@@ -57,7 +57,7 @@ jobs:
 
 The reusable workflow at `.github/workflows/workflow.yml` declares four workflow-call secrets,
 which keeps the calling workflow in full control of the credentials that are exposed.
-`secrets: inherit` is intentionally not required. `APIKey` publishes to the PowerShell Gallery,
+`secrets: inherit` is intentionally not required. `PSGALLERY_API_KEY` publishes to the PowerShell Gallery,
 `GitHubAppClientId` and `GitHubAppPrivateKey` authenticate GitHub API operations, and `TestData`
 carries everything the module's own tests need.
 
