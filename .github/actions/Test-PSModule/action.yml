@@ -283,6 +283,7 @@ runs:
       id: test
       env:
         LocalTestPath: ${{ steps.paths.outputs.LocalTestPath }}
+        PSMODULE_TEST_PSMODULE_MODULE_NAME: ${{ steps.paths.outputs.ModuleName }}
         WorkingDirectory: ${{ inputs.WorkingDirectory }}
       with:
         Debug: ${{ inputs.Debug }}

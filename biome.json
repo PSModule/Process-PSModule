@@ -1,0 +1,10 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!docs",
+      "!.github/actions/update-index"
+    ]
+  }
+}

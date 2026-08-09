@@ -1,0 +1,177 @@
+# Zensical configuration
+# https://zensical.org/docs/setup/basics/
+
+[project]
+site_name = "PSModule / Docs"
+site_url = "https://psmodule.io/docs/"
+docs_dir = "content"
+repo_name = "PSModule/Process-PSModule"
+repo_url = "https://github.com/PSModule/Process-PSModule"
+edit_uri = "edit/main/docs/content/"
+copyright = "Copyright &copy; 2023 - 2025 PSModule"
+extra_javascript = [
+  "https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js",
+  "assets/javascripts/tablesort.js",
+]
+extra_css = [
+  "assets/stylesheets/navigation.css",
+]
+watch = ["includes"]
+nav = [
+  "index.md",
+  {"Get started" = [
+    "get-started/index.md",
+    {"Repository setup" = "get-started/repository-setup.md"},
+    {"Your first release" = "get-started/your-first-release.md"},
+    {"Module bootstrap" = "get-started/module-bootstrap.md"},
+  ]},
+  {"Guides" = [
+    {"Calling the workflow" = "guides/calling-the-workflow.md"},
+    {"Configuring the pipeline" = "guides/configuring-the-pipeline.md"},
+    {"Structuring your module" = "guides/structuring-your-module.md"},
+    {"Writing module tests" = "guides/writing-module-tests.md"},
+    {"Skipping framework tests" = "guides/skipping-framework-tests.md"},
+    {"Versioning and releases" = "guides/versioning-and-releases.md"},
+    {"Validating before review" = "guides/validating-before-review.md"},
+  ]},
+  {"Reference" = [
+    {"Module development foundations" = "reference/module-development-foundations.md"},
+    {"Repository Standard" = "reference/repository-standard.md"},
+    {"PowerShell module standard" = "reference/powershell-module-standard.md"},
+    {"Module types" = "reference/module-types.md"},
+    {"Test Specification" = "reference/test-specification.md"},
+    {"Versioning" = "reference/versioning.md"},
+    {"Settings" = "reference/settings.md"},
+    {"Workflow inputs" = "reference/workflow-inputs.md"},
+    {"Pipeline stages" = "reference/pipeline-stages.md"},
+    {"Scenario matrix" = "reference/scenario-matrix.md"},
+    {"Framework test IDs" = "reference/framework-test-ids.md"},
+    {"Dependencies" = "reference/dependencies.md"},
+  ]},
+  {"Specification" = [
+    "specification/index.md",
+    {"Spec" = "specification/spec.md"},
+    {"Design" = "specification/design.md"},
+    {"Principles and practices" = "specification/principles-and-practices.md"},
+  ]},
+  {"Modules" = "Modules/index.md"},
+  {"Dictionary" = [
+    "Dictionary/index.md",
+  ]},
+]
+
+[project.theme]
+language = "en"
+custom_dir = "overrides"
+font.text = "Mona Sans"
+font.code = "Source Code Pro"
+logo = "assets/images/icon.png"
+favicon = "assets/images/icon.png"
+features = [
+  "announce.dismiss",
+  "content.action.edit",
+  "content.action.view",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.preview",
+  "navigation.instant.progress",
+  "navigation.tabs",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "search.share",
+  "search.suggest",
+  "toc.follow",
+]
+
+[project.theme.icon]
+repo = "material/github"
+link = "material/link-variant"
+
+# Palette toggle for automatic mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "material/link"
+toggle.name = "Switch to dark mode"
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "black"
+accent = "light blue"
+toggle.icon = "material/toggle-switch-off-outline"
+toggle.name = "Switch to light mode"
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "black"
+accent = "light blue"
+toggle.icon = "material/toggle-switch"
+toggle.name = "Switch to system preference"
+
+[project.plugins.meta]
+
+[project.plugins.search]
+
+[project.markdown_extensions.toc]
+permalink = "#"
+
+[project.markdown_extensions.attr_list]
+
+[project.markdown_extensions.abbr]
+
+[project.markdown_extensions.admonition]
+
+[project.markdown_extensions.def_list]
+
+[project.markdown_extensions.footnotes]
+
+[project.markdown_extensions.md_in_html]
+
+[project.markdown_extensions.tables]
+
+[project.markdown_extensions.pymdownx.details]
+
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+
+[project.markdown_extensions.pymdownx.snippets]
+auto_append = ["includes/abbreviations.md"]
+
+[project.extra.consent]
+title = "Cookie consent"
+description = """
+    We use cookies to recognize your repeated visits and preferences, as well
+    as to measure the effectiveness of our documentation and whether users
+    find what they're searching for. With your consent, you're helping us to
+    make our documentation better.
+"""
+actions = ["accept", "reject"]
+
+[[project.extra.social]]
+icon = "fontawesome/brands/discord"
+link = "https://discord.gg/jedJWCPAhD"
+name = "PSModule on Discord"
+
+[[project.extra.social]]
+icon = "material/powershell"
+link = "https://www.powershellgallery.com/profiles/PSModule.io"
+name = "PSModule on the PowerShell Gallery"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/PSModule/"
+name = "PSModule on GitHub"

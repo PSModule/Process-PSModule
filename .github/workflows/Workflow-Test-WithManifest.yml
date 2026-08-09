@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/actions/**'
       - '.github/workflows/**'
+      - 'tests/srcWithManifestTestRepo/**'
       - '!.github/workflows/Release.yml'
       - '!.github/workflows/Linter.yml'
   schedule:
@@ -48,3 +49,46 @@ jobs:
         ^README\.md$
         ^\.github/actions/
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
+
+  VerifyRootFunctionsIndexWithManifest:
+    name: Verify root Functions index [WithManifest]
+    runs-on: ubuntu-latest
+    needs:
+      - WorkflowTestWithManifest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Download docs artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: docs
+          path: tests/srcWithManifestTestRepo/outputs/docs
+
+      - name: Verify root Functions index is published
+        shell: pwsh
+        run: |
+          $path = 'tests/srcWithManifestTestRepo/outputs/docs/index.md'
+          if (-not (Test-Path -Path $path)) {
+              throw 'Expected root Functions index at ' +
+                  'tests/srcWithManifestTestRepo/outputs/docs/index.md.'
+          }
+
+          $content = Get-Content -Path $path -Raw
+          $expectedSnippets = @(
+              '# Functions'
+              'This landing page is authored from the root of ' +
+              '`src/functions/public`.'
+              'Use it to introduce the module''s function surface ' +
+              'before readers drill into each group.'
+          )
+
+          foreach ($snippet in $expectedSnippets) {
+              if (-not $content.Contains($snippet)) {
+                  throw 'Expected snippet not found in generated root ' +
+                      "Functions index: $snippet"
+              }
+          }

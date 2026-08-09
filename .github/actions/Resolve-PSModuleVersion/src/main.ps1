@@ -28,7 +28,7 @@ $decision = if ($null -eq $pullRequest) {
     Resolve-ReleaseDecision -Configuration $config -PullRequest $pullRequest
 }
 
-$releases = Get-GitHubRelease
+$releases = @(Get-GitHubRelease)
 $ghVersion = Get-LatestGitHubVersion -Releases $releases
 $psGalleryVersion = Get-LatestPSGalleryVersion -ModuleName $actionInput.Name
 $latestVersion = Get-LatestPublishedVersion -GitHubVersion $ghVersion -PSGalleryVersion $psGalleryVersion

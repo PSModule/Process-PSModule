@@ -1,0 +1,55 @@
+name: Test-Actions
+
+run-name: "Test-Actions - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/Test-Actions.yml'
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  TestActions:
+    name: Test actions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install-PSModule
+        uses: ./.github/actions/Install-PSModule
+
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          Install-PSResource -Name Pester -Version '[5.7.1,6.0.0)' -Repository PSGallery -TrustRepository
+          Install-PSResource -Name PSSemVer -Repository PSGallery -TrustRepository
+          Install-PSResource -Name GitHub -Version '[0.43.1,0.44.0)' -Repository PSGallery -TrustRepository
+
+      - name: Run action unit tests
+        shell: pwsh
+        run: |
+          $testPaths = Get-ChildItem -Path '.github/actions' -Directory |
+              ForEach-Object { Join-Path -Path $_.FullName -ChildPath 'tests' } |
+              Where-Object { Test-Path -Path $_ }
+          if (-not $testPaths) {
+              throw 'No action test folders were found under .github/actions.'
+          }
+
+          $configuration = New-PesterConfiguration
+          $configuration.Run.Path = $testPaths
+          $configuration.Run.Throw = $true
+          $configuration.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $configuration
