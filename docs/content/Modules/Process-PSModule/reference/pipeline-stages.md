@@ -64,7 +64,7 @@ suite matrices are computed under each owning test phase, and resolved version m
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Test-SourceCode.yml)
 
 - Tests the source code in parallel (matrix) using:
-  - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
+  - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Test-PSModule/src/tests/SourceCode)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 
 For the coding practices this step enforces, see [framework test IDs](framework-test-ids.md#source-code-tests).
@@ -82,7 +82,7 @@ For the coding practices this step enforces, see [framework test IDs](framework-
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Test-Module.yml)
 
 - Tests and lints the module in parallel (matrix) using:
-  - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
+  - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Test-PSModule/src/tests/Module)
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 - **Code coverage for framework-generated code**: This step collects code coverage for framework-generated
@@ -157,4 +157,4 @@ How to write these tests, including the Pester version requirement and shared-in
 
 ## Publish Docs
 
-[workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Publish-Docs.yml)
+[workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Publish-Site.yml)
