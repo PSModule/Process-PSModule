@@ -119,7 +119,7 @@ The workflow can automatically generate GitHub release names and notes from your
 Three parameters control this behavior:
 
 | Parameter | Description |
-|-----------|-------------|
+| ----------- | ------------- |
 | `UsePRTitleAsReleaseName` | Use the PR title as the GitHub release name instead of the version string |
 | `UsePRBodyAsReleaseNotes` | Use the PR body as the release notes content |
 | `UsePRTitleAsNotesHeading` | Prepend PR title as H1 heading with PR number link before the body |

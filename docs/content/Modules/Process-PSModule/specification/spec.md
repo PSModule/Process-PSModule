@@ -91,7 +91,7 @@ Scenario: Compute the next version from the PR label
   Given a pull request with the label "Minor"
   When the PR is merged to main and the current version is v1.2.3
   Then the new version is computed as v1.3.0
-  
+
 Scenario: Reject ambiguous version labels
   Given a pull request with both "Major" and "Minor" labels
   When the merge is attempted
@@ -118,7 +118,7 @@ Scenario: Publish a prerelease version
   When the PR runs the pipeline
   Then a prerelease version is published (e.g., v1.2.3-pr.1.N)
   And it is available for testing before the PR is merged
-  
+
 Scenario: Promote a prerelease to stable
   Given a prerelease PR that is merged to main with a version label
   When the PR is merged

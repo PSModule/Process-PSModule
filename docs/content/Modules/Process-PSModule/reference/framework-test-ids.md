@@ -15,7 +15,7 @@ Run by the [Test source code](pipeline-stages.md#test-source-code) job against f
 [PSModule - SourceCode tests](https://github.com/PSModule/Process-PSModule/blob/main/scripts/tests/SourceCode/PSModule/PSModule.Tests.ps1).
 
 | ID | Category | Description | Example skip comment |
-|----|----------|-------------|----------------------|
+| ---- | ---------- | ------------- | ---------------------- |
 | `NumberOfProcessors` | General | Should use `[System.Environment]::ProcessorCount` instead of `$env:NUMBER_OF_PROCESSORS`. | `#SkipTest:NumberOfProcessors:Legacy code compatibility required` |
 | `Verbose` | General | Should not pass `-Verbose` to other commands (which would override user preference), unless explicitly disabled with `-Verbose:$false`. | `#SkipTest:Verbose:Required for debugging output` |
 | `OutNull` | General | Should use `$null = ...` instead of piping output to `Out-Null`. | `#SkipTest:OutNull:Pipeline processing required` |
