@@ -451,6 +451,11 @@ concern so a failed migration is easy to bisect.
 
 ## References
 
+- [PSModule module test guidance](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/guides/writing-module-tests.md)
+- [PSModule workflow and test data guidance](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/guides/calling-the-workflow.md)
+- [PSModule pipeline configuration](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/guides/configuring-the-pipeline.md)
+- [PSModule test specification](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/test-specification.md)
+- [PSModule workflow inputs](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/workflow-inputs.md)
 - [Pester v5-to-v6 migration](https://pester.dev/docs/migrations/v5-to-v6)
 - [Pester installation and compatibility](https://pester.dev/docs/introduction/installation)
 - [Pester configuration](https://pester.dev/docs/usage/configuration)
