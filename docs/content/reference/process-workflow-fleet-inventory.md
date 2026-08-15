@@ -5,7 +5,7 @@ description: Generated inventory of PSModule repositories that call the Process-
 
 # Process-PSModule workflow inventory
 
-Generated: 2026-08-15T13:04:06+02:00
+Generated: 2026-08-15T13:13:06+02:00
 
 - Source: GitHub
 - Workflow files: 60

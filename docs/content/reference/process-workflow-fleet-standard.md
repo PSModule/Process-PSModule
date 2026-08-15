@@ -72,8 +72,9 @@ No current caller has the `v8.0.0` trigger and concurrency contract. The fleet s
 Secret forwarding is the only widespread caller variation:
 
 - 41 callers use `secrets: inherit`.
-- 15 callers explicitly map an `APIKey` or `APIKEY` secret.
-- `Confluence`, `GitHub`, `Jwt`, and `Yaml` map the old API key plus `TestData`.
+- 15 callers explicitly map only an `APIKey` or `APIKEY` secret.
+- Four more callers (`Confluence`, `GitHub`, `Jwt`, and `Yaml`) map the old API key plus `TestData`, for 19 explicit
+  API-key callers in total.
 - `Yaml` is the only caller with a `with:` override (`ImportantFilePatterns`).
 
 The case difference in the old API key name is historical drift, not a supported option in the current contract.
