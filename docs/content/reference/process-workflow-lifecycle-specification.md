@@ -149,6 +149,25 @@ Scenario: Reject an incorrectly stamped artifact
   And no release is made visible for that artifact
 ```
 
+### FR8 — Pull-request prereleases MUST have deterministic scoped identities {#fr8}
+
+A pull-request prerelease MUST use a deterministic identity scoped to its pull request. Reprocessing the same pull-request state MUST resolve the same prerelease identity, and different pull requests MUST NOT resolve the same identity.
+
+#### Behavioral scenarios {#fr8-scenarios}
+
+```gherkin
+Scenario: Reprocess the same pull-request state
+  Given a pull request has resolved a prerelease identity
+  When the same pull-request state is processed again
+  Then the workflow resolves the same prerelease identity
+  And it detects an existing publication instead of attempting an overwrite
+
+Scenario: Publish prereleases for distinct pull requests
+  Given two pull requests are eligible for prerelease publication
+  When both pull requests are processed
+  Then each pull request resolves a distinct prerelease identity
+```
+
 ## Non-functional requirements
 
 ### NFR1 — Lifecycle mutations MUST be idempotent {#nfr1}
@@ -201,7 +220,7 @@ Scenario: Inspect a scheduled validation result
 
 ### NFR4 — Pull-request mutation paths MUST resume and converge {#nfr4}
 
-Every pull-request path, including prerelease publication and cleanup, MUST be idempotent and resumable after cancellation. The next `synchronize`, `labeled`, `unlabeled`, or `closed` event MUST converge release-related state to the latest pull-request state. Cancellation MAY leave transient partial state, but it MUST NOT leave a permanent duplicate or obsolete artifact.
+Every pull-request path, including prerelease publication and cleanup, MUST be idempotent and resumable after cancellation. The next `synchronize`, `labeled`, `unlabeled`, or `closed` event MUST converge release-related state to the latest pull-request state. Cancellation MAY leave transient partial state, but it MUST NOT leave a permanent duplicate or an obsolete artifact without the required disposition.
 
 #### Behavioral scenarios {#nfr4-scenarios}
 
@@ -216,7 +235,7 @@ Scenario: Reconcile obsolete prereleases
   Given a canceled pull-request run left prerelease artifacts for an earlier pull-request state
   When a synchronize, label, unlabel, or close event is processed
   Then the workflow reconciles prerelease artifacts to the latest pull-request state
-  And no obsolete prerelease artifact remains after reconciliation
+  And every obsolete prerelease has the required disposition
 ```
 
 ### NFR5 — Pull-request events MUST NOT produce production artifacts {#nfr5}
@@ -233,6 +252,28 @@ Scenario: Evaluate an eligible prerelease pull request
   And it does not create a stable or signable production artifact
 ```
 
+### NFR6 — Immutable Gallery prereleases MUST have a disposition policy {#nfr6}
+
+PowerShell Gallery packages MUST be treated as immutable and MUST NOT be overwritten. The candidate MUST define whether obsolete pull-request prereleases are unlisted through a supported Gallery API or retained as documented immutable versions when unlisting is not feasible. This policy is distinct from GitHub Release and tag cleanup.
+
+#### Behavioral scenarios {#nfr6-scenarios}
+
+```gherkin
+Scenario: Dispose of an obsolete Gallery prerelease
+  Given a pull-request prerelease is obsolete
+  And a supported Gallery API can unlist that version
+  When the prerelease is reconciled
+  Then the workflow unlists the immutable Gallery package
+  And it performs GitHub Release and tag cleanup independently
+
+Scenario: Retain an immutable Gallery prerelease
+  Given a pull-request prerelease is obsolete
+  And unlisting that Gallery version is not feasible
+  When the prerelease is reconciled
+  Then the workflow records the retained immutable Gallery version
+  And it performs GitHub Release and tag cleanup independently
+```
+
 ## Cross-cutting acceptance criteria
 
 ### AC1 — Verifies: [FR1](#fr1), [FR6](#fr6), [FR7](#fr7), [NFR1](#nfr1)
@@ -247,7 +288,7 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6)
 
 ```gherkin
 Scenario: Lifecycle runs preserve release ownership after cancellation

@@ -15,7 +15,7 @@ The confirmed reusable workflow runs a `Plan` job, enriches one settings object 
 
 The version resolver treats non-pull-request events, including `workflow_dispatch` and `schedule`, as events without a release decision. The workflow's concurrency identity contains either the pull request number or the Git ref, and its runs are not canceled. The documented scenario matrix also identifies closed-pull-request cleanup as non-stable behavior.
 
-These facts establish the starting point. They do not implement the scheduled validation or manual recovery behavior proposed below.
+The current code detects an existing published version, resumes GitHub Release creation, and repeats GitHub Release and tag cleanup. Full reconciliation of immutable PowerShell Gallery prereleases is a design gap: it requires implementation and cancellation-boundary tests. These facts establish the starting point. They do not implement the scheduled validation or manual recovery behavior proposed below.
 
 ## Candidate event routing
 
@@ -80,13 +80,24 @@ Cancellation can leave only transient partial state. Every pull-request route, i
 
 | External operation | Required recovery behavior |
 | --- | --- |
-| PowerShell Gallery publication | Detect the existing resolved version and continue without duplicate publication. |
+| PowerShell Gallery publication | Use a deterministic pull-request-scoped prerelease identity, detect the existing resolved version, and continue without duplicate publication. |
 | GitHub Release creation | Resume or upsert the release and replace its asset set. |
 | Prerelease cleanup | Repeat safely after partial deletion and converge to the latest pull-request state. |
 | Prerelease lifecycle | A subsequent synchronize, label, unlabel, or close reconciles obsolete prereleases. |
 | Production boundary | No pull-request event creates a stable or signable production artifact. |
 
 Cleanup receives a pull-request-scoped artifact set and MUST NOT perform a broad prerelease deletion while a stable release can be active. Any future broad cleanup needs a separately approved exclusive scope; it cannot share the abandoned-close route.
+
+## Candidate Gallery prerelease disposition
+
+PowerShell Gallery packages are immutable and cannot be overwritten. Gallery reconciliation is therefore separate from GitHub Release and tag cleanup:
+
+| Obsolete Gallery prerelease condition | Candidate disposition |
+| --- | --- |
+| A supported Gallery API can unlist the version | Unlist the immutable package through that API. |
+| Unlisting is not feasible | Retain the immutable version and record it as retained in the lifecycle result. |
+
+The selected disposition policy remains unapproved. A cancellation can leave a published immutable package even when its GitHub Release and tag cleanup has not completed; the next pull-request event must detect that version and apply the approved Gallery disposition rather than attempting to overwrite it.
 
 ## Candidate verification strategy
 
@@ -99,6 +110,7 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Recovery release notes | Merged-pull-request query fixtures covering an empty range, one pull request, and multiple pull requests. |
 | Scheduled validation | A published-version fixture that proves no release mutation is requested. |
 | Pull-request convergence | Canceled prerelease-publication and cleanup fixtures followed by synchronize, label, unlabel, and close events that prove the latest pull-request state is reconciled. |
+| Gallery immutability | Deterministic pull-request identity, existing-version detection, supported-unlist, and retained-version fixtures across the cancellation boundary. |
 | Non-pull-request serialization | Overlapping main-push, manual-dispatch, and scheduled fixtures that prove runs queue by ref and do not cancel. |
 
 ## Decisions requiring approval
@@ -109,6 +121,7 @@ The candidate does not decide the following:
 - Which source is authoritative when a PowerShell Gallery publication and GitHub release disagree about the last published stable version.
 - Which consumer-facing checks comprise scheduled published-artifact validation.
 - Whether removing prerelease eligibility cleans up existing prereleases immediately or leaves them until the abandoned-close cleanup route.
+- Whether the supported Gallery API can unlist obsolete prereleases; otherwise, how retained immutable versions are recorded.
 - Approval of the selected caller concurrency expression in [PSModule/Process-PSModule#514](https://github.com/PSModule/Process-PSModule/issues/514).
 
 ## Related
