@@ -96,7 +96,21 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
+
+These three explicit mappings are the required caller baseline; `secrets: inherit` is nonconforming. The only optional
+secret mapping is `TestData` for module-local tests:
+
+```yaml
+      TestData: ${{ secrets.TestData }}
+```
+
+When present, `TestData` contains a JSON object with separate `secrets` and `variables` maps. It is omitted when
+unused. A conforming caller does not set `with.Debug: true`; the reusable workflow default remains `false`.
 
 Built-in `GITHUB_TOKEN` authorization is permitted for checkout, repository-local reads, and standard Pages/OIDC deployment within that job boundary. GitHub App installation tokens are step-scoped and authorize every user-facing interaction and every operation that needs broader reach or permissions: pull-request comments and labels, commit statuses and check-facing reporting, releases, tags, assets, and cleanup.
 
@@ -186,6 +200,7 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Gallery immutability | Deterministic pull-request identity, existing-version detection, supported-unlist, and retained-version fixtures across the cancellation boundary. |
 | Stable aggregation | Bursts of main-push, manual-dispatch, and scheduled fixtures that replace an intermediate pending run and prove the later stable target aggregates all unreleased merged pull requests. |
 | Scoped caller permissions | Empty caller top-level permissions, the three job grants, built-in-token checkout/read, and standard Pages/OIDC verification. |
+| Caller credential contract | Explicit baseline mappings for `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; rejected `secrets: inherit`; optional `TestData` JSON with separate `secrets` and `variables` maps; and no `with.Debug: true`. |
 | App authorization failure | Missing-App-token fixtures that prove user-facing operations fail closed without built-in token fallback. |
 | Token boundary | Fixtures that prove App tokens are step-scoped and built-in-token operations remain within the caller job's boundary. |
 | Event authorization | Normal-fork `pull_request` fixtures that prove the controlled upstream Plan derives restricted capabilities from immutable fork/base/head metadata before it consumes settings or checked-out code, then permits only checkout/build/lint/test with a green/red outcome and no configured secrets; `pull_request_target` fixtures prove Plan rejects before credentialed or repository-defined code, including for downstream `always()` jobs. |

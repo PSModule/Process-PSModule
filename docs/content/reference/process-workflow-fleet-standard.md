@@ -137,7 +137,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Concurrency | Use the PR-number-or-ref key and cancel only superseded pull-request runs. | Use separate groups per event class or disable cancellation for all runs. |
 | Permissions | Set top-level permissions to empty and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Define a narrower profile for repositories that do not publish Pages. |
 | Fork behavior | Invoke the reusable workflow unconditionally; Plan classifies normal fork `pull_request` events into restricted read-only validation and rejects `pull_request_target` until separately designed. | Omit fork validation or design a separate `pull_request_target` trust boundary. |
-| Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
+| Credentials | Explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; `secrets: inherit` is nonconforming. | Define a narrower profile only for repositories with an approved non-publication contract. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
 
 The `v8` reference is the controlled moving major tag for this PSModule-owned workflow. On 2026-08-15, `v8`, `v8.0`,
@@ -173,7 +173,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Permissions | Use empty top-level permissions and the three caller-job permissions shown above. | Repository-local reads and Pages/OIDC stay narrow; App tokens provide broader authority. |
 | Fork authorization | Leave the caller job unconditional. | Plan grants normal fork `pull_request` events only restricted read-only validation capabilities and rejects `pull_request_target` before credentials or repository-defined code run. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
-| Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
+| Credentials | Explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; do not use `secrets: inherit`. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
 | Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
 
 ## Candidate optional elements
@@ -182,20 +182,20 @@ These are evidence-based candidate variations, not approved policy.
 
 | Option | When it is appropriate | Constraint |
 | --- | --- | --- |
-| `TestData` secret | Module-local tests need caller-defined secrets or variables. | Use the documented compact single-line JSON object and expose only required values. |
+| `TestData` secret mapping | Module-local tests need caller-defined secrets or variables. | Map `TestData: ${{ secrets.TestData }}` only when used. Its value is a JSON object with separate `secrets` and `variables` maps; omit the mapping when unused. |
 | `with.SettingsPath` | The settings file is not `.github/PSModule.yml`. | Prefer the standard path for normal module repositories. |
 | `with.WorkingDirectory` | The module is intentionally rooted below the repository root. | Keep the default `.` for the standard layout. |
 | `with.ImportantFilePatterns` | A caller must override change detection at the workflow boundary. | Prefer stable configuration in `.github/PSModule.yml`; the supplied list replaces all defaults. |
-| `with.Debug`, `Verbose`, `Version`, or `Prerelease` | A deliberate diagnostic or dependency-selection scenario needs it. | Do not hard-code temporary diagnostics into the fleet baseline. |
+| `with.Verbose`, `Version`, or `Prerelease` | A deliberate diagnostic or dependency-selection scenario needs it. | Do not hard-code temporary diagnostics into the fleet baseline. |
 | Schedule time | Health runs need staggering or a repository-specific maintenance window. | Keep at least one documented schedule unless the repository records why health runs are unnecessary. |
 | `run-name` | A repository needs clearer run presentation. | Presentation must not change job names or routing behavior. |
 
 ## Variations requiring a decision
 
-The following differ from the candidate. They are inventory classifications, not policy violations, until #514 records
-an approved structure:
+The following are nonconforming with locked candidate decisions. They remain inventory classifications rather than
+approved organization policy until #514 records an approved structure:
 
-- `secrets: inherit`;
+- `secrets: inherit`, which is nonconforming because the candidate requires the three explicit baseline mappings;
 - `APIKey` or `APIKEY` mappings from the pre-`v7` contract;
 - any Process-PSModule reference other than the intended major tag (`v8`), including a branch, `latest`, minor tag,
   exact patch tag, or full commit SHA;
@@ -204,6 +204,22 @@ an approved structure:
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
 - unrelated additional jobs in the caller wrapper;
 - omitted documented permissions without a verified settings-based least-privilege profile.
+- `with.Debug: true`, which is nonconforming because the reusable workflow default remains `false`.
+
+When required, the optional test-data mapping extends the candidate baseline without broadening it:
+
+```yaml
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+      TestData: ${{ secrets.TestData }}
+```
+
+`TestData` is a JSON object with separate `secrets` and `variables` maps, for example
+`{"secrets":{"Example":"value"},"variables":{"Feature":"enabled"}}`. Callers omit this mapping entirely when
+module-local tests do not need it. No conforming caller sets `with.Debug: true`; the reusable workflow's default remains
+`false`.
 
 The candidate caller invokes the reusable workflow for fork-originated `pull_request` events. Plan classifies them into a
 restricted, read-only validation mode that permits only repository-local checkout, build, lint, and test with the

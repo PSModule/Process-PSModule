@@ -211,7 +211,9 @@ Scenario: Recover a range of unreleased merged pull requests
 
 ### FR11 — Repository operations MUST use scoped authorization {#fr11}
 
-The caller MUST declare top-level `permissions: {}`. Its Process-PSModule job MUST grant only `contents: read`, `pages: write`, and `id-token: write`. Built-in `GITHUB_TOKEN` MAY authorize repository-local, non-user-facing work when those permissions are sufficient, including checkout, reads, and standard Pages/OIDC deployment. GitHub App installation tokens MUST authorize all user-facing interactions and any operation that exceeds the built-in token's reach or permissions, including pull-request comments and labels, commit statuses and check-facing reporting, releases, tags, assets, and cleanup. Tokens MUST remain scoped to the steps that require them.
+The caller MUST declare top-level `permissions: {}`. Its Process-PSModule job MUST grant only `contents: read`, `pages: write`, and `id-token: write`. It MUST explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; `secrets: inherit` is nonconforming. It MAY additionally map `TestData` only for module-local tests. When present, `TestData` MUST contain a JSON object with separate `secrets` and `variables` maps; callers MUST omit it when unused. No conforming caller MAY set `with.Debug: true`; the reusable workflow default remains `false`.
+
+Built-in `GITHUB_TOKEN` MAY authorize repository-local, non-user-facing work when those permissions are sufficient, including checkout, reads, and standard Pages/OIDC deployment. GitHub App installation tokens MUST authorize all user-facing interactions and any operation that exceeds the built-in token's reach or permissions, including pull-request comments and labels, commit statuses and check-facing reporting, releases, tags, assets, and cleanup. Tokens MUST remain scoped to the steps that require them.
 
 #### Behavioral scenarios {#fr11-scenarios}
 
@@ -221,6 +223,24 @@ Scenario: Run with the caller's minimum permissions
   And its Process-PSModule job grants only contents read, Pages write, and ID-token write
   When the reusable workflow performs checkout or standard Pages deployment
   Then it may use the built-in workflow token within that granted boundary
+
+Scenario: Provide the required caller credentials explicitly
+  Given a conforming caller invokes the reusable workflow
+  When it maps credentials to the Process-PSModule job
+  Then it maps PSGALLERY_API_KEY, GitHubAppClientId, and GitHubAppPrivateKey explicitly
+  And it does not use secrets inherit
+
+Scenario: Provide optional module-local test data
+  Given module-local tests require caller-provided data
+  When the caller maps TestData
+  Then its secret value is a JSON object with separate secrets and variables maps
+  And the caller omits TestData when tests do not require it
+
+Scenario: Keep caller debug disabled
+  Given a conforming caller invokes the reusable workflow
+  When it sets workflow inputs
+  Then it does not set Debug to true
+  And the reusable workflow uses its false default
 
 Scenario: Perform a user-facing repository operation
   Given the reusable workflow must create a pull-request comment or release
