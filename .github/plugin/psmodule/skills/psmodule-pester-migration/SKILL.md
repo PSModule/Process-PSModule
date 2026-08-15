@@ -1,5 +1,5 @@
 ---
-name: pester-migration
+name: psmodule-pester-migration
 description: Migrate every Pester test set in a PSModule repository to Pester 6.1.0, preserving test intent while checking runtime, discovery, setup, mocks, data-driven tests, coverage, CI, and reporting. Use when upgrading a PSModule repository from Pester 5 or earlier, or when validating a repository-wide Pester migration.
 ---
 

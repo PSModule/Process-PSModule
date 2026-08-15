@@ -10,10 +10,10 @@
   },
   "plugins": [
     {
-      "name": "psmodule-process",
+      "name": "psmodule",
       "description": "PSModule process guidance and reusable skills for PowerShell module repositories.",
       "version": "1.0.0",
-      "source": ".github/plugin/psmodule-process"
+      "source": ".github/plugin/psmodule"
     }
   ]
 }

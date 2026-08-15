@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "psmodule-process",
+  "name": "psmodule",
   "description": "PSModule process guidance and reusable skills for PowerShell module repositories.",
   "version": "1.0.0",
   "author": {
