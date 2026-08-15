@@ -30,6 +30,7 @@ nav = [
     {"Configuring the pipeline" = "guides/configuring-the-pipeline.md"},
     {"Structuring your module" = "guides/structuring-your-module.md"},
     {"Writing module tests" = "guides/writing-module-tests.md"},
+    {"Migrating Pester tests" = "guides/pester-migration.md"},
     {"Skipping framework tests" = "guides/skipping-framework-tests.md"},
     {"Versioning and releases" = "guides/versioning-and-releases.md"},
     {"Validating before review" = "guides/validating-before-review.md"},
