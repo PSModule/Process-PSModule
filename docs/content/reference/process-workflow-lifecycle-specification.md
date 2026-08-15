@@ -209,6 +209,27 @@ Scenario: Recover a range of unreleased merged pull requests
   And the release notes use that aggregated range
 ```
 
+### FR11 — Repository operations MUST use explicit GitHub App authorization {#fr11}
+
+The caller MUST declare top-level `permissions: {}` and MUST NOT grant job permissions. The reusable workflow MUST create narrowly scoped GitHub App installation tokens before repository access and pass them explicitly to every repository operation. Built-in `GITHUB_TOKEN` authority MUST NOT authorize checkout, API access, status reporting, comments, releases, or cleanup.
+
+#### Behavioral scenarios {#fr11-scenarios}
+
+```gherkin
+Scenario: Run from a permissionless caller
+  Given the caller declares top-level permissions as an empty object
+  And the caller grants no job permissions
+  When the reusable workflow runs with authorized GitHub App installation tokens
+  Then checkout and repository operations use the explicit App tokens
+  And the built-in workflow token does not authorize those operations
+
+Scenario: Start a repository operation
+  Given the reusable workflow requires repository access
+  When the workflow begins
+  Then it creates the required GitHub App token before checkout
+  And it passes that token explicitly to checkout and subsequent repository operations
+```
+
 ## Non-functional requirements
 
 ### NFR1 — Lifecycle mutations MUST be idempotent {#nfr1}
@@ -317,6 +338,21 @@ Scenario: Retain an immutable Gallery prerelease
   And it performs GitHub Release and tag cleanup independently
 ```
 
+### NFR7 — Missing App authorization MUST fail closed {#nfr7}
+
+When the required GitHub App authorization is unavailable, every repository-mutating or reporting job MUST fail before performing an unauthorized checkout, API request, status update, comment, release, or cleanup. It MUST NOT fall back to built-in `GITHUB_TOKEN` authority.
+
+#### Behavioral scenarios {#nfr7-scenarios}
+
+```gherkin
+Scenario: Reject a job without GitHub App authorization
+  Given a caller with no granted token permissions
+  And a reusable-workflow job cannot create its required GitHub App token
+  When the job attempts repository access
+  Then the job fails before the repository operation
+  And it does not use the built-in workflow token as a fallback
+```
+
 ## Cross-cutting acceptance criteria
 
 ### AC1 — Verifies: [FR1](#fr1), [FR6](#fr6), [FR7](#fr7), [NFR1](#nfr1)
@@ -331,7 +367,7 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [FR11](#fr11), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6), [NFR7](#nfr7)
 
 ```gherkin
 Scenario: Lifecycle runs preserve release ownership after cancellation
