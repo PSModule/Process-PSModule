@@ -57,10 +57,6 @@ The uniform wrapper is a strong starting point, but it predates the two latest b
 - `v8.0.0` moves stable publication to a default-branch `push`, adds `unlabeled` routing, and requires non-cancelling
   pull-request-or-ref concurrency.
 
-The observed absence of additional jobs is inventory context, not a conformance requirement. The candidate standardizes
-the Process-PSModule reusable-workflow call and the shared top-level controls that govern that call, rather than the
-repository owner's entire workflow.
-
 No current caller has the `v8.0.0` trigger and concurrency contract. The fleet spans nine older versions:
 
 | Version | Repositories |
@@ -129,19 +125,29 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
+Modules whose local tests require repository-specific data may add the optional secret mapping:
+
+```yaml
+      TestData: >-
+        {"secrets":{"TOKEN":"${{ secrets.TEST_TOKEN }}"},"variables":{"ENDPOINT":"${{ vars.TEST_ENDPOINT }}"}}
+```
+
+The reusable workflow exports only the declared entries to module-local test setup, tests, and teardown. Callers omit
+`TestData` when no module-local test data is required.
+
 This YAML is a recommendation derived from the v8 interface and fleet evidence. It is not an approved standard.
 Issue [#514](https://github.com/PSModule/Process-PSModule/issues/514) must record agreement on the following structural
 decisions before canonical guides, templates, or consumer workflows adopt it:
 
 | Decision | Candidate | Alternatives still open |
 | --- | --- | --- |
-| Wrapper scope | Exactly one conforming Process-PSModule reusable-workflow call job plus the shared top-level controls that govern it. Repository-owned jobs may coexist in the same file or separate workflows when they do not weaken or bypass that boundary. | Decide only the placement of repository-owned jobs. |
+| Contract scope | Standardize the `Process-PSModule` caller job and its shared workflow controls, not every job in the file. | Selected for the candidate; repository-owned jobs remain outside the caller contract. |
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
-| Concurrency | Use the PR-number-or-ref key and cancel only superseded pull-request runs. | Use separate groups per event class or disable cancellation for all runs. |
-| Permissions | Set top-level permissions to empty and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Define a narrower profile for repositories that do not publish Pages. |
-| Fork behavior | Invoke the reusable workflow unconditionally; Plan classifies normal fork `pull_request` events into restricted read-only validation and rejects `pull_request_target` until separately designed. | Omit fork validation or design a separate `pull_request_target` trust boundary. |
-| Credentials | Explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; `secrets: inherit` is nonconforming. | Define a narrower profile only for repositories with an approved non-publication contract. |
+| Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
+| Permissions | Default deny at workflow level, then grant the caller job `contents: read`, `pages: write`, and `id-token: write`. | Selected for the candidate: use `GITHUB_TOKEN` for repository-local, non-user-facing platform operations and App tokens for user-facing or otherwise unsupported operations. |
+| Fork behavior | Keep the caller unconditional; classify fork pull requests as restricted read-only validation in `Plan`. | Selected for the candidate; execution policy belongs to Process-PSModule rather than every consumer. |
+| Credentials | Explicitly map the three v8 credentials; optionally map `TestData` when module-local tests need it. | Define a narrower credential profile for repositories that cannot publish. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
 
 The `v8` reference is the controlled moving major tag for this PSModule-owned workflow. On 2026-08-15, `v8`, `v8.0`,
@@ -153,6 +159,11 @@ The effective repository rulesets currently protect exact release tags but do no
 Release automation is therefore the operational owner, but actors with sufficient contents access are not yet blocked
 from moving the major tag manually. Enforce release-identity-only governance for moving tags before migrating the fleet
 to `@v8`; until then, consumers must retain immutable SHA references.
+
+The reusable workflow remains at `.github/workflows/workflow.yml`. A private cross-repository experiment on 2026-08-15
+confirmed that GitHub rejects a root-level reusable workflow reference with
+`references to workflows must be rooted in '.github/workflows'`, even when the provider repository grants the caller
+the required Actions access.
 
 ### Owned and external references
 
@@ -173,12 +184,12 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Default-branch push | Keep `push.branches: [main]`. | `v8` authorizes stable releases from the tested default-branch push. |
 | Manual dispatch | Keep `workflow_dispatch`. | Provides the documented default-branch manual release and recovery path. |
 | Schedule | Keep a scheduled health run. | Exercises current dependencies even when repository code is unchanged. |
-| Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | Pull-request changes converge promptly while non-pull-request runs serialize by ref. |
-| Permissions | Use empty top-level permissions and the three caller-job permissions shown above. | Repository-local reads and Pages/OIDC stay narrow; App tokens provide broader authority. |
-| Fork authorization | Leave the caller job unconditional. | Plan grants normal fork `pull_request` events only restricted read-only validation capabilities and rejects `pull_request_target` before credentials or repository-defined code run. |
+| Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | New PR events supersede older declarative reconciliation runs; same-ref push, dispatch, and schedule runs serialize without cancellation. |
+| Permissions | Set top-level `permissions: {}` and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Checkout and Pages remain repository-local built-in capabilities; user-facing interactions and operations outside the built-in token boundary use scoped GitHub App tokens. |
+| Event gate | Keep the caller unconditional and authorize capabilities in `Plan`. | The reusable workflow owns execution policy; fork pull requests may validate but cannot obtain App credentials, publish, deploy, clean up, or mutate repository state. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
-| Credentials | Explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; do not use `secrets: inherit`. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
-| Scope | Require exactly one conforming Process-PSModule delegation job and its governing triggers, concurrency, permissions, Plan authorization, and credential boundary. | Repository-owned jobs may be reported for visibility but are not nonconforming merely by existing. |
+| Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
+| Scope | Require one conforming `Process-PSModule` delegation job. | Additional repository-owned jobs do not change caller conformance. |
 
 ## Candidate optional elements
 
@@ -186,7 +197,7 @@ These are evidence-based candidate variations, not approved policy.
 
 | Option | When it is appropriate | Constraint |
 | --- | --- | --- |
-| `TestData` secret mapping | Module-local tests need caller-defined secrets or variables. | Map `TestData: ${{ secrets.TestData }}` only when used. Its value is a JSON object with separate `secrets` and `variables` maps; omit the mapping when unused. |
+| `TestData` secret | Module-local tests need caller-defined secrets or variables. | Optionally map the documented JSON object with separate `secrets` and `variables` maps, exposing only required values. |
 | `with.SettingsPath` | The settings file is not `.github/PSModule.yml`. | Prefer the standard path for normal module repositories. |
 | `with.WorkingDirectory` | The module is intentionally rooted below the repository root. | Keep the default `.` for the standard layout. |
 | `with.ImportantFilePatterns` | A caller must override change detection at the workflow boundary. | Prefer stable configuration in `.github/PSModule.yml`; the supplied list replaces all defaults. |
@@ -194,54 +205,44 @@ These are evidence-based candidate variations, not approved policy.
 | Schedule time | Health runs need staggering or a repository-specific maintenance window. | Keep at least one documented schedule unless the repository records why health runs are unnecessary. |
 | `run-name` | A repository needs clearer run presentation. | Presentation must not change job names or routing behavior. |
 
+Conforming callers do not set `with.Debug: true`; the reusable workflow default remains `false`.
+
 ## Variations requiring a decision
 
-The following are nonconforming with locked candidate decisions. They remain inventory classifications rather than
-approved organization policy until #514 records an approved structure:
+The following differ from the candidate. They are inventory classifications, not policy violations, until #514 records
+an approved structure:
 
-- `secrets: inherit`, which is nonconforming because the candidate requires the three explicit baseline mappings;
+- `secrets: inherit`;
 - `APIKey` or `APIKEY` mappings from the pre-`v7` contract;
 - any Process-PSModule reference other than the intended major tag (`v8`), including a branch, `latest`, minor tag,
   exact patch tag, or full commit SHA;
 - missing `push` or `unlabeled` triggers;
-- a `cancel-in-progress` expression other than `github.event_name == 'pull_request'` or the old ref-only concurrency key;
+- a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
+- a caller-level fork or event-authorization condition;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
-- omitted documented permissions without a verified settings-based least-privilege profile;
-- `with.Debug: true`, which is nonconforming because the reusable workflow default remains `false`.
+- caller permissions beyond `contents: read`, `pages: write`, and `id-token: write`.
 
-When required, the optional test-data mapping extends the candidate baseline without broadening it:
+Use the built-in `GITHUB_TOKEN` for non-user-facing operations confined to the calling repository, including checkout
+and the standard GitHub Pages deployment. Create narrowly scoped GitHub App installation tokens for user-facing
+interactions such as pull-request comments, labels, statuses, releases, and release cleanup, and whenever the built-in
+token cannot provide the required repository or cross-repository access. Tokens remain step-scoped and must not fall
+back silently from App authorization to broader built-in-token authority.
 
-```yaml
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-      TestData: ${{ secrets.TestData }}
-```
-
-`TestData` is a JSON object with separate `secrets` and `variables` maps, for example
-`{"secrets":{"Example":"value"},"variables":{"Feature":"enabled"}}`. Callers omit this mapping entirely when
-module-local tests do not need it. No conforming caller sets `with.Debug: true`; the reusable workflow's default remains
-`false`.
-
-The candidate caller invokes the reusable workflow for fork-originated `pull_request` events. Plan classifies them into a
-restricted, read-only validation mode that permits only repository-local checkout, build, lint, and test with the
-least-privilege built-in token. It emits explicit capabilities that prohibit App-token creation, publication, mutation,
-Pages deployment, cleanup, and user-facing reporting. `pull_request_target` remains unsupported and Plan must reject it
-before credentials or repository-defined code run; issue [#514](https://github.com/PSModule/Process-PSModule/issues/514)
-must approve any separate trust boundary for that event.
-
-The controlled upstream `v8` Plan implementation derives that restricted envelope first from immutable GitHub event
-metadata, including fork, base, and head identities. It may then use fork settings and checked-out files only as
-untrusted validation and build inputs; they cannot enable credentials, broaden permissions, or change the capability
-envelope. This permits ordinary fork contributors to receive the standard workflow green/red validation without
-configuring secrets.
-
-The candidate requires exactly one conforming Process-PSModule reusable-workflow call job and the shared top-level triggers,
-concurrency, permissions, Plan authorization, and credential boundary that govern it. Repository-owned jobs may exist in
-the same file or in separate workflows and are reported only for visibility. Their existence is not nonconforming, but
-they MUST NOT weaken or bypass the Process-PSModule call's trigger, concurrency, permissions, Plan authorization, or
+The reusable workflow's Plan job classifies fork-originated `pull_request` events as restricted read-only validation.
+It may allow repository-local checkout, build, lint, and test with least-privilege built-in access, but must explicitly
+deny App-token creation, Gallery access, publication, Pages deployment, cleanup, and repository or user-facing
+mutations. The controlled upstream Plan implementation derives this security envelope from GitHub event metadata before
+it interprets repository settings or executes checked-out repository code. Fork-controlled files and settings remain
+untrusted build inputs and cannot broaden the planned capabilities. Every downstream job, including jobs using
+`always()`, must require a successful valid Plan and the planned capability for its operation before running or
+evaluating Settings. Privileged-context events such as
+`pull_request_target` remain unsupported unless separately designed to prevent untrusted code from crossing the
 credential boundary.
+
+The contract applies to the shared workflow controls and the `Process-PSModule` delegation job shown above. Repositories
+may define additional jobs in the same file or separate workflows. The inventory reports those jobs for visibility, but
+the contract does not prescribe their implementation. Additional jobs must not weaken or bypass the permissions,
+authorization, trigger, or concurrency controls governing the Process-PSModule call.
 
 ## Rollout boundary
 
