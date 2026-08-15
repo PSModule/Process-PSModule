@@ -50,7 +50,8 @@ automatically.
 
 ## Use and test
 
-The dashboard refresh button runs
+The dashboard automatically refreshes missing inventory and evidence older than
+15 minutes. Its refresh button provides an explicit retry. Both paths run
 `.github/scripts/Get-ProcessPSModuleWorkflowInventory.ps1` in authenticated
 GitHub mode with target `v8`. A failed refresh clears prior success state and
 shows the command context and sanitized diagnostic.

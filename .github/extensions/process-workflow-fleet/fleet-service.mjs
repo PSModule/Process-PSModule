@@ -546,14 +546,14 @@ export function createFleetService({ getSession, repositoryRoot }) {
         };
     }
 
-    async function handleHttpRequest(request, response, token) {
+    async function handleHttpRequest(request, response, token, organization) {
         const url = new URL(request.url ?? "/", "http://127.0.0.1");
         if (request.method === "GET" && url.pathname === "/") {
             responseHtml(response, renderDashboard(token));
             return;
         }
         if (request.method === "GET" && url.pathname === "/api/state") {
-            responseJson(response, 200, await ensureState());
+            responseJson(response, 200, await ensureState({ organization }));
             return;
         }
         if (request.method !== "POST") {
@@ -592,7 +592,7 @@ export function createFleetService({ getSession, repositoryRoot }) {
         });
     }
 
-    async function openPanel(instanceId) {
+    async function openPanel(instanceId, { organization } = {}) {
         const existing = servers.get(instanceId);
         if (existing) {
             return existing;
@@ -600,21 +600,27 @@ export function createFleetService({ getSession, repositoryRoot }) {
 
         const token = randomBytes(24).toString("base64url");
         const server = createServer((request, response) => {
-            handleHttpRequest(request, response, token).catch((error) => {
-                const code = error.code || "canvas_http_failed";
-                const message = sanitizeDiagnostic(error.message);
-                getSession()?.log(
-                    `Process workflow fleet request failed: ${message}`,
-                    { level: "error", ephemeral: true },
-                );
-                if (!response.headersSent) {
-                    responseJson(response, code === "route_not_found" ? 404 : 500, {
-                        error: { code, message },
-                    });
-                } else {
-                    response.end();
-                }
-            });
+            handleHttpRequest(request, response, token, organization).catch(
+                (error) => {
+                    const code = error.code || "canvas_http_failed";
+                    const message = sanitizeDiagnostic(error.message);
+                    getSession()?.log(
+                        `Process workflow fleet request failed: ${message}`,
+                        { level: "error", ephemeral: true },
+                    );
+                    if (!response.headersSent) {
+                        responseJson(
+                            response,
+                            code === "route_not_found" ? 404 : 500,
+                            {
+                                error: { code, message },
+                            },
+                        );
+                    } else {
+                        response.end();
+                    }
+                },
+            );
         });
         server.on("clientError", (error, socket) => {
             getSession()?.log(

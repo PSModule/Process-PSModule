@@ -157,16 +157,12 @@ const canvas = createCanvas({
         },
     ],
     open: async (ctx) => {
-        const state = await fleet.ensureState({
+        const entry = await fleet.openPanel(ctx.instanceId, {
             organization: ctx.input?.organization,
         });
-        const entry = await fleet.openPanel(ctx.instanceId);
         return {
             title: "Process workflow fleet",
-            status:
-                state.inventoryStatus === "ready"
-                    ? `${state.records.length} workflows`
-                    : "Refresh required",
+            status: "Inventory updates automatically",
             url: entry.url,
         };
     },

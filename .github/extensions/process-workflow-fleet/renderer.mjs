@@ -280,9 +280,7 @@ export function renderDashboard(token) {
           <table aria-label="Process-PSModule caller workflow inventory">
             <thead>
               <tr>
-                <th scope="col">Select</th>
                 <th scope="col">Repository</th>
-                <th scope="col">Workflow</th>
                 <th scope="col">Reference / compliance</th>
                 <th scope="col">Triggers</th>
                 <th scope="col">Concurrency</th>
@@ -410,22 +408,6 @@ export function renderDashboard(token) {
       return cell;
     }
 
-    function workflowCell(record) {
-      const cell = document.createElement("td");
-      const path = document.createElement(record.workflowUrl ? "a" : "span");
-      path.textContent = text(record.workflowPath);
-      if (record.workflowUrl) {
-        path.href = record.workflowUrl;
-        path.target = "_blank";
-        path.rel = "noreferrer";
-      }
-      const name = document.createElement("div");
-      name.className = "muted";
-      name.textContent = text(record.workflowName);
-      cell.append(path, name);
-      return cell;
-    }
-
     function complianceCell(record) {
       const cell = document.createElement("td");
       const references = record.processJobs.map((job) => job.reference);
@@ -470,7 +452,6 @@ export function renderDashboard(token) {
         renderRows();
         renderInspector(record);
       });
-      const selectCell = document.createElement("td");
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = ui.state.selection.includes(record.repository);
@@ -480,11 +461,10 @@ export function renderDashboard(token) {
         checkbox.checked ? next.add(record.repository) : next.delete(record.repository);
         await updateSelection([...next]);
       });
-      selectCell.append(checkbox);
+      const identityCell = repositoryCell(record);
+      identityCell.prepend(checkbox, document.createTextNode(" "));
       row.append(
-        selectCell,
-        repositoryCell(record),
-        workflowCell(record),
+        identityCell,
         complianceCell(record),
         codeCell(triggerText(record)),
         codeCell("group=" + text(record.concurrencyGroup) + "\\ncancel=" + text(record.cancelInProgress)),
@@ -558,7 +538,16 @@ export function renderDashboard(token) {
       statusBadge.textContent = record.analysis.status;
       const path = document.createElement("p");
       path.className = "muted";
-      path.textContent = text(record.workflowPath);
+      if (record.workflowUrl) {
+        const link = document.createElement("a");
+        link.href = record.workflowUrl;
+        link.target = "_blank";
+        link.rel = "noreferrer";
+        link.textContent = text(record.workflowPath);
+        path.append(link, document.createTextNode(" · " + text(record.workflowName)));
+      } else {
+        path.textContent = text(record.workflowPath) + " · " + text(record.workflowName);
+      }
       const deltaSection = detailSection(
         "Required changes",
         record.analysis.deltas,
@@ -604,9 +593,36 @@ export function renderDashboard(token) {
       }
     }
 
+    function shouldAutoRefresh() {
+      if (ui.state.inventoryStatus === "not-refreshed") return true;
+      if (ui.state.inventoryStatus !== "ready" || !ui.state.generatedAt) return false;
+      const generatedAt = Date.parse(ui.state.generatedAt);
+      return Number.isFinite(generatedAt) && Date.now() - generatedAt > 15 * 60 * 1000;
+    }
+
+    async function refreshInventory() {
+      byId("refresh").disabled = true;
+      setStatus("Refreshing authenticated GitHub inventory…");
+      try {
+        await api("/api/refresh", {
+          method: "POST",
+          body: JSON.stringify({ organization: ui.state.organization || "PSModule" }),
+        });
+      } catch (error) {
+        setStatus(error.message, "error");
+      } finally {
+        ui.state = await api("/api/state");
+        renderState();
+        byId("refresh").disabled = false;
+      }
+    }
+
     async function loadState() {
       ui.state = await api("/api/state");
       renderState();
+      if (shouldAutoRefresh()) {
+        await refreshInventory();
+      }
     }
 
     async function updateSelection(repositories) {
@@ -634,21 +650,7 @@ export function renderDashboard(token) {
       });
     }
 
-    byId("refresh").addEventListener("click", async () => {
-      byId("refresh").disabled = true;
-      setStatus("Refreshing authenticated GitHub inventory…");
-      try {
-        await api("/api/refresh", {
-          method: "POST",
-          body: JSON.stringify({ organization: ui.state.organization || "PSModule" }),
-        });
-      } catch (error) {
-        setStatus(error.message, "error");
-      } finally {
-        await loadState();
-        byId("refresh").disabled = false;
-      }
-    });
+    byId("refresh").addEventListener("click", refreshInventory);
     byId("search").addEventListener("input", renderRows);
     byId("filter").addEventListener("change", renderRows);
     byId("select-visible").addEventListener("click", () => updateSelection(ui.visible.map((record) => record.repository)));

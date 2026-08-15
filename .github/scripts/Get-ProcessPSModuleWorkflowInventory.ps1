@@ -659,35 +659,35 @@ function Get-WorkflowInventoryItem {
     )
 
     [pscustomobject]@{
-        Repository          = $WorkflowFile.Repository
-        DefaultBranch       = $WorkflowFile.DefaultBranch
-        Archived            = $WorkflowFile.Archived
-        RepositoryUrl       = $WorkflowFile.RepositoryUrl
-        WorkflowPath        = $WorkflowFile.WorkflowPath
-        WorkflowUrl         = $WorkflowFile.WorkflowUrl
-        SearchQuery         = $WorkflowFile.SearchQuery
-        Status              = 'Parsed'
-        Error               = $null
-        WorkflowName        = Get-MapValue -Map $workflow -Name 'name'
-        RunName             = Get-MapValue -Map $workflow -Name 'run-name'
-        Events              = @(Get-MapKey -Map $trigger | Sort-Object)
-        Schedules           = @($schedule | ForEach-Object { Get-MapValue -Map $_ -Name 'cron' })
-        PushBranches        = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'branches')
-        PushBranchesIgnore  = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'branches-ignore')
-        PushPaths           = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'paths')
-        PushPathsIgnore     = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'paths-ignore')
-        PullRequestBranches = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'branches')
-        PullRequestTypes    = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'types')
-        PullRequestPaths    = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'paths')
+        Repository             = $WorkflowFile.Repository
+        DefaultBranch          = $WorkflowFile.DefaultBranch
+        Archived               = $WorkflowFile.Archived
+        RepositoryUrl          = $WorkflowFile.RepositoryUrl
+        WorkflowPath           = $WorkflowFile.WorkflowPath
+        WorkflowUrl            = $WorkflowFile.WorkflowUrl
+        SearchQuery            = $WorkflowFile.SearchQuery
+        Status                 = 'Parsed'
+        Error                  = $null
+        WorkflowName           = Get-MapValue -Map $workflow -Name 'name'
+        RunName                = Get-MapValue -Map $workflow -Name 'run-name'
+        Events                 = @(Get-MapKey -Map $trigger | Sort-Object)
+        Schedules              = @($schedule | ForEach-Object { Get-MapValue -Map $_ -Name 'cron' })
+        PushBranches           = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'branches')
+        PushBranchesIgnore     = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'branches-ignore')
+        PushPaths              = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'paths')
+        PushPathsIgnore        = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'paths-ignore')
+        PullRequestBranches    = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'branches')
+        PullRequestTypes       = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'types')
+        PullRequestPaths       = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'paths')
         PullRequestPathsIgnore = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'paths-ignore')
-        ConcurrencyGroup    = $concurrencyGroup
-        CancelInProgress    = $cancelInProgress
-        Permissions         = $permissions
-        ProcessJobs         = @($processJobs)
-        AdditionalJobs      = @($allJobNames | Where-Object { $_ -notin $processJobNames })
-        VersionComments     = $versionComments
-        TargetReference     = $ExpectedTargetReference
-        MatchesTarget       = if ($ExpectedTargetReference) {
+        ConcurrencyGroup       = $concurrencyGroup
+        CancelInProgress       = $cancelInProgress
+        Permissions            = $permissions
+        ProcessJobs            = @($processJobs)
+        AdditionalJobs         = @($allJobNames | Where-Object { $_ -notin $processJobNames })
+        VersionComments        = $versionComments
+        TargetReference        = $ExpectedTargetReference
+        MatchesTarget          = if ($ExpectedTargetReference) {
             @($processJobs | Where-Object { -not $_.MatchesTarget }).Count -eq 0
         } else {
             $null
