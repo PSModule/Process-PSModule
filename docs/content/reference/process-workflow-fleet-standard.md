@@ -141,7 +141,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 
 | Decision | Candidate | Alternatives still open |
 | --- | --- | --- |
-| Contract scope | Standardize the `Process-PSModule` caller job and its shared workflow controls, not every job in the file. | Selected for the candidate; repository-owned jobs remain outside the caller contract. |
+| Contract scope | Keep the file identical to the canonical template except for optional `TestData`. | Selected for the candidate; repository-owned jobs use separate workflow files. |
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
 | Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
@@ -189,7 +189,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Event gate | Keep the caller unconditional and authorize capabilities in `Plan`. | The reusable workflow owns execution policy; fork pull requests may validate but cannot obtain App credentials, publish, deploy, clean up, or mutate repository state. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
-| Scope | Require one conforming `Process-PSModule` delegation job. | Additional repository-owned jobs do not change caller conformance. |
+| Scope | Require exactly the canonical `Process-PSModule` workflow file. | Repository-owned jobs use separate workflow files. |
 
 ## Allowed caller variation
 
@@ -197,9 +197,9 @@ The only conforming variation from the canonical template is the optional `TestD
 Callers use it only when module-local tests need caller-defined secrets or variables, and expose only the required
 values in the documented `secrets` and `variables` maps.
 
-Every other field in the Process-PSModule caller contract matches the template exactly. Callers do not add `with:`
-inputs, change schedule timing, add `run-name`, add a caller condition, or broaden permissions. Repository-owned jobs
-may coexist because they are outside the Process-PSModule caller contract; they do not modify the canonical call.
+Every other field in the Process-PSModule workflow file matches the template exactly. Callers do not add jobs, `with:`
+inputs, change schedule timing, add `run-name`, add a caller condition, or broaden permissions. Repository-owned
+automation uses separate workflow files.
 
 ## Variations requiring a decision
 
@@ -214,6 +214,7 @@ an approved structure:
 - a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
 - a caller-level fork or event-authorization condition;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
+- any additional job in `.github/workflows/Process-PSModule.yml`;
 - any `with:` input, including `Debug`, `ImportantFilePatterns`, `Prerelease`, `SettingsPath`, `Verbose`, `Version`, or
   `WorkingDirectory`;
 - a schedule other than the canonical `0 0 * * *`;
@@ -237,10 +238,8 @@ evaluating Settings. Privileged-context events such as
 `pull_request_target` remain unsupported unless separately designed to prevent untrusted code from crossing the
 credential boundary.
 
-The contract applies to the shared workflow controls and the `Process-PSModule` delegation job shown above. Repositories
-may define additional jobs in the same file or separate workflows. The inventory reports those jobs for visibility, but
-the contract does not prescribe their implementation. Additional jobs must not weaken or bypass the permissions,
-authorization, trigger, or concurrency controls governing the Process-PSModule call.
+The contract applies to the entire `.github/workflows/Process-PSModule.yml` file shown above. Repository-owned
+automation uses separate workflow files so the canonical caller remains directly comparable across the fleet.
 
 ## Rollout boundary
 

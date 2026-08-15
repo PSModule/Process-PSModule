@@ -16,9 +16,8 @@ The lifecycle covers dispatch recovery, scheduled published-artifact validation,
 evaluation, closed-pull-request cleanup, and stable publication after a default-branch push.
 
 The [Process-PSModule caller contract](process-workflow-fleet-standard.md) requires exactly one reusable-workflow call
-job and the shared top-level controls that govern it. Repository-owned jobs MAY exist in the same workflow file or in
-separate workflows, provided they do not weaken or bypass the call's trigger, concurrency, permissions, Plan
-authorization, or credential boundary.
+job and the shared top-level controls that govern it. The workflow file MUST match the canonical template except for
+optional `TestData`. Repository-owned automation MUST use separate workflow files.
 
 ## Functional requirements
 
@@ -319,27 +318,24 @@ Scenario: Gate a privileged job for a restricted fork run
   And it does not create an App token or parse an absent publication configuration
 ```
 
-### FR13 — Caller conformance MUST be limited to the reusable-workflow boundary {#fr13}
+### FR13 — The caller workflow file MUST match the canonical template {#fr13}
 
-A conforming caller MUST contain exactly one Process-PSModule reusable-workflow call job and the shared top-level
-triggers, concurrency, permissions, Plan authorization, and credential boundary that govern it. Repository-owned jobs
-MAY coexist in the same workflow file or in separate workflows. They MUST NOT weaken or bypass any of those controls for
-the Process-PSModule call.
+A conforming `.github/workflows/Process-PSModule.yml` MUST match the canonical template exactly except for optional
+`TestData`. Repository-owned automation MUST use separate workflow files.
 
 #### Behavioral scenarios {#fr13-scenarios}
 
 ```gherkin
-Scenario: Retain a repository-owned job beside the reusable-workflow call
-  Given a workflow contains one conforming Process-PSModule reusable-workflow call job
-  And a repository-owned documentation job exists in the same workflow file
+Scenario: Keep repository-owned automation separate
+  Given a repository needs a documentation job
   When the workflow is evaluated for caller conformance
-  Then the documentation job is reported for visibility
-  And its existence does not make the Process-PSModule call nonconforming
+  Then the documentation job exists in a separate workflow file
+  And Process-PSModule.yml still matches the canonical template
 
-Scenario: Prevent a repository-owned job from bypassing the caller boundary
-  Given a repository-owned job exists beside or outside the caller workflow
-  When it weakens or bypasses the Process-PSModule call's trigger, concurrency, permissions, Plan authorization, or credential boundary
-  Then the caller arrangement is nonconforming
+Scenario: Reject any other caller variation
+  Given Process-PSModule.yml differs from the canonical template
+  When the difference is not the optional TestData mapping
+  Then the caller is nonconforming
 ```
 
 ## Non-functional requirements

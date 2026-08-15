@@ -36,8 +36,8 @@ requested state.
 
 The [Process-PSModule caller contract](process-workflow-fleet-standard.md) contains exactly one reusable-workflow call
 job and the shared top-level triggers, concurrency, permissions, Plan authorization, and credential boundary that govern
-it. Repository-owned jobs MAY coexist in the same workflow file or in separate workflows. They are visible to
-conformance reporting and MUST NOT weaken or bypass the Process-PSModule call boundary.
+it. The file matches the canonical template except for optional `TestData`. Repository-owned automation uses separate
+workflow files.
 
 ## Event authorization
 
@@ -117,8 +117,7 @@ These explicit secret mappings are required. `secrets: inherit` is prohibited. T
 
 When present, `TestData` contains a JSON object with separate `secrets` and `variables` maps. It is omitted when
 unused. It is the only permitted variation from the canonical caller template. Callers do not declare `run-name`,
-alter the canonical schedule, add a caller condition, or pass `with:` inputs. Repository-owned jobs may coexist
-outside this caller contract.
+alter the canonical schedule, add jobs or caller conditions, or pass `with:` inputs.
 
 Built-in `GITHUB_TOKEN` authorizes checkout, repository-local reads, and standard Pages/OIDC deployment within the job
 boundary. Step-scoped GitHub App installation tokens authorize pull-request comments and labels, commit statuses and
@@ -194,7 +193,7 @@ The lifecycle is verified with event payload fixtures and publication fakes befo
 | Stable aggregation | Push, manual-dispatch, and scheduled bursts replace a pending run and prove all unreleased merged pull requests are aggregated. |
 | Caller authorization | Fixtures verify the explicit permissions and credential mappings, App-token failure, and no built-in-token fallback. |
 | Fork authorization | Fixtures verify immutable-metadata-first restricted Settings, no privileged operations, and `pull_request_target` rejection. |
-| Caller boundary | Fixtures verify repository-owned jobs remain visible without weakening or bypassing the reusable-workflow call boundary. |
+| Caller boundary | Fixtures verify exact canonical-template conformance with optional `TestData` as the only variation. |
 
 ## Related
 
