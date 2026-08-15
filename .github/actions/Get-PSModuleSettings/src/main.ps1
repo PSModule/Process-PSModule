@@ -325,7 +325,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     # Check if important files have changed in the PR
     # Important files are determined by the configured ImportantFilePatterns setting
     $hasImportantChanges = $false
-    if ($pullRequestContext.Number) {
+    if ($eventName -eq 'pull_request' -and $pullRequestContext.Number) {
         LogGroup 'Check for Important File Changes' {
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
@@ -416,10 +416,8 @@ If you believe this is incorrect, please verify that your changes are in the cor
                 $changedFiles = Get-FilesFromGitTree -Tree $tree
             } else {
                 Write-Host "Fetching changed files between [$beforeCommitSha] and [$commitSha]..."
-                $changedFiles = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/compare/$beforeCommitSha...$commitSha" -Method GET |
-                    Select-Object -ExpandProperty Response |
-                    Select-Object -ExpandProperty files |
-                    Select-Object -ExpandProperty filename
+                $comparison = (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/compare/$beforeCommitSha...$commitSha" -Method GET).Response
+                $changedFiles = Get-FilesFromGitHubComparison -Comparison $comparison
             }
 
             Write-Host "Changed files ($($changedFiles.Count)):"
@@ -633,7 +631,7 @@ $settings.Test.Module | Add-Member -MemberType NoteProperty -Name Suites -Value 
 
 # Calculate job-specific conditions and add to settings
 LogGroup 'Calculate Job Run Conditions:' {
-    $shouldAutoCleanup = $routing.ShouldCleanupEvent -and ($settings.Publish.Module.AutoCleanup -eq $true)
+    $shouldAutoCleanup = $routing.ShouldRunCleanup -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force

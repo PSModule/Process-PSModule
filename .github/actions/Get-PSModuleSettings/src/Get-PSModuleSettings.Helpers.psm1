@@ -75,6 +75,7 @@ function Resolve-WorkflowEventRouting {
             $HasImportantChanges
         )
         ShouldCleanupEvent              = $isClosedPR
+        ShouldRunCleanup                = $isClosedPR -or $shouldRelease
     }
 }
 
@@ -127,4 +128,24 @@ function Get-FilesFromGitTree {
     $Tree.tree |
         Where-Object { $_.type -eq 'blob' } |
         Select-Object -ExpandProperty path
+}
+
+function Get-FilesFromGitHubComparison {
+    <#
+        .SYNOPSIS
+        Returns files from a complete GitHub compare response.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Comparison
+    )
+
+    $files = @($Comparison.files | Where-Object { $null -ne $_ })
+    if ($files.Count -ge 300) {
+        throw 'Cannot determine changed files because the GitHub compare response reached its 300-file limit.'
+    }
+
+    $files | Select-Object -ExpandProperty filename
 }

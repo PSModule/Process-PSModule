@@ -12,6 +12,7 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.ReleaseType | Should -Be 'Release'
         $result.ShouldRunBuildTest | Should -BeTrue
         $result.ShouldCleanupEvent | Should -BeFalse
+        $result.ShouldRunCleanup | Should -BeTrue
     }
 
     It 'routes a direct push to the default branch to a stable release' {
@@ -62,6 +63,7 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.ReleaseType | Should -Be 'None'
         $result.ShouldRunBuildTest | Should -BeFalse
         $result.ShouldCleanupEvent | Should -BeTrue
+        $result.ShouldRunCleanup | Should -BeTrue
     }
 
     It 'does not run a label event for a closed PR' {
@@ -76,6 +78,7 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.IsOpenOrUpdatedPR | Should -BeFalse
         $result.ShouldRunBuildTest | Should -BeFalse
         $result.ShouldCleanupEvent | Should -BeFalse
+        $result.ShouldRunCleanup | Should -BeFalse
     }
 }
 
@@ -146,5 +149,31 @@ Describe 'Get-FilesFromGitTree' {
         }
 
         { Get-FilesFromGitTree -Tree $tree } | Should -Throw '*tree response was truncated*'
+    }
+}
+
+Describe 'Get-FilesFromGitHubComparison' {
+    It 'returns filenames from a compare response below the file limit' {
+        $comparison = [pscustomobject]@{
+            files = @(
+                [pscustomobject]@{ filename = 'src/Module.psm1' }
+                [pscustomobject]@{ filename = 'README.md' }
+            )
+        }
+
+        $result = Get-FilesFromGitHubComparison -Comparison $comparison
+
+        $result | Should -Be @('src/Module.psm1', 'README.md')
+    }
+
+    It 'rejects a compare response that reaches the file limit' {
+        $comparison = [pscustomobject]@{
+            files = @(1..300 | ForEach-Object {
+                    [pscustomobject]@{ filename = "src/File$_.ps1" }
+                })
+        }
+
+        { Get-FilesFromGitHubComparison -Comparison $comparison } |
+            Should -Throw '*compare response reached its 300-file limit*'
     }
 }

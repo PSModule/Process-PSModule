@@ -24,7 +24,7 @@ execution; other pages link here rather than repeating it.
 | **Get-TestResults**       | ✅ Yes          | ✅ Yes              | ❌ No     | ✅ Yes                    |
 | **Get-CodeCoverage**      | ✅ Yes          | ✅ Yes              | ❌ No     | ✅ Yes                    |
 | **Publish-Site**          | ❌ No           | ✅ Yes*             | ❌ No     | ✅ Yes*                   |
-| **Publish-Module**        | ✅ Prerelease†  | ✅ Stable†          | ✅ Cleanup‡ | ✅ Stable†              |
+| **Publish-Module**        | ✅ Prerelease†  | ✅ Stable†§         | ✅ Cleanup‡ | ✅ Stable†§             |
 
 - \* Only when `Publish.Site.Skip` is `false`.
 - † Requires an important change and all required build, test, and coverage gates to succeed. An open PR also requires
@@ -33,6 +33,7 @@ execution; other pages link here rather than repeating it.
   release with commit-based notes.
 - ‡ Cleans up prerelease versions and tags for the closed pull request when `Publish.Module.AutoCleanup` is enabled;
   it does not publish a stable release.
+- § A successful stable release also retries prerelease cleanup when `Publish.Module.AutoCleanup` is enabled.
 
 A job that is enabled by this matrix can still be skipped by a setting (for example `Test.Skip`) or because an open PR
 or default-branch push changed no
