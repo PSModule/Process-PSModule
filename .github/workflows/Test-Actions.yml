@@ -62,6 +62,7 @@ jobs:
           }
 
           $testPaths = Get-ChildItem -Path '.github/actions' -Directory |
+              Where-Object { $_.Name -ne 'Test-PSModule' } |
               ForEach-Object { Join-Path -Path $_.FullName -ChildPath 'tests' } |
               Where-Object { Test-Path -Path $_ }
           if (-not $testPaths) {
