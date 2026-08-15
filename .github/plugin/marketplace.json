@@ -13,7 +13,7 @@
       "name": "psmodule-process",
       "description": "PSModule process guidance and reusable skills for PowerShell module repositories.",
       "version": "1.0.0",
-      "source": "psmodule-process"
+      "source": ".github/plugin/psmodule-process"
     }
   ]
 }
