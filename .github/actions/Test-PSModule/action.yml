@@ -85,7 +85,7 @@ inputs:
     required: false
   CodeCoverage_OutputFormat:
     description: |
-      Format to use for code coverage report. Possible values: JaCoCo, CoverageGutters, Cobertura
+      Format to use for code coverage report. Possible values in Pester 6.1: JaCoCo or Cobertura.
     required: false
   CodeCoverage_OutputPath:
     description: |
@@ -113,7 +113,7 @@ inputs:
     required: false
   CodeCoverage_UseBreakpoints:
     description: |
-      EXPERIMENTAL: When false, use Profiler based tracer to do CodeCoverage instead of using breakpoints.
+      When false, use the profiler-based tracer instead of breakpoints for code coverage.
     required: false
   CodeCoverage_SingleHitBreakpoints:
     description: |
