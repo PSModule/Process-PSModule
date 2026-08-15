@@ -8,6 +8,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 function Get-CommitShaForTag {
+    <#
+    .SYNOPSIS
+    Resolves a GitHub release tag to its commit SHA.
+    #>
     [OutputType([string])]
     param(
         [Parameter(Mandatory)]
@@ -33,6 +37,10 @@ function Get-CommitShaForTag {
 }
 
 function Get-LatestActionPin {
+    <#
+    .SYNOPSIS
+    Gets the latest release tag and commit SHA for a GitHub Action.
+    #>
     [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory)]
