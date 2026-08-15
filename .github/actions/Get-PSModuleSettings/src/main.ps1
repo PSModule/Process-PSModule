@@ -203,6 +203,9 @@ $settings = [pscustomobject]@{
             UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
         }
+        Site   = [pscustomobject]@{
+            Skip = $settings.Publish.Site.Skip ?? $false
+        }
     }
     Linter                = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
@@ -688,10 +691,10 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
-    $settings.Publish | Add-Member -MemberType NoteProperty -Name Site -Value ([pscustomobject]@{
-            Desired = $releaseType -eq 'Release'
-            Enabled = $releaseType -eq 'Release'
-        }) -Force
+    $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Desired -Value ($releaseType -eq 'Release') -Force
+    $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value (
+        $releaseType -eq 'Release' -and -not $settings.Publish.Site.Skip
+    ) -Force
 
     $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasImportantChanges
 

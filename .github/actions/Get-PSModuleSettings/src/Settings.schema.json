@@ -196,6 +196,16 @@
               "description": "The type of release to create: Release (stable), Prerelease, or None."
             }
           }
+        },
+        "Site": {
+          "type": "object",
+          "description": "Documentation site publish configuration",
+          "properties": {
+            "Skip": {
+              "type": "boolean",
+              "description": "Skip publishing the generated documentation site"
+            }
+          }
         }
       }
     },

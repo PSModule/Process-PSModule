@@ -58,6 +58,7 @@ For worked examples, see [Configuring the pipeline](../guides/configuring-the-pi
 | `Build.Docs.Skip`                         | `Boolean` | Skip documentation build                                                                                                                                             | `false`             |
 | `Build.Docs.ShowSummaryOnSuccess`         | `Boolean` | Show super-linter summary on success for documentation linting                                                                                                       | `false`             |
 | `Build.Site.Skip`                         | `Boolean` | Skip site build                                                                                                                                                      | `false`             |
+| `Publish.Site.Skip`                       | `Boolean` | Skip publishing the generated documentation site                                                                                                                     | `false`             |
 | `Publish.Module.Skip`                     | `Boolean` | Skip module publishing                                                                                                                                               | `false`             |
 | `Publish.Module.AutoCleanup`              | `Boolean` | Automatically clean up old prerelease tags when merging to main or when a PR is abandoned                                                                            | `true`              |
 | `Publish.Module.AutoPatching`             | `Boolean` | Automatically patch module version                                                                                                                                   | `true`              |
@@ -137,6 +138,8 @@ Test:
     StepSummaryMode: 'Missed, Files'
 
 Publish:
+  Site:
+    Skip: false
   Module:
     Skip: false
     AutoCleanup: true
