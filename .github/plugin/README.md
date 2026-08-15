@@ -1,8 +1,17 @@
 # PSModule process plugin
 
-This repository hosts the canonical `psmodule-process` GitHub Copilot CLI
-plugin. The shared MSXOrg marketplace publishes this plugin alongside the
-other initiative plugins.
+This repository hosts the `psmodule` GitHub Copilot CLI marketplace and its
+`psmodule-process` plugin. The marketplace and plugin are owned and released
+with the PSModule process.
+
+## Install through the marketplace
+
+Register this repository's marketplace and install the plugin:
+
+```console
+copilot plugin marketplace add https://github.com/PSModule/Process-PSModule.git
+copilot plugin install psmodule-process
+```
 
 ## Install directly
 
@@ -22,7 +31,6 @@ copilot plugin list
 /skills list
 ```
 
-The shared marketplace is maintained in
-[MSXOrg/docs](https://github.com/MSXOrg/docs/tree/main/.github/plugin).
-Plugin metadata is in
+The marketplace catalog is in [`marketplace.json`](./marketplace.json), and
+plugin metadata is in
 [`plugin.json`](./plugins/psmodule-process/plugin.json).
