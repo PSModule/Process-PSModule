@@ -14,12 +14,22 @@ The migration covers repository and test-set inventory, supported PowerShell
 runtime and CI checks, per-file discovery and run isolation, hidden paths,
 data-driven tests, setup blocks, mocks, pending tests, name templates,
 coverage, `Invoke-Pester` configuration, reserved tags, and validation
-reporting. It does not migrate consumer repositories as part of this framework
-change.
+reporting. It also defines the test-state/data contract: module-local tests
+consume the target module already loaded by Process-PSModule and explicitly
+load any PSD1 or other fixture data. They must not silently import the module as
+a substitute for framework setup. It does not migrate consumer repositories as
+part of this framework change.
 
 ## Required before declaring a migration complete
 
 - Every test entry point is inventoried and runs on its supported runtime matrix.
+- The target module is loaded by the framework before module-local Pester tests;
+  tests do not hide a missing load with `Import-Module`.
+- Every PSD1, JSON, CSV, XML, script, generated fixture, secret, variable, and
+  service dependency has an owner and explicit loading phase.
+- `Invoke-Pester`, `Test-PSModule`, module-local/source workflows,
+  `BeforeAll`/`AfterAll`, `Expose-TestData`, result/coverage collectors, and
+  linter result publishing are included in the repository inventory.
 - Pester 6.1.0 is imported in local and CI acceptance runs.
 - Each test file is self-contained under per-file discovery and run.
 - Hidden paths, empty data, duplicate setup blocks, mocks, pending tests, name

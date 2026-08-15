@@ -86,6 +86,96 @@ For each test set, add an inventory row to the migration report:
 Use the inventory to find test sets that are not reachable from the default
 workflow. A green workflow is not evidence that every test set was migrated.
 
+## Test-state and data contract
+
+Treat the test runner's prepared state as a contract, not an implementation
+detail. A module-local Pester test must assume that the target, built module is
+already loaded by the framework. It must not silently call `Import-Module`,
+`Install-Module`, `Install-PSModule`, or dot-source the target module as a
+fallback when the framework did not prepare it. A hidden import can make local
+tests pass while the real workflow is misconfigured and can change the module
+version or process state being tested.
+
+This does not prohibit a test whose explicit subject is module import,
+manifest validity, or module removal. Such a framework or contract test should
+say so in its name and use a deliberate, isolated import as the behavior under
+test. It must not become setup for unrelated tests.
+
+Every additional fixture is also part of the test-state contract. A test set
+must explicitly load its own JSON, CSV, XML, PSD1, script, or generated data,
+or document which setup phase provides it. In particular, a PSD1 dataset is
+not automatically loaded because it is in the repository:
+
+```powershell
+BeforeDiscovery {
+    $cases = Import-PowerShellDataFile -Path (Join-Path $PSScriptRoot 'Data\Cases.psd1')
+}
+```
+
+Record fixture ownership and availability in the inventory:
+
+| Fixture or state | Owner | Loaded in | Required environment |
+| --- | --- | --- | --- |
+| Target module | Process-PSModule or explicit contract test | Framework pre-run | Built module path and version |
+| PSD1/JSON/CSV data | Test set or documented setup | `BeforeDiscovery`, `BeforeAll`, or setup job | Relative path and encoding |
+| Secrets/variables | Calling workflow | `Expose-TestData` and environment | `TestData` JSON contract |
+| Shared service | `tests/BeforeAll.ps1` | Before module-local matrix | Deterministic run-scoped name |
+| Cleanup state | `tests/AfterAll.ps1` | Always-run teardown | Same `TestData` and run identity |
+
+Fail loudly when required data or state is absent. Do not use a broad
+`try/catch`, an empty default, or an implicit import to turn a missing fixture
+into a passing or skipped test.
+
+## Process-PSModule test-adjacent surfaces
+
+For every consumer repository, trace and record these surfaces before editing:
+
+| Surface | Framework contract to verify | Migration check |
+| --- | --- | --- |
+| `PSModule/Invoke-Pester` | Installs/runs Pester and emits per-suite JSON results and coverage artifacts | Pin/verify Pester 6.1.0, map all inputs to v6 configuration, preserve suite names |
+| `Test-PSModule` action | Selects `tests/Module` or `tests/SourceCode`, resolves `outputs/module` or `src`, and passes paths to `Invoke-Pester` | Confirm path selection, exclusions, module state, and test extension |
+| Module-local workflow | Downloads the built module, exposes `TestData`, imports the module, then runs module tests | Tests consume the prepared module; no hidden fallback import |
+| Source-code workflow | Runs source tests against the checked-out `src` path | Record how source functions/classes are loaded and which fixtures are explicit |
+| `BeforeAll-ModuleLocal` | Runs exact root `tests/BeforeAll.ps1` once before module-local jobs | Put shared services/data here only when every matrix job needs them |
+| `AfterAll-ModuleLocal` | Runs exact root `tests/AfterAll.ps1` with `always()` | Make cleanup safe after setup/test failure |
+| `Expose-TestData` | Converts caller `TestData` JSON into environment variables | Inventory every required variable; do not confuse it with repository fixtures |
+| `Get-PesterTestResults` | Downloads `*-TestResults`, expects every configured suite, and fails missing/unexecuted/failed/inconclusive results | Preserve `TestSuiteName`, matrix names, and result counts |
+| `Get-PesterCodeCoverage` | Aggregates `*-CodeCoverage` JSON and writes missed-path reports and summaries | Verify JaCoCo/Cobertura format, target, paths, and v6 tracer behavior |
+| `Invoke-ScriptAnalyzer` integration | Publishes `PSModuleLint-*` results alongside test results | Treat lint suites as required result artifacts, not Pester test files |
+| Repository linter | Checks repository/workflow/Markdown files independently of Pester | Include skill and documentation paths in the repository lint inventory |
+
+The current Process-PSModule flow specifically downloads the built module and
+imports it before module-local tests, while `Test-PSModule` resolves source or
+module paths for framework suites. The framework's own importability and
+manifest tests may import/remove the module because import is their subject;
+ordinary consumer tests must not copy that pattern as setup.
+
+Record the `PSModule/Invoke-Pester` action revision separately from the Pester
+module version. The current Process-PSModule workflows reference that action at
+`v5.1.0`; its revision and its Pester installation policy must both be checked
+when adopting Pester 6.1.0. Updating one does not prove that the other changed.
+
+Use this per-repository checklist:
+
+- [ ] All `*.Tests.ps1`, `*.Configuration.ps1`, and `*.Container.ps1` files,
+  including action and hidden paths, are listed.
+- [ ] Each test set is mapped to `Module`, `SourceCode`, action, or external
+  invocation and its `Run.Path`/`Run.ExcludePath` is recorded.
+- [ ] The built target module is loaded by the framework before module-local
+  tests; tests do not silently load it themselves.
+- [ ] Source-code test loading is explicit and documented separately from the
+  module-local contract.
+- [ ] Every PSD1, JSON, CSV, XML, script, generated fixture, secret, variable,
+  and service dependency has an owner and loading phase.
+- [ ] `BeforeAll.ps1`, `AfterAll.ps1`, and `Pester.BeforeContainer.ps1` paths
+  and scope are recorded.
+- [ ] `Invoke-Pester` action inputs, Pester version, suite names, result paths,
+  coverage paths, filters, and output formats are recorded.
+- [ ] `Get-PesterTestResults` expected artifact names include source, framework,
+  module, and linter suites.
+- [ ] Coverage aggregation and its missed-path report are validated.
+- [ ] Local, CI, and linter runs use the same intended fixture and module state.
+
 ## Step 2: Check versions, runtime, and CI
 
 Run the baseline on the current version before changing files. Save the command,
@@ -135,7 +225,8 @@ BeforeDiscovery {
 }
 
 BeforeAll {
-    Import-Module (Join-Path $PSScriptRoot '..\src\MyModule.psd1') -Force
+    # Consume the module loaded by the framework.
+    $command = Get-Command -Name Get-MyThing -ErrorAction Stop
 }
 
 Describe 'My command' {
@@ -145,8 +236,10 @@ Describe 'My command' {
 }
 ```
 
-Use `$PSScriptRoot` for paths. Do not rely on `$MyInvocation.MyCommand.Path`,
-the current directory, another test file's variables, or discovery order.
+Use `$PSScriptRoot` for fixture paths. Do not rely on
+`$MyInvocation.MyCommand.Path`, the current directory, another test file's
+variables, or discovery order. If the command check fails, fix the workflow's
+module preparation rather than adding an import to this test.
 Repository-wide bootstrap that every worker needs belongs in
 `Pester.BeforeContainer.ps1` at the repository root. Keep it deterministic and
 idempotent.
