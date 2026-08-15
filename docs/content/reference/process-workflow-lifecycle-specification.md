@@ -165,29 +165,23 @@ Scenario: Retry a publication after an interrupted run
   And it does not duplicate the package, tag, or release
 ```
 
-### NFR2 — Cancellation MUST be conditional on an explicit mutability mode {#nfr2}
+### NFR2 — Pull-request cancellation MUST preserve non-pull-request serialization {#nfr2}
 
-A run explicitly classified as read-only pull-request CI SHOULD cancel a superseded `opened`, `reopened`, or `synchronize` run for the same pull request. A run that may publish to the PowerShell Gallery, create or upload a GitHub Release or tag, deploy Pages, or clean up prereleases MUST NOT be canceled. Caller-level label inspection MUST NOT determine mutability because repository settings can change the release decision. Manual and scheduled runs sharing a ref MUST NOT cancel a default-branch release.
+All pull-request events for one pull request MUST share a cancellation scope, so a newer pull-request event cancels a superseded run. Push, manual dispatch, and scheduled runs MUST share ref-based serialization and MUST NOT cancel an in-progress run.
 
 #### Behavioral scenarios {#nfr2-scenarios}
 
 ```gherkin
-Scenario: Supersede read-only pull-request CI
-  Given an explicitly read-only pull-request CI run is in progress
-  When a newer synchronize event starts the same read-only route
-  Then the older run may be canceled
-  And no release-related resource is mutated by either run
+Scenario: Supersede a pull-request run
+  Given a pull-request run is in progress
+  When a newer synchronize, label, unlabel, or close event starts
+  Then the older pull-request run is canceled
 
-Scenario: Preserve a release-capable run
-  Given a run may publish, deploy, or clean up prereleases
-  When a newer event starts
-  Then the release-capable run is not canceled
-  And the newer event does not infer safety from pull-request labels alone
-
-Scenario: Keep main release independent from manual and scheduled runs
+Scenario: Serialize non-pull-request runs
   Given a default-branch release is in progress
   When a manual dispatch or scheduled validation starts for the same ref
-  Then neither event cancels the default-branch release
+  Then the later run waits for the default-branch release
+  And neither run cancels the other
 ```
 
 ### NFR3 — Each lifecycle outcome MUST be auditable {#nfr3}
@@ -205,6 +199,40 @@ Scenario: Inspect a scheduled validation result
   And it identifies that no release mutation occurred
 ```
 
+### NFR4 — Pull-request mutation paths MUST resume and converge {#nfr4}
+
+Every pull-request path, including prerelease publication and cleanup, MUST be idempotent and resumable after cancellation. The next `synchronize`, `labeled`, `unlabeled`, or `closed` event MUST converge release-related state to the latest pull-request state. Cancellation MAY leave transient partial state, but it MUST NOT leave a permanent duplicate or obsolete artifact.
+
+#### Behavioral scenarios {#nfr4-scenarios}
+
+```gherkin
+Scenario: Resume a canceled prerelease publication
+  Given a canceled pull-request run published a prerelease package but did not finish its release metadata
+  When a later pull-request event is processed
+  Then the workflow detects the existing version
+  And it completes or reconciles the prerelease release state without duplication
+
+Scenario: Reconcile obsolete prereleases
+  Given a canceled pull-request run left prerelease artifacts for an earlier pull-request state
+  When a synchronize, label, unlabel, or close event is processed
+  Then the workflow reconciles prerelease artifacts to the latest pull-request state
+  And no obsolete prerelease artifact remains after reconciliation
+```
+
+### NFR5 — Pull-request events MUST NOT produce production artifacts {#nfr5}
+
+A pull-request event MUST NOT create a stable or signable production artifact. Pull-request events MAY create only eligible prerelease artifacts and their associated metadata.
+
+#### Behavioral scenarios {#nfr5-scenarios}
+
+```gherkin
+Scenario: Evaluate an eligible prerelease pull request
+  Given a pull request is eligible for prerelease publication
+  When its release-capable path completes
+  Then it creates only prerelease artifacts and metadata
+  And it does not create a stable or signable production artifact
+```
+
 ## Cross-cutting acceptance criteria
 
 ### AC1 — Verifies: [FR1](#fr1), [FR6](#fr6), [FR7](#fr7), [NFR1](#nfr1)
@@ -219,14 +247,15 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR5](#fr5), [FR6](#fr6), [NFR2](#nfr2), [NFR3](#nfr3)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5)
 
 ```gherkin
-Scenario: Lifecycle runs preserve release ownership
+Scenario: Lifecycle runs preserve release ownership after cancellation
   Given a scheduled validation and an abandoned pull-request cleanup overlap a main-push release
+  And the cleanup supersedes a canceled prerelease publication
   When all three runs complete
   Then the scheduled run reports validation without a release mutation
-  And the cleanup affects only the abandoned pull request's prereleases
+  And the cleanup reconciles only the abandoned pull request's prereleases
   And none of the runs cancel the main-push release
   And the main-push run is the only run that publishes the stable release and performs promotion cleanup
 ```
