@@ -19,32 +19,42 @@ The current code detects an existing published version, resumes GitHub Release c
 
 ## Candidate event routing
 
-The planner classifies the caller event before build and publication work begins. Each route produces one of three mutation classes: validation only, prerelease mutation, or stable-release mutation. Pull-request events may cancel their predecessors, so every pull-request route must converge to the latest pull-request state.
+Plan resolves the caller event into one release classification before build and publication work begins. The classification is stable release, prerelease, recovery or resume, cleanup-only, or no-op. Pull-request events may cancel their predecessors, so every pull-request route must converge to the latest pull-request state.
 
-| Event | Candidate route | Mutation class | Cancellation | Required result |
+| Event | Candidate Plan classification | Desired release action | Cancellation | Required result |
 | --- | --- | --- | --- | --- |
-| `workflow_dispatch` on the default branch | Recovery release | Stable release or explicit no-op | Never cancel | Rebuild and validate the selected commit; reconstruct the unreleased release notes. |
-| `schedule` | Published-artifact validation | Validation only | Never cancel | Validate the latest published stable artifact and its documentation. |
-| Pull request `opened`, `reopened`, `synchronize` | Pull-request CI | Validation only | Cancels a superseded pull-request run; the later run converges state | Report configured validation on the pull request. |
-| Pull request `labeled`, `unlabeled` | Prerelease evaluation | Prerelease or validation only | Cancels a superseded pull-request run; the later run converges state | Re-evaluate the full label set and publish only an eligible prerelease. |
-| Merged pull request `closed` | Post-merge close | Validation only | Cancels a superseded pull-request run; the later run converges state | Do not clean up; the successful main-push release owns promotion cleanup. |
-| Abandoned pull request `closed` | Pull-request cleanup | Prerelease cleanup only | Cancels a superseded pull-request run; the later run converges state | Remove only prereleases owned by the abandoned pull request. |
+| `workflow_dispatch` on the default branch | Recovery or resume | Stable release or no-op | Never cancel | Rebuild and validate the selected commit; reconstruct the unreleased release notes. |
+| `schedule` | Published-artifact validation | No-op after validation | Never cancel | Validate the latest published stable artifact and its documentation. |
+| Pull request `opened`, `reopened`, `synchronize` | Pull-request classification | Prerelease or no-op | Cancels a superseded pull-request run; the later run converges state | Report configured validation and execute the planned release action. |
+| Pull request `labeled`, `unlabeled` | Pull-request classification refresh | Prerelease, cleanup-only, or no-op | Cancels a superseded pull-request run; the later run converges state | Resolve the complete current classification and execute its action. |
+| Merged pull request `closed` | Post-merge close | No-op | Cancels a superseded pull-request run; the later run converges state | Do not clean up; the successful main-push release owns promotion cleanup. |
+| Abandoned pull request `closed` | Abandoned-close classification | Cleanup-only | Cancels a superseded pull-request run; the later run converges state | Reconcile only prereleases owned by the abandoned pull request. |
 | Push to the default branch | Stable release | Stable release | Never cancel | Resolve merged-pull-request intent when applicable, then publish and perform promotion cleanup after required gates. |
 
-The classifier records the route, mutable resource scope, commit identity, and release decision in the plan result. Downstream jobs consume that record rather than infer the event again.
+Plan records its classification and release decision in enriched Settings. Downstream jobs consume that Settings object and do not infer policy from events, labels, or repository settings again.
 
 ## Candidate artifact and version boundary
 
-Version resolution is the boundary between planning and release-capable work. The candidate carries one immutable release record through build, test, and publication:
+Version resolution is the boundary between planning and release-capable work. The candidate carries one immutable release record in enriched Settings through build, test, and release execution:
 
 | Record field | Purpose |
 | --- | --- |
-| Commit identity | Binds validation, artifact, and release to one source revision. |
-| Resolved stable version and prerelease identity | Defines the only version permitted in the built artifact. |
-| Event route and mutation class | Restricts each downstream stage to its authorized behavior. |
-| Release-note range | Identifies the merged pull requests eligible for a recovery release note. |
+| Event and run type | Identifies the GitHub event and its candidate lifecycle classification. |
+| Event action | Preserves the relevant pull-request activity or non-pull-request action. |
+| Pull-request identity, state, and merged status | Distinguishes active, merged, and abandoned pull-request outcomes. |
+| Labels and repository settings result | Captures the input policy state used only by Plan. |
+| Version bump and base version | Explains the selected version transition. |
+| Manifest version, prerelease identifier, and full version or tag | Defines the only version and tag permitted in the built artifact and release. |
+| Target commit | Binds validation, artifact, and release to one source revision. |
+| Desired release action and create or publish flags | Selects stable release, prerelease, recovery or resume, cleanup-only, or no-op. |
+| Cleanup intent and artifact identity | Defines the exact artifacts that release execution may reconcile. |
+| Release-note source and boundary | Identifies the merged pull requests eligible for a recovery release note. |
 
-The build stage stamps the resolved version into the module artifact. Before any package, tag, or release becomes visible, the publication stage verifies that the artifact version and prerelease identity equal the immutable release record. A mismatch stops publication; it is not corrected by retagging or by recalculating a version after the artifact is built.
+The build stage stamps exactly the planned manifest version and prerelease identifier into the module artifact. Before any package, tag, or release becomes visible, release execution verifies that the artifact equals the immutable Settings record. A mismatch stops execution; it is not corrected by retagging or by recalculating a version after the artifact is built.
+
+## Candidate general release execution
+
+One general module release action or reusable workflow consumes enriched Settings after validation. It handles stable release, prerelease, recovery or resume, cleanup-only, and no-op actions according to the planned desired release action and flags. It verifies the artifact when an artifact is required and reconciles only the requested state. It does not recompute versioning, labels, event routing, or cleanup policy.
 
 ## Candidate manual recovery
 

@@ -78,9 +78,9 @@ Scenario: Validate a synchronized pull request
   And it does not publish a stable version
 ```
 
-### FR4 — Label changes MUST re-evaluate prerelease eligibility {#fr4}
+### FR4 — Label changes MUST refresh the planned release classification {#fr4}
 
-A `labeled` or `unlabeled` pull-request event targeting the default branch MUST re-evaluate prerelease eligibility from the complete current label set. A prerelease publication MUST occur only when the pull request is eligible and every required validation succeeds.
+A `labeled` or `unlabeled` pull-request event targeting the default branch MUST refresh the complete planned release classification from the current label set and repository settings. A prerelease publication MUST occur only when the planned classification is prerelease and every required validation succeeds.
 
 #### Behavioral scenarios {#fr4-scenarios}
 
@@ -88,13 +88,13 @@ A `labeled` or `unlabeled` pull-request event targeting the default branch MUST 
 Scenario: Add prerelease eligibility
   Given a validated pull request has no prerelease eligibility
   When a prerelease label is added
-  Then the workflow re-evaluates the pull request
+  Then the plan resolves the pull request as prerelease eligible
   And it publishes at most one eligible prerelease version
 
 Scenario: Remove prerelease eligibility
   Given a pull request has prerelease eligibility
   When its prerelease label is removed
-  Then the workflow re-evaluates the pull request as ineligible
+  Then the plan resolves the pull request as prerelease ineligible
   And it does not create a new prerelease version
 ```
 
@@ -134,15 +134,15 @@ Scenario: Publish a merged pull request
   And the successful release performs promotion cleanup
 ```
 
-### FR7 — Published artifacts MUST match the resolved version {#fr7}
+### FR7 — Published artifacts MUST match the planned version {#fr7}
 
-Every prerelease or stable publication MUST contain the version and prerelease identity resolved for its workflow run. A version mismatch MUST fail publication before the release is made visible.
+Every prerelease or stable publication MUST contain the version and prerelease identity in the planned release decision. A version mismatch MUST fail publication before the release is made visible.
 
 #### Behavioral scenarios {#fr7-scenarios}
 
 ```gherkin
 Scenario: Reject an incorrectly stamped artifact
-  Given a workflow resolves a release version
+  Given the plan resolves a release version
   And the built artifact reports a different version
   When publication is attempted
   Then publication fails
@@ -166,6 +166,26 @@ Scenario: Publish prereleases for distinct pull requests
   Given two pull requests are eligible for prerelease publication
   When both pull requests are processed
   Then each pull request resolves a distinct prerelease identity
+```
+
+### FR9 — Lifecycle policy MUST be resolved once before downstream work {#fr9}
+
+The plan MUST resolve the lifecycle policy before build, test, or release execution begins. Downstream work MUST consume that planned policy and MUST NOT reinterpret event data, labels, or repository settings.
+
+#### Behavioral scenarios {#fr9-scenarios}
+
+```gherkin
+Scenario: Execute a planned prerelease action
+  Given the plan resolves a pull request as an eligible prerelease publication
+  When downstream work executes
+  Then it consumes the planned release action and version
+  And it does not re-evaluate pull-request labels or event data
+
+Scenario: Execute a planned cleanup-only action
+  Given the plan resolves an abandoned pull-request close as cleanup only
+  When release execution runs
+  Then it reconciles only the planned cleanup state
+  And it does not create or publish an artifact
 ```
 
 ## Non-functional requirements
@@ -288,7 +308,7 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6)
 
 ```gherkin
 Scenario: Lifecycle runs preserve release ownership after cancellation
