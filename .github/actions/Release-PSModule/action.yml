@@ -37,6 +37,14 @@ inputs:
   ReleaseTag:
     description: Full GitHub release tag resolved by Resolve-PSModuleVersion.
     required: true
+  PullRequest:
+    description: Normalized pull request context JSON from Get-PSModuleSettings.
+    required: false
+    default: ''
+  CommitSha:
+    description: Commit SHA that produced the module artifact. Stable tags target this exact commit.
+    required: false
+    default: ''
 
 outputs:
   ReleaseTag:
@@ -70,4 +78,6 @@ runs:
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
         PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag: ${{ inputs.ReleaseTag }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest: ${{ inputs.PullRequest }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha: ${{ inputs.CommitSha || github.sha }}
       run: ${{ github.action_path }}/src/release.ps1

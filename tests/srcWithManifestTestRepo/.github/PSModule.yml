@@ -10,6 +10,8 @@ Test:
   CodeCoverage:
     PercentTarget: 1
 Publish:
+  Site:
+    Skip: true
   Module:
     AutoCleanup: false
 Linter:

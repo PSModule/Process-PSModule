@@ -22,6 +22,8 @@ BeforeAll {
         'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName'
         'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading'
         'PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha'
     )
     $script:originalEnvironment = @{}
     foreach ($name in $script:environmentVariableNames) {
@@ -34,6 +36,7 @@ AfterAll {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
     Remove-Item -Path function:global:gh -ErrorAction SilentlyContinue
+    Remove-Item -Path function:global:git -ErrorAction SilentlyContinue
 }
 
 Describe 'Release-PSModule WhatIf' {
@@ -88,6 +91,8 @@ Describe 'Release-PSModule WhatIf' {
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName = 'false'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading = 'true'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.3-preview.1'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = ''
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = ''
     }
 
     It 'creates a prefixed prerelease tag without GitHub side effects' {
@@ -121,5 +126,35 @@ Describe 'Release-PSModule WhatIf' {
         $ghCalls | Should -Match 'pr comment 42'
         $ghCalls | Should -Not -Match 'release create'
         Get-Content -Path $script:githubOutputPath | Should -Contain 'ReleaseTag=v1.2.3-preview.1'
+    }
+
+    It 'creates a stable release from a direct push without pull request context' {
+        $manifest = Get-Content -Path $manifestPath -Raw
+        $manifest -replace "Prerelease = 'preview.1'", "Prerelease = ''" | Set-Content -Path $manifestPath
+        @{ head_commit = @{ message = 'Publish direct push release' } } |
+            ConvertTo-Json -Depth 5 | Set-Content -Path $eventPath
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.3'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'pushed-commit-sha'
+
+        $releaseOutput = & $script:releaseScriptPath 6>&1 | Out-String
+
+        Get-Content -Path $script:githubOutputPath | Should -Contain 'ReleaseTag=v1.2.3'
+        $releaseOutput | Should -Match '--target pushed-commit-sha'
+    }
+
+    It 'uses the checked-out commit message for a manual dispatch' {
+        $manifest = Get-Content -Path $manifestPath -Raw
+        $manifest -replace "Prerelease = 'preview.1'", "Prerelease = ''" | Set-Content -Path $manifestPath
+        @{} | ConvertTo-Json | Set-Content -Path $eventPath
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.3'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'dispatched-commit-sha'
+        Set-Item -Path function:global:git -Value {
+            $global:LASTEXITCODE = 0
+            'Publish manual dispatch release'
+        }
+
+        $releaseOutput = & $script:releaseScriptPath 6>&1 | Out-String
+
+        $releaseOutput | Should -Match 'Using the pushed commit message as release notes'
     }
 }

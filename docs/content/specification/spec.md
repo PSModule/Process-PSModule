@@ -7,7 +7,7 @@ description: Requirements for Process-PSModule — an end-to-end PowerShell modu
 
 ## Premise
 
-A PowerShell module's lifecycle — from source code to versioned, published artifact — MUST be reliable, repeatable, and as automated as possible. Contributors focus on code and tests; the pipeline focuses on build, test, quality, documentation, and release. The pipeline MUST be driven entirely by pull-request labels and merge events, never by manual intervention or external tooling. The result is a versioned, immutable artifact — a module package in the PowerShell Gallery and its documentation site — paired with a GitHub Release and a git tag.
+A PowerShell module's lifecycle — from source code to versioned, published artifact — MUST be reliable, repeatable, and as automated as possible. Contributors focus on code and tests; the pipeline focuses on build, test, quality, documentation, and release. The pipeline MUST use GitHub pull-request labels and default-branch pushes for release decisions, with direct pushes and workflow dispatch as supported GitHub-native release paths. The result is a versioned, immutable artifact — a module package in the PowerShell Gallery and its documentation site — paired with a GitHub Release and a git tag.
 
 ### Principles
 
@@ -43,7 +43,11 @@ The pipeline MUST generate module documentation from the source (cmdlet help, RE
 
 ### FR5 — Support label-driven versioning and publication { #fr5 }
 
-The pipeline MUST read pull-request labels (`Major`, `Minor`, `Patch`, `Prerelease`, `NoRelease`) to decide the semantic-version bump. It MUST compute the next version automatically, never reading or writing a hand-edited version file. A merge to the release branch MUST trigger publication to the PowerShell Gallery and documentation site; a prerelease label MUST result in a prerelease version available for testing before stable release.
+The pipeline MUST read pull-request labels (`Major`, `Minor`, `Patch`, `Prerelease`, `NoRelease`) to decide the
+semantic-version bump when the merged pull request exactly matches a default-branch push. It MUST compute the next
+version automatically, never reading or writing a hand-edited version file. An important push to the release branch
+MUST trigger publication to the PowerShell Gallery and documentation site; a prerelease label MUST result in a
+prerelease version available for testing before stable release.
 
 ### FR6 — Produce immutable, linkable releases { #fr6 }
 
@@ -78,7 +82,7 @@ The entire pipeline and its decisions MUST be stored in git, so the build is rep
 ```gherkin
 Scenario: Merge a valid pull request to main
   Given a pull request with passing tests and quality gates
-  When the PR is merged to main
+  When its merge commit is pushed to main
   Then the module is built
   And all tests pass on all configured platforms
   And code coverage meets the configured threshold
@@ -87,9 +91,10 @@ Scenario: Merge a valid pull request to main
 ### Version computation
 
 ```gherkin
-Scenario: Compute the next version from the PR label
+Scenario: Compute the next version from the merged PR label
   Given a pull request with the label "Minor"
-  When the PR is merged to main and the current version is v1.2.3
+  And its merge commit is pushed to main
+  And the current version is v1.2.3
   Then the new version is computed as v1.3.0
 
 Scenario: Reject ambiguous version labels
@@ -103,7 +108,7 @@ Scenario: Reject ambiguous version labels
 ```gherkin
 Scenario: Publish a module after a stable release
   Given a merged PR to main with a version bump label
-  When the build completes successfully
+  When its merge commit is pushed to main and the build completes successfully
   Then a new version is published to the PowerShell Gallery
   And a GitHub Release is created
   And a git tag is pushed
@@ -121,7 +126,7 @@ Scenario: Publish a prerelease version
 
 Scenario: Promote a prerelease to stable
   Given a prerelease PR that is merged to main with a version label
-  When the PR is merged
+  When its merge commit is pushed to main
   Then a stable version is computed (e.g., v1.3.0) based on the label and the current main version
   And the stable version is published
 ```

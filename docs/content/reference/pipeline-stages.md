@@ -132,8 +132,11 @@ How to write these tests, including the Pester version requirement and shared-in
 
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Publish-Module.yml)
 
+- An important default-branch push is the only stable-publication authority. A closed pull request performs
+  prerelease cleanup only.
 - Publishes the artifact to the PowerShell Gallery exactly as built — no version mutation.
-- Creates a GitHub Release using the version already stamped in the manifest.
+- Creates a GitHub Release only after the Gallery publication succeeds, targeting the exact tested push SHA and using
+  the version already stamped in the manifest.
 - Attaches the built module as a `.zip` asset on the GitHub Release so consumers can download the exact bytes that were tested and pushed to the PowerShell Gallery.
 - **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
   prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned
