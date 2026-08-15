@@ -101,6 +101,28 @@ manifest validity, or module removal. Such a framework or contract test should
 say so in its name and use a deliberate, isolated import as the behavior under
 test. It must not become setup for unrelated tests.
 
+### Build, load, and interface boundary
+
+The normal module-local execution sequence is:
+
+1. Process-PSModule builds the module from `src/`.
+2. The framework prepares and loads that built module for the test job.
+3. Pester runs the module-local test files against the prepared module.
+4. Results and coverage are collected for the configured suite.
+
+Module-local tests validate the module's **public interface**: exported
+functions, exported aliases, public classes, public variables, documented
+formats, and observable behavior. They must not call private functions,
+private variables, internal classes, or implementation scripts directly.
+Private implementation is covered indirectly through public behavior. This
+keeps tests stable when internals are refactored and proves that the shipped
+module artifact works for consumers.
+
+Source-code or framework suites may inspect internal files when that is their
+explicit purpose, but they are a separate test surface. Do not use source-code
+access as setup for module-local tests, and do not interpret source-suite
+coverage as proof that the public module artifact is usable.
+
 Every additional fixture is also part of the test-state contract. A test set
 must explicitly load its own JSON, CSV, XML, PSD1, script, or generated data,
 or document which setup phase provides it. In particular, a PSD1 dataset is
@@ -117,6 +139,8 @@ Record fixture ownership and availability in the inventory:
 | Fixture or state | Owner | Loaded in | Required environment |
 | --- | --- | --- | --- |
 | Target module | Process-PSModule or explicit contract test | Framework pre-run | Built module path and version |
+| Public interface | Module-local test set | Pester after framework module load | Exported commands/classes and observable behavior |
+| Private implementation | Source/framework suite only when explicitly required | Separate source-test setup | Never a module-local test dependency |
 | PSD1/JSON/CSV data | Test set or documented setup | `BeforeDiscovery`, `BeforeAll`, or setup job | Relative path and encoding |
 | Secrets/variables | Calling workflow | `Expose-TestData` and environment | `TestData` JSON contract |
 | Shared service | `tests/BeforeAll.ps1` | Before module-local matrix | Deterministic run-scoped name |
@@ -163,6 +187,9 @@ Use this per-repository checklist:
   invocation and its `Run.Path`/`Run.ExcludePath` is recorded.
 - [ ] The built target module is loaded by the framework before module-local
   tests; tests do not silently load it themselves.
+- [ ] Module-local tests exercise only the built module's public interface;
+  private implementation tests, if required, are separate source/framework
+  suites.
 - [ ] Source-code test loading is explicit and documented separately from the
   module-local contract.
 - [ ] Every PSD1, JSON, CSV, XML, script, generated fixture, secret, variable,
