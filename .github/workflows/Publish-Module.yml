@@ -25,8 +25,7 @@ jobs:
     name: Publish-Module
     runs-on: ubuntu-24.04
     permissions:
-      contents: write # Create releases and upload release artifacts.
-      pull-requests: write # Comment on pull requests.
+      contents: read # Checkout uses github.token.
     env:
       SETTINGS: ${{ inputs.Settings }}
     steps:

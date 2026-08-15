@@ -57,22 +57,20 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-Every permission in that block is required. A push to `main` publishes a stable release after the full pipeline passes;
+Every permission in that block is required. GitHub App installation tokens perform repository writes. A push to `main` publishes a stable release after the full pipeline passes;
 the pull-request trigger handles CI, prereleases, and prerelease cleanup. See
 [Workflow inputs](../reference/workflow-inputs.md) for what each permission is used for, and
 [Calling the workflow](../guides/calling-the-workflow.md) for passing test secrets and variables.
