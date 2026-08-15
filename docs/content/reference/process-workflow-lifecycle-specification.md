@@ -15,9 +15,14 @@ This candidate defines the behavior required from a Process-PSModule workflow li
 
 ## Scope
 
-The candidate covers dispatch recovery, scheduled validation, pull-request validation and prerelease evaluation, closed-pull-request cleanup, and stable publication after a default-branch push.
+The candidate covers dispatch recovery, scheduled validation, pull-request validation and prerelease evaluation, closed-pull-request cleanup, stable publication after a default-branch push, and the Process-PSModule reusable-workflow caller boundary.
 
-It does not approve a caller layout, change module build or publication implementation, define label names, or prescribe release-note presentation. Those choices remain in the caller candidate, the existing versioning guidance, and the companion [candidate design](process-workflow-lifecycle-design.md).
+It standardizes exactly one conforming Process-PSModule reusable-workflow call job and the shared top-level controls that govern
+it; it does not standardize the repository owner's whole workflow. Repository-owned jobs may exist in the same workflow
+file or separate workflows, provided they do not weaken or bypass the call's trigger, concurrency, permissions, Plan
+authorization, or credential boundary. It does not change module build or publication implementation, define label
+names, or prescribe release-note presentation. Those choices remain in the caller candidate, the existing versioning
+guidance, and the companion [candidate design](process-workflow-lifecycle-design.md).
 
 ## Confirmed implementation baseline
 
@@ -309,6 +314,29 @@ Scenario: Gate a privileged job for a restricted fork run
   And it does not create an App token or parse an absent publication configuration
 ```
 
+### FR13 — Caller conformance MUST be limited to the reusable-workflow boundary {#fr13}
+
+A conforming caller MUST contain exactly one Process-PSModule reusable-workflow call job and the shared top-level triggers,
+concurrency, permissions, Plan authorization, and credential boundary that govern it. Repository-owned jobs MAY coexist
+in the same workflow file or in separate workflows. They are not nonconforming merely by existing, but they MUST NOT
+weaken or bypass any of those controls for the Process-PSModule call.
+
+#### Behavioral scenarios {#fr13-scenarios}
+
+```gherkin
+Scenario: Retain a repository-owned job beside the reusable-workflow call
+  Given a workflow contains one conforming Process-PSModule reusable-workflow call job
+  And a repository-owned documentation job exists in the same workflow file
+  When the workflow is evaluated for caller conformance
+  Then the documentation job is reported for visibility
+  And its existence does not make the Process-PSModule call nonconforming
+
+Scenario: Prevent a repository-owned job from bypassing the caller boundary
+  Given a repository-owned job exists beside or outside the caller workflow
+  When it could weaken or bypass the Process-PSModule call's trigger, concurrency, permissions, Plan authorization, or credential boundary
+  Then the caller arrangement is nonconforming
+```
+
 ## Non-functional requirements
 
 ### NFR1 — Lifecycle mutations MUST be idempotent {#nfr1}
@@ -445,7 +473,7 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [FR11](#fr11), [FR12](#fr12), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6), [NFR7](#nfr7)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [FR11](#fr11), [FR12](#fr12), [FR13](#fr13), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6), [NFR7](#nfr7)
 
 ```gherkin
 Scenario: Lifecycle runs preserve release ownership after cancellation

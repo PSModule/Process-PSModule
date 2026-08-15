@@ -57,6 +57,10 @@ The uniform wrapper is a strong starting point, but it predates the two latest b
 - `v8.0.0` moves stable publication to a default-branch `push`, adds `unlabeled` routing, and requires non-cancelling
   pull-request-or-ref concurrency.
 
+The observed absence of additional jobs is inventory context, not a conformance requirement. The candidate standardizes
+the Process-PSModule reusable-workflow call and the shared top-level controls that govern that call, rather than the
+repository owner's entire workflow.
+
 No current caller has the `v8.0.0` trigger and concurrency contract. The fleet spans nine older versions:
 
 | Version | Repositories |
@@ -131,7 +135,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 
 | Decision | Candidate | Alternatives still open |
 | --- | --- | --- |
-| Wrapper scope | Exactly one reusable-workflow job. | Permit repository-specific jobs in the same file, or define pre/post extension jobs. |
+| Wrapper scope | Exactly one conforming Process-PSModule reusable-workflow call job plus the shared top-level controls that govern it. Repository-owned jobs may coexist in the same file or separate workflows when they do not weaken or bypass that boundary. | Decide only the placement of repository-owned jobs. |
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
 | Concurrency | Use the PR-number-or-ref key and cancel only superseded pull-request runs. | Use separate groups per event class or disable cancellation for all runs. |
@@ -174,7 +178,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Fork authorization | Leave the caller job unconditional. | Plan grants normal fork `pull_request` events only restricted read-only validation capabilities and rejects `pull_request_target` before credentials or repository-defined code run. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; do not use `secrets: inherit`. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
-| Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
+| Scope | Require exactly one conforming Process-PSModule delegation job and its governing triggers, concurrency, permissions, Plan authorization, and credential boundary. | Repository-owned jobs may be reported for visibility but are not nonconforming merely by existing. |
 
 ## Candidate optional elements
 
@@ -202,8 +206,7 @@ approved organization policy until #514 records an approved structure:
 - missing `push` or `unlabeled` triggers;
 - a `cancel-in-progress` expression other than `github.event_name == 'pull_request'` or the old ref-only concurrency key;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
-- unrelated additional jobs in the caller wrapper;
-- omitted documented permissions without a verified settings-based least-privilege profile.
+- omitted documented permissions without a verified settings-based least-privilege profile;
 - `with.Debug: true`, which is nonconforming because the reusable workflow default remains `false`.
 
 When required, the optional test-data mapping extends the candidate baseline without broadening it:
@@ -234,9 +237,11 @@ untrusted validation and build inputs; they cannot enable credentials, broaden p
 envelope. This permits ordinary fork contributors to receive the standard workflow green/red validation without
 configuring secrets.
 
-The candidate keeps repository-specific automation in a separate workflow file. That keeps the Process-PSModule wrapper
-identical enough for automated comparison while allowing modules to own unrelated schedules, generation, or integration
-tasks.
+The candidate requires exactly one conforming Process-PSModule reusable-workflow call job and the shared top-level triggers,
+concurrency, permissions, Plan authorization, and credential boundary that govern it. Repository-owned jobs may exist in
+the same file or in separate workflows and are reported only for visibility. Their existence is not nonconforming, but
+they MUST NOT weaken or bypass the Process-PSModule call's trigger, concurrency, permissions, Plan authorization, or
+credential boundary.
 
 ## Rollout boundary
 

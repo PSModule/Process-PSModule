@@ -34,6 +34,14 @@ Plan resolves the caller event into one release classification before build and 
 
 Plan records its classification and release decision in enriched Settings. Downstream jobs consume that Settings object and do not infer policy from events, labels, or repository settings again.
 
+## Candidate caller boundary
+
+The candidate standardizes exactly one Process-PSModule reusable-workflow call job and the shared top-level triggers,
+concurrency, permissions, Plan authorization, and credential boundary that govern it. It does not standardize the
+repository owner's entire workflow. Repository-owned jobs may coexist in the same workflow file or in separate workflows
+and are reported only for visibility. They must not weaken or bypass the Process-PSModule call's trigger, concurrency,
+permissions, Plan authorization, or credential boundary.
+
 ## Candidate event authorization
 
 The caller invokes the reusable workflow without a caller-level fork or event condition. Plan is the event-authorization
@@ -201,6 +209,7 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Stable aggregation | Bursts of main-push, manual-dispatch, and scheduled fixtures that replace an intermediate pending run and prove the later stable target aggregates all unreleased merged pull requests. |
 | Scoped caller permissions | Empty caller top-level permissions, the three job grants, built-in-token checkout/read, and standard Pages/OIDC verification. |
 | Caller credential contract | Explicit baseline mappings for `PSGALLERY_API_KEY`, `GitHubAppClientId`, and `GitHubAppPrivateKey`; rejected `secrets: inherit`; optional `TestData` JSON with separate `secrets` and `variables` maps; and no `with.Debug: true`. |
+| Caller boundary | Exactly one conforming Process-PSModule call job with governing shared top-level controls, plus repository-owned jobs in the same file and separate workflows that prove their presence is visible but does not weaken or bypass the call boundary. |
 | App authorization failure | Missing-App-token fixtures that prove user-facing operations fail closed without built-in token fallback. |
 | Token boundary | Fixtures that prove App tokens are step-scoped and built-in-token operations remain within the caller job's boundary. |
 | Event authorization | Normal-fork `pull_request` fixtures that prove the controlled upstream Plan derives restricted capabilities from immutable fork/base/head metadata before it consumes settings or checked-out code, then permits only checkout/build/lint/test with a green/red outcome and no configured secrets; `pull_request_target` fixtures prove Plan rejects before credentialed or repository-defined code, including for downstream `always()` jobs. |
