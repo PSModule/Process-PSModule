@@ -33,12 +33,12 @@ $ghVersion = Get-LatestGitHubVersion -Releases $releases
 $psGalleryVersion = Get-LatestPSGalleryVersion -ModuleName $actionInput.Name
 
 $params = @{
-    GitHubVersion = $ghVersion
+    GitHubVersion    = $ghVersion
     PSGalleryVersion = $psGalleryVersion
-    Decision      = $decision
-    Configuration = $config
-    ModuleName    = $actionInput.Name
-    Releases      = $releases
+    Decision         = $decision
+    Configuration    = $config
+    ModuleName       = $actionInput.Name
+    Releases         = $releases
 }
 $newVersion = Get-ResolvedModuleVersion @params
 

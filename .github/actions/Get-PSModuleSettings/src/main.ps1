@@ -268,9 +268,11 @@ LogGroup 'Calculate Job Run Conditions:' {
         -not [string]::IsNullOrWhiteSpace($pullRequest.merged_at)
     }
     $pullRequestIsClosed = $null -ne $pullRequest -and $pullRequest.State -eq 'closed'
-    $isOpenOrUpdatedPR = $eventName -eq 'pull_request' -and
+    $isOpenOrUpdatedPR = (
+        $eventName -eq 'pull_request' -and
         -not $pullRequestIsClosed -and
         $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
+    )
     $targetBranch = if ($pullRequest) { $pullRequest.Base.Ref } elseif ($isPush) { $pushBranch } else { $workflowRef }
     $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
     $pullRequestContext = if ($pullRequest) {
