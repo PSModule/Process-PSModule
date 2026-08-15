@@ -1,3 +1,6 @@
 Name: PSModuleTest2
+Build:
+  Site:
+    Skip: true
 Linter:
   Skip: true

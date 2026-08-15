@@ -54,8 +54,7 @@ jobs:
     with:
       WorkingDirectory: tests/srcWithManifestTestRepo
       ImportantFilePatterns: |
-        ^src/
-        ^README\.md$
+        ^tests/srcWithManifestTestRepo/
         ^\.github/actions/
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
 

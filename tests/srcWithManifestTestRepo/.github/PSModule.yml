@@ -1,4 +1,7 @@
 Name: PSModuleTest
+Build:
+  Site:
+    Skip: true
 Test:
   SourceCode:
     Skip: true
