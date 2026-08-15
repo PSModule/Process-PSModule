@@ -31,15 +31,15 @@ $decision = if ($null -eq $pullRequest) {
 $releases = @(Get-GitHubRelease)
 $ghVersion = Get-LatestGitHubVersion -Releases $releases
 $psGalleryVersion = Get-LatestPSGalleryVersion -ModuleName $actionInput.Name
-$latestVersion = Get-LatestPublishedVersion -GitHubVersion $ghVersion -PSGalleryVersion $psGalleryVersion
 
 $params = @{
-    LatestVersion = $latestVersion
+    GitHubVersion = $ghVersion
+    PSGalleryVersion = $psGalleryVersion
     Decision      = $decision
     Configuration = $config
     ModuleName    = $actionInput.Name
     Releases      = $releases
 }
-$newVersion = Get-NextModuleVersion @params
+$newVersion = Get-ResolvedModuleVersion @params
 
 Write-ActionOutput -Decision $decision -NewVersion $newVersion

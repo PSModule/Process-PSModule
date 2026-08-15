@@ -145,11 +145,14 @@ LogGroup 'Publish to PSGallery' {
     if ($whatIf) {
         Write-Host "Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey ***"
     } else {
-        try {
+        $publishedPackage = Find-PSResource -Name $name -Version $publishPSVersion -Repository PSGallery -ErrorAction Stop
+        if ($publishedPackage) {
+            Write-Host (
+                "::notice title=♻️ Resuming Gallery-only publication::$name $publishPSVersion is already " +
+                'published to the PowerShell Gallery.'
+            )
+        } else {
             Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey $psGalleryApiKey
-        } catch {
-            Write-Error $_.Exception.Message
-            exit 1
         }
     }
 

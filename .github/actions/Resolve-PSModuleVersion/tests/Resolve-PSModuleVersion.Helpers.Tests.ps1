@@ -137,6 +137,40 @@ Describe 'Resolve-PSModuleVersion' {
                 $releases[0].tagName | Should -Be 'v1.2.3'
             }
         }
+
+        Describe 'Get-ResolvedModuleVersion' {
+            Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
+                It 'Get-ResolvedModuleVersion - reuses the Gallery version that is the next GitHub patch release' {
+                    $params = @{
+                        GitHubVersion    = New-PSSemVer -Version '1.2.3'
+                        PSGalleryVersion = New-PSSemVer -Version '1.2.4'
+                        Decision         = Get-TestDecision -Bump 'Patch'
+                        Configuration    = Get-TestConfiguration
+                        ModuleName       = 'MyModule'
+                        Releases         = @()
+                    }
+
+                    $result = Get-ResolvedModuleVersion @params
+
+                    $result.ToString() | Should -Be 'v1.2.4'
+                }
+
+                It 'Get-ResolvedModuleVersion - preserves the normal Gallery baseline when versions do not identify a retry' {
+                    $params = @{
+                        GitHubVersion    = New-PSSemVer -Version '1.2.3'
+                        PSGalleryVersion = New-PSSemVer -Version '1.2.5'
+                        Decision         = Get-TestDecision -Bump 'Patch'
+                        Configuration    = Get-TestConfiguration
+                        ModuleName       = 'MyModule'
+                        Releases         = @()
+                    }
+
+                    $result = Get-ResolvedModuleVersion @params
+
+                    $result.ToString() | Should -Be 'v1.2.6'
+                }
+            }
+        }
     }
 
     Describe 'Get-LatestGitHubVersion' {

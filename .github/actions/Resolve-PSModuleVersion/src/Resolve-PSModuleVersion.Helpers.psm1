@@ -724,6 +724,86 @@ function Get-NextModuleVersion {
     }
 }
 
+function Get-ResolvedModuleVersion {
+    <#
+        .SYNOPSIS
+        Resolves the next module version and resumes an incomplete stable release when possible.
+
+        .DESCRIPTION
+        Normally the highest version from GitHub Releases and the PowerShell Gallery is the
+        version baseline. If Gallery contains exactly the stable version implied by the latest
+        GitHub release and this run's version bump, Gallery publication succeeded but GitHub
+        release creation did not. In that case, return the Gallery version rather than bumping
+        again so the workflow can resume the missing GitHub release.
+
+        .OUTPUTS
+        PSSemVer representing the resolved module version.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
+        Justification = 'Parameter is used inside LogGroup script block.')]
+    [CmdletBinding()]
+    [OutputType([object])]
+    param(
+        # The latest version found in GitHub Releases.
+        [Parameter(Mandatory)]
+        [object] $GitHubVersion,
+
+        # The latest stable version found in the PowerShell Gallery.
+        [Parameter(Mandatory)]
+        [object] $PSGalleryVersion,
+
+        # The release decision for this workflow run.
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Decision,
+
+        # The publish configuration object.
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Configuration,
+
+        # The name of the module.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $ModuleName,
+
+        # The GitHub releases list, used for prerelease numbering.
+        [Parameter()]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [array] $Releases = @()
+    )
+
+    LogGroup 'Resolve module version' {
+        $latestVersion = Get-LatestPublishedVersion -GitHubVersion $GitHubVersion -PSGalleryVersion $PSGalleryVersion
+        $params = @{
+            LatestVersion = $latestVersion
+            Decision      = $Decision
+            Configuration = $Configuration
+            ModuleName    = $ModuleName
+            Releases      = $Releases
+        }
+        $resolvedVersion = Get-NextModuleVersion @params
+
+        if ($Decision.CreateRelease) {
+            $githubParams = $params.Clone()
+            $githubParams.LatestVersion = $GitHubVersion
+            $githubCandidate = Get-NextModuleVersion @githubParams
+            $galleryVersionString = "$($PSGalleryVersion.Major).$($PSGalleryVersion.Minor).$($PSGalleryVersion.Patch)"
+            $githubCandidateString = "$($githubCandidate.Major).$($githubCandidate.Minor).$($githubCandidate.Patch)"
+
+            if ([string]::IsNullOrWhiteSpace($PSGalleryVersion.Prerelease) -and
+                $galleryVersionString -eq $githubCandidateString) {
+                Write-Host (
+                    "PowerShell Gallery contains [$galleryVersionString], the next stable version after " +
+                    "GitHub [$GitHubVersion]. Resuming the Gallery-only publication."
+                )
+                $resolvedVersion = $githubCandidate
+            }
+        }
+
+        $resolvedVersion
+    }
+}
+
 function Write-ActionOutput {
     <#
         .SYNOPSIS
