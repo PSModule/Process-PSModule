@@ -48,8 +48,7 @@ permissions:
 
 jobs:
   Process-PSModule:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -67,15 +66,6 @@ resulting stable release do not serialize as one run. Keep `cancel-in-progress: 
 the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
 The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
 waits for it to finish.
-
-`Process-PSModule` is PSModule-owned automation, so callers use the controlled floating major tag (`@v8`). Compatible
-patch and minor releases move that tag through the release workflow. A breaking release publishes a new major tag and
-uses a deliberate fleet campaign rather than moving `v8` across the breaking boundary. External actions remain pinned
-to full commit SHAs.
-
-The job condition skips fork-originated pull requests because GitHub does not expose the required repository secrets to
-forks. Use a separate secret-free, read-only workflow if the repository accepts contributions from forks and requires
-fork CI.
 
 ## Passing test data
 
@@ -104,8 +94,7 @@ changes:
 ```yaml
 jobs:
   Process-PSModule:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -134,8 +123,7 @@ content lines stay at the same indentation level:
 ```yaml
 jobs:
   Process-PSModule:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -247,8 +235,7 @@ You can also pass patterns via the workflow input:
 ```yaml
 jobs:
   Process:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     with:
       ImportantFilePatterns: |
         ^src/
@@ -261,8 +248,7 @@ To disable triggering via the workflow input, pass an explicit empty string:
 ```yaml
 jobs:
   process:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     with:
       ImportantFilePatterns: ''
 ```

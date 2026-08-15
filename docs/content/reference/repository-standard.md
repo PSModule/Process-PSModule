@@ -122,23 +122,14 @@ The caller workflow declares the triggers, concurrency, and permissions for the 
 ```yaml
 jobs:
   Process-PSModule:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@<commit-sha> # <version tag>
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-Name the caller file `Process-PSModule.yml`, matching [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) and every existing module repository. `workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the `uses:` reference.
-
-`Process-PSModule` is PSModule-owned automation. Pin it to the approved floating major tag (`v8`) so compatible patch
-and minor releases move across the fleet without one pull request per release. The release workflow owns movement of
-the major tag; an incompatible release creates a new major tag and requires a deliberate fleet campaign. Do not use a
-branch, `latest`, a floating minor tag, or an exact release/commit for the standard caller.
-
-This internal-major-tag policy does not apply to third-party actions. External actions remain pinned to their full
-immutable commit SHA with the release version in a trailing comment.
+Name the caller file `Process-PSModule.yml`, matching [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) and every existing module repository. `workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the `uses:` reference. Pin the reference to a commit SHA with the version tag in a trailing comment so Dependabot can update it.
 
 ## Required common files
 
@@ -202,11 +193,7 @@ For PSModule module repositories, the requirements are:
 
 Every module repository must include `.github/dependabot.yml`. Dependabot is part of the repository supply-chain control, not an optional convenience.
 
-Configure the `github-actions` ecosystem. It keeps external SHA-pinned actions current and proposes intentional major
-updates when supported. Compatible Process-PSModule patch and minor releases arrive through its controlled major tag
-instead of a Dependabot pull request. This is what
-[`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) ships, and it is the default for new
-repositories:
+Configure the `github-actions` ecosystem. It keeps the pinned actions current, including the pinned `PSModule/Process-PSModule` reference in the [caller workflow](#caller-workflow-and-reusable-workflow). This is what [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) ships, and it is the default for new repositories:
 
 ```yaml
 version: 2

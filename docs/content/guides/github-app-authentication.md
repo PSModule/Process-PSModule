@@ -23,8 +23,7 @@ names. Map the caller's secrets explicitly:
 ```yaml
 jobs:
   Process-PSModule:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
