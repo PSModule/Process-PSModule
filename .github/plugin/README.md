@@ -24,7 +24,10 @@ copilot plugin install PSModule/Process-PSModule:.github/plugin/psmodule
 The plugin provides the
 [`psmodule-pester-migration`](./psmodule/skills/psmodule-pester-migration/SKILL.md)
 skill for migrating every Pester test set in a PSModule repository to Pester
-6.1.0. Verify the installation with:
+6.1.0, and the
+[`psmodule-v8-upgrade`](./psmodule/skills/psmodule-v8-upgrade/SKILL.md)
+skill for upgrading Process-PSModule consumer repositories to framework v8.
+Verify the installation with:
 
 ```console
 copilot plugin list
