@@ -278,7 +278,7 @@ Before editing, record the current state and the intended v8 result for:
 | --- | --- | --- |
 | Caller workflow | Triggers, permissions, concurrency, secrets, `with:` inputs | Exact v8 contract; only documented `TestData` may vary |
 | TestData | Secret and variable names and consumers | Explicit compact JSON maps, or omitted when unused |
-| Pester dependency | `#Requires`, manifests, install steps, lock files | Pester 6 is declared and installed consistently |
+| Pester dependency | `#Requires`, manifests, install steps, lockfiles | Pester 6 is declared and installed consistently |
 | Pester configuration | `Invoke-Pester`, output, result, coverage | Native configuration object and v6-compatible output |
 | Test setup | Before/After blocks, module load, fixtures, services | Explicit ownership and deterministic per-file behavior |
 | Documentation | Zensical config, content, overrides, assets | Existing Zensical design remains authoritative |
