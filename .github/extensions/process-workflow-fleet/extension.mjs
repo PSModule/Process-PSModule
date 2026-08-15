@@ -1,89 +1,182 @@
-// Extension: process-workflow-fleet
-// Inspect Process-PSModule caller workflows and prepare safe v8 migrations.
-//
-// This single-file skeleton is a starting point. For more complex canvases
-// (multiple actions with non-trivial logic, shared state, a custom renderer,
-// etc.) prefer splitting things out: move each action handler into its own
-// function, extract `open`/`onClose` into helpers, and pull large units
-// (renderer assets, schema definitions, shared utilities) into sibling files
-// imported from this entry point. Keep extension.mjs focused on wiring.
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { createServer } from "node:http";
-import { joinSession, createCanvas } from "@github/copilot-sdk/extension";
+import {
+    CanvasError,
+    createCanvas,
+    joinSession,
+} from "@github/copilot-sdk/extension";
 
-// One local HTTP server per open canvas instance. Each instance gets its own
-// ephemeral port so multiple canvases (or multiple opens of the same canvas)
-// don't collide. Replace this with your real renderer — point a static-file
-// server, a Vite/Next dev server, or any framework you like at the same URL.
-const servers = new Map();
+import {
+    createFleetService,
+    resolveRepositoryRoot,
+} from "./fleet-service.mjs";
 
-function renderHtml(instanceId) {
-    return `<!doctype html>
-<html>
-  <head><meta charset="utf-8" /><title>process-workflow-fleet</title></head>
-  <body style="font-family: system-ui; padding: 1rem;">
-    <h1>process-workflow-fleet</h1>
-    <p>Hello from a local canvas server.</p>
-    <p>Instance: <code>${instanceId}</code></p>
-  </body>
-</html>`;
-}
+const moduleDirectory = dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = resolveRepositoryRoot({
+    currentWorkingDirectory: process.cwd(),
+    moduleDirectory,
+});
 
-async function startServer(instanceId) {
-    const server = createServer((req, res) => {
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.end(renderHtml(instanceId));
-    });
-    // Port 0 = let the OS pick a free ephemeral port. Bind to loopback only.
-    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-    const address = server.address();
-    const port = typeof address === "object" && address ? address.port : 0;
-    return { server, url: `http://127.0.0.1:${port}/` };
-}
+let session;
+const fleet = createFleetService({
+    getSession: () => session,
+    repositoryRoot,
+});
 
-const session = await joinSession({
-    canvases: [
-        createCanvas({
-            id: "process-workflow-fleet",
-            displayName: "process-workflow-fleet",
-            description: "Example canvas - replace with your implementation",
-            // Optional JSON Schema describing the input passed to open():
-            // inputSchema: { type: "object", properties: {} },
-            actions: [
-                {
-                    name: "example_action",
-                    description: "Example agent-callable action on this canvas",
-                    // Optional JSON Schema for the action input:
-                    // inputSchema: { type: "object", properties: {} },
-                    handler: async (ctx) => {
-                        return { ok: true, instanceId: ctx.instanceId };
+const canvas = createCanvas({
+    id: "process-workflow-fleet",
+    displayName: "Process workflow fleet",
+    description:
+        "Inspect Process-PSModule caller workflows, compare them with the v8 contract, and request repository-scoped migrations.",
+    inputSchema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+            organization: {
+                type: "string",
+                minLength: 1,
+                maxLength: 100,
+                pattern: "^[A-Za-z0-9][A-Za-z0-9-]*$",
+            },
+        },
+    },
+    actions: [
+        {
+            name: "refresh_inventory",
+            description:
+                "Refresh the authenticated GitHub inventory and replace prior canvas data fail-closed.",
+            inputSchema: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                    organization: {
+                        type: "string",
+                        minLength: 1,
+                        maxLength: 100,
+                        pattern: "^[A-Za-z0-9][A-Za-z0-9-]*$",
+                    },
+                    repositories: {
+                        type: "array",
+                        uniqueItems: true,
+                        maxItems: 500,
+                        items: {
+                            type: "string",
+                            minLength: 1,
+                            maxLength: 200,
+                            pattern:
+                                "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?$",
+                        },
+                    },
+                    includeArchived: {
+                        type: "boolean",
                     },
                 },
-            ],
-            // Called when the agent or host opens the canvas. We boot a local
-            // HTTP server on an ephemeral port and hand its URL back to the
-            // host so it can render the canvas. Re-opens with the same
-            // instanceId reuse the existing server.
-            open: async (ctx) => {
-                let entry = servers.get(ctx.instanceId);
-                if (!entry) {
-                    entry = await startServer(ctx.instanceId);
-                    servers.set(ctx.instanceId, entry);
-                }
-                return {
-                    title: "process-workflow-fleet",
-                    url: entry.url,
-                };
             },
-            // Tear the per-instance server down when the canvas is closed so
-            // ports are not leaked across the lifetime of the extension.
-            onClose: async (ctx) => {
-                const entry = servers.get(ctx.instanceId);
-                if (entry) {
-                    servers.delete(ctx.instanceId);
-                    await new Promise((resolve) => entry.server.close(() => resolve()));
-                }
+            handler: async (ctx) => fleet.refreshInventory(ctx.input ?? {}),
+        },
+        {
+            name: "get_summary",
+            description:
+                "Return refresh health and v8 compliance counts for the current workspace inventory.",
+            inputSchema: {
+                type: "object",
+                additionalProperties: false,
+                properties: {},
             },
-        }),
+            handler: async () => fleet.getSummary(),
+        },
+        {
+            name: "get_repository",
+            description:
+                "Return normalized workflow evidence and the migration delta for one repository.",
+            inputSchema: {
+                type: "object",
+                additionalProperties: false,
+                required: ["repository"],
+                properties: {
+                    repository: {
+                        type: "string",
+                        minLength: 1,
+                        maxLength: 200,
+                    },
+                },
+            },
+            handler: async (ctx) => fleet.getRepository(ctx.input.repository),
+        },
+        {
+            name: "set_selection",
+            description:
+                "Persist the selected repository identities for this session workspace.",
+            inputSchema: {
+                type: "object",
+                additionalProperties: false,
+                required: ["repositories"],
+                properties: {
+                    repositories: {
+                        type: "array",
+                        uniqueItems: true,
+                        maxItems: 500,
+                        items: {
+                            type: "string",
+                            minLength: 1,
+                            maxLength: 200,
+                        },
+                    },
+                },
+            },
+            handler: async (ctx) => fleet.setSelection(ctx.input.repositories),
+        },
+        {
+            name: "request_migration",
+            description:
+                "Preview or confirm an agent-orchestrated migration request for selected repositories; never mutates repositories directly.",
+            inputSchema: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                    repositories: {
+                        type: "array",
+                        uniqueItems: true,
+                        maxItems: 500,
+                        items: {
+                            type: "string",
+                            minLength: 1,
+                            maxLength: 200,
+                        },
+                    },
+                    dryRun: {
+                        type: "boolean",
+                    },
+                    confirmed: {
+                        type: "boolean",
+                    },
+                },
+            },
+            handler: async (ctx) => fleet.requestMigration(ctx.input ?? {}),
+        },
     ],
+    open: async (ctx) => {
+        const state = await fleet.ensureState({
+            organization: ctx.input?.organization,
+        });
+        const entry = await fleet.openPanel(ctx.instanceId);
+        return {
+            title: "Process workflow fleet",
+            status:
+                state.inventoryStatus === "ready"
+                    ? `${state.records.length} workflows`
+                    : "Refresh required",
+            url: entry.url,
+        };
+    },
+    onClose: async (ctx) => {
+        await fleet.closePanel(ctx.instanceId);
+    },
 });
+
+session = await joinSession({
+    canvases: [canvas],
+});
+
+fleet.setCanvasErrorFactory((code, message) => new CanvasError(code, message));
