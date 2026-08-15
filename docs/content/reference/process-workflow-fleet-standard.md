@@ -108,18 +108,16 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
-  pages: write
-  id-token: write
+permissions: {}
 
 jobs:
   Process-PSModule:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
@@ -136,9 +134,9 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Wrapper scope | Exactly one reusable-workflow job. | Permit repository-specific jobs in the same file, or define pre/post extension jobs. |
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
-| Concurrency | Use the PR-number-or-ref key and never cancel a release-capable run. | Use separate groups per event class or permit cancellation for non-mutating paths. |
-| Permissions | Declare the five current scopes at workflow level. | Introduce settings-based least-privilege profiles or split read-only validation from release work. |
-| Fork behavior | Skip fork-originated pull requests in this credentialed wrapper. | Add a separate secret-free workflow or define another supported fork-validation design. |
+| Concurrency | Use the PR-number-or-ref key and cancel only superseded pull-request runs. | Use separate groups per event class or disable cancellation for all runs. |
+| Permissions | Set top-level permissions to empty and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Define a narrower profile for repositories that do not publish Pages. |
+| Fork behavior | Invoke the reusable workflow unconditionally; Plan rejects unsupported fork events before credentialed or repository-defined code. | Add an independent secret-free fork-CI workflow. |
 | Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
 
@@ -171,9 +169,9 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Default-branch push | Keep `push.branches: [main]`. | `v8` authorizes stable releases from the tested default-branch push. |
 | Manual dispatch | Keep `workflow_dispatch`. | Provides the documented default-branch manual release and recovery path. |
 | Schedule | Keep a scheduled health run. | Exercises current dependencies even when repository code is unchanged. |
-| Concurrency | Use the PR-number-or-ref key with `cancel-in-progress: false`. | Cleanup and stable release runs stay distinct; release mutations queue instead of being interrupted. |
-| Permissions | Declare the five documented permissions explicitly. | The called workflow cannot elevate caller permissions. |
-| Fork guard | Skip pull requests whose head repository differs from `github.repository`. | GitHub withholds the required repository secrets from fork pull requests. |
+| Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | Pull-request changes converge promptly while non-pull-request runs serialize by ref. |
+| Permissions | Use empty top-level permissions and the three caller-job permissions shown above. | Repository-local reads and Pages/OIDC stay narrow; App tokens provide broader authority. |
+| Fork authorization | Leave the caller job unconditional. | Plan rejects unsupported forks before credentials or repository-defined code run. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
 | Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
@@ -202,14 +200,14 @@ an approved structure:
 - any Process-PSModule reference other than the intended major tag (`v8`), including a branch, `latest`, minor tag,
   exact patch tag, or full commit SHA;
 - missing `push` or `unlabeled` triggers;
-- `cancel-in-progress: true` or the old ref-only concurrency key;
+- a `cancel-in-progress` expression other than `github.event_name == 'pull_request'` or the old ref-only concurrency key;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
 - unrelated additional jobs in the caller wrapper;
 - omitted documented permissions without a verified settings-based least-privilege profile.
 
-Fork-originated pull requests are skipped by the candidate caller because reusable-workflow caller jobs cannot select a
-GitHub Environment and repository secrets are unavailable to forks. Supporting fork CI requires a separate, secret-free,
-read-only validation workflow under this candidate; #514 must approve that boundary.
+The candidate caller invokes the reusable workflow for fork-originated pull requests. Plan rejects unsupported fork events
+before credentials or repository-defined code run. Supporting fork CI requires a separate, secret-free, read-only workflow;
+issue [#514](https://github.com/PSModule/Process-PSModule/issues/514) must approve that boundary.
 
 The candidate keeps repository-specific automation in a separate workflow file. That keeps the Process-PSModule wrapper
 identical enough for automated comparison while allowing modules to own unrelated schedules, generation, or integration

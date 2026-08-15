@@ -229,6 +229,26 @@ Scenario: Perform a user-facing repository operation
   And it uses the App token only for the steps that require that authority
 ```
 
+### FR12 — Plan MUST authorize events before downstream execution {#fr12}
+
+The caller MUST invoke the reusable workflow without a caller-level fork or event condition. Plan MUST reject unsupported fork pull-request execution before any credentialed or repository-defined code runs. Every downstream job, including a job with `always()`, MUST require a successful authorized Plan and valid Settings. No downstream job MAY evaluate missing or invalid Settings or bypass the Plan gate.
+
+#### Behavioral scenarios {#fr12-scenarios}
+
+```gherkin
+Scenario: Reject an unsupported fork pull request
+  Given a pull request originates from an unsupported fork
+  When Plan evaluates the event
+  Then Plan rejects the event before credentialed or repository-defined code runs
+  And no downstream job receives authorized Settings
+
+Scenario: Gate an always-running downstream job
+  Given Plan rejects an event or produces invalid Settings
+  When a downstream job with an always condition is evaluated
+  Then the job does not run
+  And it does not evaluate the missing or invalid Settings
+```
+
 ## Non-functional requirements
 
 ### NFR1 — Lifecycle mutations MUST be idempotent {#nfr1}
@@ -365,7 +385,7 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [FR11](#fr11), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6), [NFR7](#nfr7)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [FR11](#fr11), [FR12](#fr12), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6), [NFR7](#nfr7)
 
 ```gherkin
 Scenario: Lifecycle runs preserve release ownership after cancellation

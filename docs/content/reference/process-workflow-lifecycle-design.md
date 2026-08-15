@@ -33,6 +33,14 @@ Plan resolves the caller event into one release classification before build and 
 
 Plan records its classification and release decision in enriched Settings. Downstream jobs consume that Settings object and do not infer policy from events, labels, or repository settings again.
 
+## Candidate event authorization
+
+The caller invokes the reusable workflow without a caller-level fork or event condition. Plan is the event-authorization boundary: it rejects unsupported fork pull requests before credentialed or repository-defined code runs. An authorization rejection produces no usable Settings and no credentialed follow-on work.
+
+Every downstream job depends on a successful authorized Plan and valid Settings. This requirement applies equally to jobs that use `always()`: their conditions first require the Plan result and Settings validity, then apply their own failure-handling logic. A downstream job never parses missing or invalid Settings and cannot bypass the Plan gate.
+
+Secret-free fork CI, if needed, is a separate workflow with its own trigger, authorization, and read-only contract. It is not a mode of the credentialed Process-PSModule reusable workflow.
+
 ## Candidate artifact and version boundary
 
 Version resolution is the boundary between planning and release-capable work. The candidate carries one immutable release record in enriched Settings through build, test, and release execution:
@@ -155,6 +163,7 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Scoped caller permissions | Empty caller top-level permissions, the three job grants, built-in-token checkout/read, and standard Pages/OIDC verification. |
 | App authorization failure | Missing-App-token fixtures that prove user-facing operations fail closed without built-in token fallback. |
 | Token boundary | Fixtures that prove App tokens are step-scoped and built-in-token operations remain within the caller job's boundary. |
+| Event authorization | Unsupported-fork fixtures that prove Plan rejects before credentialed or repository-defined code, including for downstream `always()` jobs. |
 
 ## Decisions requiring approval
 
