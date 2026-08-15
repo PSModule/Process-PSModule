@@ -98,23 +98,29 @@ Scenario: Remove prerelease eligibility
   And it does not create a new prerelease version
 ```
 
-### FR5 — Closed pull requests MUST clean up only their prereleases {#fr5}
+### FR5 — Closed pull requests MUST route cleanup by close outcome {#fr5}
 
-A closed pull request MUST clean up only prerelease artifacts associated with that pull request when cleanup is enabled. It MUST NOT authorize or create a stable publication.
+A merged pull request close MUST NOT perform prerelease cleanup. A successful default-branch release for the merge MUST own promotion cleanup. An abandoned pull request close MUST run cleanup-only behavior for prerelease artifacts associated with that pull request when cleanup is enabled. Neither close outcome MUST authorize or create a stable publication.
 
 #### Behavioral scenarios {#fr5-scenarios}
 
 ```gherkin
-Scenario: Close a pull request with prereleases
-  Given a closed pull request owns prerelease artifacts
-  When the cleanup workflow completes
-  Then the pull request's prerelease artifacts are removed according to configuration
+Scenario: Merge a pull request with prereleases
+  Given a merged pull request owns prerelease artifacts
+  When its close event is processed
+  Then the close event does not clean up prerelease artifacts
+  And the successful default-branch release owns promotion cleanup
+
+Scenario: Abandon a pull request with prereleases
+  Given an unmerged closed pull request owns prerelease artifacts
+  When its close event is processed
+  Then the workflow runs cleanup only for that pull request's prerelease artifacts
   And no stable artifact, tag, or release is created
 ```
 
 ### FR6 — Default-branch pushes MUST authorize stable publication after validation {#fr6}
 
-A push to the default branch MUST publish a stable version only after all required build, test, quality, and publication gates succeed. When the pushed commit is the merge commit of a pull request, the stable-release decision MUST use that pull request's release intent.
+A push to the default branch MUST publish a stable version only after all required build, test, quality, and publication gates succeed. When the pushed commit is the merge commit of a pull request, the stable-release decision MUST use that pull request's release intent. A successful stable release for a merged pull request MUST own promotion cleanup.
 
 #### Behavioral scenarios {#fr6-scenarios}
 
@@ -125,6 +131,7 @@ Scenario: Publish a merged pull request
   When all required validation gates succeed
   Then the workflow publishes the resulting stable version
   And the publication is associated with the pushed commit
+  And the successful release performs promotion cleanup
 ```
 
 ### FR7 — Published artifacts MUST match the resolved version {#fr7}
@@ -158,19 +165,29 @@ Scenario: Retry a publication after an interrupted run
   And it does not duplicate the package, tag, or release
 ```
 
-### NFR2 — Closed-pull-request cleanup and default-branch publication MUST be isolated {#nfr2}
+### NFR2 — Cancellation MUST be conditional on an explicit mutability mode {#nfr2}
 
-A closed-pull-request cleanup and a default-branch push MUST use distinct concurrency identities and MUST NOT cancel each other. Cleanup MUST remain limited to its pull request's prerelease artifacts while a default-branch push publishes a stable version.
+A run explicitly classified as read-only pull-request CI SHOULD cancel a superseded `opened`, `reopened`, or `synchronize` run for the same pull request. A run that may publish to the PowerShell Gallery, create or upload a GitHub Release or tag, deploy Pages, or clean up prereleases MUST NOT be canceled. Caller-level label inspection MUST NOT determine mutability because repository settings can change the release decision. Manual and scheduled runs sharing a ref MUST NOT cancel a default-branch release.
 
 #### Behavioral scenarios {#nfr2-scenarios}
 
 ```gherkin
-Scenario: Cleanup and stable publication overlap
-  Given a pull request closes while another pull request is pushed to the default branch
-  When both workflow runs start
-  Then neither run cancels the other
-  And cleanup does not remove artifacts outside the closed pull request
-  And stable publication completes independently
+Scenario: Supersede read-only pull-request CI
+  Given an explicitly read-only pull-request CI run is in progress
+  When a newer synchronize event starts the same read-only route
+  Then the older run may be canceled
+  And no release-related resource is mutated by either run
+
+Scenario: Preserve a release-capable run
+  Given a run may publish, deploy, or clean up prereleases
+  When a newer event starts
+  Then the release-capable run is not canceled
+  And the newer event does not infer safety from pull-request labels alone
+
+Scenario: Keep main release independent from manual and scheduled runs
+  Given a default-branch release is in progress
+  When a manual dispatch or scheduled validation starts for the same ref
+  Then neither event cancels the default-branch release
 ```
 
 ### NFR3 — Each lifecycle outcome MUST be auditable {#nfr3}
@@ -202,15 +219,16 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR5](#fr5), [NFR2](#nfr2), [NFR3](#nfr3)
+### AC2 — Verifies: [FR2](#fr2), [FR5](#fr5), [FR6](#fr6), [NFR2](#nfr2), [NFR3](#nfr3)
 
 ```gherkin
-Scenario: Non-stable lifecycle events remain non-mutating
-  Given a scheduled validation and a closed-pull-request cleanup overlap a main-push release
+Scenario: Lifecycle runs preserve release ownership
+  Given a scheduled validation and an abandoned pull-request cleanup overlap a main-push release
   When all three runs complete
   Then the scheduled run reports validation without a release mutation
-  And the cleanup affects only the closed pull request's prereleases
-  And the main-push run is the only run that can publish the stable release
+  And the cleanup affects only the abandoned pull request's prereleases
+  And none of the runs cancel the main-push release
+  And the main-push run is the only run that publishes the stable release and performs promotion cleanup
 ```
 
 ## Impact
