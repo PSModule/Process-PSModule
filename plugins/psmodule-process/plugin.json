@@ -1,4 +1,5 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "psmodule-process",
   "description": "PSModule process guidance and reusable skills for PowerShell module repositories.",
   "version": "1.0.0",
@@ -6,6 +7,7 @@
     "name": "PSModule",
     "url": "https://github.com/PSModule"
   },
+  "homepage": "https://psmodule.io/docs/",
   "repository": "https://github.com/PSModule/Process-PSModule",
   "license": "MIT",
   "keywords": [
