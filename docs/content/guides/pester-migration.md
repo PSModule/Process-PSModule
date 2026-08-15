@@ -5,8 +5,10 @@ description: A repository-wide checklist for migrating PSModule test sets to Pes
 
 # Migrating Pester tests
 
-Use the reusable [`pester-migration`](https://github.com/PSModule/Process-PSModule/tree/main/skills/pester-migration/SKILL.md)
-agent skill to migrate every Pester test set in a PSModule repository. It is
+Install the version 1.0.0 [`psmodule-process` marketplace
+plugin](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin/marketplace.json)
+and use its reusable `pester-migration` agent skill to migrate every Pester test
+set in a PSModule repository. It is
 written for Pester **6.1.0** and distinguishes required compatibility changes
 from optional v6 modernization.
 
