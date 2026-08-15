@@ -1,9 +1,4 @@
 Name: PSModuleTest
-Publish:
-  Site:
-    Skip: true
-  Module:
-    AutoCleanup: false
 Test:
   SourceCode:
     Skip: true
@@ -14,6 +9,11 @@ Test:
     Skip: false
   CodeCoverage:
     PercentTarget: 1
+Publish:
+  Site:
+    Skip: true
+  Module:
+    AutoCleanup: false
 Linter:
   env:
     VALIDATE_BIOME_FORMAT: false
