@@ -26,6 +26,25 @@ consumer repositories while developing or validating this skill.
 Use the repository's applicable MSX workflow and PR format guidance. Do not
 silently broaden the scope when the consumer has unrelated failures.
 
+## Consumer layout variance
+
+Do not assume that a consumer already resembles Process-PSModule. Inventory
+what is present before deciding what to migrate:
+
+- Many consumers have a legacy `.github/mkdocs.yml` and no `docs/` directory.
+- Some consumers already have `docs/zensical.toml`, custom overrides, and
+  assets that must be preserved.
+- A consumer may already declare Pester 6; do not repeat a dependency migration
+  that is already complete.
+- Existing repository-owned workflows, scripts, and settings are not caller
+  workflow extensions. Keep them in separate files and validate them in place.
+
+When documentation is absent, do not invent a site as part of the caller
+upgrade unless the requested scope explicitly includes documentation migration.
+When a legacy MkDocs configuration exists and documentation migration is in
+scope, migrate its content and design deliberately to Zensical, then remove
+the obsolete configuration only after the generated site validates.
+
 ## Caller workflow contract
 
 Replace `.github/workflows/Process-PSModule.yml` with exactly this template:
@@ -92,6 +111,24 @@ the existing names and semantics. Omit `TestData` entirely when the repository
 does not use it. Never move secrets into source files, workflow `env`, or
 committed settings.
 
+For example, preserve a secrets-only caller payload such as PSModule/GitHub's:
+
+```yaml
+      TestData: >-
+        {"secrets":{"TEST_USER_USER_FG_PAT":"${{ secrets.TEST_USER_USER_FG_PAT }}","TEST_USER_ORG_FG_PAT":"${{ secrets.TEST_USER_ORG_FG_PAT }}","TEST_USER_PAT":"${{ secrets.TEST_USER_PAT }}","TEST_APP_ORG_CLIENT_ID":"${{ secrets.TEST_APP_ORG_CLIENT_ID }}","TEST_APP_ORG_PRIVATE_KEY":"${{ secrets.TEST_APP_ORG_PRIVATE_KEY }}","TEST_APP_ENT_CLIENT_ID":"${{ secrets.TEST_APP_ENT_CLIENT_ID }}","TEST_APP_ENT_PRIVATE_KEY":"${{ secrets.TEST_APP_ENT_PRIVATE_KEY }}"}}
+```
+
+Preserve a mixed secrets-and-variables payload such as PSModule/Confluence's:
+
+```yaml
+      TestData: >-
+        {"secrets":{"CONFLUENCE_API_TOKEN":"${{ secrets.CONFLUENCE_API_TOKEN }}"},"variables":{"CONFLUENCE_SITE":"${{ vars.CONFLUENCE_SITE }}","CONFLUENCE_USERNAME":"${{ vars.CONFLUENCE_USERNAME }}","CONFLUENCE_SPACE_KEY":"${{ vars.CONFLUENCE_SPACE_KEY }}"}}
+```
+
+These examples are contracts, not values to copy into an unrelated consumer.
+Read the original workflow and preserve only the maps and keys it actually
+uses.
+
 ## Documentation integration
 
 Treat `docs/zensical.toml` as authoritative. Do not create or maintain
@@ -117,7 +154,9 @@ the existing consumer source of truth, then validate the generated site.
 The framework upgrade does not permit leaving tests on an undeclared or
 unsupported Pester version. Inspect module requirements, dependency manifests,
 local setup, CI installation, and every test entry point. Declare and run the
-repository's supported Pester 6 dependency.
+repository's supported Pester 6 dependency. If Pester 6 is already declared,
+retain the declaration and focus on configuration, discovery, assertions,
+setup/teardown, and output compatibility.
 
 Rewrite tests using native Pester v6 terminology and APIs:
 
