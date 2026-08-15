@@ -127,12 +127,18 @@ Treat files and directories as follows:
 If the template revision and the consumer's existing layout disagree, record
 the difference and migrate only the requested integration surface. In
 particular, the current template uses `.github/zensical.toml`, while this v8
-upgrade request uses `docs/zensical.toml`, `docs/content/`, `docs/overrides/`,
-and `docs/assets/` as its documentation contract. When that requested
+upgrade request uses `docs/zensical.toml`, `docs/content/`, and
+`docs/overrides/` (including `docs/overrides/assets/`) as its documentation
+contract; a separate `docs/assets/` directory is optional. When that requested
 documentation migration is in scope, move the template's Zensical settings
 and custom assets into the `docs/` contract rather than maintaining both
 configurations. When it is not in scope, preserve the consumer's existing
 working configuration and report the difference.
+
+For a documentation-only MkDocs migration, use the dedicated
+[`psmodule-zensical-migration`](../psmodule-zensical-migration/SKILL.md) skill
+so content, theme, assets, and link validation are handled independently from
+the caller workflow upgrade.
 
 ## Caller workflow contract
 
@@ -231,7 +237,8 @@ preserve or migrate these surfaces deliberately:
 - `docs/content/` as the documentation source directory.
 - `docs/overrides/` and custom templates.
 - `docs/overrides/assets/stylesheets/navigation.css`.
-- `docs/assets/`, logo, favicon, palette, fonts, and custom JavaScript/CSS.
+- `docs/overrides/assets/`, any optional `docs/assets/`, logo, favicon, palette,
+  fonts, and custom JavaScript/CSS.
 - Existing navigation labels, page paths, and custom theme behavior.
 
 Do not delete existing custom CSS/assets merely because the default theme also

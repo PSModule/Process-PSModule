@@ -6,13 +6,13 @@
   },
   "metadata": {
     "description": "Agent plugins for the PSModule repository process.",
-    "version": "1.4.0"
+    "version": "1.5.0"
   },
   "plugins": [
     {
       "name": "psmodule",
       "description": "PSModule process guidance and reusable skills for PowerShell module repositories.",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "source": ".github/plugin/psmodule"
     }
   ]
