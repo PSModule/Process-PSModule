@@ -237,15 +237,29 @@ function Get-LocalDefaultBranch {
 
     $originHead = (& git -C $RepositoryRoot symbolic-ref refs/remotes/origin/HEAD --short 2>$null) -join ''
     if ($LASTEXITCODE -eq 0 -and $originHead) {
-        return $originHead -replace '^origin/', ''
+        return [pscustomobject]@{
+            Name = $originHead -replace '^origin/', ''
+            Ref  = $originHead
+        }
+    }
+
+    & git -C $RepositoryRoot show-ref --verify --quiet refs/heads/main
+    if ($LASTEXITCODE -eq 0) {
+        return [pscustomobject]@{
+            Name = 'main'
+            Ref  = 'main'
+        }
     }
 
     $branch = (& git -C $RepositoryRoot branch --show-current 2>$null) -join ''
     if ($LASTEXITCODE -eq 0 -and $branch) {
-        return $branch
+        return [pscustomobject]@{
+            Name = $branch
+            Ref  = $branch
+        }
     }
 
-    $null
+    throw "Could not determine a default or current branch for local repository [$RepositoryRoot]."
 }
 
 function Get-LocalWorkflowFile {
@@ -255,26 +269,39 @@ function Get-LocalWorkflowFile {
         [string[]] $InputPath
     )
 
+    $seenRepositories = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($repositoryRoot in Get-LocalRepositoryRoot -InputPath $InputPath) {
-        $workflowRoot = Join-Path $repositoryRoot '.github/workflows'
-        if (-not (Test-Path -LiteralPath $workflowRoot -PathType Container)) {
+        $repositoryName = Get-LocalRepositoryName -RepositoryRoot $repositoryRoot
+        if (-not $seenRepositories.Add($repositoryName)) {
             continue
         }
 
-        $repositoryName = Get-LocalRepositoryName -RepositoryRoot $repositoryRoot
         $defaultBranch = Get-LocalDefaultBranch -RepositoryRoot $repositoryRoot
-        Get-ChildItem -LiteralPath $workflowRoot -File |
-            Where-Object { $_.Extension -in @('.yml', '.yaml') } |
+        $workflowPaths = @(
+            (& git -C $repositoryRoot ls-tree -r --name-only $defaultBranch.Ref -- '.github/workflows' 2>&1) -join "`n"
+        )
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not list workflows from [$repositoryName] at [$($defaultBranch.Ref)]:`n$workflowPaths"
+        }
+
+        @($workflowPaths -split '\r?\n') |
+            Where-Object { [IO.Path]::GetExtension($_) -in @('.yml', '.yaml') } |
             ForEach-Object {
+                $workflowPath = $_
+                $content = (& git -C $repositoryRoot show "$($defaultBranch.Ref):$workflowPath" 2>&1) -join "`n"
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Could not read [$workflowPath] from [$repositoryName] at [$($defaultBranch.Ref)]:`n$content"
+                }
+
                 [pscustomobject]@{
                     Repository    = $repositoryName
-                    DefaultBranch = $defaultBranch
+                    DefaultBranch = $defaultBranch.Name
                     Archived      = $false
                     RepositoryUrl = $null
-                    WorkflowPath  = [IO.Path]::GetRelativePath($repositoryRoot, $_.FullName).Replace('\', '/')
+                    WorkflowPath  = $workflowPath
                     WorkflowUrl   = $null
                     SearchQuery   = $null
-                    Content       = Get-Content -LiteralPath $_.FullName -Raw
+                    Content       = $content
                 }
             }
     }
@@ -318,7 +345,47 @@ function Get-MapValue {
         return $Map[$Name]
     }
 
-    $Map.PSObject.Properties[$Name].Value
+    $property = $Map.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
+    }
+
+    $property.Value
+}
+
+function ConvertTo-TriggerMap {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [object] $Trigger
+    )
+
+    if ($null -eq $Trigger) {
+        return [ordered]@{}
+    }
+
+    if ($Trigger -is [Collections.IDictionary]) {
+        return $Trigger
+    }
+
+    $result = [ordered]@{}
+    if ($Trigger -is [string]) {
+        $result[$Trigger] = $null
+        return $result
+    }
+
+    if ($Trigger -is [Collections.IEnumerable]) {
+        foreach ($eventName in $Trigger) {
+            if ($eventName -isnot [string]) {
+                throw "Unsupported workflow trigger value type [$($eventName.GetType().FullName)]."
+            }
+            $result[$eventName] = $null
+        }
+        return $result
+    }
+
+    throw "Unsupported workflow trigger type [$($Trigger.GetType().FullName)]."
 }
 
 function ConvertTo-StringMap {
@@ -404,6 +471,7 @@ function Get-WorkflowInventoryItem {
                 [ordered]@{}
             }
             Environment    = Get-MapValue -Map $job -Name 'environment'
+            Condition      = Get-MapValue -Map $job -Name 'if'
         }
     }
 
@@ -411,7 +479,21 @@ function Get-WorkflowInventoryItem {
         return
     }
 
-    $trigger = Get-MapValue -Map $workflow -Name 'on'
+    try {
+        $trigger = ConvertTo-TriggerMap -Trigger (Get-MapValue -Map $workflow -Name 'on')
+    } catch {
+        return [pscustomobject]@{
+            Repository    = $WorkflowFile.Repository
+            DefaultBranch = $WorkflowFile.DefaultBranch
+            Archived      = $WorkflowFile.Archived
+            RepositoryUrl = $WorkflowFile.RepositoryUrl
+            WorkflowPath  = $WorkflowFile.WorkflowPath
+            WorkflowUrl   = $WorkflowFile.WorkflowUrl
+            SearchQuery   = $WorkflowFile.SearchQuery
+            Status        = 'ParseError'
+            Error         = $_.Exception.Message
+        }
+    }
     $pullRequest = Get-MapValue -Map $trigger -Name 'pull_request'
     $push = Get-MapValue -Map $trigger -Name 'push'
     $schedule = Get-MapValue -Map $trigger -Name 'schedule'
@@ -442,6 +524,7 @@ function Get-WorkflowInventoryItem {
         Status              = 'Parsed'
         Error               = $null
         WorkflowName        = Get-MapValue -Map $workflow -Name 'name'
+        RunName             = Get-MapValue -Map $workflow -Name 'run-name'
         Events              = @(Get-MapKey -Map $trigger | Sort-Object)
         Schedules           = @($schedule | ForEach-Object { Get-MapValue -Map $_ -Name 'cron' })
         PushBranches        = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'branches')
@@ -493,6 +576,13 @@ function ConvertTo-WorkflowInventoryMarkdown {
             Group-Object |
             Sort-Object @{ Expression = 'Count'; Descending = $true }, Name
     )
+    $versions = @(
+        $parsed |
+            ForEach-Object { $_.VersionComments.Version } |
+            Where-Object { $_ } |
+            Group-Object |
+            Sort-Object @{ Expression = 'Count'; Descending = $true }, Name
+    )
     $eventSets = @(
         $parsed |
             ForEach-Object { $_.Events -join ', ' } |
@@ -501,6 +591,11 @@ function ConvertTo-WorkflowInventoryMarkdown {
     )
 
     $lines = [Collections.Generic.List[string]]::new()
+    $lines.Add('---')
+    $lines.Add('title: Process-PSModule workflow fleet inventory')
+    $lines.Add('description: Generated inventory of PSModule repositories that call the Process-PSModule reusable workflow.')
+    $lines.Add('---')
+    $lines.Add('')
     $lines.Add('# Process-PSModule workflow inventory')
     $lines.Add('')
     $lines.Add("Generated: $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')")
@@ -518,6 +613,14 @@ function ConvertTo-WorkflowInventoryMarkdown {
         $lines.Add("| $(ConvertTo-MarkdownCell $group.Name) | $($group.Count) |")
     }
     $lines.Add('')
+    $lines.Add('## Version distribution')
+    $lines.Add('')
+    $lines.Add('| Version comment | Workflows |')
+    $lines.Add('| --- | ---: |')
+    foreach ($group in $versions) {
+        $lines.Add("| $(ConvertTo-MarkdownCell $group.Name) | $($group.Count) |")
+    }
+    $lines.Add('')
     $lines.Add('## Trigger distribution')
     $lines.Add('')
     $lines.Add('| Events | Workflows |')
@@ -529,18 +632,29 @@ function ConvertTo-WorkflowInventoryMarkdown {
     $lines.Add('## Workflow files')
     $lines.Add('')
     $lines.Add(
-        '| Repository | File | Name | Events | Reference | Version | PR types | Push branches | Schedule |' +
-        ' Concurrency | Cancel | Permissions | Secrets | Inputs | Extra jobs |'
+        '| Repository | File | Name | Run name | Events | Reference | Version | PR types | Push branches | Schedule |' +
+        ' Concurrency | Cancel | Permissions | Condition | Secrets | Inputs | Extra jobs |'
     )
     $lines.Add(
-        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
     )
 
     foreach ($item in $Inventory | Sort-Object Repository, WorkflowPath) {
+        $repositoryCell = if ($item.RepositoryUrl) {
+            "[$($item.Repository)]($($item.RepositoryUrl))"
+        } else {
+            $item.Repository
+        }
+        $workflowCell = if ($item.WorkflowUrl) {
+            "[$($item.WorkflowPath)]($($item.WorkflowUrl))"
+        } else {
+            $item.WorkflowPath
+        }
+
         if ($item.Status -eq 'ParseError') {
             $lines.Add(
-                "| $(ConvertTo-MarkdownCell $item.Repository) " +
-                "| $(ConvertTo-MarkdownCell $item.WorkflowPath) | parse error | | | | | | | | | | | | |"
+                "| $(ConvertTo-MarkdownCell $repositoryCell) " +
+                "| $(ConvertTo-MarkdownCell $workflowCell) | parse error | | | | | | | | | | | | | | |"
             )
             continue
         }
@@ -561,6 +675,7 @@ function ConvertTo-WorkflowInventoryMarkdown {
                 ForEach-Object { $_.Inputs.Keys } |
                 Sort-Object -Unique
         )
+        $conditionSummary = @($item.ProcessJobs.Condition | Where-Object { $_ } | Sort-Object -Unique)
         $permissionSummary = @(
             $item.Permissions.GetEnumerator() |
                 Sort-Object Key |
@@ -568,9 +683,10 @@ function ConvertTo-WorkflowInventoryMarkdown {
         )
 
         $lines.Add(
-            "| $(ConvertTo-MarkdownCell $item.Repository) " +
-            "| $(ConvertTo-MarkdownCell $item.WorkflowPath) " +
+            "| $(ConvertTo-MarkdownCell $repositoryCell) " +
+            "| $(ConvertTo-MarkdownCell $workflowCell) " +
             "| $(ConvertTo-MarkdownCell $item.WorkflowName) " +
+            "| $(ConvertTo-MarkdownCell $item.RunName) " +
             "| $(ConvertTo-MarkdownCell $item.Events) " +
             "| $(ConvertTo-MarkdownCell $referencesForItem) " +
             "| $(ConvertTo-MarkdownCell $versionsForItem) " +
@@ -580,6 +696,7 @@ function ConvertTo-WorkflowInventoryMarkdown {
             "| $(ConvertTo-MarkdownCell $item.ConcurrencyGroup) " +
             "| $(ConvertTo-MarkdownCell $item.CancelInProgress) " +
             "| $(ConvertTo-MarkdownCell $permissionSummary) " +
+            "| $(ConvertTo-MarkdownCell $conditionSummary) " +
             "| $(ConvertTo-MarkdownCell $secretSummary) " +
             "| $(ConvertTo-MarkdownCell $inputSummary) " +
             "| $(ConvertTo-MarkdownCell $item.AdditionalJobs) |"
