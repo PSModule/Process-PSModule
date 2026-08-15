@@ -150,6 +150,11 @@ Release automation is therefore the operational owner, but actors with sufficien
 from moving the major tag manually. Enforce release-identity-only governance for moving tags before migrating the fleet
 to `@v8`; until then, consumers must retain immutable SHA references.
 
+The reusable workflow remains at `.github/workflows/workflow.yml`. A private cross-repository experiment on 2026-08-15
+confirmed that GitHub rejects a root-level reusable workflow reference with
+`references to workflows must be rooted in '.github/workflows'`, even when the provider repository grants the caller
+the required Actions access.
+
 ### Owned and external references
 
 | Automation source | Standard reference | Update model |
