@@ -8,7 +8,7 @@ $moduleName = if ([string]::IsNullOrEmpty($env:PSMODULE_TEST_PSMODULE_INPUT_Name
     $env:PSMODULE_TEST_PSMODULE_INPUT_Name
 }
 $settings = $env:PSMODULE_TEST_PSMODULE_INPUT_Settings
-$testPath = Resolve-Path -Path "$PSScriptRoot/tests/$settings" | Select-Object -ExpandProperty Path
+$testPath = Resolve-Path -Path "$PSScriptRoot/../tests/$settings" | Select-Object -ExpandProperty Path
 
 $localTestPath = Resolve-Path -Path 'tests' | Select-Object -ExpandProperty Path
 switch ($settings) {
