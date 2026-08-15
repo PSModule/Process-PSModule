@@ -141,7 +141,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 
 | Decision | Candidate | Alternatives still open |
 | --- | --- | --- |
-| Wrapper scope | Exactly one reusable-workflow job. | Permit repository-specific jobs in the same file, or define pre/post extension jobs. |
+| Contract scope | Standardize the `Process-PSModule` caller job and its shared workflow controls, not every job in the file. | Selected for the candidate; repository-owned jobs remain outside the caller contract. |
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
 | Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
@@ -189,7 +189,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Event gate | Keep the caller unconditional and authorize capabilities in `Plan`. | The reusable workflow owns execution policy; fork pull requests may validate but cannot obtain App credentials, publish, deploy, clean up, or mutate repository state. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
-| Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
+| Scope | Require one conforming `Process-PSModule` delegation job. | Additional repository-owned jobs do not change caller conformance. |
 
 ## Candidate optional elements
 
@@ -220,7 +220,6 @@ an approved structure:
 - a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
 - a caller-level fork or event-authorization condition;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
-- unrelated additional jobs in the caller wrapper;
 - caller permissions beyond `contents: read`, `pages: write`, and `id-token: write`.
 
 Use the built-in `GITHUB_TOKEN` for non-user-facing operations confined to the calling repository, including checkout
@@ -240,9 +239,10 @@ evaluating Settings. Privileged-context events such as
 `pull_request_target` remain unsupported unless separately designed to prevent untrusted code from crossing the
 credential boundary.
 
-The candidate keeps repository-specific automation in a separate workflow file. That keeps the Process-PSModule wrapper
-identical enough for automated comparison while allowing modules to own unrelated schedules, generation, or integration
-tasks.
+The contract applies to the shared workflow controls and the `Process-PSModule` delegation job shown above. Repositories
+may define additional jobs in the same file or separate workflows. The inventory reports those jobs for visibility, but
+the contract does not prescribe their implementation. Additional jobs must not weaken or bypass the permissions,
+authorization, trigger, or concurrency controls governing the Process-PSModule call.
 
 ## Rollout boundary
 
