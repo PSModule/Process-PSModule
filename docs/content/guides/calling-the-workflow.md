@@ -48,7 +48,8 @@ permissions:
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@5a11e8e8b018faf97017e0416f136a751c026713 # v8.0.0
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -66,6 +67,10 @@ resulting stable release do not serialize as one run. Keep `cancel-in-progress: 
 the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
 The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
 waits for it to finish.
+
+The job condition skips fork-originated pull requests because GitHub does not expose the required repository secrets to
+forks. Use a separate secret-free, read-only workflow if the repository accepts contributions from forks and requires
+fork CI.
 
 ## Passing test data
 
@@ -94,7 +99,8 @@ changes:
 ```yaml
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@5a11e8e8b018faf97017e0416f136a751c026713 # v8.0.0
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -123,7 +129,8 @@ content lines stay at the same indentation level:
 ```yaml
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@5a11e8e8b018faf97017e0416f136a751c026713 # v8.0.0
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -183,9 +190,9 @@ Notes:
 - If using `secrets: inherit` in a caller workflow, remember that GitHub only forwards secrets that
   already exist by name. It does not assemble a `TestData` JSON payload from individual secrets such as
   `TEST_USER_PAT`; the caller must still create and pass the `TestData` value explicitly.
-- Organization, repository and GitHub *Environment* secrets and variables are supported when they are
-  visible to the calling job. For environment-scoped values, set `environment:` on the calling job and
-  explicitly include those values in `TestData`; they are not exposed automatically.
+- Organization and repository secrets and variables are supported when they are visible to the calling job.
+  GitHub Environment secrets are not supported by this caller contract because a job that calls a reusable
+  workflow cannot declare `environment:`.
 
 ## Important file change detection
 
@@ -235,7 +242,8 @@ You can also pass patterns via the workflow input:
 ```yaml
 jobs:
   Process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@5a11e8e8b018faf97017e0416f136a751c026713 # v8.0.0
     with:
       ImportantFilePatterns: |
         ^src/
@@ -248,7 +256,8 @@ To disable triggering via the workflow input, pass an explicit empty string:
 ```yaml
 jobs:
   process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@5a11e8e8b018faf97017e0416f136a751c026713 # v8.0.0
     with:
       ImportantFilePatterns: ''
 ```
