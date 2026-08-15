@@ -86,7 +86,8 @@ Get-ChildItem -LiteralPath $root -Recurse -File -Include '*.yml', '*.yaml' | For
             param($match)
 
             $action = $match.Groups['action'].Value
-            if ($action.StartsWith('./', [System.StringComparison]::Ordinal) -or $action.StartsWith('docker://', [System.StringComparison]::OrdinalIgnoreCase)) {
+            if ($action.StartsWith('./', [System.StringComparison]::Ordinal) -or
+                $action.StartsWith('docker://', [System.StringComparison]::OrdinalIgnoreCase)) {
                 return $match.Value
             }
 
