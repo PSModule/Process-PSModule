@@ -39,7 +39,7 @@ permissions:
 jobs:
   Process-PSModule:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@0123456789012345678901234567890123456789 # v8.0.0
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     with:
       Debug: true
     secrets:
@@ -66,8 +66,8 @@ jobs:
     & git -C $repositoryRoot switch --quiet -c feature
     $featureContent = Get-Content -LiteralPath (Join-Path $workflowRoot 'Process-PSModule.yml') -Raw
     $featureContent.Replace(
-        '0123456789012345678901234567890123456789',
-        'ffffffffffffffffffffffffffffffffffffffff'
+        'workflow.yml@v8',
+        'workflow.yml@v9'
     ) |
         Set-Content -LiteralPath (Join-Path $workflowRoot 'Process-PSModule.yml')
 }
@@ -85,7 +85,7 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         $result = @(
             & $scriptPath `
                 -Path $testRoot `
-                -TargetReference '0123456789012345678901234567890123456789'
+                -TargetReference 'v8'
         )
 
         $result.Count | Should -Be 1
@@ -96,7 +96,7 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         $result[0].PullRequestTypes | Should -Be @('opened', 'synchronize')
         $result[0].ConcurrencyGroup | Should -Be '${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}'
         $result[0].CancelInProgress | Should -BeFalse
-        $result[0].ProcessJobs[0].Reference | Should -Be '0123456789012345678901234567890123456789'
+        $result[0].ProcessJobs[0].Reference | Should -Be 'v8'
         $result[0].ProcessJobs[0].MatchesTarget | Should -BeTrue
         $result[0].MatchesTarget | Should -BeTrue
         $result[0].ProcessJobs[0].Condition | Should -Match 'head.repo.full_name'
@@ -108,11 +108,18 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         )
     }
 
+    It 'compares target references case-sensitively' {
+        $result = @(& $scriptPath -Path $repositoryRoot -TargetReference 'V8')
+
+        $result[0].ProcessJobs[0].MatchesTarget | Should -BeFalse
+        $result[0].MatchesTarget | Should -BeFalse
+    }
+
     It 'reads the remote default branch instead of feature-worktree changes' {
         $result = @(& $scriptPath -Path $repositoryRoot)
 
         $result[0].DefaultBranch | Should -Be 'main'
-        $result[0].ProcessJobs[0].Reference | Should -Be '0123456789012345678901234567890123456789'
+        $result[0].ProcessJobs[0].Reference | Should -Be 'v8'
     }
 
     It 'writes JSON and Markdown refresh artifacts' {
@@ -121,7 +128,7 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
 
         & $scriptPath `
             -Path $repositoryRoot `
-            -TargetReference '0123456789012345678901234567890123456789' `
+            -TargetReference 'v8' `
             -JsonPath $jsonPath `
             -MarkdownPath $markdownPath |
             Out-Null
@@ -130,7 +137,7 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         Test-Path -LiteralPath $markdownPath | Should -BeTrue
         (Get-Content -LiteralPath $jsonPath -Raw).TrimStart() | Should -Match '^\['
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Example'
-        Get-Content -LiteralPath $markdownPath -Raw | Should -Match '0123456789012345678901234567890123456789'
+        Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'v8'
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Matching target: 1/1'
     }
 

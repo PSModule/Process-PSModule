@@ -504,7 +504,7 @@ function Get-WorkflowInventoryItem {
             Uses           = "$uses"
             Reference      = "$uses".Substring("$ExpectedReference@".Length)
             MatchesTarget  = if ($ExpectedTargetReference) {
-                "$uses".Substring("$ExpectedReference@".Length) -eq $ExpectedTargetReference
+                "$uses".Substring("$ExpectedReference@".Length) -ceq $ExpectedTargetReference
             } else {
                 $null
             }
