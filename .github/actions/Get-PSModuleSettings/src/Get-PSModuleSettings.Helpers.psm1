@@ -46,27 +46,27 @@ function Resolve-WorkflowEventRouting {
     )
 
     [pscustomobject]@{
-        IsPR                           = $isPR
-        IsPush                         = $isPush
-        IsManualDispatch               = $isManualDispatch
-        IsOpenOrUpdatedPR              = $isOpenOrUpdatedPR
-        IsOpenOrLabeledPR              = $isOpenOrLabeledPR
-        IsClosedPR                     = $isClosedPR
-        IsAbandonedPR                  = $isAbandonedPR
-        IsMergedPR                     = $isMergedPR
-        IsTargetDefaultBranch          = $IsTargetDefaultBranch
-        IsPushToDefaultBranch          = $IsPushToDefaultBranch
+        IsPR                            = $isPR
+        IsPush                          = $isPush
+        IsManualDispatch                = $isManualDispatch
+        IsOpenOrUpdatedPR               = $isOpenOrUpdatedPR
+        IsOpenOrLabeledPR               = $isOpenOrLabeledPR
+        IsClosedPR                      = $isClosedPR
+        IsAbandonedPR                   = $isAbandonedPR
+        IsMergedPR                      = $isMergedPR
+        IsTargetDefaultBranch           = $IsTargetDefaultBranch
+        IsPushToDefaultBranch           = $IsPushToDefaultBranch
         IsManualDispatchToDefaultBranch = $IsManualDispatchToDefaultBranch
-        ShouldPrerelease               = $shouldPrerelease
-        ReleaseType                    = if ($shouldRelease) {
+        ShouldPrerelease                = $shouldPrerelease
+        ReleaseType                     = if ($shouldRelease) {
             'Release'
         } elseif ($shouldPrerelease) {
             'Prerelease'
         } else {
             'None'
         }
-        ShouldRunBuildTest             = (-not $isClosedPR) -and $HasImportantChanges
-        ShouldCleanupEvent             = $isClosedPR
+        ShouldRunBuildTest              = (-not $isClosedPR) -and $HasImportantChanges
+        ShouldCleanupEvent              = $isClosedPR
     }
 }
 
@@ -106,7 +106,7 @@ function Get-FilesFromGitTree {
         Returns the files contained in a complete Git tree response.
     #>
     [CmdletBinding()]
-    [OutputType([string[]])]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject] $Tree
@@ -116,7 +116,7 @@ function Get-FilesFromGitTree {
         throw 'Cannot determine changed files because the Git tree response was truncated.'
     }
 
-    @($Tree.tree |
+    $Tree.tree |
         Where-Object { $_.type -eq 'blob' } |
-        Select-Object -ExpandProperty path)
+        Select-Object -ExpandProperty path
 }
