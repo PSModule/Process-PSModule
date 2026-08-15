@@ -118,7 +118,6 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
@@ -137,7 +136,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
 | Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
 | Permissions | Default deny at workflow level, then grant the caller job `contents: read`, `pages: write`, and `id-token: write`. | Selected for the candidate: use `GITHUB_TOKEN` for repository-local, non-user-facing platform operations and App tokens for user-facing or otherwise unsupported operations. |
-| Fork behavior | Skip fork-originated pull requests in this credentialed wrapper. | Add a separate secret-free workflow or define another supported fork-validation design. |
+| Fork behavior | Keep the caller unconditional; gate unsupported fork events in the reusable workflow's Plan job. | Selected for the candidate; execution policy belongs to Process-PSModule rather than every consumer. |
 | Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
 
@@ -172,7 +171,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Schedule | Keep a scheduled health run. | Exercises current dependencies even when repository code is unchanged. |
 | Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | New PR events supersede older declarative reconciliation runs; same-ref push, dispatch, and schedule runs serialize without cancellation. |
 | Permissions | Set top-level `permissions: {}` and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Checkout and Pages remain repository-local built-in capabilities; user-facing interactions and operations outside the built-in token boundary use scoped GitHub App tokens. |
-| Fork guard | Skip pull requests whose head repository differs from `github.repository`. | GitHub withholds the required repository secrets from fork pull requests. |
+| Event gate | Keep the caller unconditional and gate unsupported events in `Plan`. | The reusable workflow owns execution policy; every downstream job must require a successful authorized plan. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
 | Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
@@ -202,6 +201,7 @@ an approved structure:
   exact patch tag, or full commit SHA;
 - missing `push` or `unlabeled` triggers;
 - a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
+- a caller-level fork or event-authorization condition;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
 - unrelated additional jobs in the caller wrapper;
 - caller permissions beyond `contents: read`, `pages: write`, and `id-token: write`.
@@ -212,9 +212,9 @@ interactions such as pull-request comments, labels, statuses, releases, and rele
 token cannot provide the required repository or cross-repository access. Tokens remain step-scoped and must not fall
 back silently from App authorization to broader built-in-token authority.
 
-Fork-originated pull requests are skipped by the candidate caller because reusable-workflow caller jobs cannot select a
-GitHub Environment and repository secrets are unavailable to forks. Supporting fork CI requires a separate, secret-free,
-read-only validation workflow under this candidate; #514 must approve that boundary.
+The reusable workflow's Plan job rejects unsupported fork-originated pull requests before any credentialed or
+repository-defined work runs. Every downstream job must depend on a successful authorized Plan result, including jobs
+using `always()`. Supporting fork CI requires a separate, secret-free read-only workflow under this candidate.
 
 The candidate keeps repository-specific automation in a separate workflow file. That keeps the Process-PSModule wrapper
 identical enough for automated comparison while allowing modules to own unrelated schedules, generation, or integration
