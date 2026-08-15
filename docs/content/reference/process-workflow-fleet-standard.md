@@ -14,6 +14,7 @@ workflow. Refresh it with:
 ```powershell
 ./.github/scripts/Get-ProcessPSModuleWorkflowInventory.ps1 `
     -Organization PSModule `
+    -TargetReference v8 `
     -JsonPath ./output/process-workflows.json `
     -MarkdownPath ./docs/content/reference/process-workflow-fleet-inventory.md
 ```
@@ -24,6 +25,7 @@ GitHub discovery, use the local parameter set:
 ```powershell
 ./.github/scripts/Get-ProcessPSModuleWorkflowInventory.ps1 `
     -Path C:\Repos, C:\Users\me\.copilot\repos `
+    -TargetReference v8 `
     -JsonPath ./output/process-workflows.json `
     -MarkdownPath ./output/process-workflows.md
 ```
@@ -118,14 +120,32 @@ permissions:
 jobs:
   Process-PSModule:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@5a11e8e8b018faf97017e0416f136a751c026713 # v8.0.0
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-The full commit SHA is the machine-enforced pin. The version comment is required for humans and Dependabot.
+The `v8` reference is the controlled moving major tag for this PSModule-owned workflow. On 2026-08-15, `v8`, `v8.0`,
+and the immutable `v8.0.0` release tag all resolve to commit `5a11e8e8b018faf97017e0416f136a751c026713`.
+`Release-GHRepository` creates and advances major and minor tags by default, while the organization tag ruleset prevents
+deletion or non-fast-forward updates of exact `*.*.*` release tags.
+
+The effective repository rulesets currently protect exact release tags but do not restrict movement of `v8` itself.
+Release automation is therefore the operational owner, but actors with sufficient contents access are not yet blocked
+from moving the major tag manually. Enforce release-identity-only governance for moving tags before migrating the fleet
+to `@v8`; until then, consumers must retain immutable SHA references.
+
+### Owned and external references
+
+| Automation source | Standard reference | Update model |
+| --- | --- | --- |
+| PSModule-owned action or reusable workflow | Floating major tag such as `@v8` | Compatible patch and minor releases advance the major tag through controlled release automation. |
+| External action or reusable workflow | Full commit SHA with a trailing release-version comment | Dependabot proposes reviewed SHA updates; upstream cannot silently change the referenced code. |
+
+A major tag never crosses a breaking boundary. `v8` remains on the latest compatible `8.x` release; `v9` begins a new
+fleet campaign. Branch names, `latest`, floating minor tags, and unqualified targets are not accepted pins.
 
 ## Required elements
 
@@ -139,7 +159,7 @@ The full commit SHA is the machine-enforced pin. The version comment is required
 | Concurrency | Use the PR-number-or-ref key with `cancel-in-progress: false`. | Cleanup and stable release runs stay distinct; release mutations queue instead of being interrupted. |
 | Permissions | Declare the five documented permissions explicitly. | The called workflow cannot elevate caller permissions. |
 | Fork guard | Skip pull requests whose head repository differs from `github.repository`. | GitHub withholds the required repository secrets from fork pull requests. |
-| Reference | Pin the latest approved release to its full commit SHA and retain the version comment. | Immutable supply-chain reference with readable update context. |
+| Reference | Use the approved internal floating major tag (`v8`). | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
 | Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
 
@@ -163,7 +183,8 @@ The following are migration defects or require a documented exception:
 
 - `secrets: inherit`;
 - `APIKey` or `APIKEY` mappings from the pre-`v7` contract;
-- a mutable tag instead of a full commit SHA;
+- any Process-PSModule reference other than the approved major tag (`v8`), including a branch, `latest`, minor tag,
+  exact patch tag, or full commit SHA;
 - missing `push` or `unlabeled` triggers;
 - `cancel-in-progress: true` or the old ref-only concurrency key;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
@@ -180,7 +201,30 @@ tasks.
 
 ## Rollout boundary
 
-This research does not change consumer repositories. A fleet campaign should use one delivery issue and one early draft
-pull request per repository, preserve the supported optional mappings discovered here, and replace every historical
-credential mapping with the explicit `v8` contract. The inventory should be refreshed immediately before creating the
-campaign leaves and again before declaring the campaign complete.
+This research does not change consumer repositories. The campaign should use the stable slug
+`process-v8-major-tag`, one delivery issue, branch, and early draft pull request per repository, and these waves:
+
+| Wave | Repositories | Change profile |
+| --- | ---: | --- |
+| Pilot | 1 | Update `Template-PSModule` first and use its final caller as the generated-repository reference. |
+| Inherited secrets | 41 | Replace `secrets: inherit` with the three explicit `v8` credential mappings. |
+| Old API key only | 14 | Replace `APIKey`/`APIKEY` with the three explicit mappings; excludes the template pilot. |
+| Test data | 3 | Preserve each existing `TestData` payload while replacing the old API key contract. |
+| Custom input | 1 | Update `Yaml` last while preserving `TestData` and `ImportantFilePatterns`. |
+
+Before opening leaves:
+
+1. Confirm `v8` and `v8.0.0` resolve to the same tested release commit.
+2. Restrict moving major-tag updates to the controlled release identity. Do not start the consumer rollout while another
+   identity can move `v8`; retain immutable SHA references until this gate is enforced.
+3. Have an organization administrator confirm `PSGALLERY_API_KEY`, `SHELLY_CLIENT_ID`, and `SHELLY_PRIVATE_KEY` coverage
+   in Actions and Dependabot scope. The inventory token can list repository-local secrets but receives `403` for
+   organization secret visibility, so inherited coverage is currently unresolved.
+4. Refresh the inventory with `-TargetReference v8`; the starting target count should be `0/60`.
+5. Confirm workflow-only changes are not important release changes. The fleet defaults match only `src/` and
+   `README.md`; `Yaml` explicitly matches `src/`, `tests/`, and `README.md`, so this campaign should not publish modules.
+
+Each leaf applies the common caller, retains only the supported optional mappings, and proves the PR path before merge.
+Advance one wave only after the previous wave's push run completes without an unintended release. Completion requires a
+fresh inventory showing `60/60` on `v8`, the complete trigger/concurrency contract, explicit credentials, no inherited
+secrets or old API-key mappings, and no unresolved review or CI failures.
