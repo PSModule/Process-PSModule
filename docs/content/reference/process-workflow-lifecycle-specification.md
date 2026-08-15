@@ -120,7 +120,7 @@ Scenario: Abandon a pull request with prereleases
 
 ### FR6 — Default-branch pushes MUST authorize stable publication after validation {#fr6}
 
-A push to the default branch MUST publish a stable version only after all required build, test, quality, and publication gates succeed. When the pushed commit is the merge commit of a pull request, the stable-release decision MUST use that pull request's release intent. A successful stable release for a merged pull request MUST own promotion cleanup.
+A push to the default branch MUST publish a stable version only after all required build, test, quality, and publication gates succeed. A successful stable release MUST own promotion cleanup.
 
 #### Behavioral scenarios {#fr6-scenarios}
 
@@ -188,6 +188,27 @@ Scenario: Execute a planned cleanup-only action
   And it does not create or publish an artifact
 ```
 
+### FR10 — Stable targets MUST aggregate unreleased merged pull requests {#fr10}
+
+For every stable push or recovery target, the plan MUST aggregate merged pull requests and their release intent from the last successfully published version through the target commit. The resulting stable action MUST converge correctly when GitHub replaces an intermediate pending run.
+
+#### Behavioral scenarios {#fr10-scenarios}
+
+```gherkin
+Scenario: Publish after an intermediate pending push is replaced
+  Given merged pull requests exist after the last successfully published version
+  And an intermediate default-branch push is replaced while pending
+  When a later default-branch push is planned
+  Then the plan aggregates every merged pull request through the later target commit
+  And the stable release uses the aggregated release intent
+
+Scenario: Recover a range of unreleased merged pull requests
+  Given merged pull requests exist after the last successfully published version
+  When a maintainer dispatches recovery for a later default-branch commit
+  Then the plan aggregates every merged pull request through that target commit
+  And the release notes use that aggregated range
+```
+
 ## Non-functional requirements
 
 ### NFR1 — Lifecycle mutations MUST be idempotent {#nfr1}
@@ -206,7 +227,7 @@ Scenario: Retry a publication after an interrupted run
 
 ### NFR2 — Pull-request cancellation MUST preserve non-pull-request serialization {#nfr2}
 
-All pull-request events for one pull request MUST share a cancellation scope, so a newer pull-request event cancels a superseded run. Push, manual dispatch, and scheduled runs MUST share ref-based serialization and MUST NOT cancel an in-progress run.
+All pull-request events for one pull request MUST share a cancellation scope, so a newer pull-request event cancels a superseded run. Push, manual dispatch, and scheduled runs MUST share a full-ref serialization scope and MUST NOT cancel an in-progress run. Because GitHub permits at most one running and one pending run per group, a newer same-group non-pull-request run MAY replace an older pending run; the stable plan MUST therefore converge from the last successfully published version.
 
 #### Behavioral scenarios {#nfr2-scenarios}
 
@@ -218,9 +239,11 @@ Scenario: Supersede a pull-request run
 
 Scenario: Serialize non-pull-request runs
   Given a default-branch release is in progress
-  When a manual dispatch or scheduled validation starts for the same ref
-  Then the later run waits for the default-branch release
-  And neither run cancels the other
+  And an earlier default-branch run is pending
+  When a manual dispatch or scheduled validation starts for the same full ref
+  Then the later run does not cancel the running release
+  And it may replace the older pending run
+  And the next stable plan aggregates the unreleased merged pull requests
 ```
 
 ### NFR3 — Each lifecycle outcome MUST be auditable {#nfr3}
@@ -308,7 +331,7 @@ Scenario: Recover release notes after a missed main-push publication
   And a retry creates no duplicate publication
 ```
 
-### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6)
+### AC2 — Verifies: [FR2](#fr2), [FR4](#fr4), [FR5](#fr5), [FR6](#fr6), [FR8](#fr8), [FR9](#fr9), [FR10](#fr10), [NFR2](#nfr2), [NFR3](#nfr3), [NFR4](#nfr4), [NFR5](#nfr5), [NFR6](#nfr6)
 
 ```gherkin
 Scenario: Lifecycle runs preserve release ownership after cancellation

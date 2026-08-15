@@ -56,11 +56,17 @@ The build stage stamps exactly the planned manifest version and prerelease ident
 
 One general module release action or reusable workflow consumes enriched Settings after validation. It handles stable release, prerelease, recovery or resume, cleanup-only, and no-op actions according to the planned desired release action and flags. It verifies the artifact when an artifact is required and reconciles only the requested state. It does not recompute versioning, labels, event routing, or cleanup policy.
 
+## Candidate stable Plan aggregation
+
+Every stable push and recovery target uses the same aggregation rule. Plan finds the last successfully published stable version and its associated target commit, then queries merged pull requests through the requested target commit. It aggregates their release intent and uses that range for the stable version decision and release notes.
+
+This aggregation is not limited to manual recovery. GitHub can replace an intermediate pending run when a newer run enters the same concurrency group, so the later stable target must carry forward every merged pull request since the last successful publication.
+
 ## Candidate manual recovery
 
-A manual recovery route accepts only a selected default-branch commit. It first determines whether a stable publication already covers that commit and returns a no-op when one exists.
+A manual recovery route accepts only a selected default-branch commit. It uses the stable Plan aggregation rule and returns a no-op when a stable publication already covers that commit.
 
-For a missing publication, the route identifies the last published stable version and its associated default-branch commit. It then queries merged pull requests targeting the default branch between that publication boundary and the selected commit. The release-note reconstruction uses that ordered, de-duplicated result rather than the manual-dispatch event payload, which has no pull-request context.
+For a missing publication, the release-note reconstruction uses the ordered, de-duplicated aggregated pull-request range rather than the manual-dispatch event payload, which has no pull-request context.
 
 The recovery route validates the selected commit using the same release gates as a default-branch push. It produces a stable release only after the artifact/version boundary succeeds. This keeps recovery notes traceable even when the normal main-push run was missed or interrupted.
 
@@ -84,7 +90,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 ```
 
-This is a candidate, not an approved caller contract. All pull-request events for one pull request share a group and may cancel an earlier run. Push, manual-dispatch, and scheduled events serialize by ref and never cancel; a manual dispatch or schedule therefore cannot interrupt a main release.
+This is a candidate, not an approved caller contract. All pull-request events for one pull request share a group and may cancel an earlier run. Push, manual-dispatch, and scheduled events serialize by the full `github.ref` and do not cancel a running run. GitHub permits at most one running and one pending run per group, so a newer same-group event can replace an older pending run even when cancellation is disabled. A manual dispatch on `main` shares `refs/heads/main` with a push: it queues behind a running push but can replace an older pending main run.
+
+The candidate retains full `github.ref`. `github.ref_name` neither prevents pending-run replacement nor distinguishes branches and tags with the same name.
 
 Cancellation can leave only transient partial state. Every pull-request route, including prerelease publication and abandoned-close cleanup, resumes and reconciles on the next `synchronize`, `labeled`, `unlabeled`, or `closed` event:
 
@@ -121,7 +129,7 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Scheduled validation | A published-version fixture that proves no release mutation is requested. |
 | Pull-request convergence | Canceled prerelease-publication and cleanup fixtures followed by synchronize, label, unlabel, and close events that prove the latest pull-request state is reconciled. |
 | Gallery immutability | Deterministic pull-request identity, existing-version detection, supported-unlist, and retained-version fixtures across the cancellation boundary. |
-| Non-pull-request serialization | Overlapping main-push, manual-dispatch, and scheduled fixtures that prove runs queue by ref and do not cancel. |
+| Stable aggregation | Bursts of main-push, manual-dispatch, and scheduled fixtures that replace an intermediate pending run and prove the later stable target aggregates all unreleased merged pull requests. |
 
 ## Decisions requiring approval
 
