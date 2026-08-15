@@ -139,6 +139,7 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Example'
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'v8'
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Matching target: 1/1'
+        Get-Content -LiteralPath $markdownPath -Raw | Should -Match '0 0 \\\* \\\* \\\*'
     }
 
     It 'records a parse error for a matching malformed workflow' {

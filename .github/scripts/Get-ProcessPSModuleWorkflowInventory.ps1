@@ -629,7 +629,7 @@ function ConvertTo-MarkdownCell {
         return ''
     }
 
-    (($Value -join ', ') -replace '\|', '\|' -replace '\r?\n', '<br>')
+    (($Value -join ', ') -replace '\|', '\|' -replace '\*', '\*' -replace '\r?\n', '<br>')
 }
 
 function ConvertTo-WorkflowInventoryMarkdown {
