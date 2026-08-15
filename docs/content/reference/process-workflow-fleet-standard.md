@@ -114,6 +114,10 @@ permissions: {}
 
 jobs:
   Process-PSModule:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
@@ -132,7 +136,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
 | Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
-| Permissions | Set caller permissions to `{}` and use scoped GitHub App tokens inside the reusable workflow. | Selected for the candidate; built-in `GITHUB_TOKEN` authority must not be required. |
+| Permissions | Default deny at workflow level, then grant the caller job `contents: read`, `pages: write`, and `id-token: write`. | Selected for the candidate: use `GITHUB_TOKEN` for repository-local, non-user-facing platform operations and App tokens for user-facing or otherwise unsupported operations. |
 | Fork behavior | Skip fork-originated pull requests in this credentialed wrapper. | Add a separate secret-free workflow or define another supported fork-validation design. |
 | Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
@@ -167,7 +171,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Manual dispatch | Keep `workflow_dispatch`. | Provides the documented default-branch manual release and recovery path. |
 | Schedule | Keep a scheduled health run. | Exercises current dependencies even when repository code is unchanged. |
 | Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | New PR events supersede older declarative reconciliation runs; same-ref push, dispatch, and schedule runs serialize without cancellation. |
-| Permissions | Set top-level `permissions: {}` and grant no caller-job permissions. | Repository access and mutations use narrowly scoped GitHub App installation tokens created inside the reusable workflow. |
+| Permissions | Set top-level `permissions: {}` and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Checkout and Pages remain repository-local built-in capabilities; user-facing interactions and operations outside the built-in token boundary use scoped GitHub App tokens. |
 | Fork guard | Skip pull requests whose head repository differs from `github.repository`. | GitHub withholds the required repository secrets from fork pull requests. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
@@ -200,13 +204,13 @@ an approved structure:
 - a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
 - unrelated additional jobs in the caller wrapper;
-- any built-in `GITHUB_TOKEN` permission granted by the caller.
+- caller permissions beyond `contents: read`, `pages: write`, and `id-token: write`.
 
-The current v8 implementation still uses built-in token authority for checkout, linter status/reporting, and the standard
-GitHub Pages deployment action. Before adopting the empty-permissions caller, each job must create a narrowly scoped
-GitHub App installation token before checkout and pass it explicitly to checkout, GitHub CLI, and reporting actions.
-Pages publication must either move to an App-authenticated deployment path or document the unavoidable `pages`/OIDC
-exception if the standard Pages action remains.
+Use the built-in `GITHUB_TOKEN` for non-user-facing operations confined to the calling repository, including checkout
+and the standard GitHub Pages deployment. Create narrowly scoped GitHub App installation tokens for user-facing
+interactions such as pull-request comments, labels, statuses, releases, and release cleanup, and whenever the built-in
+token cannot provide the required repository or cross-repository access. Tokens remain step-scoped and must not fall
+back silently from App authorization to broader built-in-token authority.
 
 Fork-originated pull requests are skipped by the candidate caller because reusable-workflow caller jobs cannot select a
 GitHub Environment and repository secrets are unavailable to forks. Supporting fork CI requires a separate, secret-free,
