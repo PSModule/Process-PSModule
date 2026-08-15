@@ -72,7 +72,6 @@ jobs:
         uses: PSModule/Invoke-Pester@4ff33199141fdf22568990b6107fe3148ae93a1c # v5.1.0
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
-          Prerelease: false
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
           Version: '[6.1.0,7.0.0)'
           GitHubVersion: ${{ fromJson(inputs.Settings).Version }}
