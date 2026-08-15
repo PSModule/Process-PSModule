@@ -15,7 +15,7 @@ The confirmed reusable workflow runs a `Plan` job, enriches one settings object 
 
 The version resolver treats non-pull-request events, including `workflow_dispatch` and `schedule`, as events without a release decision. The workflow's concurrency identity contains either the pull request number or the Git ref, and its runs are not canceled. The documented scenario matrix also identifies closed-pull-request cleanup as non-stable behavior.
 
-The current code detects an existing published version, resumes GitHub Release creation, and repeats GitHub Release and tag cleanup. Full reconciliation of immutable PowerShell Gallery prereleases is a design gap: it requires implementation and cancellation-boundary tests. Current reusable jobs create App tokens after checkout, and the Pages workflow declares `pages: write` and `id-token: write`; the permissionless-caller candidate is therefore not confirmed behavior. These facts establish the starting point. They do not implement the scheduled validation or manual recovery behavior proposed below.
+The current code detects an existing published version, resumes GitHub Release creation, and repeats GitHub Release and tag cleanup. Full reconciliation of immutable PowerShell Gallery prereleases is a design gap: it requires implementation and cancellation-boundary tests. Current reusable jobs create App tokens after checkout; that sequencing does not satisfy the candidate App-token boundary for user-facing operations. The Pages workflow's `pages: write` and `id-token: write` permissions align with the candidate's standard Pages/OIDC path. These facts establish the starting point. They do not implement the scheduled validation or manual recovery behavior proposed below.
 
 ## Candidate event routing
 
@@ -58,19 +58,25 @@ One general module release action or reusable workflow consumes enriched Setting
 
 ## Candidate repository authorization
 
-The caller remains permissionless:
+The caller sets no top-level default and grants its Process-PSModule job only the built-in permissions needed for repository-local reads and standard Pages/OIDC deployment:
 
 ```yaml
 permissions: {}
+jobs:
+  Process-PSModule:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 ```
 
-It grants no job permissions. Every reusable-workflow job creates a narrowly scoped GitHub App installation token before checkout and passes that token explicitly to checkout. The same explicit App token authorizes `gh` and API requests, linter statuses and comments, releases, and cleanup. Downstream jobs do not rely on built-in `GITHUB_TOKEN` authority.
+Built-in `GITHUB_TOKEN` authorization is permitted for checkout, repository-local reads, and standard Pages/OIDC deployment within that job boundary. GitHub App installation tokens are step-scoped and authorize every user-facing interaction and every operation that needs broader reach or permissions: pull-request comments and labels, commit statuses and check-facing reporting, releases, tags, assets, and cleanup.
 
-Each job requests only the App installation permissions required for its operation. A missing App token is an authorization failure: the job stops before checkout or its repository operation, without falling back to the built-in workflow token.
+Each App-token step requests only the installation permissions required for its operation. A missing App token is an authorization failure for App-required work: that operation stops before its API request or mutation, without silently falling back to the built-in workflow token. Built-in-token reads and Pages deployment remain available only within the explicit caller job permissions.
 
-## Candidate Pages deployment boundary
+## Candidate Pages authorization
 
-The current Pages deployment uses `actions/deploy-pages`, which requires `pages: write` and `id-token: write`. This is a design gap under the permissionless-caller candidate. The implementation must either replace it with an App-authenticated supported deployment path or document an explicit, unavoidable Pages/OIDC exception. It MUST NOT silently grant caller or job `GITHUB_TOKEN` permissions.
+The standard `actions/deploy-pages` path uses the built-in token's `pages: write` and `id-token: write` permissions granted only to the caller's Process-PSModule job. It remains inside the candidate's repository-local, non-user-facing boundary and does not require an App token.
 
 ## Candidate stable Plan aggregation
 
@@ -146,9 +152,9 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Pull-request convergence | Canceled prerelease-publication and cleanup fixtures followed by synchronize, label, unlabel, and close events that prove the latest pull-request state is reconciled. |
 | Gallery immutability | Deterministic pull-request identity, existing-version detection, supported-unlist, and retained-version fixtures across the cancellation boundary. |
 | Stable aggregation | Bursts of main-push, manual-dispatch, and scheduled fixtures that replace an intermediate pending run and prove the later stable target aggregates all unreleased merged pull requests. |
-| Permissionless caller | Empty caller permissions and no job grants with explicit App-token checkout, API, status, comment, release, and cleanup verification. |
-| Authorization failure | Missing-App-token fixtures that prove each repository job fails closed without built-in token fallback. |
-| Pages boundary | A supported App-authenticated deployment-path test or an explicit Pages/OIDC exception test. |
+| Scoped caller permissions | Empty caller top-level permissions, the three job grants, built-in-token checkout/read, and standard Pages/OIDC verification. |
+| App authorization failure | Missing-App-token fixtures that prove user-facing operations fail closed without built-in token fallback. |
+| Token boundary | Fixtures that prove App tokens are step-scoped and built-in-token operations remain within the caller job's boundary. |
 
 ## Decisions requiring approval
 
@@ -159,7 +165,6 @@ The candidate does not decide the following:
 - Which consumer-facing checks comprise scheduled published-artifact validation.
 - Whether removing prerelease eligibility cleans up existing prereleases immediately or leaves them until the abandoned-close cleanup route.
 - Whether the supported Gallery API can unlist obsolete prereleases; otherwise, how retained immutable versions are recorded.
-- Whether Pages can use a supported App-authenticated deployment path or requires an explicit Pages/OIDC exception.
 - Approval of the selected caller concurrency expression in [PSModule/Process-PSModule#514](https://github.com/PSModule/Process-PSModule/issues/514).
 
 ## Related

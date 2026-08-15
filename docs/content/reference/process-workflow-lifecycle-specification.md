@@ -209,25 +209,24 @@ Scenario: Recover a range of unreleased merged pull requests
   And the release notes use that aggregated range
 ```
 
-### FR11 — Repository operations MUST use explicit GitHub App authorization {#fr11}
+### FR11 — Repository operations MUST use scoped authorization {#fr11}
 
-The caller MUST declare top-level `permissions: {}` and MUST NOT grant job permissions. The reusable workflow MUST create narrowly scoped GitHub App installation tokens before repository access and pass them explicitly to every repository operation. Built-in `GITHUB_TOKEN` authority MUST NOT authorize checkout, API access, status reporting, comments, releases, or cleanup.
+The caller MUST declare top-level `permissions: {}`. Its Process-PSModule job MUST grant only `contents: read`, `pages: write`, and `id-token: write`. Built-in `GITHUB_TOKEN` MAY authorize repository-local, non-user-facing work when those permissions are sufficient, including checkout, reads, and standard Pages/OIDC deployment. GitHub App installation tokens MUST authorize all user-facing interactions and any operation that exceeds the built-in token's reach or permissions, including pull-request comments and labels, commit statuses and check-facing reporting, releases, tags, assets, and cleanup. Tokens MUST remain scoped to the steps that require them.
 
 #### Behavioral scenarios {#fr11-scenarios}
 
 ```gherkin
-Scenario: Run from a permissionless caller
+Scenario: Run with the caller's minimum permissions
   Given the caller declares top-level permissions as an empty object
-  And the caller grants no job permissions
-  When the reusable workflow runs with authorized GitHub App installation tokens
-  Then checkout and repository operations use the explicit App tokens
-  And the built-in workflow token does not authorize those operations
+  And its Process-PSModule job grants only contents read, Pages write, and ID-token write
+  When the reusable workflow performs checkout or standard Pages deployment
+  Then it may use the built-in workflow token within that granted boundary
 
-Scenario: Start a repository operation
-  Given the reusable workflow requires repository access
-  When the workflow begins
-  Then it creates the required GitHub App token before checkout
-  And it passes that token explicitly to checkout and subsequent repository operations
+Scenario: Perform a user-facing repository operation
+  Given the reusable workflow must create a pull-request comment or release
+  When the operation requires authority beyond the built-in token boundary
+  Then it creates a narrowly scoped GitHub App installation token
+  And it uses the App token only for the steps that require that authority
 ```
 
 ## Non-functional requirements
@@ -338,18 +337,17 @@ Scenario: Retain an immutable Gallery prerelease
   And it performs GitHub Release and tag cleanup independently
 ```
 
-### NFR7 — Missing App authorization MUST fail closed {#nfr7}
+### NFR7 — App-required operations MUST fail closed {#nfr7}
 
-When the required GitHub App authorization is unavailable, every repository-mutating or reporting job MUST fail before performing an unauthorized checkout, API request, status update, comment, release, or cleanup. It MUST NOT fall back to built-in `GITHUB_TOKEN` authority.
+When an operation requires GitHub App authorization and the required App token is unavailable, the operation MUST fail before an unauthorized API request, status update, comment, release, tag or asset mutation, or cleanup. It MUST NOT silently fall back to built-in `GITHUB_TOKEN` authority. Repository-local reads and standard Pages/OIDC deployment MAY continue only within the caller job's explicit built-in-token permissions.
 
 #### Behavioral scenarios {#nfr7-scenarios}
 
 ```gherkin
-Scenario: Reject a job without GitHub App authorization
-  Given a caller with no granted token permissions
-  And a reusable-workflow job cannot create its required GitHub App token
-  When the job attempts repository access
-  Then the job fails before the repository operation
+Scenario: Reject a user-facing operation without GitHub App authorization
+  Given a reusable-workflow job cannot create its required GitHub App token
+  When the job attempts to create a pull-request comment
+  Then the operation fails before the API request
   And it does not use the built-in workflow token as a fallback
 ```
 
