@@ -108,7 +108,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: write
@@ -136,7 +136,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Wrapper scope | Exactly one reusable-workflow job. | Permit repository-specific jobs in the same file, or define pre/post extension jobs. |
 | Trigger ownership | The caller owns manual, schedule, default-branch push, and pull-request triggers. | Move some trigger policy into separate workflows or omit selected event classes. |
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
-| Concurrency | Use the PR-number-or-ref key and never cancel a release-capable run. | Use separate groups per event class or permit cancellation for non-mutating paths. |
+| Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
 | Permissions | Declare the five current scopes at workflow level. | Introduce settings-based least-privilege profiles or split read-only validation from release work. |
 | Fork behavior | Skip fork-originated pull requests in this credentialed wrapper. | Add a separate secret-free workflow or define another supported fork-validation design. |
 | Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
@@ -171,7 +171,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Default-branch push | Keep `push.branches: [main]`. | `v8` authorizes stable releases from the tested default-branch push. |
 | Manual dispatch | Keep `workflow_dispatch`. | Provides the documented default-branch manual release and recovery path. |
 | Schedule | Keep a scheduled health run. | Exercises current dependencies even when repository code is unchanged. |
-| Concurrency | Use the PR-number-or-ref key with `cancel-in-progress: false`. | Cleanup and stable release runs stay distinct; release mutations queue instead of being interrupted. |
+| Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | New PR events supersede older declarative reconciliation runs; same-ref push, dispatch, and schedule runs serialize without cancellation. |
 | Permissions | Declare the five documented permissions explicitly. | The called workflow cannot elevate caller permissions. |
 | Fork guard | Skip pull requests whose head repository differs from `github.repository`. | GitHub withholds the required repository secrets from fork pull requests. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
@@ -202,7 +202,7 @@ an approved structure:
 - any Process-PSModule reference other than the intended major tag (`v8`), including a branch, `latest`, minor tag,
   exact patch tag, or full commit SHA;
 - missing `push` or `unlabeled` triggers;
-- `cancel-in-progress: true` or the old ref-only concurrency key;
+- a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
 - unrelated additional jobs in the caller wrapper;
 - omitted documented permissions without a verified settings-based least-privilege profile.
