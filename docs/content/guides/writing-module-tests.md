@@ -11,15 +11,24 @@ been built and imported.
 
 ## Pester version
 
-Module test files declare a Pester **6.x** requirement at the top of each `*.Tests.ps1`:
+Module test files declare a Pester **6.1.x** requirement at the top of each `*.Tests.ps1`:
 
 ```powershell
-#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.*' }
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.1.0'; MaximumVersion = '6.*' }
 ```
 
-This is a convention module authors add, not something the pipeline injects. The
-[Invoke-Pester](https://github.com/PSModule/Invoke-Pester) action installs a matching `6.x`, so minor and patch updates
-flow in automatically while a new major stays a deliberate, reviewed change.
+This is a convention module authors add. Process-PSModule pins its reusable
+[Invoke-Pester](https://github.com/PSModule/Invoke-Pester) action runs to the
+`[6.1.0,7.0.0)` range, so patch updates flow in automatically while a new
+major stays a deliberate, reviewed change.
+
+Pester 6.1 adds opt-in controls for shuffled and parallel file execution
+(`Run.Shuffle`, `Run.ShuffleSeed`, `Run.Parallel`, and
+`Run.ParallelThrottleLimit`) and diagnostic start markers
+(`Debug.ShowStartMarkers`). These controls are available when invoking Pester
+directly with `New-PesterConfiguration`. Process-PSModule's reusable action will
+expose them after the coordinated `PSModule/Invoke-Pester` action adds matching
+inputs; the current v5.1.0 action contract does not accept them.
 
 ## Test discovery
 
