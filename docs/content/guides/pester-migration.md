@@ -16,7 +16,7 @@ copilot plugin install psmodule-process
 Then use its reusable `pester-migration` agent skill to migrate every Pester
 test set in a PSModule repository. For direct installation during development,
 use `copilot plugin install
-PSModule/Process-PSModule:.github/plugin/plugins/psmodule-process`. It is
+PSModule/Process-PSModule:.github/plugin/psmodule-process`. It is
 written for Pester **6.1.0** and distinguishes required compatibility changes
 from optional v6 modernization.
 

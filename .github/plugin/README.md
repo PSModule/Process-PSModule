@@ -18,11 +18,11 @@ copilot plugin install psmodule-process
 Install the plugin directly from this repository:
 
 ```console
-copilot plugin install PSModule/Process-PSModule:.github/plugin/plugins/psmodule-process
+copilot plugin install PSModule/Process-PSModule:.github/plugin/psmodule-process
 ```
 
 The plugin provides the
-[`pester-migration`](./plugins/psmodule-process/skills/pester-migration/SKILL.md)
+[`pester-migration`](./psmodule-process/skills/pester-migration/SKILL.md)
 skill for migrating every Pester test set in a PSModule repository to Pester
 6.1.0. Verify the installation with:
 
@@ -33,4 +33,4 @@ copilot plugin list
 
 The marketplace catalog is in [`marketplace.json`](./marketplace.json), and
 plugin metadata is in
-[`plugin.json`](./plugins/psmodule-process/plugin.json).
+[`plugin.json`](./psmodule-process/plugin.json).
