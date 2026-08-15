@@ -251,6 +251,23 @@ export function createFleetService({ getSession, repositoryRoot }) {
                     `Unsupported or mismatched state at ${statePath()}.`,
                 );
             }
+            if (
+                state.inventoryStatus === "refreshing" &&
+                !refreshes.has(identity)
+            ) {
+                return writeState({
+                    ...state,
+                    inventoryStatus: "not-refreshed",
+                    generatedAt: null,
+                    error: {
+                        code: "inventory_refresh_interrupted",
+                        message:
+                            "The previous inventory refresh was interrupted. Refresh again.",
+                    },
+                    records: [],
+                    selection: [],
+                });
+            }
             return state;
         } catch (error) {
             if (error?.code === "ENOENT") {
