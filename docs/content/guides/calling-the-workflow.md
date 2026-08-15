@@ -64,6 +64,8 @@ Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
 The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
 resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
 the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
+The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
+waits for it to finish.
 
 ## Passing test data
 

@@ -45,8 +45,10 @@ The label names are configurable through `Publish.Module.MajorLabels`, `MinorLab
 ## Branch types
 
 - **Main (stable)** — pushes publish stable releases. A prerelease label on an open pull request publishes a prerelease.
-- **Development** — optional prerelease branch (for example `dev`). Each push publishes a prerelease.
-- **Feature branch** — optional feature branch. A prerelease label publishes a prerelease for testing.
+- **Development** — optional prerelease branch (for example `dev`). Its open, prerelease-labelled pull request to the
+  stable branch publishes previews when it is updated.
+- **Feature branch** — optional feature branch. Its open, prerelease-labelled pull request publishes a preview for
+  testing.
 
 Exactly one branch is authorized to publish stable releases, so consumers always have one unambiguous latest version.
 

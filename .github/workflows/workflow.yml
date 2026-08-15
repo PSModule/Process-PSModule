@@ -76,7 +76,7 @@ permissions:
   id-token: write # to verify the deployment originates from an appropriate source
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: Process-PSModule-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:

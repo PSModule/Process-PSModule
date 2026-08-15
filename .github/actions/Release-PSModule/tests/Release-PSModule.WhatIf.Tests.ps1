@@ -36,6 +36,7 @@ AfterAll {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
     Remove-Item -Path function:global:gh -ErrorAction SilentlyContinue
+    Remove-Item -Path function:global:git -ErrorAction SilentlyContinue
 }
 
 Describe 'Release-PSModule WhatIf' {
@@ -139,5 +140,21 @@ Describe 'Release-PSModule WhatIf' {
 
         Get-Content -Path $script:githubOutputPath | Should -Contain 'ReleaseTag=v1.2.3'
         $releaseOutput | Should -Match '--target pushed-commit-sha'
+    }
+
+    It 'uses the checked-out commit message for a manual dispatch' {
+        $manifest = Get-Content -Path $manifestPath -Raw
+        $manifest -replace "Prerelease = 'preview.1'", "Prerelease = ''" | Set-Content -Path $manifestPath
+        @{} | ConvertTo-Json | Set-Content -Path $eventPath
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.3'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'dispatched-commit-sha'
+        Set-Item -Path function:global:git -Value {
+            $global:LASTEXITCODE = 0
+            'Publish manual dispatch release'
+        }
+
+        $releaseOutput = & $script:releaseScriptPath 6>&1 | Out-String
+
+        $releaseOutput | Should -Match 'Using the pushed commit message as release notes'
     }
 }

@@ -41,10 +41,6 @@
     Justification = 'Variable is used in script blocks.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'commitMessage',
-    Justification = 'Variable is used in script blocks.'
-)]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', 'releaseType',
     Justification = 'Variable is used in script blocks.'
 )]
@@ -112,6 +108,12 @@ LogGroup 'Load release context' {
     $prNumber = $pullRequest.Number
     $prHeadRef = $pullRequest.HeadRef
     $commitMessage = $githubEvent.head_commit.message
+    if ([string]::IsNullOrWhiteSpace($commitMessage) -and -not [string]::IsNullOrWhiteSpace($commitSha)) {
+        $commitMessage = git log -1 --format=%B $commitSha
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to read commit message for [$commitSha]."
+        }
+    }
 
     if ($prNumber) {
         Write-Host "Pull request: [#$prNumber]"
