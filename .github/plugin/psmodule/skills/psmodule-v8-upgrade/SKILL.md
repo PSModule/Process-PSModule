@@ -54,7 +54,7 @@ the template's default files before adding, removing, or relocating anything.
 The template is a starting point, not a reason to overwrite module-specific
 content.
 
-The expected repository anatomy is:
+The current template's default repository anatomy is:
 
 ```text
 <ModuleName>/
@@ -62,18 +62,15 @@ The expected repository anatomy is:
 │   ├── CODEOWNERS
 │   ├── dependabot.yml
 │   ├── linters/
+│   │   ├── .codespellrc
 │   │   ├── .markdown-lint.yml
 │   │   ├── .powershell-psscriptanalyzer.psd1
 │   │   └── .textlintrc
 │   ├── PSModule.yml
 │   ├── pull_request_template.md
 │   ├── release.yml
-│   └── workflows/
+│   ├── workflows/
 │       └── Process-PSModule.yml
-├── docs/
-│   ├── assets/
-│   ├── content/
-│   ├── overrides/
 │   └── zensical.toml
 ├── examples/
 ├── icon/
@@ -96,13 +93,9 @@ The expected repository anatomy is:
 ├── .gitattributes
 ├── .gitignore
 ├── AGENTS.md
-├── CLAUDE.md
-├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
 ├── LICENSE
-├── README.md
-├── SECURITY.md
-└── SUPPORT.md
+└── README.md
 ```
 
 Treat files and directories as follows:
@@ -121,12 +114,25 @@ Treat files and directories as follows:
 - Optional source folders such as `assemblies`, `formats`, `types`, `variables`,
   `data`, `modules`, and `scripts` are added when the module needs them; do not
   create empty placeholders solely to match the tree.
+- The template's starter test declares Pester 6 with `#Requires` and uses the
+  native `Describe`, `It`, and `Should-Be` syntax. Preserve that requirement
+  when the consumer already has the Pester 6 baseline.
+- The template's `.github/PSModule.yml` sets a zero code-coverage target and
+  carries explicit linter environment defaults; compare these settings before
+  replacing or deleting a consumer settings file.
+- The template's `AGENTS.md` points to Template-PSModule quickstart, repository
+  defaults, module anatomy, build/test/pack/publish, and standards guidance.
+  Preserve the consumer's local onboarding contract while updating stale links.
 
 If the template revision and the consumer's existing layout disagree, record
 the difference and migrate only the requested integration surface. In
-particular, this v8 skill uses `docs/zensical.toml`, `docs/content/`,
-`docs/overrides/`, and `docs/assets/` as the documentation contract described
-below; do not create a second configuration under `.github/`.
+particular, the current template uses `.github/zensical.toml`, while this v8
+upgrade request uses `docs/zensical.toml`, `docs/content/`, `docs/overrides/`,
+and `docs/assets/` as its documentation contract. When that requested
+documentation migration is in scope, move the template's Zensical settings
+and custom assets into the `docs/` contract rather than maintaining both
+configurations. When it is not in scope, preserve the consumer's existing
+working configuration and report the difference.
 
 ## Caller workflow contract
 
