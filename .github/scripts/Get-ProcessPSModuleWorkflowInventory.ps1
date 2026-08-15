@@ -15,6 +15,7 @@
     .EXAMPLE
     ./.github/scripts/Get-ProcessPSModuleWorkflowInventory.ps1 `
         -Organization PSModule `
+        -TargetReference v8 `
         -JsonPath ./output/process-workflows.json `
         -MarkdownPath ./output/process-workflows.md
 
@@ -44,6 +45,10 @@ param(
     [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string] $WorkflowReference = 'PSModule/Process-PSModule/.github/workflows/workflow.yml',
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string] $TargetReference,
 
     [Parameter()]
     [string] $JsonPath,
@@ -458,7 +463,10 @@ function Get-WorkflowInventoryItem {
         [psobject] $WorkflowFile,
 
         [Parameter(Mandatory)]
-        [string] $ExpectedReference
+        [string] $ExpectedReference,
+
+        [Parameter()]
+        [string] $ExpectedTargetReference
     )
 
     if ($WorkflowFile.Content -notmatch [regex]::Escape($ExpectedReference)) {
@@ -495,6 +503,11 @@ function Get-WorkflowInventoryItem {
             Name           = $jobName
             Uses           = "$uses"
             Reference      = "$uses".Substring("$ExpectedReference@".Length)
+            MatchesTarget  = if ($ExpectedTargetReference) {
+                "$uses".Substring("$ExpectedReference@".Length) -eq $ExpectedTargetReference
+            } else {
+                $null
+            }
             Inputs         = ConvertTo-StringMap -Map (Get-MapValue -Map $job -Name 'with')
             SecretMode     = $secretMode
             SecretMappings = if ($secretMode -eq 'explicit') {
@@ -595,6 +608,12 @@ function Get-WorkflowInventoryItem {
         ProcessJobs         = @($processJobs)
         AdditionalJobs      = @($allJobNames | Where-Object { $_ -notin $processJobNames })
         VersionComments     = $versionComments
+        TargetReference     = $ExpectedTargetReference
+        MatchesTarget       = if ($ExpectedTargetReference) {
+            @($processJobs | Where-Object { -not $_.MatchesTarget }).Count -eq 0
+        } else {
+            $null
+        }
     }
 }
 
@@ -621,7 +640,10 @@ function ConvertTo-WorkflowInventoryMarkdown {
 
         [Parameter(Mandatory)]
         [ValidateSet('GitHub', 'Local')]
-        [string] $Source
+        [string] $Source,
+
+        [Parameter()]
+        [string] $TargetReference
     )
 
     $parsed = @($Inventory | Where-Object Status -eq 'Parsed')
@@ -660,6 +682,11 @@ function ConvertTo-WorkflowInventoryMarkdown {
     $lines.Add("- Workflow files: $($Inventory.Count)")
     $lines.Add("- Parsed: $($parsed.Count)")
     $lines.Add("- Parse errors: $($parseErrors.Count)")
+    if ($TargetReference) {
+        $matchingTarget = @($parsed | Where-Object MatchesTarget).Count
+        $lines.Add("- Target reference: $TargetReference")
+        $lines.Add("- Matching target: $matchingTarget/$($parsed.Count)")
+    }
     $lines.Add('')
     $lines.Add('## Reference distribution')
     $lines.Add('')
@@ -688,11 +715,11 @@ function ConvertTo-WorkflowInventoryMarkdown {
     $lines.Add('## Workflow files')
     $lines.Add('')
     $lines.Add(
-        '| Repository | File | Name | Run name | Events | Reference | Version | PR types | Push branches | Schedule |' +
-        ' Concurrency | Cancel | Permissions | Condition | Secrets | Inputs | Extra jobs |'
+        '| Repository | File | Name | Run name | Events | Reference | Target | Version | PR types | Push branches |' +
+        ' Schedule | Concurrency | Cancel | Permissions | Condition | Secrets | Inputs | Extra jobs |'
     )
     $lines.Add(
-        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
     )
 
     foreach ($item in $Inventory | Sort-Object Repository, WorkflowPath) {
@@ -710,7 +737,7 @@ function ConvertTo-WorkflowInventoryMarkdown {
         if ($item.Status -eq 'ParseError') {
             $lines.Add(
                 "| $(ConvertTo-MarkdownCell $repositoryCell) " +
-                "| $(ConvertTo-MarkdownCell $workflowCell) | parse error | | | | | | | | | | | | | | |"
+                "| $(ConvertTo-MarkdownCell $workflowCell) | parse error | | | | | | | | | | | | | | | |"
             )
             continue
         }
@@ -749,6 +776,7 @@ function ConvertTo-WorkflowInventoryMarkdown {
             "| $(ConvertTo-MarkdownCell $item.RunName) " +
             "| $(ConvertTo-MarkdownCell $item.Events) " +
             "| $(ConvertTo-MarkdownCell $referencesForItem) " +
+            "| $(ConvertTo-MarkdownCell $item.MatchesTarget) " +
             "| $(ConvertTo-MarkdownCell $versionsForItem) " +
             "| $(ConvertTo-MarkdownCell $item.PullRequestTypes) " +
             "| $(ConvertTo-MarkdownCell $item.PushBranches) " +
@@ -805,7 +833,10 @@ if (-not $workflowFiles) {
 $inventory = @(
     $workflowFiles |
         ForEach-Object {
-            Get-WorkflowInventoryItem -WorkflowFile $_ -ExpectedReference $WorkflowReference
+            Get-WorkflowInventoryItem `
+                -WorkflowFile $_ `
+                -ExpectedReference $WorkflowReference `
+                -ExpectedTargetReference $TargetReference
         }
 )
 
@@ -829,7 +860,8 @@ if ($MarkdownPath) {
     }
     ConvertTo-WorkflowInventoryMarkdown `
         -Inventory $inventory `
-        -Source $PSCmdlet.ParameterSetName |
+        -Source $PSCmdlet.ParameterSetName `
+        -TargetReference $TargetReference |
         Set-Content -LiteralPath $MarkdownPath -Encoding utf8
 }
 

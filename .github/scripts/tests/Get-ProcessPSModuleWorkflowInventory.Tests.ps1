@@ -82,7 +82,11 @@ AfterAll {
 
 Describe 'Get-ProcessPSModuleWorkflowInventory' {
     It 'inventories matching local workflows and their compatibility dimensions' {
-        $result = @(& $scriptPath -Path $testRoot)
+        $result = @(
+            & $scriptPath `
+                -Path $testRoot `
+                -TargetReference '0123456789012345678901234567890123456789'
+        )
 
         $result.Count | Should -Be 1
         $result[0].Repository | Should -Be 'Example'
@@ -93,6 +97,8 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         $result[0].ConcurrencyGroup | Should -Be '${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}'
         $result[0].CancelInProgress | Should -BeFalse
         $result[0].ProcessJobs[0].Reference | Should -Be '0123456789012345678901234567890123456789'
+        $result[0].ProcessJobs[0].MatchesTarget | Should -BeTrue
+        $result[0].MatchesTarget | Should -BeTrue
         $result[0].ProcessJobs[0].Condition | Should -Match 'head.repo.full_name'
         $result[0].ProcessJobs[0].Inputs.Keys | Should -Contain 'Debug'
         $result[0].ProcessJobs[0].SecretMappings.Keys | Should -Be @(
@@ -113,13 +119,19 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         $jsonPath = Join-Path $testRoot 'inventory.json'
         $markdownPath = Join-Path $testRoot 'inventory.md'
 
-        & $scriptPath -Path $repositoryRoot -JsonPath $jsonPath -MarkdownPath $markdownPath | Out-Null
+        & $scriptPath `
+            -Path $repositoryRoot `
+            -TargetReference '0123456789012345678901234567890123456789' `
+            -JsonPath $jsonPath `
+            -MarkdownPath $markdownPath |
+            Out-Null
 
         Test-Path -LiteralPath $jsonPath | Should -BeTrue
         Test-Path -LiteralPath $markdownPath | Should -BeTrue
         (Get-Content -LiteralPath $jsonPath -Raw).TrimStart() | Should -Match '^\['
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Example'
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match '0123456789012345678901234567890123456789'
+        Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Matching target: 1/1'
     }
 
     It 'records a parse error for a matching malformed workflow' {
