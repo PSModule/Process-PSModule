@@ -123,26 +123,57 @@ function Get-PublishConfiguration {
 function Get-GitHubPullRequest {
     <#
         .SYNOPSIS
-        Reads and validates the GitHub pull request from the event payload.
+        Reads normalized pull-request context from settings, with event-payload fallback.
 
         .DESCRIPTION
-        Loads the GitHub event from the input override or from the event path file. On a
-        pull_request event it returns the pull request head ref and labels. On any other
-        event (for example workflow_dispatch or schedule) there is no pull request, so it
-        returns $null and the caller resolves the current version without a version bump.
+        The settings action resolves the pull request associated with a default-branch push
+        before this action runs. When no pull request exists, a direct push or manual
+        dispatch on the default branch still receives release context so it resolves the
+        default patch bump.
 
         .OUTPUTS
-        PSCustomObject with HeadRef and Labels properties for a pull_request event, or
-        $null when the event has no pull request (non-PR events).
+        PSCustomObject with pull-request metadata, or a default-branch direct-release
+        context with no pull-request number.
 
         .EXAMPLE
-        $pullRequest = Get-GitHubPullRequest
+        $pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'SettingsJson',
+        Justification = 'Parameter is used inside a LogGroup script block.')]
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
-    param()
+    param(
+        # The complete settings object, including normalized workflow context.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $SettingsJson
+    )
 
     LogGroup 'Event information' {
+        $settings = $SettingsJson | ConvertFrom-Json
+        $context = $settings.Context
+        if ($context) {
+            $contextPullRequest = $context.PullRequest
+            if ($contextPullRequest) {
+                Write-Host "Using normalized pull request context for #$($contextPullRequest.Number)."
+                return [PSCustomObject]@{
+                    Number  = $contextPullRequest.Number
+                    HeadRef = $contextPullRequest.HeadRef
+                    Labels  = @($contextPullRequest.Labels)
+                }
+            }
+
+            if ($context.IsPushToDefaultBranch -or $context.IsManualDispatchToDefaultBranch) {
+                Write-Host 'Using direct default-branch release context with the default patch bump.'
+                return [PSCustomObject]@{
+                    Number          = $null
+                    HeadRef         = $context.DefaultBranch
+                    Labels          = @()
+                    IsDirectRelease = $true
+                }
+            }
+        }
+
         $eventJsonInput = $env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson
         $githubEvent = if (-not [string]::IsNullOrWhiteSpace($eventJsonInput)) {
             $eventJsonInput | ConvertFrom-Json
@@ -152,8 +183,7 @@ function Get-GitHubPullRequest {
 
         $pr = $githubEvent.pull_request
         if (-not $pr) {
-            Write-Host 'GitHub event does not contain pull_request data (non-PR event, e.g. workflow_dispatch or schedule).'
-            Write-Host 'No pull request context is available; the caller keeps the current version without a bump.'
+            Write-Host 'GitHub event does not contain pull_request data and no release context was normalized.'
             return $null
         }
 
@@ -220,6 +250,20 @@ function Resolve-ReleaseDecision {
         $createRelease = $releaseType -eq 'Release'
         $createPrerelease = $releaseType -eq 'Prerelease'
         $shouldPublish = $createRelease -or $createPrerelease
+        $isCleanupOnly = $releaseType -eq 'None'
+
+        if ($isCleanupOnly) {
+            return [PSCustomObject]@{
+                ShouldPublish    = $false
+                CreateRelease    = $false
+                CreatePrerelease = $false
+                MajorRelease     = $false
+                MinorRelease     = $false
+                PatchRelease     = $false
+                HasVersionBump   = $false
+                PrereleaseName   = $prereleaseName
+            }
+        }
 
         $ignoreRelease = ($labels | Where-Object { $Configuration.IgnoreLabels -contains $_ }).Count -gt 0
         if ($ignoreRelease -and $shouldPublish) {
@@ -227,27 +271,41 @@ function Resolve-ReleaseDecision {
             $shouldPublish = $false
         }
 
-        # Always evaluate the version-bump labels so the resolved version reflects what WOULD be
-        # created, regardless of whether this run publishes. ReleaseType (and the prerelease label
-        # that drives it) only controls whether and how we publish - never the version increment.
-        $majorRelease = ($labels | Where-Object { $Configuration.MajorLabels -contains $_ }).Count -gt 0
-        $minorRelease = ($labels | Where-Object { $Configuration.MinorLabels -contains $_ }).Count -gt 0 -and -not $majorRelease
-        $patchRelease = (
-            (($labels | Where-Object { $Configuration.PatchLabels -contains $_ }).Count -gt 0) -or $Configuration.AutoPatching
-        ) -and -not $majorRelease -and -not $minorRelease
+        $majorLabels = @($labels | Where-Object { $Configuration.MajorLabels -contains $_ })
+        $minorLabels = @($labels | Where-Object { $Configuration.MinorLabels -contains $_ })
+        $patchLabels = @($labels | Where-Object { $Configuration.PatchLabels -contains $_ })
+        $versionLabels = @($majorLabels + $minorLabels + $patchLabels)
 
+        if ($versionLabels.Count -gt 1) {
+            throw "Conflicting version labels: [$($versionLabels -join ', ')]. Apply exactly one version label."
+        }
+        if ($ignoreRelease -and $versionLabels.Count -gt 0) {
+            throw "The ignore label cannot be combined with a version label: [$($versionLabels -join ', ')]."
+        }
+
+        $majorRelease = $majorLabels.Count -eq 1
+        $minorRelease = $minorLabels.Count -eq 1
+        $isDirectStableRelease = $createRelease -and $PullRequest.IsDirectRelease
+        $patchRelease = $patchLabels.Count -eq 1 -or (
+            -not $majorRelease -and
+            -not $minorRelease -and
+            ($Configuration.AutoPatching -or $isDirectStableRelease)
+        )
         $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
+
         if (-not $hasVersionBump) {
-            # No explicit bump label and no AutoPatching: still resolve a patch version so the run
-            # can preview what it would create, but do not publish a full release for an unlabeled change.
             Write-Host 'No version bump label and AutoPatching disabled; previewing a patch version without publishing.'
             $patchRelease = $true
             $hasVersionBump = $true
             $shouldPublish = $false
         }
 
-        # Anything that is not a published full release is surfaced as a prerelease - either a
-        # published prerelease (ShouldPublish) or a non-published preview.
+        if ($ignoreRelease) {
+            $createRelease = $false
+            $createPrerelease = $false
+            $shouldPublish = $false
+        }
+
         if (-not $shouldPublish) {
             $createPrerelease = $true
         }
