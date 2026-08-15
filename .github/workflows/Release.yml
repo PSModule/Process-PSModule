@@ -1,17 +1,8 @@
 name: Release
 
-run-name: "Release - ${{ github.event_name }} [${{ github.event.pull_request.title || github.event.head_commit.message || github.ref_name }}] by @${{ github.actor }}"
+run-name: "Release - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/actions/**'
-      - '.github/workflows/**'
-      - '!.github/workflows/Release.yml'
-      - '!.github/workflows/Linter.yml'
-      - '!.github/workflows/Workflow-Test-*'
   pull_request:
     branches:
       - main
@@ -29,7 +20,7 @@ on:
       - '!.github/workflows/Workflow-Test-*'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -38,7 +29,6 @@ permissions:
 
 jobs:
   Release:
-    if: github.event_name != 'pull_request' || github.event.action != 'closed' || github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

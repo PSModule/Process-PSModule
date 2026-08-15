@@ -14,6 +14,13 @@ on:
       - '!.github/workflows/Release.yml'
       - '!.github/workflows/Linter.yml'
   pull_request:
+    types:
+      - closed
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
     paths:
       - '.github/actions/**'
       - '.github/workflows/**'
@@ -24,8 +31,8 @@ on:
     - cron: '0 0 * * *'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
