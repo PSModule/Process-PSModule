@@ -151,9 +151,18 @@ function Get-GitHubMatchingWorkflowFile {
         'per_page=100'
     )
     $pages = @($response | ConvertFrom-Json -Depth 100)
+    if ($pages.incomplete_results -contains $true) {
+        throw "GitHub code search returned incomplete results for [$query]."
+    }
+
     $searchResults = @($pages | ForEach-Object { $_.items })
     if (-not $searchResults) {
         throw "GitHub code search returned no matches for [$query]."
+    }
+
+    $expectedResultCount = @($pages | Select-Object -ExpandProperty total_count -Unique)
+    if ($expectedResultCount.Count -ne 1 -or $searchResults.Count -ne $expectedResultCount[0]) {
+        throw "GitHub code search returned [$($searchResults.Count)] of [$($expectedResultCount -join ', ')] results for [$query]."
     }
 
     $repositoryByName = @{}
@@ -419,6 +428,29 @@ function ConvertTo-StringArray {
     @($Value | ForEach-Object { "$_" })
 }
 
+function ConvertTo-PermissionValue {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [object] $Value
+    )
+
+    if ($null -eq $Value) {
+        return [ordered]@{}
+    }
+
+    if ($Value -is [string]) {
+        return $Value
+    }
+
+    if ($Value -is [Collections.IDictionary]) {
+        return ConvertTo-StringMap -Map $Value
+    }
+
+    throw "Unsupported workflow permissions type [$($Value.GetType().FullName)]."
+}
+
 function Get-WorkflowInventoryItem {
     [CmdletBinding()]
     param(
@@ -494,10 +526,34 @@ function Get-WorkflowInventoryItem {
             Error         = $_.Exception.Message
         }
     }
-    $pullRequest = Get-MapValue -Map $trigger -Name 'pull_request'
-    $push = Get-MapValue -Map $trigger -Name 'push'
-    $schedule = Get-MapValue -Map $trigger -Name 'schedule'
-    $concurrency = Get-MapValue -Map $workflow -Name 'concurrency'
+    try {
+        $pullRequest = Get-MapValue -Map $trigger -Name 'pull_request'
+        $push = Get-MapValue -Map $trigger -Name 'push'
+        $schedule = Get-MapValue -Map $trigger -Name 'schedule'
+        $concurrency = Get-MapValue -Map $workflow -Name 'concurrency'
+        if ($concurrency -is [string]) {
+            $concurrencyGroup = $concurrency
+            $cancelInProgress = $null
+        } elseif ($null -eq $concurrency -or $concurrency -is [Collections.IDictionary]) {
+            $concurrencyGroup = Get-MapValue -Map $concurrency -Name 'group'
+            $cancelInProgress = Get-MapValue -Map $concurrency -Name 'cancel-in-progress'
+        } else {
+            throw "Unsupported workflow concurrency type [$($concurrency.GetType().FullName)]."
+        }
+        $permissions = ConvertTo-PermissionValue -Value (Get-MapValue -Map $workflow -Name 'permissions')
+    } catch {
+        return [pscustomobject]@{
+            Repository    = $WorkflowFile.Repository
+            DefaultBranch = $WorkflowFile.DefaultBranch
+            Archived      = $WorkflowFile.Archived
+            RepositoryUrl = $WorkflowFile.RepositoryUrl
+            WorkflowPath  = $WorkflowFile.WorkflowPath
+            WorkflowUrl   = $WorkflowFile.WorkflowUrl
+            SearchQuery   = $WorkflowFile.SearchQuery
+            Status        = 'ParseError'
+            Error         = $_.Exception.Message
+        }
+    }
     $allJobNames = Get-MapKey -Map $jobs
     $processJobNames = @($processJobs.Name)
 
@@ -533,9 +589,9 @@ function Get-WorkflowInventoryItem {
         PushPathsIgnore     = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'paths-ignore')
         PullRequestBranches = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'branches')
         PullRequestTypes    = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'types')
-        ConcurrencyGroup    = Get-MapValue -Map $concurrency -Name 'group'
-        CancelInProgress    = Get-MapValue -Map $concurrency -Name 'cancel-in-progress'
-        Permissions         = ConvertTo-StringMap -Map (Get-MapValue -Map $workflow -Name 'permissions')
+        ConcurrencyGroup    = $concurrencyGroup
+        CancelInProgress    = $cancelInProgress
+        Permissions         = $permissions
         ProcessJobs         = @($processJobs)
         AdditionalJobs      = @($allJobNames | Where-Object { $_ -notin $processJobNames })
         VersionComments     = $versionComments
@@ -676,11 +732,15 @@ function ConvertTo-WorkflowInventoryMarkdown {
                 Sort-Object -Unique
         )
         $conditionSummary = @($item.ProcessJobs.Condition | Where-Object { $_ } | Sort-Object -Unique)
-        $permissionSummary = @(
-            $item.Permissions.GetEnumerator() |
-                Sort-Object Key |
-                ForEach-Object { "$($_.Key)=$($_.Value)" }
-        )
+        $permissionSummary = if ($item.Permissions -is [string]) {
+            @($item.Permissions)
+        } else {
+            @(
+                $item.Permissions.GetEnumerator() |
+                    Sort-Object Key |
+                    ForEach-Object { "$($_.Key)=$($_.Value)" }
+            )
+        }
 
         $lines.Add(
             "| $(ConvertTo-MarkdownCell $repositoryCell) " +
@@ -758,7 +818,8 @@ if ($JsonPath) {
     if ($parent) {
         New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
-    $inventory | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $JsonPath -Encoding utf8
+    ConvertTo-Json -InputObject @($inventory) -Depth 100 |
+        Set-Content -LiteralPath $JsonPath -Encoding utf8
 }
 
 if ($MarkdownPath) {

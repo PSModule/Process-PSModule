@@ -117,6 +117,7 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
 
         Test-Path -LiteralPath $jsonPath | Should -BeTrue
         Test-Path -LiteralPath $markdownPath | Should -BeTrue
+        (Get-Content -LiteralPath $jsonPath -Raw).TrimStart() | Should -Match '^\['
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Example'
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match '0123456789012345678901234567890123456789'
     }
@@ -178,6 +179,8 @@ jobs:
         Set-Content -LiteralPath (Join-Path $shorthandWorkflowRoot 'Process.yml') -Value @'
 name: Shorthand
 on: [push, workflow_dispatch]
+permissions: read-all
+concurrency: process-${{ github.ref }}
 jobs:
   Process:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
@@ -188,5 +191,8 @@ jobs:
         $result = @(& $scriptPath -Path $shorthandRoot)
 
         $result[0].Events | Should -Be @('push', 'workflow_dispatch')
+        $result[0].Permissions | Should -Be 'read-all'
+        $result[0].ConcurrencyGroup | Should -Be 'process-${{ github.ref }}'
+        $result[0].CancelInProgress | Should -BeNullOrEmpty
     }
 }
