@@ -116,7 +116,9 @@ These explicit secret mappings are required. `secrets: inherit` is prohibited. T
 ```
 
 When present, `TestData` contains a JSON object with separate `secrets` and `variables` maps. It is omitted when
-unused. Callers do not set `with.Debug: true`; the reusable workflow default is `false`.
+unused. It is the only permitted variation from the canonical caller template. Callers do not declare `run-name`,
+alter the canonical schedule, add a caller condition, or pass `with:` inputs. Repository-owned jobs may coexist
+outside this caller contract.
 
 Built-in `GITHUB_TOKEN` authorizes checkout, repository-local reads, and standard Pages/OIDC deployment within the job
 boundary. Step-scoped GitHub App installation tokens authorize pull-request comments and labels, commit statuses and

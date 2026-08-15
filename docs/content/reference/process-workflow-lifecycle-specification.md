@@ -227,7 +227,8 @@ The caller MUST declare top-level `permissions: {}`. Its Process-PSModule job MU
 `pages: write`, and `id-token: write`. It MUST explicitly map `PSGALLERY_API_KEY`, `GitHubAppClientId`, and
 `GitHubAppPrivateKey`; `secrets: inherit` MUST NOT be used. It MAY map `TestData` only for module-local tests.
 When present, `TestData` MUST contain a JSON object with separate `secrets` and `variables` maps; callers MUST omit it
-when unused. A caller MUST NOT set `with.Debug: true`; the reusable workflow default is `false`.
+when unused. `TestData` MUST be the only variation from the canonical caller template. A caller MUST NOT declare
+`run-name`, alter the canonical schedule, add a caller condition, or pass any `with:` input.
 
 Built-in `GITHUB_TOKEN` MAY authorize repository-local, non-user-facing work when those permissions are sufficient,
 including checkout, reads, and standard Pages/OIDC deployment. GitHub App installation tokens MUST authorize all
@@ -256,11 +257,11 @@ Scenario: Provide optional module-local test data
   Then its secret value is a JSON object with separate secrets and variables maps
   And the caller omits TestData when tests do not require it
 
-Scenario: Keep caller debug disabled
+Scenario: Match the canonical caller template
   Given a conforming caller invokes the reusable workflow
-  When it sets workflow inputs
-  Then it does not set Debug to true
-  And the reusable workflow uses its false default
+  When its Process-PSModule caller contract is compared with the canonical template
+  Then every field matches the template
+  And TestData is the only permitted optional mapping
 
 Scenario: Perform a user-facing repository operation
   Given the reusable workflow must create a pull-request comment or release

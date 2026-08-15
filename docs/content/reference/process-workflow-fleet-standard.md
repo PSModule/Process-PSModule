@@ -148,7 +148,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Permissions | Default deny at workflow level, then grant the caller job `contents: read`, `pages: write`, and `id-token: write`. | Selected for the candidate: use `GITHUB_TOKEN` for repository-local, non-user-facing platform operations and App tokens for user-facing or otherwise unsupported operations. |
 | Fork behavior | Keep the caller unconditional; classify fork pull requests as restricted read-only validation in `Plan`. | Selected for the candidate; execution policy belongs to Process-PSModule rather than every consumer. |
 | Credentials | Explicitly map the three v8 credentials; optionally map `TestData` when module-local tests need it. | Define a narrower credential profile for repositories that cannot publish. |
-| Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
+| Optional surface | Permit only the documented `TestData` secret mapping. | Selected for the candidate; every other caller-contract field matches the canonical template. |
 
 The `v8` reference is the controlled moving major tag for this PSModule-owned workflow. On 2026-08-15, `v8`, `v8.0`,
 and the immutable `v8.0.0` release tag all resolve to commit `5a11e8e8b018faf97017e0416f136a751c026713`.
@@ -191,21 +191,15 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
 | Scope | Require one conforming `Process-PSModule` delegation job. | Additional repository-owned jobs do not change caller conformance. |
 
-## Candidate optional elements
+## Allowed caller variation
 
-These are evidence-based candidate variations, not approved policy.
+The only conforming variation from the canonical template is the optional `TestData` secret mapping shown above.
+Callers use it only when module-local tests need caller-defined secrets or variables, and expose only the required
+values in the documented `secrets` and `variables` maps.
 
-| Option | When it is appropriate | Constraint |
-| --- | --- | --- |
-| `TestData` secret | Module-local tests need caller-defined secrets or variables. | Optionally map the documented JSON object with separate `secrets` and `variables` maps, exposing only required values. |
-| `with.SettingsPath` | The settings file is not `.github/PSModule.yml`. | Prefer the standard path for normal module repositories. |
-| `with.WorkingDirectory` | The module is intentionally rooted below the repository root. | Keep the default `.` for the standard layout. |
-| `with.ImportantFilePatterns` | A caller must override change detection at the workflow boundary. | Prefer stable configuration in `.github/PSModule.yml`; the supplied list replaces all defaults. |
-| `with.Verbose`, `Version`, or `Prerelease` | A deliberate diagnostic or dependency-selection scenario needs it. | Do not hard-code temporary diagnostics into the fleet baseline. |
-| Schedule time | Health runs need staggering or a repository-specific maintenance window. | Keep at least one documented schedule unless the repository records why health runs are unnecessary. |
-| `run-name` | A repository needs clearer run presentation. | Presentation must not change job names or routing behavior. |
-
-Conforming callers do not set `with.Debug: true`; the reusable workflow default remains `false`.
+Every other field in the Process-PSModule caller contract matches the template exactly. Callers do not add `with:`
+inputs, change schedule timing, add `run-name`, add a caller condition, or broaden permissions. Repository-owned jobs
+may coexist because they are outside the Process-PSModule caller contract; they do not modify the canonical call.
 
 ## Variations requiring a decision
 
@@ -220,6 +214,10 @@ an approved structure:
 - a concurrency key other than workflow plus PR number or full ref, or cancellation behavior other than pull-request-only;
 - a caller-level fork or event-authorization condition;
 - trigger-level path filters that bypass Process-PSModule important-file evaluation;
+- any `with:` input, including `Debug`, `ImportantFilePatterns`, `Prerelease`, `SettingsPath`, `Verbose`, `Version`, or
+  `WorkingDirectory`;
+- a schedule other than the canonical `0 0 * * *`;
+- `run-name`;
 - caller permissions beyond `contents: read`, `pages: write`, and `id-token: write`.
 
 Use the built-in `GITHUB_TOKEN` for non-user-facing operations confined to the calling repository, including checkout
@@ -256,7 +254,7 @@ the stable slug
 | Inherited secrets | 41 | Replace `secrets: inherit` with the three explicit `v8` credential mappings. |
 | Old API key only | 14 | Replace `APIKey`/`APIKEY` with the three explicit mappings; excludes the template pilot. |
 | Test data | 3 | Preserve each existing `TestData` payload while replacing the old API key contract. |
-| Custom input | 1 | Update `Yaml` last while preserving `TestData` and `ImportantFilePatterns`. |
+| Custom input | 1 | Update `Yaml` last, preserve `TestData`, and remove the caller-level `ImportantFilePatterns` override. |
 
 Before opening leaves:
 
@@ -271,7 +269,7 @@ Before opening leaves:
 6. Confirm workflow-only changes are not important release changes. The fleet defaults match only `src/` and
    `README.md`; `Yaml` explicitly matches `src/`, `tests/`, and `README.md`, so this campaign should not publish modules.
 
-After approval, each leaf would apply the agreed caller, retain the agreed optional mappings, and prove the PR path
+After approval, each leaf would apply the canonical caller, retain optional `TestData` only where required, and prove the PR path
 before merge. Advance one wave only after the previous wave's push run completes without an unintended release.
 Completion would require a fresh inventory showing `60/60` on `v8`, the agreed trigger and concurrency contract,
 the agreed credential mapping, and no unresolved review or CI failures.
