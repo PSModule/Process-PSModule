@@ -3,6 +3,7 @@ param()
 
 BeforeAll {
     $scriptPath = Join-Path $PSScriptRoot '../Get-ProcessPSModuleWorkflowInventory.ps1'
+    Test-Path -LiteralPath $scriptPath | Should -BeTrue
     $testRoot = Join-Path ([IO.Path]::GetTempPath()) "process-workflow-inventory-$([guid]::NewGuid())"
     $repositoryRoot = Join-Path $testRoot 'Example'
     $workflowRoot = Join-Path $repositoryRoot '.github/workflows'
