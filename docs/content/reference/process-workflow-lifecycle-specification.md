@@ -231,13 +231,46 @@ Scenario: Perform a user-facing repository operation
 
 ### FR12 — Plan MUST authorize events before downstream execution {#fr12}
 
-The caller MUST invoke the reusable workflow without a caller-level fork or event condition. Plan MUST reject unsupported fork pull-request execution before any credentialed or repository-defined code runs. Every downstream job, including a job with `always()`, MUST require a successful authorized Plan and valid Settings. No downstream job MAY evaluate missing or invalid Settings or bypass the Plan gate.
+The caller MUST invoke the reusable workflow without a caller-level fork or event condition. Plan MUST classify a normal
+fork `pull_request` event into an authorized restricted read-only validation mode before downstream execution. Its valid
+Settings MUST explicitly set `IsFork=true`, `AllowAppToken=false`, `AllowPublication=false`, and
+`AllowMutation=false`. That mode MAY perform only safe repository-local checkout, build, lint, and test with the
+least-privilege built-in token. It MUST NOT create an App token; access PowerShell Gallery; create pull-request
+comments, labels, or status mutations; create releases, tags, or assets; perform cleanup; deploy Pages; or run another
+privileged or user-facing operation.
+
+The controlled upstream reusable-workflow Plan implementation MUST derive the restricted capability envelope first from
+immutable GitHub event metadata, including fork, base, and head identities, before interpreting repository settings or
+executing checked-out repository code. It MAY query the trusted upstream or base version and state as needed. Fork
+settings and files MAY be consumed only as untrusted validation and build inputs; they MUST NOT enable App tokens,
+mutation, publication, deployment, cleanup, or broaden permissions. The restricted mode MUST provide the ordinary
+green/red validation outcome without requiring contributor-configured secrets.
+
+`pull_request_target` MUST remain unsupported until a separate trust boundary is designed and approved. Plan MUST reject
+that event before credentials or repository-defined code run. Every downstream job, including a job with `always()`,
+MUST require a successful authorized Plan and valid Settings, and every privileged downstream job MUST also require its
+relevant planned capability. No downstream job MAY evaluate missing or invalid Settings or bypass the Plan gate.
 
 #### Behavioral scenarios {#fr12-scenarios}
 
 ```gherkin
-Scenario: Reject an unsupported fork pull request
-  Given a pull request originates from an unsupported fork
+Scenario: Validate a normal fork pull request in restricted mode
+  Given a pull request originates from a fork through the pull_request event
+  When Plan evaluates the event
+  Then Plan emits valid Settings with IsFork true and App-token, publication, and mutation capabilities false
+  And downstream work may perform only repository-local checkout, build, lint, and test with the least-privilege built-in token
+  And no App token, Gallery access, user-facing operation, Pages deployment, publication, or cleanup runs
+  And the contributor receives the standard green or red validation outcome without configured secrets
+
+Scenario: Derive fork capabilities before interpreting untrusted repository inputs
+  Given a pull request originates from a fork through the pull_request event
+  And its repository settings attempt to enable publication
+  When the controlled upstream Plan evaluates immutable fork, base, and head metadata
+  Then it fixes the restricted capability envelope before reading the settings or checked-out files
+  And the settings cannot enable App tokens, mutation, publication, deployment, cleanup, or broader permissions
+
+Scenario: Reject an unsupported pull_request_target event
+  Given a pull_request_target event is received
   When Plan evaluates the event
   Then Plan rejects the event before credentialed or repository-defined code runs
   And no downstream job receives authorized Settings
@@ -247,6 +280,13 @@ Scenario: Gate an always-running downstream job
   When a downstream job with an always condition is evaluated
   Then the job does not run
   And it does not evaluate the missing or invalid Settings
+
+Scenario: Gate a privileged job for a restricted fork run
+  Given Plan emits valid restricted Settings for a fork pull request
+  And the planned capability for publication is false
+  When a publication job is evaluated
+  Then the job does not run
+  And it does not create an App token or parse an absent publication configuration
 ```
 
 ## Non-functional requirements

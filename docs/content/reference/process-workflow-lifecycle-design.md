@@ -25,6 +25,7 @@ Plan resolves the caller event into one release classification before build and 
 | --- | --- | --- | --- | --- |
 | `workflow_dispatch` on the default branch | Recovery or resume | Stable release or no-op | Never cancel | Rebuild and validate the selected commit; reconstruct the unreleased release notes. |
 | `schedule` | Published-artifact validation | No-op after validation | Never cancel | Validate the latest published stable artifact and its documentation. |
+| Fork `pull_request` | Restricted read-only validation | No-op after validation | Cancels a superseded pull-request run; the later run converges state | Perform only safe repository-local checkout, build, lint, and test with no privileged or user-facing operation. |
 | Pull request `opened`, `reopened`, `synchronize` | Pull-request classification | Prerelease or no-op | Cancels a superseded pull-request run; the later run converges state | Report configured validation and execute the planned release action. |
 | Pull request `labeled`, `unlabeled` | Pull-request classification refresh | Prerelease, cleanup-only, or no-op | Cancels a superseded pull-request run; the later run converges state | Resolve the complete current classification and execute its action. |
 | Merged pull request `closed` | Post-merge close | No-op | Cancels a superseded pull-request run; the later run converges state | Do not clean up; the successful main-push release owns promotion cleanup. |
@@ -35,11 +36,29 @@ Plan records its classification and release decision in enriched Settings. Downs
 
 ## Candidate event authorization
 
-The caller invokes the reusable workflow without a caller-level fork or event condition. Plan is the event-authorization boundary: it rejects unsupported fork pull requests before credentialed or repository-defined code runs. An authorization rejection produces no usable Settings and no credentialed follow-on work.
+The caller invokes the reusable workflow without a caller-level fork or event condition. Plan is the event-authorization
+boundary. For a normal fork `pull_request`, the controlled upstream Process-PSModule `v8` Plan implementation first
+derives the security and capability envelope from immutable GitHub event metadata: the fork condition and the base and
+head identities. It may query trusted upstream or base version and state as needed. GitHub withholds fork secrets, so
+Plan then emits an authorized restricted read-only validation record rather than rejecting the event. That record sets
+`IsFork=true`, `AllowAppToken=false`, `AllowPublication=false`, and `AllowMutation=false`. It permits only
+repository-local checkout, build, lint, and test with the least-privilege built-in token, giving the contributor the
+standard green/red validation outcome without configured secrets.
 
-Every downstream job depends on a successful authorized Plan and valid Settings. This requirement applies equally to jobs that use `always()`: their conditions first require the Plan result and Settings validity, then apply their own failure-handling logic. A downstream job never parses missing or invalid Settings and cannot bypass the Plan gate.
+Repository settings and checked-out fork files are consumed only after that envelope is fixed, and only as untrusted
+validation or build inputs. They cannot enable an App token; publication, mutation, deployment, or cleanup; or broader
+permissions.
 
-Secret-free fork CI, if needed, is a separate workflow with its own trigger, authorization, and read-only contract. It is not a mode of the credentialed Process-PSModule reusable workflow.
+No restricted fork path may create an App token; access PowerShell Gallery; comment on, label, or mutate a pull request;
+write a status or other check-facing report; create releases, tags, or assets; perform cleanup; deploy Pages; or perform
+another privileged or user-facing operation. `pull_request_target` remains unsupported because it could combine
+privileged context with untrusted code. Plan rejects that event before credentials or repository-defined code run. An
+authorization rejection produces no usable Settings and no credentialed follow-on work.
+
+Every downstream job depends on a successful authorized Plan and valid Settings. This requirement applies equally to jobs
+that use `always()`: their conditions first require the Plan result and Settings validity, then apply their own
+failure-handling logic. Privileged jobs additionally require their relevant explicit capability. A downstream job never
+parses missing or invalid Settings and cannot bypass the Plan gate.
 
 ## Candidate artifact and version boundary
 
@@ -50,6 +69,7 @@ Version resolution is the boundary between planning and release-capable work. Th
 | Event and run type | Identifies the GitHub event and its candidate lifecycle classification. |
 | Event action | Preserves the relevant pull-request activity or non-pull-request action. |
 | Pull-request identity, state, and merged status | Distinguishes active, merged, and abandoned pull-request outcomes. |
+| Authorization capabilities and evidence | Records `IsFork`, the immutable event metadata used to derive it, and the explicit App-token, publication, and mutation capabilities that each downstream job must enforce. |
 | Labels and repository settings result | Captures the input policy state used only by Plan. |
 | Version bump and base version | Explains the selected version transition. |
 | Manifest version, prerelease identifier, and full version or tag | Defines the only version and tag permitted in the built artifact and release. |
@@ -81,6 +101,11 @@ jobs:
 Built-in `GITHUB_TOKEN` authorization is permitted for checkout, repository-local reads, and standard Pages/OIDC deployment within that job boundary. GitHub App installation tokens are step-scoped and authorize every user-facing interaction and every operation that needs broader reach or permissions: pull-request comments and labels, commit statuses and check-facing reporting, releases, tags, assets, and cleanup.
 
 Each App-token step requests only the installation permissions required for its operation. A missing App token is an authorization failure for App-required work: that operation stops before its API request or mutation, without silently falling back to the built-in workflow token. Built-in-token reads and Pages deployment remain available only within the explicit caller job permissions.
+
+For a Plan-classified restricted fork run, the Settings capabilities override the caller job's otherwise available
+permissions: no App token is created, no Pages deployment runs, and no repository mutation or user-facing action runs.
+The fork path has only the least-privilege built-in-token access required for repository-local checkout, build, lint,
+and test.
 
 ## Candidate Pages authorization
 
@@ -163,7 +188,8 @@ The lifecycle contract is exercised with event payload fixtures and publication 
 | Scoped caller permissions | Empty caller top-level permissions, the three job grants, built-in-token checkout/read, and standard Pages/OIDC verification. |
 | App authorization failure | Missing-App-token fixtures that prove user-facing operations fail closed without built-in token fallback. |
 | Token boundary | Fixtures that prove App tokens are step-scoped and built-in-token operations remain within the caller job's boundary. |
-| Event authorization | Unsupported-fork fixtures that prove Plan rejects before credentialed or repository-defined code, including for downstream `always()` jobs. |
+| Event authorization | Normal-fork `pull_request` fixtures that prove the controlled upstream Plan derives restricted capabilities from immutable fork/base/head metadata before it consumes settings or checked-out code, then permits only checkout/build/lint/test with a green/red outcome and no configured secrets; `pull_request_target` fixtures prove Plan rejects before credentialed or repository-defined code, including for downstream `always()` jobs. |
+| Capability enforcement | Restricted-fork fixtures that prove App-token creation, Gallery access, comments, labels, statuses, releases, tags, assets, cleanup, Pages deployment, and other privileged paths cannot run. |
 
 ## Decisions requiring approval
 
