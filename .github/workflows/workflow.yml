@@ -69,9 +69,7 @@ on:
           ^README\.md$
 
 permissions:
-  contents: write # to checkout the repo and create releases on the repo
-  pull-requests: write # to write comments to PRs
-  statuses: write # to update the status of the workflow from linter
+  contents: read # to checkout the repo
   pages: write # to deploy to Pages
   id-token: write # to verify the deployment originates from an appropriate source
 

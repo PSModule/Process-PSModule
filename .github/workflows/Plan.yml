@@ -64,7 +64,6 @@ on:
 
 permissions:
   contents: read # to checkout the repo
-  pull-requests: write # to add labels / comments to PRs
 
 jobs:
   Plan:
