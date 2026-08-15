@@ -1,10 +1,26 @@
 name: Workflow-Test [WithManifest]
 
-run-name: 'Workflow-Test [WithManifest] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}'
+run-name: 'Workflow-Test [WithManifest] - ${{ github.event_name }} [${{ github.event.pull_request.title || github.event.head_commit.message || github.ref_name }}] by @${{ github.actor }}'
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/**'
+      - 'tests/srcWithManifestTestRepo/**'
+      - '!.github/workflows/Release.yml'
+      - '!.github/workflows/Linter.yml'
   pull_request:
+    types:
+      - closed
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
     paths:
       - '.github/actions/**'
       - '.github/workflows/**'
@@ -15,8 +31,8 @@ on:
     - cron: '0 0 * * *'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -45,8 +61,7 @@ jobs:
     with:
       WorkingDirectory: tests/srcWithManifestTestRepo
       ImportantFilePatterns: |
-        ^src/
-        ^README\.md$
+        ^tests/srcWithManifestTestRepo/
         ^\.github/actions/
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
 

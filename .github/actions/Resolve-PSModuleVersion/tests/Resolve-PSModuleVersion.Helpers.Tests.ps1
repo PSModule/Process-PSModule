@@ -137,6 +137,40 @@ Describe 'Resolve-PSModuleVersion' {
                 $releases[0].tagName | Should -Be 'v1.2.3'
             }
         }
+
+        Describe 'Get-ResolvedModuleVersion' {
+            Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
+                It 'Get-ResolvedModuleVersion - reuses the Gallery version that is the next GitHub patch release' {
+                    $params = @{
+                        GitHubVersion    = New-PSSemVer -Version '1.2.3'
+                        PSGalleryVersion = New-PSSemVer -Version '1.2.4'
+                        Decision         = Get-TestDecision -Bump 'Patch'
+                        Configuration    = Get-TestConfiguration
+                        ModuleName       = 'MyModule'
+                        Releases         = @()
+                    }
+
+                    $result = Get-ResolvedModuleVersion @params
+
+                    $result.ToString() | Should -Be 'v1.2.4'
+                }
+
+                It 'Get-ResolvedModuleVersion - preserves the normal Gallery baseline when versions do not identify a retry' {
+                    $params = @{
+                        GitHubVersion    = New-PSSemVer -Version '1.2.3'
+                        PSGalleryVersion = New-PSSemVer -Version '1.2.5'
+                        Decision         = Get-TestDecision -Bump 'Patch'
+                        Configuration    = Get-TestConfiguration
+                        ModuleName       = 'MyModule'
+                        Releases         = @()
+                    }
+
+                    $result = Get-ResolvedModuleVersion @params
+
+                    $result.ToString() | Should -Be 'v1.2.6'
+                }
+            }
+        }
     }
 
     Describe 'Get-LatestGitHubVersion' {
@@ -449,6 +483,85 @@ Describe 'Resolve-PSModuleVersion' {
 
                 $result.ToString() | Should -Be 'v1.0.0'
             }
+        }
+    }
+
+    Describe 'Get-GitHubPullRequest' {
+        It 'uses the normalized pull request from a default-branch push' {
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch = $true
+                    DefaultBranch         = 'main'
+                    PullRequest           = @{
+                        Number  = 390
+                        HeadRef = 'feature/push-release'
+                        Labels  = @('minor')
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -Be 390
+            $result.HeadRef | Should -Be 'feature/push-release'
+            $result.Labels | Should -Be @('minor')
+        }
+
+        It 'creates default patch context for a direct default-branch push' {
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch = $true
+                    DefaultBranch         = 'main'
+                    PullRequest           = $null
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -BeNullOrEmpty
+            $result.HeadRef | Should -Be 'main'
+            $result.Labels | Should -BeNullOrEmpty
+            $result.IsDirectRelease | Should -BeTrue
+        }
+    }
+
+    Describe 'Resolve-ReleaseDecision' {
+        It 'uses the default patch bump for a direct stable release' {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -AutoPatching $false) `
+                -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @(); IsDirectRelease = $true })
+
+            $result.ShouldPublish | Should -BeTrue
+            $result.PatchRelease | Should -BeTrue
+        }
+
+        It 'does not publish an unlabeled prerelease when AutoPatching is disabled' {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -AutoPatching $false -ReleaseType Prerelease) `
+                -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @() })
+
+            $result.ShouldPublish | Should -BeFalse
+            $result.PatchRelease | Should -BeTrue
+        }
+
+        It 'does not validate cleanup-only pull request labels' {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -ReleaseType None) `
+                -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @('NoRelease', 'patch') })
+
+            $result.ShouldPublish | Should -BeFalse
+            $result.HasVersionBump | Should -BeFalse
+        }
+
+        It 'rejects multiple version labels' {
+            {
+                Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) `
+                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('major', 'patch') })
+            } | Should -Throw '*Conflicting version labels*'
+        }
+
+        It 'rejects a NoRelease label combined with a version label' {
+            {
+                Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) `
+                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('NoRelease', 'patch') })
+            } | Should -Throw '*ignore label cannot be combined*'
         }
     }
 }

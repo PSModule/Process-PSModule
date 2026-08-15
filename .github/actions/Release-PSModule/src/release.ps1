@@ -33,11 +33,11 @@
     Justification = 'Variable is used in script blocks.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'prNumber',
+    'PSUseDeclaredVarsMoreThanAssignments', 'prHeadRef',
     Justification = 'Variable is used in script blocks.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'prHeadRef',
+    'PSUseDeclaredVarsMoreThanAssignments', 'commitSha',
     Justification = 'Variable is used in script blocks.'
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
@@ -80,6 +80,7 @@ LogGroup 'Load inputs' {
     $usePRTitleAsReleaseName = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
     $releaseTag = $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag
+    $commitSha = $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha
     if ([string]::IsNullOrWhiteSpace($releaseTag)) {
         throw 'ReleaseTag is required. Ensure Publish.Module.Resolution.FullVersion is passed from the Plan job.'
     }
@@ -90,15 +91,35 @@ LogGroup 'Load inputs' {
     Write-Host "WhatIf:      [$whatIf]"
 }
 
-LogGroup 'Load PR information' {
+LogGroup 'Load release context' {
     $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
     $githubEvent = $githubEventJson | ConvertFrom-Json
-    $pull_request = $githubEvent.pull_request
-    if (-not $pull_request) {
-        throw 'GitHub event does not contain pull_request data. This script must be run from a pull_request event.'
+    $pullRequestJson = $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest
+    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequestJson | ConvertFrom-Json
+    } elseif ($githubEvent.pull_request) {
+        [pscustomobject]@{
+            Number  = $githubEvent.pull_request.number
+            Title   = $githubEvent.pull_request.title
+            Body    = $githubEvent.pull_request.body
+            HeadRef = $githubEvent.pull_request.head.ref
+        }
     }
-    $prNumber = $pull_request.number
-    $prHeadRef = $pull_request.head.ref
+    $prNumber = $pullRequest.Number
+    $prHeadRef = $pullRequest.HeadRef
+    $commitMessage = $githubEvent.head_commit.message
+    if ([string]::IsNullOrWhiteSpace($commitMessage) -and -not [string]::IsNullOrWhiteSpace($commitSha)) {
+        $commitMessage = git log -1 --format=%B $commitSha
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to read commit message for [$commitSha]."
+        }
+    }
+
+    if ($prNumber) {
+        Write-Host "Pull request: [#$prNumber]"
+    } else {
+        Write-Host 'No pull request context is available; using the pushed commit message for release notes.'
+    }
 }
 
 LogGroup 'Resolve version from manifest' {
@@ -153,6 +174,7 @@ LogGroup 'Resolve version from manifest' {
             ReleaseTag       = $releaseTag
             PRNumber         = $prNumber
             PRHeadRef        = $prHeadRef
+            CommitSha        = $commitSha
         } | Format-List | Out-String
     )
 }
@@ -178,31 +200,38 @@ LogGroup 'Create GitHub release' {
     }
 
     if (-not $releaseExists) {
-        if ($usePRTitleAsReleaseName -and $pull_request.title) {
-            $releaseCreateCommand += @('--title', $pull_request.title)
-            Write-Host "Using PR title as release name: [$($pull_request.title)]"
+        if ($usePRTitleAsReleaseName -and $pullRequest.Title) {
+            $releaseCreateCommand += @('--title', $pullRequest.Title)
+            Write-Host "Using PR title as release name: [$($pullRequest.Title)]"
         } else {
             $releaseCreateCommand += @('--title', $releaseTag)
         }
 
         # Build release notes content. Uses a file to preserve special characters.
-        if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pull_request.title -and $pull_request.body) {
-            $notes = "# $($pull_request.title) (#$prNumber)`n`n$($pull_request.body)"
+        if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pullRequest.Title -and $pullRequest.Body) {
+            $notes = "# $($pullRequest.Title) (#$prNumber)`n`n$($pullRequest.Body)"
             $notesFilePath = [System.IO.Path]::GetTempFileName()
             Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
             $releaseCreateCommand += @('--notes-file', $notesFilePath)
             Write-Host 'Using PR title as H1 heading with link and body as release notes'
-        } elseif ($usePRBodyAsReleaseNotes -and $pull_request.body) {
+        } elseif ($usePRBodyAsReleaseNotes -and $pullRequest.Body) {
             $notesFilePath = [System.IO.Path]::GetTempFileName()
-            Set-Content -Path $notesFilePath -Value $pull_request.body -Encoding utf8
+            Set-Content -Path $notesFilePath -Value $pullRequest.Body -Encoding utf8
             $releaseCreateCommand += @('--notes-file', $notesFilePath)
             Write-Host 'Using PR body as release notes'
+        } elseif (-not [string]::IsNullOrWhiteSpace($commitMessage)) {
+            $notesFilePath = [System.IO.Path]::GetTempFileName()
+            Set-Content -Path $notesFilePath -Value $commitMessage -Encoding utf8
+            $releaseCreateCommand += @('--notes-file', $notesFilePath)
+            Write-Host 'Using the pushed commit message as release notes'
         } else {
             $releaseCreateCommand += @('--generate-notes')
         }
 
         if ($createPrerelease) {
             $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
+        } elseif (-not [string]::IsNullOrWhiteSpace($commitSha)) {
+            $releaseCreateCommand += @('--target', $commitSha)
         }
 
         try {
@@ -247,9 +276,9 @@ LogGroup 'Create GitHub release' {
         }
     }
 
-    if ($whatIf) {
+    if ($whatIf -and $prNumber) {
         Write-Host "gh pr comment $prNumber -b '✅ $($releaseType): GitHub - $name $releaseTag'"
-    } else {
+    } elseif (-not $whatIf -and $prNumber) {
         gh pr comment $prNumber -b "✅ $releaseType`: GitHub - [$name $releaseTag]($releaseURL)"
         if ($LASTEXITCODE -ne 0) {
             throw 'Failed to comment on the pull request.'

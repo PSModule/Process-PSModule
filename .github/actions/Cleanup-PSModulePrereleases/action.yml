@@ -11,6 +11,10 @@ inputs:
     description: GitHub release tag to retain during cleanup.
     required: false
     default: ''
+  PullRequest:
+    description: Normalized pull request context JSON from Get-PSModuleSettings.
+    required: false
+    default: ''
   WhatIf:
     description: If specified, the action will only log the changes it would make.
     required: false
@@ -33,5 +37,6 @@ runs:
       env:
         GH_TOKEN: ${{ env.GH_TOKEN }}
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf: ${{ inputs.WhatIf }}
+        PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest: ${{ inputs.PullRequest }}
         PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag: ${{ inputs.ReleaseTag }}
       run: ${{ github.action_path }}/src/cleanup.ps1

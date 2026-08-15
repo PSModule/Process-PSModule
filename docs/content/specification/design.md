@@ -11,8 +11,9 @@ The behaviour in the [spec](spec.md) is delivered by a **single reusable GitHub 
 
 ### Single entry point
 
-The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job that
-calls `workflow.yml` and passes the `PSGALLERY_API_KEY` secret. The full caller template is in
+The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job for
+CI and prereleases plus a default-branch `push` trigger for stable publication. The caller calls `workflow.yml` and
+passes the required secrets. The full caller template is in
 [Repository setup](../get-started/repository-setup.md#3-add-the-caller-workflow), and the interface it targets is
 documented in [Workflow inputs](../reference/workflow-inputs.md).
 
@@ -46,8 +47,10 @@ That enriched object is an internal inter-workflow contract, not an authoring fo
 
 ## Scenario matrix
 
-Release intent comes from pull-request labels and is resolved once, in the Plan job. The label-to-bump mapping, the
-handling of conflicting labels, and the branch types that may publish are documented in
+Release intent is resolved once, in the Plan job. A default-branch push resolves the merged pull request for its
+labels only when its merge commit exactly matches the pushed SHA; a direct push or manual dispatch defaults to `Patch`
+regardless of `AutoPatching`. Closed pull requests clean up prereleases but cannot authorize a stable release. The
+label-to-bump mapping, handling of conflicting labels, and branch types that may publish are documented in
 [Versioning and releases](../guides/versioning-and-releases.md).
 
 Tests run on **Windows** (latest), **Linux** (Ubuntu latest), and **macOS** (latest). Failures on any platform block
@@ -87,9 +90,12 @@ Settings live only as workflow outputs, computed by Plan. Pros: single source of
 
 ### Version computation
 
-**Chosen: PR label + current version**
+**Chosen: default-branch push + current version**
 
-The bump comes from the PR label; the next version is computed as `current_version + bump`. Pros: explicit, git-traceable (the label is recorded in the PR). Cons: must be re-computed if a PR is re-run or the base version changes.
+An important default-branch push is the release authority. When its commit exactly matches a merged pull request, the
+bump comes from that PR label; otherwise it is `Patch`. The next version is computed from the current version. Pros:
+explicit, git-traceable release metadata without making a pull-request close event a publication authority. Cons: it
+must be re-computed if a PR is re-run or the base version changes.
 
 **Alternative: Conventional Commits**
 
