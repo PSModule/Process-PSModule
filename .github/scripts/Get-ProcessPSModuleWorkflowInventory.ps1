@@ -590,6 +590,7 @@ function Get-WorkflowInventoryItem {
             } else {
                 [ordered]@{}
             }
+            Permissions    = ConvertTo-PermissionValue -Value (Get-MapValue -Map $job -Name 'permissions')
             Environment    = Get-MapValue -Map $job -Name 'environment'
             Condition      = Get-MapValue -Map $job -Name 'if'
         }
@@ -677,6 +678,8 @@ function Get-WorkflowInventoryItem {
         PushPathsIgnore     = ConvertTo-StringArray -Value (Get-MapValue -Map $push -Name 'paths-ignore')
         PullRequestBranches = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'branches')
         PullRequestTypes    = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'types')
+        PullRequestPaths    = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'paths')
+        PullRequestPathsIgnore = ConvertTo-StringArray -Value (Get-MapValue -Map $pullRequest -Name 'paths-ignore')
         ConcurrencyGroup    = $concurrencyGroup
         CancelInProgress    = $cancelInProgress
         Permissions         = $permissions

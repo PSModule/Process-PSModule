@@ -40,6 +40,10 @@ permissions:
 jobs:
   Process-PSModule:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     with:
       Debug: true
@@ -95,12 +99,17 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         $result[0].Events | Should -Be @('pull_request', 'push', 'schedule', 'workflow_dispatch')
         $result[0].PushBranches | Should -Be @('main')
         $result[0].PullRequestTypes | Should -Be @('opened', 'synchronize')
+        $result[0].PullRequestPaths | Should -BeNullOrEmpty
+        $result[0].PullRequestPathsIgnore | Should -BeNullOrEmpty
         $result[0].ConcurrencyGroup | Should -Be '${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}'
         $result[0].CancelInProgress | Should -BeFalse
         $result[0].ProcessJobs[0].Reference | Should -Be 'v8'
         $result[0].ProcessJobs[0].MatchesTarget | Should -BeTrue
         $result[0].MatchesTarget | Should -BeTrue
         $result[0].ProcessJobs[0].Condition | Should -Match 'head.repo.full_name'
+        $result[0].ProcessJobs[0].Permissions.contents | Should -Be 'read'
+        $result[0].ProcessJobs[0].Permissions.pages | Should -Be 'write'
+        $result[0].ProcessJobs[0].Permissions.'id-token' | Should -Be 'write'
         $result[0].ProcessJobs[0].Inputs.Keys | Should -Contain 'Debug'
         $result[0].ProcessJobs[0].SecretMappings.Keys | Should -Be @(
             'PSGALLERY_API_KEY'
