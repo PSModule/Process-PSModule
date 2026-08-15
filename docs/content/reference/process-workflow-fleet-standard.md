@@ -136,7 +136,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Pull-request activities | Keep all six listed activity types. | Reduce the activity list if a v8 behavior is intentionally unsupported. |
 | Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
 | Permissions | Default deny at workflow level, then grant the caller job `contents: read`, `pages: write`, and `id-token: write`. | Selected for the candidate: use `GITHUB_TOKEN` for repository-local, non-user-facing platform operations and App tokens for user-facing or otherwise unsupported operations. |
-| Fork behavior | Keep the caller unconditional; gate unsupported fork events in the reusable workflow's Plan job. | Selected for the candidate; execution policy belongs to Process-PSModule rather than every consumer. |
+| Fork behavior | Keep the caller unconditional; classify fork pull requests as restricted read-only validation in `Plan`. | Selected for the candidate; execution policy belongs to Process-PSModule rather than every consumer. |
 | Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
 
@@ -171,7 +171,7 @@ fleet campaign. Branch names, `latest`, floating minor tags, and unqualified tar
 | Schedule | Keep a scheduled health run. | Exercises current dependencies even when repository code is unchanged. |
 | Concurrency | Use the PR-number-or-ref key and cancel only pull-request runs. | New PR events supersede older declarative reconciliation runs; same-ref push, dispatch, and schedule runs serialize without cancellation. |
 | Permissions | Set top-level `permissions: {}` and grant only `contents: read`, `pages: write`, and `id-token: write` to the caller job. | Checkout and Pages remain repository-local built-in capabilities; user-facing interactions and operations outside the built-in token boundary use scoped GitHub App tokens. |
-| Event gate | Keep the caller unconditional and gate unsupported events in `Plan`. | The reusable workflow owns execution policy; every downstream job must require a successful authorized plan. |
+| Event gate | Keep the caller unconditional and authorize capabilities in `Plan`. | The reusable workflow owns execution policy; fork pull requests may validate but cannot obtain App credentials, publish, deploy, clean up, or mutate repository state. |
 | Reference | Use the intended internal floating major tag (`v8`) after tag governance is enforced. | Compatible owned releases roll out centrally; breaking releases require a new major and campaign. |
 | Credentials | Explicitly map the three required secrets. | Satisfies the `v7+` contract and prevents unrelated secret inheritance. |
 | Scope | Keep the caller as a single delegation job. | Repository-specific automation remains independently understandable and maintainable. |
@@ -212,9 +212,13 @@ interactions such as pull-request comments, labels, statuses, releases, and rele
 token cannot provide the required repository or cross-repository access. Tokens remain step-scoped and must not fall
 back silently from App authorization to broader built-in-token authority.
 
-The reusable workflow's Plan job rejects unsupported fork-originated pull requests before any credentialed or
-repository-defined work runs. Every downstream job must depend on a successful authorized Plan result, including jobs
-using `always()`. Supporting fork CI requires a separate, secret-free read-only workflow under this candidate.
+The reusable workflow's Plan job classifies fork-originated `pull_request` events as restricted read-only validation.
+It may allow repository-local checkout, build, lint, and test with least-privilege built-in access, but must explicitly
+deny App-token creation, Gallery access, publication, Pages deployment, cleanup, and repository or user-facing
+mutations. Every downstream job, including jobs using `always()`, must require a successful valid Plan and the planned
+capability for its operation before running or evaluating Settings. Privileged-context events such as
+`pull_request_target` remain unsupported unless separately designed to prevent untrusted code from crossing the
+credential boundary.
 
 The candidate keeps repository-specific automation in a separate workflow file. That keeps the Process-PSModule wrapper
 identical enough for automated comparison while allowing modules to own unrelated schedules, generation, or integration
