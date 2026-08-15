@@ -63,6 +63,20 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.ShouldRunBuildTest | Should -BeFalse
         $result.ShouldCleanupEvent | Should -BeTrue
     }
+
+    It 'does not run a label event for a closed PR' {
+        $result = Resolve-WorkflowEventRouting -EventName pull_request `
+            -EventAction labeled `
+            -PullRequestIsClosed $true `
+            -IsTargetDefaultBranch $true `
+            -HasImportantChanges $true `
+            -HasPrereleaseLabel $true
+
+        $result.ReleaseType | Should -Be 'None'
+        $result.IsOpenOrUpdatedPR | Should -BeFalse
+        $result.ShouldRunBuildTest | Should -BeFalse
+        $result.ShouldCleanupEvent | Should -BeFalse
+    }
 }
 
 Describe 'Select-PullRequestForPush' {

@@ -16,6 +16,9 @@ function Resolve-WorkflowEventRouting {
         [bool] $PullRequestIsMerged,
 
         [Parameter()]
+        [bool] $PullRequestIsClosed,
+
+        [Parameter()]
         [bool] $IsTargetDefaultBranch,
 
         [Parameter()]
@@ -34,8 +37,9 @@ function Resolve-WorkflowEventRouting {
     $isPR = $EventName -eq 'pull_request'
     $isPush = $EventName -eq 'push'
     $isManualDispatch = $EventName -eq 'workflow_dispatch'
-    $isOpenOrUpdatedPR = $isPR -and $EventAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
-    $isOpenOrLabeledPR = $isPR -and $EventAction -in @('opened', 'reopened', 'synchronize', 'labeled')
+    $isActivePR = $isPR -and -not $PullRequestIsClosed
+    $isOpenOrUpdatedPR = $isActivePR -and $EventAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
+    $isOpenOrLabeledPR = $isActivePR -and $EventAction -in @('opened', 'reopened', 'synchronize', 'labeled')
     $isClosedPR = $isPR -and $EventAction -eq 'closed'
     $isAbandonedPR = $isClosedPR -and -not $PullRequestIsMerged
     $isMergedPR = $isClosedPR -and $PullRequestIsMerged
@@ -65,7 +69,11 @@ function Resolve-WorkflowEventRouting {
         } else {
             'None'
         }
-        ShouldRunBuildTest              = (-not $isClosedPR) -and $HasImportantChanges
+        ShouldRunBuildTest              = (
+            -not $isClosedPR -and
+            ((-not $isPR) -or (-not $PullRequestIsClosed)) -and
+            $HasImportantChanges
+        )
         ShouldCleanupEvent              = $isClosedPR
     }
 }

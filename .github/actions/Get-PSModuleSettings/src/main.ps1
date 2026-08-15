@@ -267,6 +267,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     } else {
         -not [string]::IsNullOrWhiteSpace($pullRequest.merged_at)
     }
+    $pullRequestIsClosed = $null -ne $pullRequest -and $pullRequest.State -eq 'closed'
     $targetBranch = if ($pullRequest) { $pullRequest.Base.Ref } elseif ($isPush) { $pushBranch } else { $workflowRef }
     $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
     $pullRequestContext = if ($pullRequest) {
@@ -278,6 +279,7 @@ LogGroup 'Calculate Job Run Conditions:' {
             BaseRef        = $pullRequest.Base.Ref
             Labels         = @($pullRequest.Labels.Name)
             Merged         = $pullRequestIsMerged
+            Closed         = $pullRequestIsClosed
             MergeCommitSha = $pullRequest.merge_commit_sha
             HtmlUrl        = $pullRequest.html_url
         }
@@ -301,6 +303,7 @@ LogGroup 'Calculate Job Run Conditions:' {
         GITHUB_EVENT_NAME                = $eventName
         GITHUB_EVENT_ACTION              = $pullRequestAction
         GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
+        GITHUB_EVENT_PULL_REQUEST_CLOSED = $pullRequestIsClosed
         CommitSha                        = $commitSha
         PushBranch                       = $pushBranch
         TargetBranch                     = $targetBranch
@@ -439,6 +442,7 @@ If you believe this is incorrect, please verify that your changes are in the cor
     $routing = Resolve-WorkflowEventRouting -EventName $eventName `
         -EventAction $pullRequestAction `
         -PullRequestIsMerged $pullRequestIsMerged `
+        -PullRequestIsClosed $pullRequestIsClosed `
         -IsTargetDefaultBranch $isTargetDefaultBranch `
         -IsPushToDefaultBranch $isPushToDefaultBranch `
         -IsManualDispatchToDefaultBranch $isManualDispatchToDefaultBranch `
