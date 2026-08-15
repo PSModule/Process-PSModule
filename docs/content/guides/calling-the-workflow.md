@@ -36,7 +36,7 @@ on:
       - unlabeled
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -60,6 +60,10 @@ jobs:
 Stable releases are evaluated from a push to the default branch. A merged pull request supplies its version label and
 release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
 Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
+
+The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
+resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
+the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
 
 ## Passing test data
 

@@ -15,7 +15,7 @@ Start new modules from the PSModule template repository:
 3. Replace placeholder metadata and remove scaffold sample files.
 4. Add your first public command and tests.
 5. Validate `.github/PSModule.yml` defaults for your module.
-6. [Open a draft pull request](your-first-release.md) and run the full pipeline.
+6. [Open a draft pull request](your-first-release.md), then release from its resulting important default-branch push.
 
 If the module needs several interdependent commands before it is usable at all, see
 [Module bootstrap](module-bootstrap.md) instead of shipping them as one command per step.
@@ -31,7 +31,7 @@ If the module needs several interdependent commands before it is usable at all, 
 | Page | Description |
 | --- | --- |
 | [Repository setup](repository-setup.md) | GitHub Pages, `PSGALLERY_API_KEY`, permissions, and the caller workflow. |
-| [Your first release](your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
+| [Your first release](your-first-release.md) | The pull request flow, version labels, and the resulting default-branch release. |
 | [Module bootstrap](module-bootstrap.md) | Getting a brand-new module to its first release with an integration branch. |
 
 For framework-level practices, refer to [MSX Ways of Working](https://msx.no/docs/Ways-of-Working/).

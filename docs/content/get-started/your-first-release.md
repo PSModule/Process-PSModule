@@ -1,12 +1,13 @@
 ---
 title: Your first release
-description: The pull request flow, version labels, and what happens when a Process-PSModule pull request is merged.
+description: The pull request flow, version labels, and the default-branch push that creates a stable Process-PSModule release.
 ---
 
 # Your first release
 
-Process-PSModule is driven entirely by pull requests. There is no manual publish step, no version file to edit, and no
-tag to push by hand.
+Process-PSModule uses pull requests for review and release metadata, and an important push to the default branch as
+the authority for stable publication. There is no manual publish step, no version file to edit, and no tag to push by
+hand.
 
 ## The flow
 
@@ -14,9 +15,15 @@ tag to push by hand.
 2. Push the branch and open a pull request against `main`.
 3. The workflow builds the module, runs tests on Windows, Linux, and macOS, lints the repository, and reports back on
    the pull request.
-4. Apply a version label to declare release intent (see below). Without a label, the change releases as a **patch**.
-5. Merge the pull request. The workflow publishes the module to the PowerShell Gallery, creates a GitHub Release and
-   tag, and deploys the documentation site to GitHub Pages.
+4. Apply a version label to declare release intent (see below). An unlabeled pull request defaults to a **patch** when
+   `Publish.Module.AutoPatching` is enabled, which is the default.
+5. Merge the pull request. Its resulting important push to `main` runs the stable release: after the pipeline passes,
+   it publishes the module to the PowerShell Gallery, creates a GitHub Release and tag for the tested commit, and
+   deploys the documentation site unless site publication is configured to skip. The closed-pull-request event only
+   cleans up prereleases.
+
+An important direct push to the default branch, or a manual dispatch on that branch, also creates a stable **patch**
+release with commit-based notes. It has no pull-request labels or body to use as metadata.
 
 ## Version labels
 
@@ -24,7 +31,7 @@ tag to push by hand.
 | --- | --- |
 | `major` / `breaking` | Bump `MAJOR`. |
 | `minor` / `feature` | Bump `MINOR`. |
-| `patch` / `fix` | Bump `PATCH`. This is the default when no label is applied. |
+| `patch` / `fix` | Bump `PATCH`. This is the default for an unlabeled PR when `AutoPatching` is enabled. |
 | `Prerelease` | Publish a prerelease version from the pull request, before it is merged. |
 | `NoRelease` | Run the pipeline but skip publication. |
 
@@ -43,9 +50,9 @@ cleaned up automatically.
 
 ## When nothing is released
 
-If a pull request only touches files outside the configured important-file patterns — documentation, CI tweaks, comment
-typos — the build, test, and publish stages are skipped and no release is created. A comment on the pull request
-explains why. See
+If a pull request or default-branch push only touches files outside the configured important-file patterns —
+documentation, CI tweaks, comment typos — the build, test, and publish stages are skipped and no release is created.
+A pull-request comment explains why for pull-request runs. See
 [important-file change detection](../guides/calling-the-workflow.md#important-file-change-detection) to change which
 paths trigger a release.
 
