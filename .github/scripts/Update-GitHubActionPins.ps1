@@ -71,7 +71,7 @@ if (-not [string]::IsNullOrWhiteSpace($token)) {
     $headers.Authorization = "Bearer $token"
 }
 
-$linePattern = [regex]'(?m)^(?<prefix>[ \t]*uses:[ \t]*)(?<action>[^@\s]+)@(?<sha>[^\s#]+)(?:[ \t]*#.*)?(?<carriageReturn>\r?)$'
+$linePattern = [regex]'(?m)^(?<prefix>[ \t]*uses:[ \t]*)(?<action>[^@\s]+)@(?<sha>[^\s#]+)(?:[ \t]*#[^\r\n]*)?(?<carriageReturn>\r?)$'
 $pins = @{}
 
 Get-ChildItem -LiteralPath $root -Recurse -File -Include '*.yml', '*.yaml' | ForEach-Object {
