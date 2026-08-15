@@ -35,9 +35,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
+  contents: read
   pages: write
   id-token: write
 

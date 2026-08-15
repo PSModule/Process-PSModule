@@ -37,14 +37,12 @@ See [passing test data](../guides/calling-the-workflow.md#passing-test-data) for
 
 ## Workflow `github.token` permissions
 
-The following permissions are needed by the caller workflow's default `github.token` for operations that do not use
-Shelly, such as linting and GitHub Pages deployment:
+The following permissions are needed by the caller workflow's default `github.token` for checkout and GitHub Pages
+deployment:
 
 ```yaml
 permissions:
-  contents: write      # to checkout the repo and create releases on the repo
-  pull-requests: write # to write comments to PRs
-  statuses: write      # to update the status of the workflow from linter
+  contents: read       # to checkout the repo
   pages: write         # to deploy to Pages
   id-token: write      # to verify the Pages deployment originates from an appropriate source
 ```
