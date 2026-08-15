@@ -770,7 +770,7 @@ function ConvertTo-WorkflowInventoryMarkdown {
     if ($TargetReference) {
         $matchingTarget = @($parsed | Where-Object MatchesTarget).Count
         $lines.Add("- Target reference: $TargetReference")
-        $lines.Add("- Matching target: $matchingTarget/$($parsed.Count)")
+        $lines.Add("- Matching target: $matchingTarget/$($Inventory.Count)")
     }
     $lines.Add('')
     $lines.Add('## Reference distribution')
@@ -929,6 +929,8 @@ if (-not $inventory) {
     throw "No reusable workflow jobs using [$WorkflowReference] were found in the discovered files."
 }
 
+$parseErrors = @($inventory | Where-Object Status -eq 'ParseError')
+
 if ($JsonPath) {
     $parent = Split-Path -Path $JsonPath -Parent
     if ($parent) {
@@ -948,6 +950,12 @@ if ($MarkdownPath) {
         -Source $PSCmdlet.ParameterSetName `
         -TargetReference $TargetReference |
         Set-Content -LiteralPath $MarkdownPath -Encoding utf8
+}
+
+if ($parseErrors) {
+    $parseErrorDetails = $parseErrors |
+        ForEach-Object { "[$($_.Repository)/$($_.WorkflowPath)]: $($_.Error)" }
+    throw "$($parseErrors.Count) matching workflow file(s) could not be parsed. $($parseErrorDetails -join '; ')"
 }
 
 $inventory

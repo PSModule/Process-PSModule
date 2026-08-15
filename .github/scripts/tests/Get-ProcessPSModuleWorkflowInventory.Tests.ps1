@@ -143,9 +143,11 @@ Describe 'Get-ProcessPSModuleWorkflowInventory' {
         Get-Content -LiteralPath $markdownPath -Raw | Should -Match '0 0 \\\* \\\* \\\*'
     }
 
-    It 'records a parse error for a matching malformed workflow' {
+    It 'reports and fails closed for a matching malformed workflow' {
         $malformedRoot = Join-Path $testRoot 'Malformed'
         $malformedWorkflowRoot = Join-Path $malformedRoot '.github/workflows'
+        $jsonPath = Join-Path $malformedRoot 'output/inventory.json'
+        $markdownPath = Join-Path $malformedRoot 'output/inventory.md'
         & git init --quiet --initial-branch=main $malformedRoot
         & git -C $malformedRoot config user.email 'inventory-tests@example.invalid'
         & git -C $malformedRoot config user.name 'Inventory Tests'
@@ -160,11 +162,21 @@ jobs:
         & git -C $malformedRoot add .
         & git -C $malformedRoot commit --quiet -m 'Add malformed workflow'
 
-        $result = @(& $scriptPath -Path $malformedRoot)
+        {
+            & $scriptPath `
+                -Path $malformedRoot `
+                -TargetReference 'v8' `
+                -JsonPath $jsonPath `
+                -MarkdownPath $markdownPath |
+                Out-Null
+        } | Should -Throw -ExpectedMessage '*1 matching workflow file(s) could not be parsed*'
 
+        $result = @(Get-Content -LiteralPath $jsonPath -Raw | ConvertFrom-Json)
         $result.Count | Should -Be 1
         $result[0].Status | Should -Be 'ParseError'
         $result[0].Error | Should -Not -BeNullOrEmpty
+        Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Parse errors: 1'
+        Get-Content -LiteralPath $markdownPath -Raw | Should -Match 'Matching target: 0/1'
     }
 
     It 'fails closed when no matching workflow is found' {
