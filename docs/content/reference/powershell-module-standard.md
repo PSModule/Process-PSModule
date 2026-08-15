@@ -319,7 +319,7 @@ Process-PSModule derives `TestName` from the file's basename before the first do
 Each `*.Tests.ps1` file must declare the Pester 6 requirement:
 
 ```powershell
-#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.*' }
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.1.0'; MaximumVersion = '6.*' }
 ```
 
 Tests run against the built module artifact installed locally, across a multi-OS matrix (Linux, macOS, Windows). The full suite must also remain runnable locally without mandatory cloud resources, special access, or secrets that cannot be mocked.

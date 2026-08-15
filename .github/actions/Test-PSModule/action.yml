@@ -288,6 +288,8 @@ runs:
       with:
         Debug: ${{ inputs.Debug }}
         Verbose: ${{ inputs.Verbose }}
+        Version: '[6.1.0,7.0.0)'
+        Prerelease: false
         GitHubVersion: ${{ inputs.Version }}
         GitHubPrerelease: ${{ inputs.Prerelease }}
         WorkingDirectory: ${{ inputs.WorkingDirectory }}

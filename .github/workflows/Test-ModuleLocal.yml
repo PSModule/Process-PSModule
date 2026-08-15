@@ -72,9 +72,11 @@ jobs:
         uses: PSModule/Invoke-Pester@4ff33199141fdf22568990b6107fe3148ae93a1c # v5.1.0
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
-          Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
+          Prerelease: false
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
-          Version: ${{ fromJson(inputs.Settings).Version }}
+          Version: '[6.1.0,7.0.0)'
+          GitHubVersion: ${{ fromJson(inputs.Settings).Version }}
+          GitHubPrerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           TestResult_TestSuiteName: ${{ matrix.TestName }}-${{ matrix.OSName }}
           TestResult_Enabled: true
           CodeCoverage_Enabled: true
