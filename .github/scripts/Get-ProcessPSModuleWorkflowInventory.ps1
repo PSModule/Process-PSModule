@@ -64,7 +64,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 function Invoke-GhCommand {
+    <#
+        .SYNOPSIS
+        Invokes GitHub CLI arguments and returns their combined output.
+    #>
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
         [string[]] $ArgumentList
@@ -79,7 +84,12 @@ function Invoke-GhCommand {
 }
 
 function ConvertFrom-JsonResponse {
+    <#
+        .SYNOPSIS
+        Converts a possibly empty JSON response into a stable object array.
+    #>
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter(Mandatory)]
         [AllowEmptyString()]
@@ -87,14 +97,19 @@ function ConvertFrom-JsonResponse {
     )
 
     if ([string]::IsNullOrWhiteSpace($Content)) {
-        return @()
+        return [object[]] @()
     }
 
-    @($Content | ConvertFrom-Json -Depth 100)
+    [object[]] @($Content | ConvertFrom-Json -Depth 100)
 }
 
 function Get-GitHubRepository {
+    <#
+        .SYNOPSIS
+        Gets the repositories included in GitHub inventory discovery.
+    #>
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter(Mandatory)]
         [string] $Owner,
@@ -124,13 +139,18 @@ function Get-GitHubRepository {
         $repositories = ConvertFrom-JsonResponse -Content $response
     }
 
-    @($repositories |
+    [object[]] @($repositories |
             Where-Object { $IncludeArchivedRepository -or -not $_.isArchived } |
             Sort-Object nameWithOwner)
 }
 
 function Get-GitHubMatchingWorkflowFile {
+    <#
+        .SYNOPSIS
+        Finds and reads default-branch workflow files matching the expected reference.
+    #>
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter(Mandatory)]
         [psobject[]] $RepositoryInfo,
@@ -175,7 +195,7 @@ function Get-GitHubMatchingWorkflowFile {
         $repositoryByName[$item.nameWithOwner] = $item
     }
 
-    @($searchResults |
+    [object[]] @($searchResults |
             Where-Object { $repositoryByName.ContainsKey($_.repository.full_name) } |
             Sort-Object { $_.repository.full_name }, path -Unique |
             ForEach-Object {
@@ -201,7 +221,12 @@ function Get-GitHubMatchingWorkflowFile {
 }
 
 function Get-LocalRepositoryRoot {
+    <#
+        .SYNOPSIS
+        Discovers unique Git repository roots below the supplied paths.
+    #>
     [CmdletBinding()]
+    [OutputType([string[]])]
     param(
         [Parameter(Mandatory)]
         [string[]] $InputPath
@@ -224,11 +249,16 @@ function Get-LocalRepositoryRoot {
             }
     }
 
-    @($roots | Sort-Object -Unique)
+    [string[]] @($roots | Sort-Object -Unique)
 }
 
 function Get-LocalRepositoryName {
+    <#
+        .SYNOPSIS
+        Resolves a repository name from its origin URL or local directory.
+    #>
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
         [string] $RepositoryRoot
@@ -243,7 +273,12 @@ function Get-LocalRepositoryName {
 }
 
 function Get-LocalDefaultBranch {
+    <#
+        .SYNOPSIS
+        Resolves the Git ref used as the local repository's default branch.
+    #>
     [CmdletBinding()]
+    [OutputType([psobject])]
     param(
         [Parameter(Mandatory)]
         [string] $RepositoryRoot
@@ -277,7 +312,12 @@ function Get-LocalDefaultBranch {
 }
 
 function Get-LocalWorkflowFile {
+    <#
+        .SYNOPSIS
+        Reads workflow files from each local repository's default-branch Git object.
+    #>
     [CmdletBinding()]
+    [OutputType([psobject[]])]
     param(
         [Parameter(Mandatory)]
         [string[]] $InputPath
@@ -322,7 +362,12 @@ function Get-LocalWorkflowFile {
 }
 
 function Get-MapKey {
+    <#
+        .SYNOPSIS
+        Gets normalized string keys from dictionary-like YAML values.
+    #>
     [CmdletBinding()]
+    [OutputType([string[]])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -330,18 +375,23 @@ function Get-MapKey {
     )
 
     if ($null -eq $Map) {
-        return @()
+        return [string[]] @()
     }
 
     if ($Map -is [Collections.IDictionary]) {
-        return @($Map.Keys | ForEach-Object { "$_" })
+        return [string[]] @($Map.Keys | ForEach-Object { "$_" })
     }
 
-    @($Map.PSObject.Properties.Name)
+    [string[]] @($Map.PSObject.Properties.Name)
 }
 
 function Get-MapValue {
+    <#
+        .SYNOPSIS
+        Gets a named value from dictionary-like YAML values.
+    #>
     [CmdletBinding()]
+    [OutputType([object])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -368,7 +418,12 @@ function Get-MapValue {
 }
 
 function ConvertTo-TriggerMap {
+    <#
+        .SYNOPSIS
+        Normalizes mapping, scalar, and list workflow trigger syntax.
+    #>
     [CmdletBinding()]
+    [OutputType([Collections.IDictionary], [Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -403,7 +458,12 @@ function ConvertTo-TriggerMap {
 }
 
 function ConvertTo-StringMap {
+    <#
+        .SYNOPSIS
+        Converts dictionary-like values into an ordered string map.
+    #>
     [CmdletBinding()]
+    [OutputType([Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -419,7 +479,12 @@ function ConvertTo-StringMap {
 }
 
 function ConvertTo-StringArray {
+    <#
+        .SYNOPSIS
+        Converts a possibly empty YAML value into a string array.
+    #>
     [CmdletBinding()]
+    [OutputType([string[]])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -427,14 +492,19 @@ function ConvertTo-StringArray {
     )
 
     if ($null -eq $Value) {
-        return @()
+        return [string[]] @()
     }
 
-    @($Value | ForEach-Object { "$_" })
+    [string[]] @($Value | ForEach-Object { "$_" })
 }
 
 function ConvertTo-PermissionValue {
+    <#
+        .SYNOPSIS
+        Normalizes scalar and mapping workflow permission syntax.
+    #>
     [CmdletBinding()]
+    [OutputType([string], [Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -457,7 +527,12 @@ function ConvertTo-PermissionValue {
 }
 
 function Get-WorkflowInventoryItem {
+    <#
+        .SYNOPSIS
+        Parses a workflow file into a normalized inventory record.
+    #>
     [CmdletBinding()]
+    [OutputType([psobject])]
     param(
         [Parameter(Mandatory)]
         [psobject] $WorkflowFile,
@@ -618,7 +693,12 @@ function Get-WorkflowInventoryItem {
 }
 
 function ConvertTo-MarkdownCell {
+    <#
+        .SYNOPSIS
+        Escapes a value for safe rendering in a Markdown table cell.
+    #>
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter()]
         [AllowNull()]
@@ -633,7 +713,12 @@ function ConvertTo-MarkdownCell {
 }
 
 function ConvertTo-WorkflowInventoryMarkdown {
+    <#
+        .SYNOPSIS
+        Renders workflow inventory records as a Markdown report.
+    #>
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
         [psobject[]] $Inventory,
