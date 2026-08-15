@@ -47,6 +47,8 @@ nav = [
     {"Scenario matrix" = "reference/scenario-matrix.md"},
     {"Framework test IDs" = "reference/framework-test-ids.md"},
     {"Dependencies" = "reference/dependencies.md"},
+    {"Workflow lifecycle candidate specification" = "reference/process-workflow-lifecycle-specification.md"},
+    {"Workflow lifecycle candidate design" = "reference/process-workflow-lifecycle-design.md"},
   ]},
   {"Specification" = [
     "specification/index.md",
