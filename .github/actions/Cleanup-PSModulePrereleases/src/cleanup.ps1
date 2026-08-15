@@ -9,13 +9,19 @@ Import-Module -Name 'PSModule' -Force
 LogGroup 'Load inputs' {
     $whatIf = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf -eq 'true'
 
-    $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
-    $githubEvent = $githubEventJson | ConvertFrom-Json
-    $pull_request = $githubEvent.pull_request
-    if (-not $pull_request) {
-        throw 'GitHub event does not contain pull_request data. This script must be run from a pull_request event.'
+    $pullRequestJson = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest
+    $prHeadRef = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        ($pullRequestJson | ConvertFrom-Json).HeadRef
+    } else {
+        $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
+        $githubEvent = $githubEventJson | ConvertFrom-Json
+        $githubEvent.pull_request.head.ref
     }
-    $prHeadRef = $pull_request.head.ref
+
+    if ([string]::IsNullOrWhiteSpace($prHeadRef)) {
+        Write-Host '::notice::No pull request head ref is available. Nothing to cleanup.'
+        exit 0
+    }
     $prereleaseName = $prHeadRef -replace '[^a-zA-Z0-9]'
 
     if ([string]::IsNullOrWhiteSpace($prereleaseName)) {

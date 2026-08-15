@@ -13,6 +13,10 @@ inputs:
   PSGALLERY_API_KEY:
     description: PowerShell Gallery API Key.
     required: true
+  PullRequest:
+    description: Normalized pull request context JSON from Get-PSModuleSettings.
+    required: false
+    default: ''
   WhatIf:
     description: If specified, the action will only log the changes it would make, but will not publish the module.
     required: false
@@ -50,5 +54,6 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY: ${{ inputs.PSGALLERY_API_KEY }}
+        PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest: ${{ inputs.PullRequest }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
       run: ${{ github.action_path }}/src/publish.ps1

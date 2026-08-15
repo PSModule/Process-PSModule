@@ -2,10 +2,6 @@
     'PSUseDeclaredVarsMoreThanAssignments', 'psGalleryApiKey',
     Justification = 'Variable is used in script blocks.'
 )]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', 'prNumber',
-    Justification = 'Variable is used in script blocks.'
-)]
 [CmdletBinding()]
 param()
 
@@ -47,17 +43,29 @@ LogGroup 'Load inputs' {
 }
 #endregion Load inputs
 
-#region Load PR information
-LogGroup 'Load PR information' {
-    $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
-    $githubEvent = $githubEventJson | ConvertFrom-Json
-    $pull_request = $githubEvent.pull_request
-    if (-not $pull_request) {
-        throw 'GitHub event does not contain pull_request data. This script must be run from a pull_request event.'
+#region Load release context
+LogGroup 'Load release context' {
+    $pullRequestJson = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest
+    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequestJson | ConvertFrom-Json
+    } else {
+        $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
+        $githubEvent = $githubEventJson | ConvertFrom-Json
+        if ($githubEvent.pull_request) {
+            [pscustomobject]@{
+                Number = $githubEvent.pull_request.number
+            }
+        }
     }
-    $prNumber = $pull_request.number
+
+    $prNumber = $pullRequest.Number
+    if ($prNumber) {
+        Write-Host "Pull request: [#$prNumber]"
+    } else {
+        Write-Host 'No pull request context is available; publication comments are disabled.'
+    }
 }
-#endregion Load PR information
+#endregion Load release context
 
 #region Resolve version from manifest
 # The manifest was stamped with the final version during Build-PSModule. This step is read-only
@@ -145,18 +153,20 @@ LogGroup 'Publish to PSGallery' {
         }
     }
 
-    if ($whatIf) {
+    if ($whatIf -and $prNumber) {
         Write-Host (
             "gh pr comment $prNumber -b " +
             "'✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)'"
         )
-    } else {
+    } elseif (-not $whatIf -and $prNumber) {
         Write-Host "::notice title=✅ $releaseType`: PowerShell Gallery - $name $publishPSVersion::$psGalleryReleaseLink"
         gh pr comment $prNumber -b "✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)"
         if ($LASTEXITCODE -ne 0) {
             Write-Error 'Failed to comment on the pull request.'
             exit $LASTEXITCODE
         }
+    } else {
+        Write-Host "::notice title=✅ $releaseType`: PowerShell Gallery - $name $publishPSVersion::$psGalleryReleaseLink"
     }
 }
 #endregion Publish to PSGallery
