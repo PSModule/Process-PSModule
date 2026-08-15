@@ -40,7 +40,6 @@ Task-oriented deep dives into the pipeline's functionality.
 | [Configuring the pipeline](guides/configuring-the-pipeline.md) | Worked examples for coverage targets, rapid testing, linting, and PR-based release notes. |
 | [Structuring your module](guides/structuring-your-module.md) | The repository and module source layout the workflow expects, and how to declare dependencies. |
 | [Writing module tests](guides/writing-module-tests.md) | Test discovery, setup and teardown phases, and shared test infrastructure. |
-| [Migrating Pester tests](guides/pester-migration.md) | A repository-wide checklist for migrating every test set to Pester 6.1.0. |
 | [PSModule process marketplace](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin) | Register the initiative marketplace and install the PSModule process plugin. |
 | [Skipping framework tests](guides/skipping-framework-tests.md) | Skip individual framework tests on a per-file basis. |
 | [Versioning and releases](guides/versioning-and-releases.md) | Label-driven versioning, prereleases, and what a release produces. |
