@@ -215,8 +215,11 @@ back silently from App authorization to broader built-in-token authority.
 The reusable workflow's Plan job classifies fork-originated `pull_request` events as restricted read-only validation.
 It may allow repository-local checkout, build, lint, and test with least-privilege built-in access, but must explicitly
 deny App-token creation, Gallery access, publication, Pages deployment, cleanup, and repository or user-facing
-mutations. Every downstream job, including jobs using `always()`, must require a successful valid Plan and the planned
-capability for its operation before running or evaluating Settings. Privileged-context events such as
+mutations. The controlled upstream Plan implementation derives this security envelope from GitHub event metadata before
+it interprets repository settings or executes checked-out repository code. Fork-controlled files and settings remain
+untrusted build inputs and cannot broaden the planned capabilities. Every downstream job, including jobs using
+`always()`, must require a successful valid Plan and the planned capability for its operation before running or
+evaluating Settings. Privileged-context events such as
 `pull_request_target` remain unsupported unless separately designed to prevent untrusted code from crossing the
 credential boundary.
 
