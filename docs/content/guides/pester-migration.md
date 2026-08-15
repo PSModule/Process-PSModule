@@ -5,10 +5,12 @@ description: A repository-wide checklist for migrating PSModule test sets to Pes
 
 # Migrating Pester tests
 
-Install the version 1.0.0 [`psmodule-process` marketplace
-plugin](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin/marketplace.json)
-and use its reusable `pester-migration` agent skill to migrate every Pester test
-set in a PSModule repository. It is
+Install the `psmodule-process` plugin from the shared
+[MSXOrg marketplace](https://github.com/MSXOrg/docs/tree/main/.github/plugin)
+and use its reusable `pester-migration` agent skill to migrate every Pester
+test set in a PSModule repository. For direct installation during development,
+use `copilot plugin install
+PSModule/Process-PSModule:.github/plugin/plugins/psmodule-process`. It is
 written for Pester **6.1.0** and distinguishes required compatibility changes
 from optional v6 modernization.
 

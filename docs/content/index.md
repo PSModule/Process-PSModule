@@ -41,7 +41,7 @@ Task-oriented deep dives into the pipeline's functionality.
 | [Structuring your module](guides/structuring-your-module.md) | The repository and module source layout the workflow expects, and how to declare dependencies. |
 | [Writing module tests](guides/writing-module-tests.md) | Test discovery, setup and teardown phases, and shared test infrastructure. |
 | [Migrating Pester tests](guides/pester-migration.md) | A repository-wide checklist for migrating every test set to Pester 6.1.0. |
-| [PSModule process marketplace](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin) | Install the version 1.0.0 Copilot CLI plugin and its reusable skills. |
+| [PSModule process plugin](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin) | Install the plugin directly or through the shared MSXOrg marketplace. |
 | [Skipping framework tests](guides/skipping-framework-tests.md) | Skip individual framework tests on a per-file basis. |
 | [Versioning and releases](guides/versioning-and-releases.md) | Label-driven versioning, prereleases, and what a release produces. |
 | [Validating before review](guides/validating-before-review.md) | The PSModule validation pass before a draft pull request is marked ready. |
