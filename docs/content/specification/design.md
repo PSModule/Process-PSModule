@@ -11,8 +11,9 @@ The behaviour in the [spec](spec.md) is delivered by a **single reusable GitHub 
 
 ### Single entry point
 
-The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job that
-calls `workflow.yml` and passes the `PSGALLERY_API_KEY` secret. The full caller template is in
+The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job for
+CI and prereleases plus a default-branch `push` trigger for stable publication. The caller calls `workflow.yml` and
+passes the required secrets. The full caller template is in
 [Repository setup](../get-started/repository-setup.md#3-add-the-caller-workflow), and the interface it targets is
 documented in [Workflow inputs](../reference/workflow-inputs.md).
 
@@ -46,8 +47,10 @@ That enriched object is an internal inter-workflow contract, not an authoring fo
 
 ## Scenario matrix
 
-Release intent comes from pull-request labels and is resolved once, in the Plan job. The label-to-bump mapping, the
-handling of conflicting labels, and the branch types that may publish are documented in
+Release intent comes from pull-request labels and is resolved once, in the Plan job. A default-branch push resolves the
+merged pull request for its labels, while a direct push or manual dispatch defaults to `Patch` regardless of
+`AutoPatching`. The label-to-bump
+mapping, handling of conflicting labels, and branch types that may publish are documented in
 [Versioning and releases](../guides/versioning-and-releases.md).
 
 Tests run on **Windows** (latest), **Linux** (Ubuntu latest), and **macOS** (latest). Failures on any platform block

@@ -38,6 +38,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -47,10 +50,11 @@ on:
       - reopened
       - synchronize
       - labeled
+      - unlabeled
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -68,8 +72,10 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-Every permission in that block is required. See [Workflow inputs](../reference/workflow-inputs.md) for what each one is
-used for, and [Calling the workflow](../guides/calling-the-workflow.md) for passing test secrets and variables.
+Every permission in that block is required. A push to `main` publishes a stable release after the full pipeline passes;
+the pull-request trigger handles CI, prereleases, and prerelease cleanup. See
+[Workflow inputs](../reference/workflow-inputs.md) for what each permission is used for, and
+[Calling the workflow](../guides/calling-the-workflow.md) for passing test secrets and variables.
 
 ## 4. Add the settings file
 

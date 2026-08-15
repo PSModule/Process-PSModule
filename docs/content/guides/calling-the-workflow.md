@@ -21,6 +21,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -30,10 +33,11 @@ on:
       - reopened
       - synchronize
       - labeled
+      - unlabeled
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -52,6 +56,10 @@ jobs:
 ```
 
 </details>
+
+Stable releases are evaluated from a push to the default branch. A merged pull request supplies its version label and
+release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
+Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
 
 ## Passing test data
 
@@ -175,9 +183,9 @@ Notes:
 
 ## Important file change detection
 
-The workflow automatically detects whether a pull request contains changes to "important" files that should enter the
-build, test, and publish path. This prevents unnecessary work and releases when only files outside the configured
-patterns are modified.
+The workflow automatically detects whether a pull request or default-branch push contains changes to "important" files
+that should enter the build, test, and publish path. This prevents unnecessary work and releases when only files outside
+the configured patterns are modified.
 
 ### Files that trigger the important-change path
 
