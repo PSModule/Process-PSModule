@@ -125,6 +125,16 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
+Modules whose local tests require repository-specific data may add the optional secret mapping:
+
+```yaml
+      TestData: >-
+        {"secrets":{"TOKEN":"${{ secrets.TEST_TOKEN }}"},"variables":{"ENDPOINT":"${{ vars.TEST_ENDPOINT }}"}}
+```
+
+The reusable workflow exports only the declared entries to module-local test setup, tests, and teardown. Callers omit
+`TestData` when no module-local test data is required.
+
 This YAML is a recommendation derived from the v8 interface and fleet evidence. It is not an approved standard.
 Issue [#514](https://github.com/PSModule/Process-PSModule/issues/514) must record agreement on the following structural
 decisions before canonical guides, templates, or consumer workflows adopt it:
@@ -137,7 +147,7 @@ decisions before canonical guides, templates, or consumer workflows adopt it:
 | Concurrency | Use the workflow plus PR-number-or-full-ref key and cancel only pull-request runs. | Selected for the candidate: PR reconciliation must be resumable; non-PR runs serialize by full ref. |
 | Permissions | Default deny at workflow level, then grant the caller job `contents: read`, `pages: write`, and `id-token: write`. | Selected for the candidate: use `GITHUB_TOKEN` for repository-local, non-user-facing platform operations and App tokens for user-facing or otherwise unsupported operations. |
 | Fork behavior | Keep the caller unconditional; classify fork pull requests as restricted read-only validation in `Plan`. | Selected for the candidate; execution policy belongs to Process-PSModule rather than every consumer. |
-| Credentials | Explicitly map the three v8 credentials. | Define a narrower credential profile for repositories that cannot publish. |
+| Credentials | Explicitly map the three v8 credentials; optionally map `TestData` when module-local tests need it. | Define a narrower credential profile for repositories that cannot publish. |
 | Optional surface | Permit only documented `TestData`, workflow inputs, schedule timing, and presentation metadata. | Allow additional extension points after naming and compatibility rules are agreed. |
 
 The `v8` reference is the controlled moving major tag for this PSModule-owned workflow. On 2026-08-15, `v8`, `v8.0`,
@@ -187,13 +197,15 @@ These are evidence-based candidate variations, not approved policy.
 
 | Option | When it is appropriate | Constraint |
 | --- | --- | --- |
-| `TestData` secret | Module-local tests need caller-defined secrets or variables. | Use the documented compact single-line JSON object and expose only required values. |
+| `TestData` secret | Module-local tests need caller-defined secrets or variables. | Optionally map the documented JSON object with separate `secrets` and `variables` maps, exposing only required values. |
 | `with.SettingsPath` | The settings file is not `.github/PSModule.yml`. | Prefer the standard path for normal module repositories. |
 | `with.WorkingDirectory` | The module is intentionally rooted below the repository root. | Keep the default `.` for the standard layout. |
 | `with.ImportantFilePatterns` | A caller must override change detection at the workflow boundary. | Prefer stable configuration in `.github/PSModule.yml`; the supplied list replaces all defaults. |
-| `with.Debug`, `Verbose`, `Version`, or `Prerelease` | A deliberate diagnostic or dependency-selection scenario needs it. | Do not hard-code temporary diagnostics into the fleet baseline. |
+| `with.Verbose`, `Version`, or `Prerelease` | A deliberate diagnostic or dependency-selection scenario needs it. | Do not hard-code temporary diagnostics into the fleet baseline. |
 | Schedule time | Health runs need staggering or a repository-specific maintenance window. | Keep at least one documented schedule unless the repository records why health runs are unnecessary. |
 | `run-name` | A repository needs clearer run presentation. | Presentation must not change job names or routing behavior. |
+
+Conforming callers do not set `with.Debug: true`; the reusable workflow default remains `false`.
 
 ## Variations requiring a decision
 
