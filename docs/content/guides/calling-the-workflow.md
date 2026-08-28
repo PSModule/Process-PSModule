@@ -46,7 +46,7 @@ permissions:
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v9
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -92,7 +92,7 @@ changes:
 ```yaml
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v9
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -121,7 +121,7 @@ content lines stay at the same indentation level:
 ```yaml
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v9
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
       GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
@@ -233,7 +233,7 @@ You can also pass patterns via the workflow input:
 ```yaml
 jobs:
   Process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v9
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     with:
       ImportantFilePatterns: |
         ^src/
@@ -246,7 +246,7 @@ To disable triggering via the workflow input, pass an explicit empty string:
 ```yaml
 jobs:
   process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v9
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     with:
       ImportantFilePatterns: ''
 ```
