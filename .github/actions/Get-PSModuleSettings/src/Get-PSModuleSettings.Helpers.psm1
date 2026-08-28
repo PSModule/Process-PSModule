@@ -28,10 +28,7 @@ function Resolve-WorkflowEventRouting {
         [bool] $IsManualDispatchToDefaultBranch,
 
         [Parameter()]
-        [bool] $HasImportantChanges,
-
-        [Parameter()]
-        [bool] $HasPrereleaseLabel
+        [bool] $HasImportantChanges
     )
 
     $isPR = $EventName -eq 'pull_request'
@@ -43,7 +40,6 @@ function Resolve-WorkflowEventRouting {
     $isClosedPR = $isPR -and $EventAction -eq 'closed'
     $isAbandonedPR = $isClosedPR -and -not $PullRequestIsMerged
     $isMergedPR = $isClosedPR -and $PullRequestIsMerged
-    $shouldPrerelease = $isOpenOrLabeledPR -and $HasPrereleaseLabel -and $HasImportantChanges
     $shouldRelease = (
         ($IsPushToDefaultBranch -or $IsManualDispatchToDefaultBranch) -and
         $HasImportantChanges
@@ -61,11 +57,8 @@ function Resolve-WorkflowEventRouting {
         IsTargetDefaultBranch           = $IsTargetDefaultBranch
         IsPushToDefaultBranch           = $IsPushToDefaultBranch
         IsManualDispatchToDefaultBranch = $IsManualDispatchToDefaultBranch
-        ShouldPrerelease                = $shouldPrerelease
         ReleaseType                     = if ($shouldRelease) {
             'Release'
-        } elseif ($shouldPrerelease) {
-            'Prerelease'
         } else {
             'None'
         }
@@ -148,4 +141,104 @@ function Get-FilesFromGitHubComparison {
     }
 
     $files | Select-Object -ExpandProperty filename
+}
+
+function Get-UnsupportedPSModuleReleaseSetting {
+    <#
+        .SYNOPSIS
+        Returns release settings removed from the Process-PSModule v9 contract.
+
+        .DESCRIPTION
+        Inspects a publish-module settings object and returns any setting names that
+        configured automatic patching or custom release-label aliases before v9.
+
+        .OUTPUTS
+        System.String
+
+        .EXAMPLE
+        Get-UnsupportedPSModuleReleaseSetting -PublishModule $settings.Publish.Module
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [object] $PublishModule
+    )
+
+    if ($null -eq $PublishModule) {
+        return
+    }
+
+    $settingNames = if ($PublishModule -is [System.Collections.IDictionary]) {
+        @($PublishModule.Keys)
+    } else {
+        @($PublishModule.PSObject.Properties.Name)
+    }
+    $unsupportedSettingNames = @(
+        'AutoPatching'
+        'MajorLabels'
+        'MinorLabels'
+        'PatchLabels'
+        'PrereleaseLabels'
+        'IgnoreLabels'
+    )
+
+    foreach ($settingName in $unsupportedSettingNames) {
+        if ($settingNames -contains $settingName) {
+            $settingName
+        }
+    }
+}
+
+function Resolve-PSModulePublishState {
+    <#
+        .SYNOPSIS
+        Applies the resolved release decision to module and site publication state.
+
+        .DESCRIPTION
+        Updates the runtime settings after Resolve-PSModuleVersion has decided
+        whether this run publishes a stable release, prerelease, or nothing.
+        Closed pull requests retain their cleanup-only path.
+
+        .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        .EXAMPLE
+        $params = @{
+            Settings      = $settings
+            ReleaseType   = 'None'
+            ShouldPublish = $false
+        }
+        Resolve-PSModulePublishState @params
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Settings,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('Release', 'Prerelease', 'None')]
+        [string] $ReleaseType,
+
+        [Parameter(Mandatory)]
+        [bool] $ShouldPublish
+    )
+
+    $isCleanupOnly = (
+        $Settings.Context.EventName -eq 'pull_request' -and
+        $Settings.Context.EventAction -eq 'closed'
+    )
+    $cleanupEnabled = $isCleanupOnly -and [bool]$Settings.Publish.Module.AutoCleanup
+    $moduleEnabled = $ShouldPublish -or $cleanupEnabled
+    $siteDesired = $ReleaseType -eq 'Release'
+
+    $Settings.Publish.Module.ReleaseType = $ReleaseType
+    $Settings.Publish.Module.Desired = $moduleEnabled
+    $Settings.Publish.Module.Enabled = $moduleEnabled
+    $Settings.Publish.Site.Desired = $siteDesired
+    $Settings.Publish.Site.Enabled = $siteDesired -and -not [bool]$Settings.Publish.Site.Skip
+
+    $Settings
 }

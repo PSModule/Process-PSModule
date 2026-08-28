@@ -8,25 +8,9 @@ Import-Module -Name "$PSScriptRoot/Resolve-PSModuleVersion.Helpers.psm1" -Force
 
 $actionInput = Read-ActionInput
 $config = Get-PublishConfiguration -SettingsJson $actionInput.SettingsJson
-$pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
-
-$decision = if ($null -eq $pullRequest) {
-    # Non-PR event (for example workflow_dispatch or schedule): there are no pull request
-    # labels to determine a version bump, so keep the current published version and publish
-    # nothing. For a module that has never been released this floors at 0.0.0.
-    [PSCustomObject]@{
-        ShouldPublish    = $false
-        CreateRelease    = $false
-        CreatePrerelease = $false
-        MajorRelease     = $false
-        MinorRelease     = $false
-        PatchRelease     = $false
-        HasVersionBump   = $false
-        PrereleaseName   = ''
-    }
-} else {
-    Resolve-ReleaseDecision -Configuration $config -PullRequest $pullRequest
-}
+$releaseContext = Get-ReleaseContext -SettingsJson $actionInput.SettingsJson `
+    -ReleaseDecision $actionInput.ReleaseDecision
+$decision = Resolve-ReleaseDecision -ReleaseContext $releaseContext
 
 $releases = @(Get-GitHubRelease)
 $ghVersion = Get-LatestGitHubVersion -Releases $releases

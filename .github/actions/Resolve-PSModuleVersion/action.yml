@@ -32,6 +32,10 @@ inputs:
     description: GitHub event payload as a JSON string. When set, overrides reading from the event file. Use for testing.
     required: false
     default: ''
+  ReleaseDecision:
+    description: Explicit decision for a direct push or workflow dispatch - release:patch, release:minor, release:major, or release:skip.
+    required: false
+    default: ''
 
 outputs:
   Version:
@@ -69,5 +73,6 @@ runs:
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Settings: ${{ inputs.Settings }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson: ${{ inputs.EventJson }}
+        PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_ReleaseDecision: ${{ inputs.ReleaseDecision }}
         GITHUB_EVENT_PATH: ${{ inputs.EventPath || github.event_path }}
       run: ${{ github.action_path }}/src/main.ps1

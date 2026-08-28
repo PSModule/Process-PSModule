@@ -73,6 +73,17 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
     $settings = @{}
 }
 
+$unsupportedReleaseSettings = @(
+    Get-UnsupportedPSModuleReleaseSetting -PublishModule $settings.Publish.Module
+)
+if ($unsupportedReleaseSettings.Count -gt 0) {
+    throw (
+        "Unsupported Process-PSModule v9 release settings: [$($unsupportedReleaseSettings -join ', ')]. " +
+        'Remove these settings. Release decisions now use only release:patch, release:minor, ' +
+        'release:major, release:pre-release, and release:skip.'
+    )
+}
+
 LogGroup 'Name' {
     [pscustomobject]@{
         InputName      = $name
@@ -190,15 +201,9 @@ $settings = [pscustomobject]@{
         Module = [pscustomobject]@{
             Skip                     = $settings.Publish.Module.Skip ?? $false
             AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
-            AutoPatching             = $settings.Publish.Module.AutoPatching ?? $true
             IncrementalPrerelease    = $settings.Publish.Module.IncrementalPrerelease ?? $true
             DatePrereleaseFormat     = $settings.Publish.Module.DatePrereleaseFormat ?? ''
             VersionPrefix            = $settings.Publish.Module.VersionPrefix ?? 'v'
-            MajorLabels              = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
-            MinorLabels              = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
-            PatchLabels              = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
-            IgnoreLabels             = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
-            PrereleaseLabels         = $settings.Publish.Module.PrereleaseLabels ?? 'prerelease'
             UsePRTitleAsReleaseName  = $settings.Publish.Module.UsePRTitleAsReleaseName ?? $false
             UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
@@ -318,11 +323,6 @@ LogGroup 'Calculate Job Run Conditions:' {
         IsManualDispatchToDefaultBranch  = $isManualDispatchToDefaultBranch
         AssociatedPullRequest            = $pullRequestContext.Number
     } | Format-List | Out-String
-
-    # Check if a prerelease label exists on the PR
-    $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
-    $prLabels = @($pullRequestContext.Labels)
-    $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
 
     # Check if important files have changed in the PR
     # Important files are determined by the configured ImportantFilePatterns setting
@@ -449,8 +449,7 @@ If you believe this is incorrect, please verify that your changes are in the cor
         -IsTargetDefaultBranch $isTargetDefaultBranch `
         -IsPushToDefaultBranch $isPushToDefaultBranch `
         -IsManualDispatchToDefaultBranch $isManualDispatchToDefaultBranch `
-        -HasImportantChanges $hasImportantChanges `
-        -HasPrereleaseLabel $hasPrereleaseLabel
+        -HasImportantChanges $hasImportantChanges
     $releaseType = $routing.ReleaseType
 
     [pscustomobject]@{
@@ -464,8 +463,6 @@ If you believe this is incorrect, please verify that your changes are in the cor
         isManualDispatch      = $routing.IsManualDispatch
         isPushToDefaultBranch = $routing.IsPushToDefaultBranch
         isTargetDefaultBranch = $routing.IsTargetDefaultBranch
-        hasPrereleaseLabel    = $hasPrereleaseLabel
-        shouldPrerelease      = $routing.ShouldPrerelease
         ReleaseType           = $releaseType
         HasImportantChanges   = $hasImportantChanges
     } | Format-List | Out-String

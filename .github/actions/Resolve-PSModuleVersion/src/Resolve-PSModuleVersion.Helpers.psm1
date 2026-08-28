@@ -1,25 +1,4 @@
-﻿function Split-CommaSeparatedList {
-    <#
-        .SYNOPSIS
-        Splits a comma-separated string into a trimmed, non-empty array.
-
-        .EXAMPLE
-        Split-CommaSeparatedList -Value 'Major, Minor, Patch'
-
-        Returns @('Major', 'Minor', 'Patch').
-    #>
-    [CmdletBinding()]
-    [OutputType([string[]])]
-    param(
-        # The comma-separated string to split.
-        [Parameter()]
-        [string] $Value
-    )
-
-    ($Value -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-}
-
-function Read-ActionInput {
+﻿function Read-ActionInput {
     <#
         .SYNOPSIS
         Reads and validates action inputs from environment variables.
@@ -29,7 +8,7 @@ function Read-ActionInput {
         Falls back to the repository name when the module name input is not provided.
 
         .OUTPUTS
-        PSCustomObject with Name and SettingsJson properties.
+        PSCustomObject with Name, SettingsJson, and ReleaseDecision properties.
 
         .EXAMPLE
         $actionInput = Read-ActionInput
@@ -54,8 +33,9 @@ function Read-ActionInput {
         }
 
         [PSCustomObject]@{
-            Name         = $name
-            SettingsJson = $settingsJson
+            Name            = $name
+            SettingsJson    = $settingsJson
+            ReleaseDecision = [string]$env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_ReleaseDecision
         }
     }
 }
@@ -66,8 +46,7 @@ function Get-PublishConfiguration {
         Parses the settings JSON into a publish configuration object.
 
         .DESCRIPTION
-        Extracts publish module settings including auto-patching flags, version prefix,
-        release type, and label classification arrays.
+        Extracts publish module settings used to format versions and prereleases.
 
         .OUTPUTS
         PSCustomObject with publish configuration properties.
@@ -91,28 +70,16 @@ function Get-PublishConfiguration {
         $publishModule = $settings.Publish.Module
 
         $config = [PSCustomObject]@{
-            AutoPatching          = [bool]$publishModule.AutoPatching
             IncrementalPrerelease = [bool]$publishModule.IncrementalPrerelease
             DatePrereleaseFormat  = [string]$publishModule.DatePrereleaseFormat
             VersionPrefix         = [string]$publishModule.VersionPrefix
-            ReleaseType           = [string]$publishModule.ReleaseType
-            IgnoreLabels          = Split-CommaSeparatedList ([string]$publishModule.IgnoreLabels)
-            MajorLabels           = Split-CommaSeparatedList ([string]$publishModule.MajorLabels)
-            MinorLabels           = Split-CommaSeparatedList ([string]$publishModule.MinorLabels)
-            PatchLabels           = Split-CommaSeparatedList ([string]$publishModule.PatchLabels)
         }
 
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
-                AutoPatching          = $config.AutoPatching
                 IncrementalPrerelease = $config.IncrementalPrerelease
                 DatePrereleaseFormat  = $config.DatePrereleaseFormat
                 VersionPrefix         = $config.VersionPrefix
-                ReleaseType           = $config.ReleaseType
-                IgnoreLabels          = $config.IgnoreLabels -join ', '
-                MajorLabels           = $config.MajorLabels -join ', '
-                MinorLabels           = $config.MinorLabels -join ', '
-                PatchLabels           = $config.PatchLabels -join ', '
             } | Format-List | Out-String)
         Write-Host '-------------------------------------------------'
 
@@ -120,25 +87,25 @@ function Get-PublishConfiguration {
     }
 }
 
-function Get-GitHubPullRequest {
+function Get-ReleaseContext {
     <#
         .SYNOPSIS
-        Reads normalized pull-request context from settings, with event-payload fallback.
+        Reads normalized release context from settings, with event-payload fallback.
 
         .DESCRIPTION
-        The settings action resolves the pull request associated with a default-branch push
-        before this action runs. When no pull request exists, a direct push or manual
-        dispatch on the default branch still receives release context so it resolves the
-        default patch bump.
+        The settings action resolves a pull request associated with a default-branch
+        push before this action runs. Pull requests use canonical labels, while a
+        release-capable event without a pull request uses the explicit action input.
 
         .OUTPUTS
-        PSCustomObject with pull-request metadata, or a default-branch direct-release
-        context with no pull-request number.
+        PSCustomObject describing whether the run is a pull request, stable release,
+        cleanup, or validation context.
 
         .EXAMPLE
-        $pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
+        $releaseContext = Get-ReleaseContext -SettingsJson $actionInput.SettingsJson `
+            -ReleaseDecision $actionInput.ReleaseDecision
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'SettingsJson',
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
         Justification = 'Parameter is used inside a LogGroup script block.')]
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -146,7 +113,12 @@ function Get-GitHubPullRequest {
         # The complete settings object, including normalized workflow context.
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string] $SettingsJson
+        [string] $SettingsJson,
+
+        # Explicit canonical decision for a release-capable event without a pull request.
+        [Parameter()]
+        [AllowEmptyString()]
+        [string] $ReleaseDecision = ''
     )
 
     LogGroup 'Event information' {
@@ -154,23 +126,90 @@ function Get-GitHubPullRequest {
         $context = $settings.Context
         if ($context) {
             $contextPullRequest = $context.PullRequest
-            if ($contextPullRequest) {
-                Write-Host "Using normalized pull request context for #$($contextPullRequest.Number)."
+            $eventName = [string]$context.EventName
+            $eventAction = [string]$context.EventAction
+            $isCleanupOnly = $eventName -eq 'pull_request' -and $eventAction -eq 'closed'
+
+            if ($isCleanupOnly) {
+                Write-Host 'Using cleanup-only closed pull request context.'
                 return [PSCustomObject]@{
-                    Number  = $contextPullRequest.Number
-                    HeadRef = $contextPullRequest.HeadRef
-                    Labels  = @($contextPullRequest.Labels)
+                    Type                = 'Cleanup'
+                    DecisionSource      = 'None'
+                    RequiresDecision    = $false
+                    CanPublish          = $false
+                    HasImportantChanges = [bool]$settings.HasImportantChanges
+                    Number              = $contextPullRequest.Number
+                    HeadRef             = [string]$contextPullRequest.HeadRef
+                    Labels              = @()
+                    IsDirectRelease     = $false
                 }
             }
 
-            if ($context.IsPushToDefaultBranch -or $context.IsManualDispatchToDefaultBranch) {
-                Write-Host 'Using direct default-branch release context with the default patch bump.'
-                return [PSCustomObject]@{
-                    Number          = $null
-                    HeadRef         = $context.DefaultBranch
-                    Labels          = @()
-                    IsDirectRelease = $true
+            if ($contextPullRequest) {
+                if ($eventName -notin @('pull_request', 'push')) {
+                    Write-Host "Ignoring pull request data in unsupported [$eventName] release context."
+                    return [PSCustomObject]@{
+                        Type                = 'Validation'
+                        DecisionSource      = 'None'
+                        RequiresDecision    = $false
+                        CanPublish          = $false
+                        HasImportantChanges = [bool]$settings.HasImportantChanges
+                        Number              = $contextPullRequest.Number
+                        HeadRef             = [string]$contextPullRequest.HeadRef
+                        Labels              = @()
+                        IsDirectRelease     = $false
+                    }
                 }
+
+                Write-Host "Using normalized pull request context for #$($contextPullRequest.Number)."
+                $isStableContext = $eventName -eq 'push'
+                return [PSCustomObject]@{
+                    Type                = if ($isStableContext) { 'Stable' } else { 'PullRequest' }
+                    DecisionSource      = 'Labels'
+                    RequiresDecision    = $true
+                    CanPublish          = if ($isStableContext) {
+                        [bool]$context.IsPushToDefaultBranch
+                    } else {
+                        $true
+                    }
+                    HasImportantChanges = [bool]$settings.HasImportantChanges
+                    Number              = $contextPullRequest.Number
+                    HeadRef             = [string]$contextPullRequest.HeadRef
+                    Labels              = @($contextPullRequest.Labels)
+                    IsDirectRelease     = $false
+                }
+            }
+
+            if ($eventName -in @('push', 'workflow_dispatch')) {
+                Write-Host "Using explicit [$eventName] release context."
+                return [PSCustomObject]@{
+                    Type                = 'Stable'
+                    DecisionSource      = 'Input'
+                    RequiresDecision    = $true
+                    CanPublish          = [bool](
+                        $context.IsPushToDefaultBranch -or
+                        $context.IsManualDispatchToDefaultBranch
+                    )
+                    HasImportantChanges = [bool]$settings.HasImportantChanges
+                    Number              = $null
+                    HeadRef             = [string]$context.DefaultBranch
+                    Labels              = @()
+                    ExplicitDecision    = $ReleaseDecision
+                    IsDirectRelease     = $true
+                }
+            }
+
+            Write-Host "Using validation-only [$eventName] context."
+            return [PSCustomObject]@{
+                Type                = 'Validation'
+                DecisionSource      = 'None'
+                RequiresDecision    = $false
+                CanPublish          = $false
+                HasImportantChanges = [bool]$settings.HasImportantChanges
+                Number              = $null
+                HeadRef             = [string]$context.DefaultBranch
+                Labels              = @()
+                IsDirectRelease     = $false
             }
         }
 
@@ -183,8 +222,23 @@ function Get-GitHubPullRequest {
 
         $pr = $githubEvent.pull_request
         if (-not $pr) {
+            $eventName = [string]$env:GITHUB_EVENT_NAME
+            if ($eventName -in @('push', 'workflow_dispatch')) {
+                throw "Cannot authorize [$eventName] publication without normalized default-branch context."
+            }
+
             Write-Host 'GitHub event does not contain pull_request data and no release context was normalized.'
-            return $null
+            return [PSCustomObject]@{
+                Type                = 'Validation'
+                DecisionSource      = 'None'
+                RequiresDecision    = $false
+                CanPublish          = $false
+                HasImportantChanges = [bool]$settings.HasImportantChanges
+                Number              = $null
+                HeadRef             = ''
+                Labels              = @()
+                IsDirectRelease     = $false
+            }
         }
 
         $labels = @()
@@ -197,9 +251,22 @@ function Get-GitHubPullRequest {
             } | Format-List | Out-String)
         Write-Host '-------------------------------------------------'
 
+        $isCleanupOnly = [string]$githubEvent.action -eq 'closed'
+        $defaultBranch = [string]$githubEvent.repository.default_branch
+        $targetsDefaultBranch = (
+            -not [string]::IsNullOrWhiteSpace($defaultBranch) -and
+            [string]$pr.base.ref -eq $defaultBranch
+        )
         [PSCustomObject]@{
-            HeadRef = $pr.head.ref
-            Labels  = $labels
+            Type                = if ($isCleanupOnly) { 'Cleanup' } else { 'PullRequest' }
+            DecisionSource      = if ($isCleanupOnly) { 'None' } else { 'Labels' }
+            RequiresDecision    = -not $isCleanupOnly
+            CanPublish          = -not $isCleanupOnly -and $targetsDefaultBranch
+            HasImportantChanges = [bool]$settings.HasImportantChanges
+            Number              = $pr.number
+            HeadRef             = [string]$pr.head.ref
+            Labels              = if ($isCleanupOnly) { @() } else { $labels }
+            IsDirectRelease     = $false
         }
     }
 }
@@ -210,49 +277,29 @@ function Resolve-ReleaseDecision {
         Determines whether to publish a release and what kind of version bump to apply.
 
         .DESCRIPTION
-        Evaluates the PR labels against the configured label categories and release type
-        to produce a complete release decision.
+        Evaluates only the canonical release labels or the explicit non-PR input.
+        Missing, conflicting, and invalid release-capable decisions fail closed.
 
         .OUTPUTS
         PSCustomObject with ShouldPublish, CreateRelease, CreatePrerelease, MajorRelease,
         MinorRelease, PatchRelease, HasVersionBump, and PrereleaseName properties.
 
         .EXAMPLE
-        $decision = Resolve-ReleaseDecision -Configuration $config -PullRequest $pullRequest
+        $decision = Resolve-ReleaseDecision -ReleaseContext $releaseContext
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
         Justification = 'Parameter is used inside LogGroup script block.')]
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        # The publish configuration object.
+        # The normalized release context.
         [Parameter(Mandatory)]
-        [PSCustomObject] $Configuration,
-
-        # The pull request data object.
-        [Parameter(Mandatory)]
-        [PSCustomObject] $PullRequest
+        [PSCustomObject] $ReleaseContext
     )
 
     LogGroup 'Determine release configuration' {
-        $prereleaseName = $PullRequest.HeadRef -replace '[^a-zA-Z0-9]'
-        $labels = $PullRequest.Labels
-        $releaseType = $Configuration.ReleaseType
-
-        $validReleaseTypes = @('Release', 'Prerelease', 'None')
-        if ([string]::IsNullOrWhiteSpace($releaseType)) {
-            throw "Settings.Publish.Module.ReleaseType is required. Valid values are: $($validReleaseTypes -join ', ')"
-        }
-        if ($releaseType -notin $validReleaseTypes) {
-            throw "Invalid ReleaseType: [$releaseType]. Valid values are: $($validReleaseTypes -join ', ')"
-        }
-
-        $createRelease = $releaseType -eq 'Release'
-        $createPrerelease = $releaseType -eq 'Prerelease'
-        $shouldPublish = $createRelease -or $createPrerelease
-        $isCleanupOnly = $releaseType -eq 'None'
-
-        if ($isCleanupOnly) {
+        $prereleaseName = [string]$ReleaseContext.HeadRef -replace '[^a-zA-Z0-9]'
+        if (-not $ReleaseContext.RequiresDecision) {
             return [PSCustomObject]@{
                 ShouldPublish    = $false
                 CreateRelease    = $false
@@ -262,63 +309,94 @@ function Resolve-ReleaseDecision {
                 PatchRelease     = $false
                 HasVersionBump   = $false
                 PrereleaseName   = $prereleaseName
+                SkipRelease      = $false
+                Bump             = 'None'
             }
         }
 
-        $ignoreRelease = ($labels | Where-Object { $Configuration.IgnoreLabels -contains $_ }).Count -gt 0
-        if ($ignoreRelease -and $shouldPublish) {
-            Write-Host 'Ignoring release creation due to ignore label.'
-            $shouldPublish = $false
+        $bumpLabelTypes = [ordered]@{
+            'release:patch' = 'Patch'
+            'release:minor' = 'Minor'
+            'release:major' = 'Major'
         }
-
-        $majorLabels = @($labels | Where-Object { $Configuration.MajorLabels -contains $_ })
-        $minorLabels = @($labels | Where-Object { $Configuration.MinorLabels -contains $_ })
-        $patchLabels = @($labels | Where-Object { $Configuration.PatchLabels -contains $_ })
-        $versionLabels = @($majorLabels + $minorLabels + $patchLabels)
-
-        if ($versionLabels.Count -gt 1) {
-            throw "Conflicting version labels: [$($versionLabels -join ', ')]. Apply exactly one version label."
-        }
-        if ($ignoreRelease -and $versionLabels.Count -gt 0) {
-            throw "The ignore label cannot be combined with a version label: [$($versionLabels -join ', ')]."
-        }
-
-        $majorRelease = $majorLabels.Count -eq 1
-        $minorRelease = $minorLabels.Count -eq 1
-        $isDirectStableRelease = $createRelease -and $PullRequest.IsDirectRelease
-        $patchRelease = $patchLabels.Count -eq 1 -or (
-            -not $majorRelease -and
-            -not $minorRelease -and
-            ($Configuration.AutoPatching -or $isDirectStableRelease)
+        $ownedLabelNames = @($bumpLabelTypes.Keys) + @('release:pre-release', 'release:skip')
+        $ownedLabels = [System.Collections.Generic.HashSet[string]]::new(
+            [System.StringComparer]::Ordinal
         )
+
+        if ($ReleaseContext.DecisionSource -eq 'Input') {
+            $explicitDecision = [string]$ReleaseContext.ExplicitDecision
+            $validInputDecisions = @($bumpLabelTypes.Keys) + @('release:skip')
+            if ($validInputDecisions -cnotcontains $explicitDecision) {
+                throw (
+                    "Invalid or missing ReleaseDecision: [$explicitDecision]. Specify exactly one of " +
+                    "$($validInputDecisions -join ', ')."
+                )
+            }
+            $null = $ownedLabels.Add($explicitDecision)
+        } else {
+            foreach ($label in @($ReleaseContext.Labels)) {
+                if ($ownedLabelNames -ccontains $label) {
+                    $null = $ownedLabels.Add($label)
+                }
+            }
+        }
+
+        $hasSkip = $ownedLabels.Contains('release:skip')
+        $hasPrerelease = $ownedLabels.Contains('release:pre-release')
+        $bumpLabels = @($bumpLabelTypes.Keys | Where-Object { $ownedLabels.Contains($_) })
+
+        if ($hasSkip) {
+            if ($ownedLabels.Count -ne 1) {
+                throw 'Invalid release labels: release:skip must not be combined with another release label.'
+            }
+        } elseif ($bumpLabels.Count -eq 0) {
+            if ($hasPrerelease) {
+                throw 'Invalid release labels: release:pre-release requires exactly one release bump label.'
+            }
+            throw (
+                'Release decision is missing. Apply exactly one of release:patch, release:minor, ' +
+                'release:major, or release:skip.'
+            )
+        } elseif ($bumpLabels.Count -gt 1) {
+            throw "Conflicting release bump labels: [$($bumpLabels -join ', ')]. Apply exactly one bump label."
+        }
+
+        $bump = if ($bumpLabels.Count -eq 1) { $bumpLabelTypes[$bumpLabels[0]] } else { 'None' }
+        $majorRelease = $bump -eq 'Major'
+        $minorRelease = $bump -eq 'Minor'
+        $patchRelease = $bump -eq 'Patch'
         $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
-
-        if (-not $hasVersionBump) {
-            Write-Host 'No version bump label and AutoPatching disabled; previewing a patch version without publishing.'
-            $patchRelease = $true
-            $hasVersionBump = $true
-            $shouldPublish = $false
-        }
-
-        if ($ignoreRelease) {
-            $createRelease = $false
-            $createPrerelease = $false
-            $shouldPublish = $false
-        }
-
-        if (-not $shouldPublish) {
-            $createPrerelease = $true
+        $canPublish = [bool]$ReleaseContext.CanPublish -and [bool]$ReleaseContext.HasImportantChanges
+        $createRelease = -not $hasSkip -and $ReleaseContext.Type -eq 'Stable' -and $canPublish
+        $publishPrerelease = (
+            -not $hasSkip -and
+            $ReleaseContext.Type -eq 'PullRequest' -and
+            $hasPrerelease -and
+            $canPublish
+        )
+        $shouldPublish = $createRelease -or $publishPrerelease
+        $createPrerelease = (
+            -not $hasSkip -and
+            $ReleaseContext.Type -eq 'PullRequest' -and
+            $hasVersionBump
+        )
+        if ($createPrerelease -and [string]::IsNullOrWhiteSpace($prereleaseName)) {
+            throw 'Cannot create a pull-request preview version because the head branch name is missing.'
         }
 
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
-                ReleaseType      = $releaseType
-                ShouldPublish    = $shouldPublish
-                CreateRelease    = $createRelease
-                CreatePrerelease = $createPrerelease
-                Major            = $majorRelease
-                Minor            = $minorRelease
-                Patch            = $patchRelease
+                ContextType       = $ReleaseContext.Type
+                ShouldPublish     = $shouldPublish
+                CreateRelease     = $createRelease
+                PublishPrerelease = $publishPrerelease
+                PreviewVersion    = $createPrerelease
+                Skip              = $hasSkip
+                Bump              = $bump
+                Major             = $majorRelease
+                Minor             = $minorRelease
+                Patch             = $patchRelease
             } | Format-List | Out-String)
         Write-Host '-------------------------------------------------'
 
@@ -331,6 +409,8 @@ function Resolve-ReleaseDecision {
             PatchRelease     = $patchRelease
             HasVersionBump   = $hasVersionBump
             PrereleaseName   = $prereleaseName
+            SkipRelease      = $hasSkip
+            Bump             = $bump
         }
     }
 }
