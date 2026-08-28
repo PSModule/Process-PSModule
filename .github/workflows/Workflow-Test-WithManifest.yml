@@ -4,6 +4,16 @@ run-name: 'Workflow-Test [WithManifest] - ${{ github.event_name }} [${{ github.e
 
 on:
   workflow_dispatch:
+    inputs:
+      ReleaseDecision:
+        description: Explicit release decision for this manual run.
+        type: choice
+        required: true
+        options:
+          - release:skip
+          - release:patch
+          - release:minor
+          - release:major
   push:
     branches:
       - main
@@ -62,6 +72,12 @@ jobs:
         ^tests/srcWithManifestTestRepo/
         ^\.github/actions/
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
+      ReleaseDecision: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && inputs.ReleaseDecision ||
+          github.event_name == 'push' && 'release:skip' ||
+          ''
+        }}
 
   VerifyRootFunctionsIndexWithManifest:
     if: github.event.action != 'closed'

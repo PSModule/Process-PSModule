@@ -35,7 +35,6 @@ inputs:
   ReleaseDecision:
     description: Explicit decision for a direct push or workflow dispatch - release:patch, release:minor, release:major, or release:skip.
     required: false
-    default: ''
 
 outputs:
   Version:
