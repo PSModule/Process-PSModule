@@ -67,10 +67,6 @@ on:
         default: |
           ^src/
           ^README\.md$
-      ReleaseDecision:
-        type: string
-        description: Explicit decision for a direct push or workflow dispatch.
-        required: false
 
 permissions:
   contents: read # to checkout the repo
@@ -100,7 +96,6 @@ jobs:
       Version: ${{ inputs.Version }}
       WorkingDirectory: ${{ inputs.WorkingDirectory }}
       ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
-      ReleaseDecision: ${{ inputs.ReleaseDecision }}
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints code changes in active PRs

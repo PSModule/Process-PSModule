@@ -56,10 +56,6 @@ on:
         default: |
           ^src/
           ^README\.md$
-      ReleaseDecision:
-        type: string
-        description: Explicit decision for a direct push or workflow dispatch.
-        required: false
 
     outputs:
       Settings:
@@ -124,7 +120,6 @@ jobs:
           Debug: ${{ inputs.Debug }}
           Verbose: ${{ inputs.Verbose }}
           WorkingDirectory: ${{ inputs.WorkingDirectory }}
-          ReleaseDecision: ${{ inputs.ReleaseDecision }}
 
       - name: Enrich-Settings
         # Merge the resolved version into the Settings object so all downstream jobs
@@ -139,25 +134,13 @@ jobs:
           RELEASE_TYPE: ${{ steps.Resolve-Version.outputs.ReleaseType }}
           CREATE_RELEASE: ${{ steps.Resolve-Version.outputs.CreateRelease }}
         run: |
-          Import-Module -Name './_wf/.github/actions/Get-PSModuleSettings/src/Get-PSModuleSettings.Helpers.psm1' -Force
-
           $settings = $env:SETTINGS | ConvertFrom-Json
-          $releaseType = if ([string]::IsNullOrEmpty($env:RELEASE_TYPE)) { 'None' } else { $env:RELEASE_TYPE }
-          $shouldPublish = $env:CREATE_RELEASE -eq 'true'
-
           $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Resolution -Value ([pscustomobject]@{
               Version       = $env:VERSION
               Prerelease    = $env:PRERELEASE
               FullVersion   = $env:FULL_VERSION
-              ReleaseType   = $releaseType
-              CreateRelease = $shouldPublish
+              ReleaseType   = if ([string]::IsNullOrEmpty($env:RELEASE_TYPE)) { 'None' } else { $env:RELEASE_TYPE }
+              CreateRelease = $env:CREATE_RELEASE -eq 'true'
           }) -Force
-          $publishStateParams = @{
-              Settings      = $settings
-              ReleaseType   = $releaseType
-              ShouldPublish = $shouldPublish
-          }
-          $settings = Resolve-PSModulePublishState @publishStateParams
-
           $enriched = $settings | ConvertTo-Json -Depth 10 -Compress
           "Settings=$enriched" >> $env:GITHUB_OUTPUT
