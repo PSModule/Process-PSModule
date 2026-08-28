@@ -28,7 +28,7 @@ execution; other pages link here rather than repeating it.
 
 - \* Only when `Publish.Site.Skip` is `false`.
 - † Requires an important change and all required build, test, and coverage gates to succeed. An open PR also requires
-  the `Prerelease` label. A default-branch push uses labels and notes only when its SHA exactly matches a merged pull
+  the configured prerelease label (`release:pre-release` by default) and a resolved bump. A default-branch push uses labels and notes only when its SHA exactly matches a merged pull
   request; otherwise it releases a Patch version with commit-based notes. A default-branch manual run is also a Patch
   release with commit-based notes.
 - ‡ Cleans up prerelease versions and tags for the closed pull request when `Publish.Module.AutoCleanup` is enabled;

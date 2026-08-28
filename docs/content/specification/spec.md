@@ -43,11 +43,12 @@ The pipeline MUST generate module documentation from the source (cmdlet help, RE
 
 ### FR5 — Support label-driven versioning and publication { #fr5 }
 
-The pipeline MUST read pull-request labels (`Major`, `Minor`, `Patch`, `Prerelease`, `NoRelease`) to decide the
-semantic-version bump when the merged pull request exactly matches a default-branch push. It MUST compute the next
-version automatically, never reading or writing a hand-edited version file. An important push to the release branch
-MUST trigger publication to the PowerShell Gallery and documentation site; a prerelease label MUST result in a
-prerelease version available for testing before stable release.
+The pipeline MUST default to the namespaced pull-request labels `release:major`, `release:minor`, `release:patch`,
+`release:pre-release`, and `release:skip` when deciding publication and the semantic-version bump. Repositories MAY
+override each mapping through `.github/PSModule.yml`. It MUST compute the next version automatically, never reading or
+writing a hand-edited version file. An important push to the release branch MUST trigger publication to the PowerShell
+Gallery and documentation site. With AutoPatching enabled, the configured prerelease label MUST resolve a patch
+prerelease; when AutoPatching is disabled, a configured bump label MUST also be present.
 
 ### FR6 — Produce immutable, linkable releases { #fr6 }
 
@@ -92,14 +93,14 @@ Scenario: Merge a valid pull request to main
 
 ```gherkin
 Scenario: Compute the next version from the merged PR label
-  Given a pull request with the label "Minor"
+  Given a pull request with the default label "release:minor"
   And its merge commit is pushed to main
   And the current version is v1.2.3
   Then the new version is computed as v1.3.0
 
 Scenario: Reject ambiguous version labels
-  Given a pull request with both "Major" and "Minor" labels
-  When the merge is attempted
+  Given a pull request with "release:pre-release", "release:major", and "release:minor" labels
+  When the pull-request pipeline runs
   Then the build fails and the merge is blocked
 ```
 
@@ -119,7 +120,7 @@ Scenario: Publish a module after a stable release
 
 ```gherkin
 Scenario: Publish a prerelease version
-  Given a pull request with the label "Prerelease"
+  Given a pull request with the default label "release:pre-release"
   When the PR runs the pipeline
   Then a prerelease version is published (e.g., v1.2.3-pr.1.N)
   And it is available for testing before the PR is merged

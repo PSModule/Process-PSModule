@@ -376,8 +376,9 @@ Module repositories use the Process-PSModule workflow. Version and release behav
 
 Default expectations:
 
-- `Major`, `Minor`, `Patch`, and `Prerelease` labels determine release behavior.
-- Documentation-only README standardization PRs use the `Docs`/`NoRelease` behavior when available.
+- `release:major`, `release:minor`, `release:patch`, and `release:pre-release` are the default release labels.
+- Documentation-only README standardization PRs use the default `release:skip` behavior when available.
+- Module repositories may override these defaults through `.github/PSModule.yml`.
 - Source changes under `src/` are module-impacting and should trigger the full module workflow.
 - README and documentation changes should update the site without pretending to be module API changes.
 
