@@ -79,6 +79,47 @@ function Resolve-WorkflowEventRouting {
     }
 }
 
+function Resolve-PSModulePublishSetting {
+    <#
+        .SYNOPSIS
+        Resolves module publication settings and their defaults.
+
+        .DESCRIPTION
+        Applies Process-PSModule defaults while preserving every consumer-provided
+        publication and release-label mapping.
+
+        .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        .EXAMPLE
+        Resolve-PSModulePublishSetting -PublishModule $settings.Publish.Module
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [object] $PublishModule
+    )
+
+    [pscustomobject]@{
+        Skip                     = $PublishModule.Skip ?? $false
+        AutoCleanup              = $PublishModule.AutoCleanup ?? $true
+        AutoPatching             = $PublishModule.AutoPatching ?? $true
+        IncrementalPrerelease    = $PublishModule.IncrementalPrerelease ?? $true
+        DatePrereleaseFormat     = $PublishModule.DatePrereleaseFormat ?? ''
+        VersionPrefix            = $PublishModule.VersionPrefix ?? 'v'
+        MajorLabels              = $PublishModule.MajorLabels ?? 'release:major'
+        MinorLabels              = $PublishModule.MinorLabels ?? 'release:minor'
+        PatchLabels              = $PublishModule.PatchLabels ?? 'release:patch'
+        IgnoreLabels             = $PublishModule.IgnoreLabels ?? 'release:skip'
+        PrereleaseLabels         = $PublishModule.PrereleaseLabels ?? 'release:pre-release'
+        UsePRTitleAsReleaseName  = $PublishModule.UsePRTitleAsReleaseName ?? $false
+        UsePRBodyAsReleaseNotes  = $PublishModule.UsePRBodyAsReleaseNotes ?? $true
+        UsePRTitleAsNotesHeading = $PublishModule.UsePRTitleAsNotesHeading ?? $true
+    }
+}
+
 function Select-PullRequestForPush {
     <#
         .SYNOPSIS

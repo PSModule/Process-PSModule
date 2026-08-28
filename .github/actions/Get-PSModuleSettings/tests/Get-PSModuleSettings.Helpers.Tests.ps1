@@ -82,6 +82,52 @@ Describe 'Resolve-WorkflowEventRouting' {
     }
 }
 
+Describe 'Resolve-PSModulePublishSetting' {
+    It 'uses the canonical release-label defaults' {
+        $result = Resolve-PSModulePublishSetting -PublishModule $null
+
+        $result.AutoPatching | Should -BeTrue
+        $result.MajorLabels | Should -BeExactly 'release:major'
+        $result.MinorLabels | Should -BeExactly 'release:minor'
+        $result.PatchLabels | Should -BeExactly 'release:patch'
+        $result.PrereleaseLabels | Should -BeExactly 'release:pre-release'
+        $result.IgnoreLabels | Should -BeExactly 'release:skip'
+    }
+
+    It 'preserves consumer-controlled release settings' {
+        $publishModule = [pscustomobject]@{
+            AutoPatching     = $false
+            MajorLabels      = 'custom:major'
+            MinorLabels      = 'custom:minor'
+            PatchLabels      = 'custom:patch'
+            PrereleaseLabels = 'custom:pre-release'
+            IgnoreLabels     = 'custom:skip'
+        }
+
+        $result = Resolve-PSModulePublishSetting -PublishModule $publishModule
+
+        $result.AutoPatching | Should -BeFalse
+        $result.MajorLabels | Should -BeExactly 'custom:major'
+        $result.MinorLabels | Should -BeExactly 'custom:minor'
+        $result.PatchLabels | Should -BeExactly 'custom:patch'
+        $result.PrereleaseLabels | Should -BeExactly 'custom:pre-release'
+        $result.IgnoreLabels | Should -BeExactly 'custom:skip'
+    }
+
+    It 'declares the same canonical defaults in the settings schema' {
+        $schemaPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/Settings.schema.json'
+        $schema = Get-Content -Path $schemaPath -Raw | ConvertFrom-Json
+        $moduleProperties = $schema.properties.Publish.properties.Module.properties
+
+        $moduleProperties.AutoPatching.default | Should -BeTrue
+        $moduleProperties.MajorLabels.default | Should -BeExactly 'release:major'
+        $moduleProperties.MinorLabels.default | Should -BeExactly 'release:minor'
+        $moduleProperties.PatchLabels.default | Should -BeExactly 'release:patch'
+        $moduleProperties.PrereleaseLabels.default | Should -BeExactly 'release:pre-release'
+        $moduleProperties.IgnoreLabels.default | Should -BeExactly 'release:skip'
+    }
+}
+
 Describe 'Select-PullRequestForPush' {
     It 'selects the merged PR whose merge commit matches the pushed commit' {
         $pullRequests = @(

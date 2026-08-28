@@ -35,7 +35,23 @@ BeforeAll {
 
             # The release type resolved from the pull request labels.
             [Parameter()]
-            [string] $ReleaseType = 'Release'
+            [string] $ReleaseType = 'Release',
+
+            # Labels indicating no release.
+            [Parameter()]
+            [string[]] $IgnoreLabels = @('release:skip'),
+
+            # Labels indicating a major release.
+            [Parameter()]
+            [string[]] $MajorLabels = @('release:major'),
+
+            # Labels indicating a minor release.
+            [Parameter()]
+            [string[]] $MinorLabels = @('release:minor'),
+
+            # Labels indicating a patch release.
+            [Parameter()]
+            [string[]] $PatchLabels = @('release:patch')
         )
 
         [PSCustomObject]@{
@@ -44,10 +60,10 @@ BeforeAll {
             DatePrereleaseFormat  = $DatePrereleaseFormat
             VersionPrefix         = $VersionPrefix
             ReleaseType           = $ReleaseType
-            IgnoreLabels          = @('NoRelease')
-            MajorLabels           = @('major')
-            MinorLabels           = @('minor')
-            PatchLabels           = @('patch')
+            IgnoreLabels          = $IgnoreLabels
+            MajorLabels           = $MajorLabels
+            MinorLabels           = $MinorLabels
+            PatchLabels           = $PatchLabels
         }
     }
 
@@ -495,7 +511,7 @@ Describe 'Resolve-PSModuleVersion' {
                     PullRequest           = @{
                         Number  = 390
                         HeadRef = 'feature/push-release'
-                        Labels  = @('minor')
+                        Labels  = @('release:minor')
                     }
                 }
             } | ConvertTo-Json -Depth 5
@@ -504,7 +520,7 @@ Describe 'Resolve-PSModuleVersion' {
 
             $result.Number | Should -Be 390
             $result.HeadRef | Should -Be 'feature/push-release'
-            $result.Labels | Should -Be @('minor')
+            $result.Labels | Should -Be @('release:minor')
         }
 
         It 'creates default patch context for a direct default-branch push' {
@@ -544,7 +560,7 @@ Describe 'Resolve-PSModuleVersion' {
 
         It 'does not validate cleanup-only pull request labels' {
             $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -ReleaseType None) `
-                -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @('NoRelease', 'patch') })
+                -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip', 'release:patch') })
 
             $result.ShouldPublish | Should -BeFalse
             $result.HasVersionBump | Should -BeFalse
@@ -553,15 +569,61 @@ Describe 'Resolve-PSModuleVersion' {
         It 'rejects multiple version labels' {
             {
                 Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) `
-                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('major', 'patch') })
+                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('release:major', 'release:patch') })
             } | Should -Throw '*Conflicting version labels*'
         }
 
-        It 'rejects a NoRelease label combined with a version label' {
+        It 'rejects release:skip combined with a version label' {
             {
                 Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) `
-                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('NoRelease', 'patch') })
+                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('release:skip', 'release:patch') })
             } | Should -Throw '*ignore label cannot be combined*'
+        }
+
+        It 'honors the canonical <Bump> default' -ForEach @(
+            @{ Bump = 'Major'; Label = 'release:major'; Flag = 'MajorRelease' }
+            @{ Bump = 'Minor'; Label = 'release:minor'; Flag = 'MinorRelease' }
+            @{ Bump = 'Patch'; Label = 'release:patch'; Flag = 'PatchRelease' }
+        ) {
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @($Label)
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) -PullRequest $pullRequest
+
+            $result.$Flag | Should -BeTrue
+            $result.ShouldPublish | Should -BeTrue
+        }
+
+        It 'honors the configured <Bump> label mapping' -ForEach @(
+            @{ Bump = 'Major'; Setting = 'MajorLabels'; Label = 'custom:major'; Flag = 'MajorRelease' }
+            @{ Bump = 'Minor'; Setting = 'MinorLabels'; Label = 'custom:minor'; Flag = 'MinorRelease' }
+            @{ Bump = 'Patch'; Setting = 'PatchLabels'; Label = 'custom:patch'; Flag = 'PatchRelease' }
+        ) {
+            $configuration = Get-TestConfiguration
+            $configuration.$Setting = @($Label)
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @($Label)
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $result.$Flag | Should -BeTrue
+            $result.ShouldPublish | Should -BeTrue
+        }
+
+        It 'honors a configured ignore label' {
+            $configuration = Get-TestConfiguration -IgnoreLabels @('custom:skip')
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @('custom:skip')
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $result.ShouldPublish | Should -BeFalse
         }
     }
 }

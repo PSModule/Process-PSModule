@@ -140,7 +140,8 @@
             },
             "AutoPatching": {
               "type": "boolean",
-              "description": "Automatically apply patches"
+              "description": "Automatically apply patches",
+              "default": true
             },
             "IncrementalPrerelease": {
               "type": "boolean",
@@ -156,23 +157,28 @@
             },
             "MajorLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger major version bump"
+              "description": "Comma-separated labels that trigger major version bump",
+              "default": "release:major"
             },
             "MinorLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger minor version bump"
+              "description": "Comma-separated labels that trigger minor version bump",
+              "default": "release:minor"
             },
             "PatchLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger patch version bump"
+              "description": "Comma-separated labels that trigger patch version bump",
+              "default": "release:patch"
             },
             "IgnoreLabels": {
               "type": "string",
-              "description": "Comma-separated labels that prevent release"
+              "description": "Comma-separated labels that prevent release",
+              "default": "release:skip"
             },
             "PrereleaseLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger a prerelease"
+              "description": "Comma-separated labels that trigger a prerelease",
+              "default": "release:pre-release"
             },
             "UsePRTitleAsReleaseName": {
               "type": "boolean",
