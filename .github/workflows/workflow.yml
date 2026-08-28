@@ -3,8 +3,14 @@ name: Process-PSModule
 on:
   workflow_call:
     secrets:
-      APIKey:
+      PSGALLERY_API_KEY:
         description: The API key for the PowerShell Gallery.
+        required: true
+      GitHubAppClientId:
+        description: Generic GitHub App client ID secret for caller mapping.
+        required: true
+      GitHubAppPrivateKey:
+        description: Generic GitHub App private key secret for caller mapping.
         required: true
       TestData:
         description: |
@@ -63,20 +69,25 @@ on:
           ^README\.md$
 
 permissions:
-  contents: write # to checkout the repo and create releases on the repo
-  pull-requests: write # to write comments to PRs
-  statuses: write # to update the status of the workflow from linter
+  contents: read # to checkout the repo
   pages: write # to deploy to Pages
   id-token: write # to verify the deployment originates from an appropriate source
+
+concurrency:
+  group: Process-PSModule-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   # Runs on:
   # - ✅ Open/Updated PR - Always runs to load configuration
-  # - ✅ Merged PR       - Always runs to load configuration
-  # - ✅ Abandoned PR    - Always runs to load configuration
+  # - ✅ Default push    - Always runs to load configuration
+  # - ✅ Closed PR       - Always runs to load configuration
   # - ✅ Manual run      - Always runs to load configuration
   Plan:
     uses: ./.github/workflows/Plan.yml
+    secrets:
+      GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
+      GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     with:
       SettingsPath: ${{ inputs.SettingsPath }}
       Debug: ${{ inputs.Debug }}
@@ -88,8 +99,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints code changes in active PRs
-  # - ❌ Merged PR       - No need to lint after merge + its a merge commit that causes issues with super-linter
-  # - ❌ Abandoned PR    - No need to lint abandoned changes
+  # - ❌ Default push    - No need to lint after merge + its a merge commit that causes issues with super-linter
+  # - ❌ Closed PR       - No need to lint closed changes
   # - ❌ Manual run      - Only runs for PR events
   Lint-Repository:
     if: fromJson(needs.Plan.outputs.Settings).Linter.Repository.Enabled
@@ -101,12 +112,15 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds module for testing
-  # - ✅ Merged PR       - Builds module for publishing
-  # - ❌ Abandoned PR    - Skips building abandoned changes
+  # - ✅ Default push    - Builds module for publishing
+  # - ❌ Closed PR       - Skips building closed changes
   # - ✅ Manual run      - Builds module when manually triggered
   Build-Module:
     if: fromJson(needs.Plan.outputs.Settings).Build.Module.Enabled
     uses: ./.github/workflows/Build-Module.yml
+    secrets:
+      GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
+      GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     needs:
       - Plan
     with:
@@ -114,8 +128,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests source code changes
-  # - ✅ Merged PR       - Tests source code before publishing
-  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Default push    - Tests source code before publishing
+  # - ❌ Closed PR       - Skips testing closed changes
   # - ✅ Manual run      - Tests source code when manually triggered
   Test-SourceCode:
     if: fromJson(needs.Plan.outputs.Settings).Test.SourceCode.Enabled
@@ -127,8 +141,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Lints source code changes
-  # - ✅ Merged PR       - Lints source code before publishing
-  # - ❌ Abandoned PR    - Skips linting abandoned changes
+  # - ✅ Default push    - Lints source code before publishing
+  # - ❌ Closed PR       - Skips linting closed changes
   # - ✅ Manual run      - Lints source code when manually triggered
   Lint-SourceCode:
     if: fromJson(needs.Plan.outputs.Settings).Linter.SourceCode.Enabled
@@ -140,8 +154,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests built module
-  # - ✅ Merged PR       - Tests built module before publishing
-  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Default push    - Tests built module before publishing
+  # - ❌ Closed PR       - Skips testing closed changes
   # - ✅ Manual run      - Tests built module when manually triggered
   Test-Module:
     if: fromJson(needs.Plan.outputs.Settings).Test.PSModule.Enabled && needs.Build-Module.result == 'success' && !cancelled()
@@ -154,8 +168,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs setup scripts before local module tests
-  # - ✅ Merged PR       - Runs setup scripts before local module tests
-  # - ❌ Abandoned PR    - Skips setup for abandoned changes
+  # - ✅ Default push    - Runs setup scripts before local module tests
+  # - ❌ Closed PR       - Skips setup for closed changes
   # - ✅ Manual run      - Runs setup scripts when manually triggered
   BeforeAll-ModuleLocal:
     if: fromJson(needs.Plan.outputs.Settings).Test.Module.BeforeAllEnabled && needs.Build-Module.result == 'success' && !cancelled()
@@ -170,8 +184,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Tests module in local environment
-  # - ✅ Merged PR       - Tests module in local environment before publishing
-  # - ❌ Abandoned PR    - Skips testing abandoned changes
+  # - ✅ Default push    - Tests module in local environment before publishing
+  # - ❌ Closed PR       - Skips testing closed changes
   # - ✅ Manual run      - Tests module in local environment when manually triggered
   Test-ModuleLocal:
     if: fromJson(needs.Plan.outputs.Settings).Test.Module.MainEnabled && needs.Build-Module.result == 'success' && !cancelled()
@@ -187,8 +201,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Runs teardown scripts after local module setup/tests
-  # - ✅ Merged PR       - Runs teardown scripts after local module setup/tests
-  # - ✅ Abandoned PR    - Runs teardown if local module setup/tests were started (cleanup)
+  # - ✅ Default push    - Runs teardown scripts after local module setup/tests
+  # - ❌ Closed PR       - No test setup ran in the closed-PR cleanup path
   # - ✅ Manual run      - Runs teardown scripts after local module setup/tests
   AfterAll-ModuleLocal:
     if: fromJson(needs.Plan.outputs.Settings).Test.Module.AfterAllEnabled && needs.BeforeAll-ModuleLocal.result != 'skipped' && always()
@@ -204,8 +218,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Collects and reports test results
-  # - ✅ Merged PR       - Collects and reports test results before publishing
-  # - ❌ Abandoned PR    - Skips collecting results for abandoned changes
+  # - ✅ Default push    - Collects and reports test results before publishing
+  # - ❌ Closed PR       - Skips collecting results for closed changes
   # - ✅ Manual run      - Collects and reports test results when manually triggered
   Get-TestResults:
     if: fromJson(needs.Plan.outputs.Settings).Test.TestResults.Enabled && needs.Plan.result == 'success' && always() && !cancelled()
@@ -223,8 +237,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Calculates and reports code coverage
-  # - ✅ Merged PR       - Calculates and reports code coverage before publishing
-  # - ❌ Abandoned PR    - Skips coverage for abandoned changes
+  # - ✅ Default push    - Calculates and reports code coverage before publishing
+  # - ❌ Closed PR       - Skips coverage for closed changes
   # - ✅ Manual run      - Calculates and reports code coverage when manually triggered
   Get-CodeCoverage:
     if: fromJson(needs.Plan.outputs.Settings).Test.CodeCoverage.Enabled && needs.Plan.result == 'success' && always() && !cancelled()
@@ -238,14 +252,16 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Only with prerelease label: publishes prerelease version
-  # - ✅ Merged PR       - To default branch only: publishes release when all tests/coverage/build succeed
-  # - ✅ Abandoned PR    - Cleans up prereleases for the abandoned branch (no version published)
-  # - ❌ Manual run      - Only runs for PR events
+  # - ✅ Default push    - Publishes a stable release when all tests/coverage/build succeed
+  # - ✅ Closed PR       - Cleans up prereleases for the closed branch (no version published)
+  # - ✅ Manual run      - Publishes a stable default-branch release
   Publish-Module:
     if: fromJson(needs.Plan.outputs.Settings).Publish.Module.Enabled && needs.Plan.result == 'success' && !cancelled() && (needs.Get-TestResults.result == 'success' || needs.Get-TestResults.result == 'skipped') && (needs.Get-CodeCoverage.result == 'success' || needs.Get-CodeCoverage.result == 'skipped') && (needs.Build-Site.result == 'success' || needs.Build-Site.result == 'skipped')
     uses: ./.github/workflows/Publish-Module.yml
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.GitHubAppClientId }}
+      GitHubAppPrivateKey: ${{ secrets.GitHubAppPrivateKey }}
     needs:
       - Plan
       - Get-TestResults
@@ -256,8 +272,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds documentation for review
-  # - ✅ Merged PR       - Builds documentation for publishing
-  # - ❌ Abandoned PR    - Skips building docs for abandoned changes
+  # - ✅ Default push    - Builds documentation for publishing
+  # - ❌ Closed PR       - Skips building docs for closed changes
   # - ✅ Manual run      - Builds documentation when manually triggered
   Build-Docs:
     if: fromJson(needs.Plan.outputs.Settings).Build.Docs.Enabled
@@ -270,8 +286,8 @@ jobs:
 
   # Runs on:
   # - ✅ Open/Updated PR - Builds site for preview
-  # - ✅ Merged PR       - Builds site for publishing
-  # - ❌ Abandoned PR    - Skips building site for abandoned changes
+  # - ✅ Default push    - Builds site for publishing
+  # - ❌ Closed PR       - Skips building site for closed changes
   # - ✅ Manual run      - Builds site when manually triggered
   Build-Site:
     if: fromJson(needs.Plan.outputs.Settings).Build.Site.Enabled
@@ -284,9 +300,9 @@ jobs:
 
   # Runs on:
   # - ❌ Open/Updated PR - Site not published for PRs in progress
-  # - ✅ Merged PR       - To default branch only: deploys site to GitHub Pages
-  # - ❌ Abandoned PR    - Site not published for abandoned changes
-  # - ❌ Manual run      - Only publishes on merged PRs to default branch
+  # - ✅ Default push    - Deploys site to GitHub Pages unless publication is skipped
+  # - ❌ Closed PR       - Site not published for closed changes
+  # - ✅ Manual run      - Publishes from a default-branch stable release
   Publish-Site:
     if: fromJson(needs.Plan.outputs.Settings).Publish.Site.Enabled && needs.Get-TestResults.result == 'success' && needs.Get-CodeCoverage.result == 'success' && needs.Build-Site.result == 'success' && !cancelled()
     uses: ./.github/workflows/Publish-Site.yml

@@ -34,12 +34,33 @@ jobs:
       - name: Install test dependencies
         shell: pwsh
         run: |
-          Install-PSResource -Name Pester -Version '[5.7.1,6.0.0)' -Repository PSGallery -TrustRepository
+          Install-PSResource -Name Pester -Version '[6.1.0,7.0.0)' -Repository PSGallery -TrustRepository
           Install-PSResource -Name PSSemVer -Repository PSGallery -TrustRepository
+          Install-PSResource -Name GitHub -Version '[0.43.1,0.44.0)' -Repository PSGallery -TrustRepository
 
       - name: Run action unit tests
         shell: pwsh
         run: |
+          $configuration = New-PesterConfiguration
+          $configuration.Run.Shuffle = $true
+          $configuration.Run.ShuffleSeed = 42
+          $configuration.Run.Parallel = $true
+          $configuration.Run.ParallelThrottleLimit = 2
+          $configuration.Debug.ShowStartMarkers = $true
+
+          $expectedOptions = @{
+              'Run.Shuffle' = $configuration.Run.Shuffle.Value
+              'Run.ShuffleSeed' = $configuration.Run.ShuffleSeed.Value -eq 42
+              'Run.Parallel' = $configuration.Run.Parallel.Value
+              'Run.ParallelThrottleLimit' = $configuration.Run.ParallelThrottleLimit.Value -eq 2
+              'Debug.ShowStartMarkers' = $configuration.Debug.ShowStartMarkers.Value
+          }
+          foreach ($option in $expectedOptions.GetEnumerator()) {
+              if (-not $option.Value) {
+                  throw "Pester 6.1 configuration option [$($option.Key)] was not applied."
+              }
+          }
+
           $testPaths = Get-ChildItem -Path '.github/actions' -Directory |
               ForEach-Object { Join-Path -Path $_.FullName -ChildPath 'tests' } |
               Where-Object { Test-Path -Path $_ }

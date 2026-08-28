@@ -831,7 +831,7 @@ function Update-ModuleList {
     $moduleRepos = $Repos | Where-Object {
         $_.Type -eq 'Module' -and $_.Owner -eq 'PSModule'
     } | Sort-Object Name
-    $catalogFolderPath = Join-Path 'docs\content\Modules\Catalog' 'Repositories'
+    $catalogFolderPath = Join-Path 'docs\content\Modules' 'Repositories'
     if (-not (Test-Path $catalogFolderPath)) {
         Write-Host "Creating catalog folder [$catalogFolderPath]"
         $null = New-Item -Path $catalogFolderPath -ItemType Directory
@@ -921,7 +921,7 @@ function Update-ModuleList {
 
     LogGroup 'Write module catalog table to docs index' {
         $moduleTable = $moduleCatalogTableTemplate.Replace('{{ ROWS }}', $moduleTableRows.TrimEnd())
-        Update-MDSection -Path '.\docs\content\Modules\Catalog\index.md' -Name 'MODULE_CATALOG' -Content $moduleTable
+        Update-MDSection -Path '.\docs\content\Modules\index.md' -Name 'MODULE_CATALOG' -Content $moduleTable
         Write-Host 'Module catalog table update completed'
     }
 }
