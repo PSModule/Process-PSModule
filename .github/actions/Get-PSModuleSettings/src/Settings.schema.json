@@ -138,6 +138,10 @@
               "type": "boolean",
               "description": "When enabled (default: true), automatically cleans up old prerelease tags when merging to main or when a PR is abandoned"
             },
+            "AutoPatching": {
+              "type": "boolean",
+              "description": "Automatically apply patches"
+            },
             "IncrementalPrerelease": {
               "type": "boolean",
               "description": "Use incremental prerelease versioning"
@@ -149,6 +153,26 @@
             "VersionPrefix": {
               "type": "string",
               "description": "Prefix for version tags"
+            },
+            "MajorLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger major version bump"
+            },
+            "MinorLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger minor version bump"
+            },
+            "PatchLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger patch version bump"
+            },
+            "IgnoreLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that prevent release"
+            },
+            "PrereleaseLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger a prerelease"
             },
             "UsePRTitleAsReleaseName": {
               "type": "boolean",

@@ -1,10 +1,3 @@
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSUseDeclaredVarsMoreThanAssignments', '',
-    Justification = 'Variables are assigned in BeforeEach and used inside It blocks.'
-)]
-[CmdletBinding()]
-param()
-
 BeforeAll {
     Import-Module "$PSScriptRoot/../src/Get-PSModuleSettings.Helpers.psm1" -Force
 }
@@ -49,13 +42,14 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.ReleaseType | Should -Be 'Release'
     }
 
-    It 'leaves open-PR publication for the version resolver' {
+    It 'routes a labeled open PR with important changes to a prerelease' {
         $result = Resolve-WorkflowEventRouting -EventName pull_request `
             -EventAction labeled `
             -IsTargetDefaultBranch $true `
-            -HasImportantChanges $true
+            -HasImportantChanges $true `
+            -HasPrereleaseLabel $true
 
-        $result.ReleaseType | Should -Be 'None'
+        $result.ReleaseType | Should -Be 'Prerelease'
         $result.ShouldRunBuildTest | Should -BeTrue
     }
 
@@ -77,155 +71,14 @@ Describe 'Resolve-WorkflowEventRouting' {
             -EventAction labeled `
             -PullRequestIsClosed $true `
             -IsTargetDefaultBranch $true `
-            -HasImportantChanges $true
+            -HasImportantChanges $true `
+            -HasPrereleaseLabel $true
 
         $result.ReleaseType | Should -Be 'None'
         $result.IsOpenOrUpdatedPR | Should -BeFalse
         $result.ShouldRunBuildTest | Should -BeFalse
         $result.ShouldCleanupEvent | Should -BeFalse
         $result.ShouldRunCleanup | Should -BeFalse
-    }
-}
-
-Describe 'Get-UnsupportedPSModuleReleaseSetting' {
-    It 'returns no settings when the publish configuration uses the v9 contract' {
-        $publishModule = [pscustomobject]@{
-            AutoCleanup           = $true
-            IncrementalPrerelease = $true
-            VersionPrefix         = 'v'
-        }
-
-        @(Get-UnsupportedPSModuleReleaseSetting -PublishModule $publishModule).Count |
-            Should -Be 0
-    }
-
-    It 'returns the removed <Name> setting from a PSCustomObject' -ForEach @(
-        @{ Name = 'AutoPatching' }
-        @{ Name = 'MajorLabels' }
-        @{ Name = 'MinorLabels' }
-        @{ Name = 'PatchLabels' }
-        @{ Name = 'PrereleaseLabels' }
-        @{ Name = 'IgnoreLabels' }
-    ) {
-        $publishModule = [pscustomobject]@{}
-        $publishModule | Add-Member -MemberType NoteProperty -Name $Name -Value 'legacy'
-
-        Get-UnsupportedPSModuleReleaseSetting -PublishModule $publishModule |
-            Should -BeExactly $Name
-    }
-
-    It 'returns every removed setting from a dictionary in migration order' {
-        $publishModule = @{
-            IgnoreLabels     = 'NoRelease'
-            AutoPatching     = $true
-            PrereleaseLabels = 'Prerelease'
-            MajorLabels      = 'Major'
-            MinorLabels      = 'Minor'
-            PatchLabels      = 'Patch'
-        }
-
-        @(Get-UnsupportedPSModuleReleaseSetting -PublishModule $publishModule) |
-            Should -Be @(
-                'AutoPatching'
-                'MajorLabels'
-                'MinorLabels'
-                'PatchLabels'
-                'PrereleaseLabels'
-                'IgnoreLabels'
-            )
-    }
-
-    It 'rejects removed setting names case-insensitively' {
-        $publishModule = @{ autopatching = $true }
-
-        Get-UnsupportedPSModuleReleaseSetting -PublishModule $publishModule |
-            Should -BeExactly 'AutoPatching'
-    }
-
-    It 'accepts a null publish configuration' {
-        @(Get-UnsupportedPSModuleReleaseSetting -PublishModule $null).Count |
-            Should -Be 0
-    }
-}
-
-Describe 'Resolve-PSModulePublishState' {
-    BeforeEach {
-        $settings = [pscustomobject]@{
-            Context = [pscustomobject]@{
-                EventName   = 'push'
-                EventAction = ''
-            }
-            Publish = [pscustomobject]@{
-                Module = [pscustomobject]@{
-                    AutoCleanup = $true
-                    ReleaseType = 'Release'
-                    Desired     = $true
-                    Enabled     = $true
-                }
-                Site   = [pscustomobject]@{
-                    Skip    = $false
-                    Desired = $true
-                    Enabled = $true
-                }
-            }
-        }
-    }
-
-    It 'enables module and site publication for a stable release' {
-        $result = Resolve-PSModulePublishState -Settings $settings `
-            -ReleaseType Release -ShouldPublish $true
-
-        $result.Publish.Module.ReleaseType | Should -BeExactly 'Release'
-        $result.Publish.Module.Enabled | Should -BeTrue
-        $result.Publish.Site.Enabled | Should -BeTrue
-    }
-
-    It 'enables only module publication for a prerelease' {
-        $result = Resolve-PSModulePublishState -Settings $settings `
-            -ReleaseType Prerelease -ShouldPublish $true
-
-        $result.Publish.Module.Enabled | Should -BeTrue
-        $result.Publish.Site.Enabled | Should -BeFalse
-    }
-
-    It 'disables all publication for release:skip' {
-        $result = Resolve-PSModulePublishState -Settings $settings `
-            -ReleaseType None -ShouldPublish $false
-
-        $result.Publish.Module.Enabled | Should -BeFalse
-        $result.Publish.Site.Enabled | Should -BeFalse
-    }
-
-    It 'respects the site publication setting for a stable release' {
-        $settings.Publish.Site.Skip = $true
-
-        $result = Resolve-PSModulePublishState -Settings $settings `
-            -ReleaseType Release -ShouldPublish $true
-
-        $result.Publish.Module.Enabled | Should -BeTrue
-        $result.Publish.Site.Enabled | Should -BeFalse
-    }
-
-    It 'retains closed-pull-request cleanup without enabling site publication' {
-        $settings.Context.EventName = 'pull_request'
-        $settings.Context.EventAction = 'closed'
-
-        $result = Resolve-PSModulePublishState -Settings $settings `
-            -ReleaseType None -ShouldPublish $false
-
-        $result.Publish.Module.Enabled | Should -BeTrue
-        $result.Publish.Site.Enabled | Should -BeFalse
-    }
-
-    It 'disables closed-pull-request cleanup when AutoCleanup is disabled' {
-        $settings.Context.EventName = 'pull_request'
-        $settings.Context.EventAction = 'closed'
-        $settings.Publish.Module.AutoCleanup = $false
-
-        $result = Resolve-PSModulePublishState -Settings $settings `
-            -ReleaseType None -ShouldPublish $false
-
-        $result.Publish.Module.Enabled | Should -BeFalse
     }
 }
 
