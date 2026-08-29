@@ -24,7 +24,7 @@ Apply these sources in order:
    is the canonical generated-module profile and the byte-level source for
    module repositories.
 
-MSXorg takes precedence when the first two designs differ. Do not resolve a
+MSXOrg takes precedence when the first two designs differ. Do not resolve a
 difference independently in every consumer. If the generated-module profile
 does not represent the intended design, report the upstream gap and block the
 consumer migration until the Process-PSModule change's template-impact

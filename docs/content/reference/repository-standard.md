@@ -419,8 +419,8 @@ This keeps the repository landing page readable and prevents drift between READM
 The canonical module-site configuration is
 [`Template-PSModule/.github/zensical.toml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/zensical.toml).
 Keep its repository placeholders: Process-PSModule resolves them while staging
-the generated site. The template carries the portable subset of the MSXorg and
-Process-PSModule documentation design, with the MSXorg design taking precedence
+the generated site. The template carries the portable subset of the MSXOrg and
+Process-PSModule documentation design, with the MSXOrg design taking precedence
 when they differ.
 
 Do not declare `nav` in a standard module repository. Zensical derives
