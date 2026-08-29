@@ -187,7 +187,7 @@ Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.g
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 
-## Template ownership and reconciliation
+## Template ownership and reconciliation {#managed-file-distribution}
 
 Policy ownership, executable templates, and distribution are separate
 concerns:
