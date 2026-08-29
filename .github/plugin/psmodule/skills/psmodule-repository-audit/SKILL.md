@@ -23,7 +23,7 @@ Use these sources together:
 
 1. The [MSX Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/)
    owns inherited enterprise policy.
-2. The [PSModule Repository Standard](https://psmodule.io/docs/reference/repository-standard/)
+2. The [PSModule Repository Standard](https://psmodule.io/Process-PSModule/reference/repository-standard/)
    owns PSModule additions and explicit initiative overrides.
 3. The default branch of `PSModule/Template-PSModule` owns the executable
    implementation of those requirements.
