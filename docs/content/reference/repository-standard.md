@@ -429,6 +429,11 @@ sorts the remaining pages alphabetically. Organize generated function
 references through their source folders instead of maintaining a second
 navigation tree in TOML.
 
+The template does not define `[project.extra.consent]`. Standard generated
+module sites do not enable cookie-based measurement and must not display a
+consent prompt. A repository adds consent configuration only when its own
+documented functionality requires it.
+
 Repository-specific documentation content remains repository-owned. A module
 may depart from the template's site configuration only for a documented
 requirement that the shared generated-site profile cannot satisfy.

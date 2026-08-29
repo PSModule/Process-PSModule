@@ -62,6 +62,8 @@ For a standard PowerShell module built by Process-PSModule:
 - Copy it from the same path in `Template-PSModule` at the recorded commit.
 - Keep template placeholders that Process-PSModule resolves while staging the
   site.
+- Do not add `[project.extra.consent]`. The generated-module template does not
+  enable cookie-based measurement, so it must not display a consent prompt.
 - Use only includes, overrides, and assets that the template supplies and the
   Process-PSModule staging pipeline copies.
 - Do not create `docs/content/` merely to imitate a documentation repository.

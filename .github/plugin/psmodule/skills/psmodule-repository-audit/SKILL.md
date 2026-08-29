@@ -98,6 +98,9 @@ in `Template-PSModule`.
 - Do not add a `nav` setting. Zensical generates navigation from the staged
   folder structure, places index pages first, and sorts the remaining pages
   alphabetically.
+- Confirm the template does not define `[project.extra.consent]`. Cookie
+  consent is not a generated-module default and belongs only in a documented
+  repository-specific configuration that actually requires it.
 - Keep the template's theme, palette, typography, icons, plugins, Markdown
   extensions, and supported assets together as one baseline.
 - Do not copy path-specific settings from `MSXOrg/docs` or
