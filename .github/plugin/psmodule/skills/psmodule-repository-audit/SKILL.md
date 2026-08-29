@@ -108,9 +108,10 @@ in `Template-PSModule`.
   functional exception must be documented in the target and reported as an
   accepted difference.
 
-Use
-[`psmodule-zensical-migration`](../psmodule-zensical-migration/SKILL.md) when
-the target still uses MkDocs or requires a documentation layout migration.
+When the target still uses MkDocs or requires a documentation layout
+migration, report
+[`psmodule-zensical-migration`](../psmodule-zensical-migration/SKILL.md) as
+required follow-up. Do not invoke a migration skill from this read-only audit.
 
 ## Pester and workflow contracts
 
@@ -120,7 +121,7 @@ template's Pester baseline, report
 [`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) as required
 follow-up. If the Process-PSModule caller needs a major-version migration,
 report [`psmodule-v8-upgrade`](../psmodule-v8-upgrade/SKILL.md) as required
-follow-up. Do not invoke either migration from this read-only audit.
+follow-up.
 
 ## Audit output
 
