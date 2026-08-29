@@ -24,6 +24,14 @@ works. For PSModule-specific build, layout, and process guidance:
 - [PSModule/memory](https://github.com/PSModule/memory) — durable cross-session agent
   working memory for the PSModule organization.
 
+## Template impact
+
+For every Process-PSModule change, evaluate whether the framework contract,
+repository defaults, or generated output changes what a new module repository
+should contain. When it does, update `PSModule/Template-PSModule` in a
+coordinated pull request. Do not add template-maintenance behavior to consumer
+audit or migration skills.
+
 ## Org-wide guidance
 
 For cross-cutting ways of working and standards:

@@ -61,7 +61,9 @@ These names describe repository conventions, not settings. `.github/PSModule.yml
 Key expectations:
 
 - Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/` using a [documented test profile](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles).
-- Keep documentation site configuration in `.github/zensical.toml`.
+- Keep documentation site configuration aligned with
+  `Template-PSModule/.github/zensical.toml`. Omit `nav`; Zensical follows the
+  generated folder structure and sorts pages alphabetically.
 - Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
 - Markdown files in `src/functions/public` subfolders become documentation pages alongside generated help.
 - A group's overview page (`<Category>/<Category>.md` named after the folder, or `<Category>/index.md`) becomes that group's section landing page in the docs navigation.

@@ -6,7 +6,9 @@ description: How to call the Process-PSModule reusable workflow — the caller w
 # Calling the workflow
 
 To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
-For documentation site generation, use `zensical.toml` as the active site contract.
+For documentation site generation, keep the canonical
+`Template-PSModule/.github/zensical.toml`; Process-PSModule resolves it into the
+staged site's `zensical.toml`.
 
 For the exact inputs, secrets, and permissions the reusable workflow declares, see
 [Workflow inputs](../reference/workflow-inputs.md).

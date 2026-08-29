@@ -88,8 +88,11 @@ See [Settings](../reference/settings.md) for the full contract and
 
 ## 5. Configure the documentation site
 
-Process-PSModule builds documentation with [Zensical](https://zensical.org/) from `.github/zensical.toml`. The template
-ships a working file; update the site name and repository links to match the module.
+Process-PSModule builds documentation with [Zensical](https://zensical.org/)
+from `.github/zensical.toml`. Keep the file from `Template-PSModule`;
+Process-PSModule resolves its repository placeholders while staging the site.
+The standard configuration omits `nav`, so Zensical follows the generated
+folder structure and sorts pages alphabetically.
 
 ## Next
 

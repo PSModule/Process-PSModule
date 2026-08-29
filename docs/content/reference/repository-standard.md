@@ -19,11 +19,18 @@ It does not apply directly to:
 
 Two baseline expectations still apply to every PSModule repository, including the types listed above. Each repository stands on its own: it carries its own governance and community files instead of relying on the organization `.github` fallback, and each repository ships the [agent onboarding files](#agent-onboarding-files) so an agent can work in it without prior context. What differs by type is the concrete file set and layout: the required files, README shape, and framework wiring on the rest of this page are the module standard, and non-module repositories keep only the equivalent baseline appropriate to their own type. This documentation project, maintained in `PSModule/Process-PSModule`, follows those two baseline expectations itself.
 
-Each initiative should keep its own repository standards in its central documentation repository. For the PSModule organization, this repository is the source of truth.
+Each initiative should keep its own repository standards in its central
+documentation repository. For the PSModule organization, this repository owns
+the requirements and `Template-PSModule` owns their executable file
+implementations.
 
 ## Repository creation
 
-Create new module repositories from [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule). The template provides the framework wiring, starter layout, and CI/CD expectations.
+Create new module repositories from
+[`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule).
+The template is the executable baseline for standard files, framework wiring,
+starter layout, and CI/CD expectations. Do not recreate those files from
+examples in this documentation.
 
 After creating the repository:
 
@@ -88,6 +95,7 @@ Module repositories use the PSModule framework layout:
 | `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
 | `.github/workflows/Process-PSModule.yml` | Caller workflow that runs the module's CI/CD by calling the shared Process-PSModule workflow. |
+| `.github/zensical.toml` | Canonical generated-site configuration copied from `Template-PSModule`. |
 | `.github/release.yml` | Release-note and changelog categorization for GitHub releases. |
 | `.github/linters/` | Linter configuration used by the framework's linting stage, including `.markdown-lint.yml` and `.powershell-psscriptanalyzer.psd1`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
@@ -179,15 +187,50 @@ Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.g
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 
-## Managed file distribution
+## Template ownership and reconciliation
 
-**Policy ownership and distribution runtime are separate concerns.** This page — and this documentation project in [`PSModule/Process-PSModule`](https://github.com/PSModule/Process-PSModule) — defines *what* files must exist in module repositories and *what standards they must meet*. The distribution runtime is handled by [`MSXOrg/Custo`](https://github.com/MSXOrg/Custo).
+Policy ownership, executable templates, and distribution are separate
+concerns:
 
-For PSModule module repositories, the requirements are:
+| Concern | Source of truth |
+| --- | --- |
+| Enterprise requirements | [MSX Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/) |
+| PowerShell module requirements | This PSModule Repository Standard |
+| Exact standard-file implementation | The default branch of [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) |
+| Repository-specific code and content | The consumer repository |
 
-- Repositories must contain the required baseline files defined on this page.
-- Managed copies of those files are treated as generated distribution artifacts, not repository-specific source.
-- Standard changes to managed-file content are made in the distribution engine, not by patching generated copies in receiving repositories.
+MSX requirements take precedence when these sources differ. Correct the
+PSModule standard when its policy differs from MSX, then correct the template
+before updating consumer repositories. Once the policy sources agree, the
+template is the byte-level source for standard files. This keeps exact file
+content in one place instead of duplicating templates in documentation or
+skills.
+
+Every standard file for a new module repository must exist in
+`Template-PSModule`. Template files have one of these relationships to an
+established repository:
+
+| Relationship | Reconciliation behavior |
+| --- | --- |
+| Template-owned standard | Match the template unless a documented exception applies. |
+| Parameterized standard | Match after applying only declared repository identity substitutions. |
+| Configurable standard | Preserve supported repository-specific values and compare the remaining defaults. |
+| Creation scaffold | Use when creating a repository; do not overwrite established source, tests, examples, or content. |
+| Repository-owned addition | Preserve unless it violates a governing standard or framework contract. |
+
+Use the
+[`psmodule-repository-audit`](https://github.com/PSModule/Process-PSModule/blob/main/.github/plugin/psmodule/skills/psmodule-repository-audit/SKILL.md)
+skill to audit a consumer repository and align it when requested. The skill
+never changes the template. Each run records the resolved template commit so
+its result remains reproducible after the template changes.
+
+Automated managed-file distribution is not operating across the PSModule fleet.
+Setting `SubscribeTo` does not currently synchronize files. Until a distribution
+runtime is implemented, maintainers apply template changes through
+repository-specific pull requests and use the repository audit skill to detect
+drift. A future runtime must consume `Template-PSModule` rather than maintain a
+second copy of standard files. Process-PSModule maintainers own detecting when
+template reconciliation or distribution stops operating.
 
 ## Supply-chain defaults
 
@@ -370,6 +413,25 @@ Use these defaults:
 
 This keeps the repository landing page readable and prevents drift between README content, PowerShell help, and generated documentation.
 
+### Zensical configuration
+
+The canonical module-site configuration is
+[`Template-PSModule/.github/zensical.toml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/zensical.toml).
+Keep its repository placeholders: Process-PSModule resolves them while staging
+the generated site. The template carries the portable subset of the MSXorg and
+Process-PSModule documentation design, with the MSXorg design taking precedence
+when they differ.
+
+Do not declare `nav` in a standard module repository. Zensical derives
+navigation from the staged folder structure, places index pages first, and
+sorts the remaining pages alphabetically. Organize generated function
+references through their source folders instead of maintaining a second
+navigation tree in TOML.
+
+Repository-specific documentation content remains repository-owned. A module
+may depart from the template's site configuration only for a documented
+requirement that the shared generated-site profile cannot satisfy.
+
 ## Release and PR defaults
 
 Module repositories use the Process-PSModule workflow. Version and release behavior is driven by PR labels and workflow settings.
@@ -385,6 +447,11 @@ See [Versioning](versioning.md) for semantic version rules and [PowerShell modul
 
 ## Template maintenance
 
-`Template-PSModule` defines the default README shape and starter repository contract. When this page changes a default, update `Template-PSModule` in the same work item when practical.
+`Template-PSModule` contains the concrete files for the complete starter
+repository contract. Every Process-PSModule change includes an impact
+evaluation that determines whether the template must change. When a framework
+contract or this page changes a default, update the template in the same work
+item before aligning consumer repositories. A standard is not complete while
+its required implementation is absent from the template.
 
 The template README may contain tokens, but generated module repositories should not keep them after the initial setup commit.
