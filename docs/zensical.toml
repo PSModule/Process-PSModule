@@ -13,9 +13,6 @@ extra_javascript = [
   "assets/javascripts/tablesort.min.js",
   "assets/javascripts/tablesort.js",
 ]
-extra_css = [
-  "assets/stylesheets/navigation.css",
-]
 watch = ["includes"]
 
 [project.theme]
