@@ -175,9 +175,10 @@ Each repository must stand on its own. It carries its own copy of every file abo
 Keep repository-local community health files together under `.github/`.
 GitHub discovers `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and
 `SUPPORT.md` there, so root-level duplicates add no value and are not part of
-the PSModule layout. `README.md`, `LICENSE`, and `AGENTS.md` remain at the
-repository root because they are repository entry points rather than community
-health files.
+the PSModule layout. This is the PSModule initiative's explicit path override
+of the MSX repository default. `README.md`, `LICENSE`, and `AGENTS.md` remain
+at the repository root because they are repository entry points rather than
+community health files.
 
 ## Agent onboarding files
 
