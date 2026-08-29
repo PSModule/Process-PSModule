@@ -87,10 +87,10 @@ Module repositories use the PSModule framework layout:
 | ---- | --------------- |
 | `README.md` | Concise start page for the module. |
 | `LICENSE` | Repository license. PSModule module repositories default to MIT unless a different license is explicitly decided. |
-| `CONTRIBUTING.md` | Self-contained contribution workflow for this repository. Does not rely on an organization-level fallback. |
-| `SECURITY.md` | Security support policy and private vulnerability reporting instructions. |
-| `SUPPORT.md` | Support expectations and where users ask for help. |
-| `CODE_OF_CONDUCT.md` | Community conduct expectations. |
+| `.github/CONTRIBUTING.md` | Self-contained contribution workflow for this repository. Does not rely on an organization-level fallback. |
+| `.github/SECURITY.md` | Security support policy and private vulnerability reporting instructions. |
+| `.github/SUPPORT.md` | Support expectations and where users ask for help. |
+| `.github/CODE_OF_CONDUCT.md` | Community conduct expectations. |
 | `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/docs/`. |
 | `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
@@ -155,10 +155,10 @@ Required baseline files for module repositories:
 | ---- | ------------------ |
 | `README.md` | Repository landing page and evergreen context for humans and agents. |
 | `LICENSE` | Clear legal terms for reuse, packaging, and redistribution. |
-| `CONTRIBUTING.md` | Self-contained contribution workflow and expectations for this repository. |
-| `SECURITY.md` | Private vulnerability reporting and latest-version support policy. |
-| `SUPPORT.md` | Support channel and issue-routing expectations. |
-| `CODE_OF_CONDUCT.md` | Community participation rules. |
+| `.github/CONTRIBUTING.md` | Self-contained contribution workflow and expectations for this repository. |
+| `.github/SECURITY.md` | Private vulnerability reporting and latest-version support policy. |
+| `.github/SUPPORT.md` | Support channel and issue-routing expectations. |
+| `.github/CODE_OF_CONDUCT.md` | Community participation rules. |
 | `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/docs/`. |
 | `CLAUDE.md` | Claude Code entry point that imports `AGENTS.md`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
@@ -171,6 +171,13 @@ Required baseline files for module repositories:
 Repositories can add local files, but they should not remove these baseline files unless the repository is explicitly outside the module standard.
 
 Each repository must stand on its own. It carries its own copy of every file above and does not depend on the organization `.github` fallback: that fallback is only surfaced in GitHub's web UI, and agents, linters, and local tooling do not read it.
+
+Keep repository-local community health files together under `.github/`.
+GitHub discovers `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and
+`SUPPORT.md` there, so root-level duplicates add no value and are not part of
+the PSModule layout. `README.md`, `LICENSE`, and `AGENTS.md` remain at the
+repository root because they are repository entry points rather than community
+health files.
 
 ## Agent onboarding files
 
@@ -354,7 +361,12 @@ Retain upstream attribution and licensing context. Credit, acknowledgements, don
 
 README pages should not duplicate generated command documentation. Do not add full command inventories, parameter tables, or long reference sections when those details are already produced from comment-based help.
 
-Do not add a community-file or policy link section by default. Readers can find standard repository files such as `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md` through GitHub conventions and the repository file tree. Link them only when the module has an unusual rule the user must know before using it, or when it carries required upstream attribution.
+Do not add a community-file or policy link section by default. Readers can find
+standard files such as `LICENSE`, `.github/CONTRIBUTING.md`,
+`.github/SECURITY.md`, and `.github/CODE_OF_CONDUCT.md` through GitHub
+conventions and the repository file tree. Link them only when the module has an
+unusual rule the user must know before using it, or when it carries required
+upstream attribution.
 
 ## Placeholder and in-progress repositories
 

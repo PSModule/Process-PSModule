@@ -77,11 +77,16 @@ overwrite an established repository.
 | Creation scaffold | Use for new repositories. Do not overwrite established module source, tests, examples, or content. |
 | Repository-owned addition | Preserve it unless it violates a governing standard or breaks the framework contract. |
 
-Treat governance files, caller workflows, linter settings, dependency
-configuration, agent entry points, and documentation-site defaults as
-template-owned or parameterized unless the template or PSModule standard says
-otherwise. Treat `src/`, established `tests/`, `examples/`, documentation
-content, and module-specific assets as repository-owned after creation.
+Treat `.github/CONTRIBUTING.md`, `.github/CODE_OF_CONDUCT.md`,
+`.github/SECURITY.md`, `.github/SUPPORT.md`, governance files, caller workflows,
+linter settings, dependency configuration, agent entry points, and
+documentation-site defaults as template-owned or parameterized unless the
+template or PSModule standard says otherwise. Treat `src/`, established
+`tests/`, `examples/`, documentation content, and module-specific assets as
+repository-owned after creation.
+
+Report a root-level duplicate of a community file as drift. GitHub recognizes
+these files under `.github/`, which is their canonical PSModule location.
 
 Configuration is not automatically consumer-owned. For example,
 `.github/PSModule.yml` may contain valid module-specific overrides while its
