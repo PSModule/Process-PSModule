@@ -31,8 +31,8 @@ It also provides
 [`psmodule-zensical-migration`](./psmodule/skills/psmodule-zensical-migration/SKILL.md)
 for migrating legacy MkDocs sites to the standard Zensical design, and
 [`psmodule-repository-audit`](./psmodule/skills/psmodule-repository-audit/SKILL.md)
-for auditing or aligning module repositories with the current
-Template-PSModule baseline.
+for auditing module repositories against the current Template-PSModule
+baseline.
 Verify the installation with:
 
 ```console

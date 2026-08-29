@@ -1,16 +1,16 @@
 ---
 name: psmodule-repository-audit
-description: Audit a PSModule repository against the current Template-PSModule baseline and align the consumer when requested while preserving repository-owned code, tests, settings, and content.
+description: Audit a PSModule repository against the current Template-PSModule baseline while distinguishing template drift from repository-owned code, tests, settings, and content.
 ---
 
 # Audit a PSModule repository against Template-PSModule
 
-Use this skill when checking an established PowerShell module repository
-against the standard files in
+Use this read-only skill when checking an established PowerShell module
+repository against the standard files in
 [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule).
-Apply confirmed consumer updates only when the requested scope includes them.
 Use the same procedure for one repository or as the repository-level audit
-inside a fleet campaign.
+inside a fleet campaign. Report changes for a separate migration or delivery
+task; do not edit either repository while running this audit.
 
 This skill does not maintain or reconcile `Template-PSModule`. Changes to
 Process-PSModule include an impact evaluation that determines whether the
@@ -19,12 +19,12 @@ validated in the template repository before consumer alignment begins.
 
 ## Authority and precedence
 
-Apply sources in this order:
+Use these sources together:
 
 1. The [MSX Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/)
-   owns enterprise policy.
+   owns inherited enterprise policy.
 2. The [PSModule Repository Standard](https://psmodule.io/docs/reference/repository-standard/)
-   adds or overrides requirements for PowerShell module repositories.
+   owns PSModule additions and explicit initiative overrides.
 3. The default branch of `PSModule/Template-PSModule` owns the executable
    implementation of those requirements.
 4. The target repository owns its module code, tests, documentation content,
@@ -34,20 +34,20 @@ Resolve and record the template default-branch commit before comparing files.
 Use that one commit throughout the run. Do not embed a snapshot of template
 file contents in this skill.
 
-When a higher-precedence standard and the template disagree, do not propagate
-the discrepancy and do not repair the template from this skill. Report the
-upstream gap and block consumer alignment until the template is corrected.
-When prose and template implementation merely express the same requirement
-differently, use the template as the byte-level source.
+When either governing standard and the template disagree, do not propagate the
+discrepancy and do not repair the template from this skill. Report the upstream
+gap and block consumer alignment until the policy owner and template agree.
+When prose and template implementation express the same requirement
+differently, use the template as the byte-level source. For shared Zensical
+presentation settings, the MSXOrg documentation design takes precedence over
+the Process-PSModule documentation-site implementation.
 
-## Modes
+## Audit boundary
 
-- **Audit** reports drift without changing the target.
-- **Align** applies confirmed template-owned changes to one consumer repository.
-
-State the selected mode before editing. A fleet run invokes Audit or Align
-once per repository; it does not combine many repositories into one branch or
-pull request.
+The audit records aligned paths, drift, accepted differences, and blocked
+comparisons. It does not edit the template or consumer. A fleet run invokes the
+audit once per repository and creates a separate delivery task for each
+consumer that needs alignment.
 
 ## Inventory
 
@@ -71,7 +71,7 @@ overwrite an established repository.
 
 | Class | Treatment |
 | --- | --- |
-| Template-owned standard | Compare with the template and replace drift unless a documented target exception applies. |
+| Template-owned standard | Compare with the template and report drift unless a documented target exception applies. |
 | Parameterized standard | Compare after applying only the substitutions declared by the template or framework. |
 | Configurable standard | Keep supported repository-specific values; compare the remaining structure and defaults. |
 | Creation scaffold | Use for new repositories. Do not overwrite established module source, tests, examples, or content. |
@@ -116,14 +116,11 @@ the target still uses MkDocs or requires a documentation layout migration.
 
 Template comparison does not prove that an established test suite is compatible
 with the template's Pester version. If the target does not already meet the
-template's Pester baseline, invoke
-[`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) and migrate
-every test set before declaring alignment complete.
-
-When the Process-PSModule caller requires a major-version migration, invoke
-[`psmodule-v8-upgrade`](../psmodule-v8-upgrade/SKILL.md). Preserve supported
-`TestData` and repository-owned automation instead of replacing them with
-template examples.
+template's Pester baseline, report
+[`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) as required
+follow-up. If the Process-PSModule caller needs a major-version migration,
+report [`psmodule-v8-upgrade`](../psmodule-v8-upgrade/SKILL.md) as required
+follow-up. Do not invoke either migration from this read-only audit.
 
 ## Audit output
 
@@ -159,7 +156,7 @@ Follow the MSX Fleet Orchestration standard:
 ## Validation
 
 1. Repeat the comparison against the same recorded template commit.
-2. Confirm no repository-owned content or secrets changed unintentionally.
+2. Confirm the audit did not change either repository.
 3. Run the target's smallest repository-native checks for every changed
    surface.
 4. Run Pester with the declared version when tests changed.

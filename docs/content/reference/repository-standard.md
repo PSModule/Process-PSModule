@@ -199,11 +199,12 @@ concerns:
 | Exact standard-file implementation | The default branch of [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) |
 | Repository-specific code and content | The consumer repository |
 
-MSX requirements take precedence when these sources differ. Correct the
-PSModule standard when its policy differs from MSX, then correct the template
-before updating consumer repositories. Once the policy sources agree, the
-template is the byte-level source for standard files. This keeps exact file
-content in one place instead of duplicating templates in documentation or
+The PSModule standard inherits MSX defaults and may explicitly adjust them for
+PowerShell module repositories. For the shared Zensical presentation profile,
+the MSXOrg documentation design takes precedence when it differs from the
+Process-PSModule documentation site. Once the governing policy is clear, the
+template is the byte-level source for standard module files. This keeps exact
+file content in one place instead of duplicating templates in documentation or
 skills.
 
 Every standard file for a new module repository must exist in
@@ -220,9 +221,9 @@ established repository:
 
 Use the
 [`psmodule-repository-audit`](https://github.com/PSModule/Process-PSModule/blob/main/.github/plugin/psmodule/skills/psmodule-repository-audit/SKILL.md)
-skill to audit a consumer repository and align it when requested. The skill
-never changes the template. Each run records the resolved template commit so
-its result remains reproducible after the template changes.
+skill to audit a consumer repository. The skill never changes the template or
+consumer; alignment is a separate delivery task. Each run records the resolved
+template commit so its result remains reproducible after the template changes.
 
 Automated managed-file distribution is not operating across the PSModule fleet.
 Setting `SubscribeTo` does not currently synchronize files. Until a distribution
@@ -230,7 +231,7 @@ runtime is implemented, maintainers apply template changes through
 repository-specific pull requests and use the repository audit skill to detect
 drift. A future runtime must consume `Template-PSModule` rather than maintain a
 second copy of standard files. Process-PSModule maintainers own detecting when
-template reconciliation or distribution stops operating.
+repository audits or distribution stop operating.
 
 ## Supply-chain defaults
 
