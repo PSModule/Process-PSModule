@@ -2,6 +2,10 @@
     'PSUseDeclaredVarsMoreThanAssignments', '',
     Justification = 'Variables are assigned in BeforeAll and used inside It blocks.'
 )]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingCmdletAliases', 'Context',
+    Justification = 'Context is part of the Pester DSL, not the Get-Context alias.'
+)]
 [CmdletBinding()]
 param()
 
@@ -17,9 +21,9 @@ BeforeAll {
         [CmdletBinding()]
         [OutputType([PSCustomObject])]
         param(
-            # Whether an unlabeled pull request is treated as a patch.
+            # The bump used when no configured bump label is present.
             [Parameter()]
-            [bool] $AutoPatching = $true,
+            [string] $DefaultBump = 'patch',
 
             # Whether prereleases get an incrementing number suffix.
             [Parameter()]
@@ -55,7 +59,7 @@ BeforeAll {
         )
 
         [PSCustomObject]@{
-            AutoPatching          = $AutoPatching
+            DefaultBump           = $DefaultBump
             IncrementalPrerelease = $IncrementalPrerelease
             DatePrereleaseFormat  = $DatePrereleaseFormat
             VersionPrefix         = $VersionPrefix
@@ -107,6 +111,38 @@ BeforeAll {
 }
 
 Describe 'Resolve-PSModuleVersion' {
+    Describe 'Get-PublishConfiguration' {
+        It 'maps DefaultBump and configured labels from settings JSON' {
+            $settings = @{
+                Publish = @{
+                    Module = @{
+                        DefaultBump           = 'major'
+                        IncrementalPrerelease = $true
+                        DatePrereleaseFormat  = ''
+                        VersionPrefix         = 'v'
+                        ReleaseType           = 'Release'
+                        IgnoreLabels          = 'custom:skip'
+                        MajorLabels           = 'custom:major'
+                        MinorLabels           = 'custom:minor'
+                        PatchLabels           = 'custom:patch'
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $configuration = Get-PublishConfiguration -SettingsJson $settings
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @('custom:minor')
+            }
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $configuration.DefaultBump | Should -BeExactly 'major'
+            $configuration.MinorLabels | Should -Be @('custom:minor')
+            $result.MinorRelease | Should -BeTrue
+            $result.MajorRelease | Should -BeFalse
+        }
+    }
+
     Describe 'ConvertFrom-GitHubReleaseJson' {
         Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
             It 'ConvertFrom-GitHubReleaseJson - returns an empty array for an empty JSON array' {
@@ -542,20 +578,24 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Resolve-ReleaseDecision' {
-        It 'uses the default patch bump for a direct stable release' {
-            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -AutoPatching $false) `
+        It 'uses the configured <DefaultBump> bump for a direct stable release' -ForEach @(
+            @{ DefaultBump = 'patch'; Flag = 'PatchRelease' }
+            @{ DefaultBump = 'minor'; Flag = 'MinorRelease' }
+            @{ DefaultBump = 'major'; Flag = 'MajorRelease' }
+        ) {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -DefaultBump $DefaultBump) `
                 -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @(); IsDirectRelease = $true })
 
             $result.ShouldPublish | Should -BeTrue
-            $result.PatchRelease | Should -BeTrue
+            $result.$Flag | Should -BeTrue
         }
 
-        It 'does not publish an unlabeled prerelease when AutoPatching is disabled' {
-            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -AutoPatching $false -ReleaseType Prerelease) `
+        It 'uses the configured default bump for a prerelease mode label' {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -DefaultBump 'major' -ReleaseType Prerelease) `
                 -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @() })
 
-            $result.ShouldPublish | Should -BeFalse
-            $result.PatchRelease | Should -BeTrue
+            $result.ShouldPublish | Should -BeTrue
+            $result.MajorRelease | Should -BeTrue
         }
 
         It 'does not validate cleanup-only pull request labels' {
@@ -580,7 +620,7 @@ Describe 'Resolve-PSModuleVersion' {
             } | Should -Throw '*ignore label cannot be combined*'
         }
 
-        It 'honors the canonical <Bump> default' -ForEach @(
+        It 'honors the canonical <Bump> label' -ForEach @(
             @{ Bump = 'Major'; Label = 'release:major'; Flag = 'MajorRelease' }
             @{ Bump = 'Minor'; Label = 'release:minor'; Flag = 'MinorRelease' }
             @{ Bump = 'Patch'; Label = 'release:patch'; Flag = 'PatchRelease' }
@@ -614,8 +654,21 @@ Describe 'Resolve-PSModuleVersion' {
             $result.ShouldPublish | Should -BeTrue
         }
 
+        It 'gives an explicit bump label precedence over DefaultBump' {
+            $configuration = Get-TestConfiguration -DefaultBump 'major'
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @('release:minor')
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $result.MinorRelease | Should -BeTrue
+            $result.MajorRelease | Should -BeFalse
+        }
+
         It 'honors a configured ignore label' {
-            $configuration = Get-TestConfiguration -IgnoreLabels @('custom:skip')
+            $configuration = Get-TestConfiguration -DefaultBump 'major' -IgnoreLabels @('custom:skip')
             $pullRequest = [pscustomobject]@{
                 HeadRef = 'main'
                 Labels  = @('custom:skip')
@@ -624,6 +677,18 @@ Describe 'Resolve-PSModuleVersion' {
             $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
 
             $result.ShouldPublish | Should -BeFalse
+            $result.CreateRelease | Should -BeFalse
+        }
+
+        It 'rejects an invalid DefaultBump with valid values' {
+            $configuration = Get-TestConfiguration -DefaultBump 'none'
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @()
+            }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*Valid values are: patch, minor, major*'
         }
     }
 }

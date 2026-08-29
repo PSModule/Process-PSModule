@@ -86,7 +86,7 @@ Describe 'Resolve-PSModulePublishSetting' {
     It 'uses the canonical release-label defaults' {
         $result = Resolve-PSModulePublishSetting -PublishModule $null
 
-        $result.AutoPatching | Should -BeTrue
+        $result.DefaultBump | Should -BeExactly 'patch'
         $result.MajorLabels | Should -BeExactly 'release:major'
         $result.MinorLabels | Should -BeExactly 'release:minor'
         $result.PatchLabels | Should -BeExactly 'release:patch'
@@ -96,7 +96,7 @@ Describe 'Resolve-PSModulePublishSetting' {
 
     It 'preserves consumer-controlled release settings' {
         $publishModule = [pscustomobject]@{
-            AutoPatching     = $false
+            DefaultBump      = 'minor'
             MajorLabels      = 'custom:major'
             MinorLabels      = 'custom:minor'
             PatchLabels      = 'custom:patch'
@@ -106,7 +106,7 @@ Describe 'Resolve-PSModulePublishSetting' {
 
         $result = Resolve-PSModulePublishSetting -PublishModule $publishModule
 
-        $result.AutoPatching | Should -BeFalse
+        $result.DefaultBump | Should -BeExactly 'minor'
         $result.MajorLabels | Should -BeExactly 'custom:major'
         $result.MinorLabels | Should -BeExactly 'custom:minor'
         $result.PatchLabels | Should -BeExactly 'custom:patch'
@@ -119,12 +119,33 @@ Describe 'Resolve-PSModulePublishSetting' {
         $schema = Get-Content -Path $schemaPath -Raw | ConvertFrom-Json
         $moduleProperties = $schema.properties.Publish.properties.Module.properties
 
-        $moduleProperties.AutoPatching.default | Should -BeTrue
+        $moduleProperties.DefaultBump.default | Should -BeExactly 'patch'
+        $moduleProperties.DefaultBump.enum | Should -Be @('patch', 'minor', 'major')
+        $moduleProperties.PSObject.Properties.Name | Should -Not -Contain 'AutoPatching'
         $moduleProperties.MajorLabels.default | Should -BeExactly 'release:major'
         $moduleProperties.MinorLabels.default | Should -BeExactly 'release:minor'
         $moduleProperties.PatchLabels.default | Should -BeExactly 'release:patch'
         $moduleProperties.PrereleaseLabels.default | Should -BeExactly 'release:pre-release'
         $moduleProperties.IgnoreLabels.default | Should -BeExactly 'release:skip'
+    }
+
+    It 'rejects the invalid DefaultBump value <DefaultBump>' -ForEach @(
+        @{ DefaultBump = $null }
+        @{ DefaultBump = '' }
+        @{ DefaultBump = 'Patch' }
+        @{ DefaultBump = 'none' }
+    ) {
+        $publishModule = [pscustomobject]@{ DefaultBump = $DefaultBump }
+
+        { Resolve-PSModulePublishSetting -PublishModule $publishModule } |
+            Should -Throw '*Valid values are: patch, minor, major*'
+    }
+
+    It 'rejects AutoPatching with migration guidance' {
+        $publishModule = [pscustomobject]@{ AutoPatching = $true }
+
+        { Resolve-PSModulePublishSetting -PublishModule $publishModule } |
+            Should -Throw '*AutoPatching was removed*Replace it with Publish.Module.DefaultBump*'
     }
 }
 

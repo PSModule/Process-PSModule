@@ -44,6 +44,10 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
     }
 
     LogGroup 'Validate settings against schema' {
+        # Validate release settings first so removed or invalid values get a
+        # migration-focused error instead of only a generic schema failure.
+        $null = Resolve-PSModulePublishSetting -PublishModule $settings.Publish.Module
+
         $schemaPath = Join-Path $PSScriptRoot 'Settings.schema.json'
         if (Test-Path -Path $schemaPath) {
             Write-Host 'Validating settings against schema...'

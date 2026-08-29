@@ -138,10 +138,15 @@
               "type": "boolean",
               "description": "When enabled (default: true), automatically cleans up old prerelease tags when merging to main or when a PR is abandoned"
             },
-            "AutoPatching": {
-              "type": "boolean",
-              "description": "Automatically apply patches",
-              "default": true
+            "DefaultBump": {
+              "type": "string",
+              "enum": [
+                "patch",
+                "minor",
+                "major"
+              ],
+              "description": "Version bump used when no configured bump label is present",
+              "default": "patch"
             },
             "IncrementalPrerelease": {
               "type": "boolean",
