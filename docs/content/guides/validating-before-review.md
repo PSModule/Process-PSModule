@@ -78,7 +78,7 @@ Do not repeat the shared workflow here. Follow the shared branch â†’ draft PR â†
    Check:
 
    - naming, documentation, error handling, testing expectations, and security posture align with the relevant pages under [MSX Coding Standards](https://msx.no/docs/Coding-Standards/)
-   - the change follows the shared "written once, referenced everywhere" rule by linking canonical guidance instead of copying it into local docs or code comments, as described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/)
+   - the change follows the shared "written once, referenced everywhere" rule by linking canonical guidance instead of copying it into local docs or code comments, as described in [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
    - the draft PR description, issue progress, and any follow-up issues reflect what actually shipped and what still belongs out of scope
 
    This is the last author-side gate before a PSModule draft PR is ready for independent review.

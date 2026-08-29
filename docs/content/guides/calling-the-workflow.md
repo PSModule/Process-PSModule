@@ -5,7 +5,12 @@ description: How to call the Process-PSModule reusable workflow — the caller w
 
 # Calling the workflow
 
-To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
+Use
+[`Template-PSModule/.github/workflows/Process-PSModule.yml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/workflows/Process-PSModule.yml)
+as the caller workflow. Copy the complete file instead of reconstructing it
+from documentation snippets. The template owns its triggers, concurrency,
+permissions, standard secrets, and controlled `@v8` reference.
+
 For documentation site generation, keep the canonical
 `Template-PSModule/.github/zensical.toml`; Process-PSModule resolves it into the
 staged site's `zensical.toml`.
@@ -13,57 +18,14 @@ staged site's `zensical.toml`.
 For the exact inputs, secrets, and permissions the reusable workflow declares, see
 [Workflow inputs](../reference/workflow-inputs.md).
 
-<details>
-<summary>Workflow suggestion</summary>
-
-```yaml
-name: Process-PSModule
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
-      - opened
-      - reopened
-      - synchronize
-      - labeled
-      - unlabeled
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-```
-
-</details>
-
 Stable releases are evaluated from a push to the default branch. A merged pull request supplies its version label and
 release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
 Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
 
-The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
-resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
-the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
+The template's concurrency key keeps a pull request distinct from a
+default-branch push. It cancels superseded pull-request validation while
+allowing release-capable branch runs to finish because they can mutate the
+PowerShell Gallery, GitHub Releases, and tags.
 The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
 waits for it to finish.
 

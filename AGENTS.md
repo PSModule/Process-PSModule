@@ -17,10 +17,10 @@ works. For PSModule-specific build, layout, and process guidance:
 
 - [Process-PSModule docs](https://psmodule.io/Process-PSModule/) —
   repository structure, module anatomy, and the build/test/pack/publish pipeline.
-- [Repository defaults](https://psmodule.github.io/docs/Modules/Repository-Defaults/) —
+- [Repository standard](https://psmodule.io/Process-PSModule/reference/repository-standard/) —
   the expected repository layout and required files.
-- [Standards](https://psmodule.github.io/docs/Modules/Standards/) — PowerShell module
-  coding standards.
+- [PowerShell module standard](https://psmodule.io/Process-PSModule/reference/powershell-module-standard/) —
+  PowerShell module coding standards.
 - [PSModule/memory](https://github.com/PSModule/memory) — durable cross-session agent
   working memory for the PSModule organization.
 
@@ -36,7 +36,7 @@ audit or migration skills.
 
 For cross-cutting ways of working and standards:
 
-- [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) —
+- [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/) —
   how agents and humans collaborate in this ecosystem.
 - [Ways of Working](https://msx.no/docs/Ways-of-Working/) — contribution
   workflow, branching, PRs, issues.

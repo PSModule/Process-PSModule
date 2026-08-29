@@ -27,6 +27,8 @@ The goal is a stable repository anatomy so both humans and automation know exact
 
 ```plaintext
 <ModuleName>/
+├── .claude/
+│   └── CLAUDE.md                               # Claude Code route to AGENTS.md
 ├── .github/                                   # Workflow config, doc/site templates, automation policy
 │   ├── linters/                               # Rule sets applied by shared lint steps
 │   │   ├── .markdown-lint.yml                 # Markdown rules enforced via super-linter
@@ -37,6 +39,7 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   ├── CODE_OF_CONDUCT.md                      # Community participation rules
 │   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
 │   ├── CONTRIBUTING.md                         # Repository-local contribution workflow
+│   ├── copilot-instructions.md                 # Copilot route to AGENTS.md
 │   ├── dependabot.yml                         # Dependency update cadence handled by GitHub
 │   ├── PSModule.yml                           # Settings parsed to drive matrices
 │   ├── release.yml                            # Release automation template invoked on publish
@@ -54,6 +57,7 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   └── <ModuleName>.Tests.ps1                 # Simple: one root-level module suite
 ├── .gitattributes                             # Normalizes line endings across platforms
 ├── .gitignore                                 # Excludes build artifacts from source control
+├── AGENTS.md                                  # Cross-client agent guidance router
 ├── LICENSE                                    # License text surfaced in manifest metadata
 └── README.md                                  # Repository overview rendered on GitHub and docs landing
 ```

@@ -92,7 +92,8 @@ Module repositories use the PSModule framework layout:
 | `.github/SUPPORT.md` | Support expectations and where users ask for help. |
 | `.github/CODE_OF_CONDUCT.md` | Community conduct expectations. |
 | `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
-| `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
+| `.claude/CLAUDE.md` | Claude Code entry point. Imports the root `AGENTS.md`. |
+| `.github/copilot-instructions.md` | Route for Copilot surfaces that do not read `AGENTS.md` directly. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
 | `.github/workflows/Process-PSModule.yml` | Caller workflow that runs the module's CI/CD by calling the shared Process-PSModule workflow. |
 | `.github/zensical.toml` | Canonical generated-site configuration copied from `Template-PSModule`. |
@@ -125,19 +126,16 @@ The module repository owns a caller workflow; the framework owns the reusable wo
 | Caller workflow | The module repository | `.github/workflows/Process-PSModule.yml` |
 | Reusable workflow | [`PSModule/Process-PSModule`](https://github.com/PSModule/Process-PSModule) | `.github/workflows/workflow.yml` |
 
-The caller workflow declares the triggers, concurrency, and permissions for the module repository, and delegates the work:
+The caller workflow declares the triggers, concurrency, and permissions for the
+module repository, then delegates the work. Copy
+[`Template-PSModule/.github/workflows/Process-PSModule.yml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/workflows/Process-PSModule.yml)
+instead of maintaining another example here.
 
-```yaml
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@<commit-sha> # <version tag>
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-```
-
-Name the caller file `Process-PSModule.yml`, matching [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) and every existing module repository. `workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the `uses:` reference. Pin the reference to a commit SHA with the version tag in a trailing comment so Dependabot can update it.
+Name the caller file `Process-PSModule.yml`. `workflow.yml` is the reusable
+workflow's own filename inside `PSModule/Process-PSModule` and belongs only in
+the `uses:` reference. Process-PSModule is initiative-owned automation with a
+controlled release process, so the template uses the floating `@v8` major
+reference permitted by the MSX GitHub Actions standard.
 
 ## Required common files
 
@@ -160,7 +158,8 @@ Required baseline files for module repositories:
 | `.github/SUPPORT.md` | Support channel and issue-routing expectations. |
 | `.github/CODE_OF_CONDUCT.md` | Community participation rules. |
 | `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
-| `CLAUDE.md` | Claude Code entry point that imports `AGENTS.md`. |
+| `.claude/CLAUDE.md` | Claude Code entry point that imports the root `AGENTS.md`. |
+| `.github/copilot-instructions.md` | Route to `AGENTS.md` for Copilot surfaces that need their own filename. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
 | `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
@@ -185,13 +184,25 @@ community health files.
 Every repository must be usable by an agent that has never seen it before, without special configuration. Each repository carries its own agent entry points that point to the authoritative documentation instead of restating it:
 
 - `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/Process-PSModule](https://psmodule.io/Process-PSModule/).
-- `CLAUDE.md`: a thin file that imports `AGENTS.md` with `@AGENTS.md` so Claude Code reads the same instructions. Claude-specific notes, if any, go below the import.
+- `.claude/CLAUDE.md`: a thin file that imports the root router with
+  `@../AGENTS.md`.
+- `.github/copilot-instructions.md`: a thin link to `../AGENTS.md` for Copilot
+  surfaces that do not read the root router directly.
 
-See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule) for a concrete implementation example of `AGENTS.md` and `CLAUDE.md`.
+See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule)
+for the concrete implementation.
 
-`AGENTS.md` and `CLAUDE.md` are the required set. `AGENTS.md` is the entry point that AGENTS.md-aware runtimes read directly, so a repository is usable by an agent without a per-runtime copy of the same pointer.
+`AGENTS.md`, `.claude/CLAUDE.md`, and
+`.github/copilot-instructions.md` are the required set. `AGENTS.md` is the
+entry point that AGENTS.md-aware runtimes read directly.
 
-Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
+Additional runtime-specific adapters and
+`.github/instructions/*.instructions.md` are optional. MSX treats them as
+client routes or path-scoped caveats, described in
+[Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
+and its
+[capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/).
+Keep routes pointing at `AGENTS.md` rather than restating it.
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 
