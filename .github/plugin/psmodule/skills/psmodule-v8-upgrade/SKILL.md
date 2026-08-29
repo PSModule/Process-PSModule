@@ -1,6 +1,6 @@
 ---
 name: psmodule-v8-upgrade
-description: Upgrade a Process-PSModule consumer repository to framework version 8 while preserving repository intent, enforcing the caller workflow contract, migrating Pester tests to v6, and retaining the repository's Zensical documentation design.
+description: Upgrade a Process-PSModule consumer repository to framework version 8, audit it against Template-PSModule, migrate every test set to Pester 6.1.0, and align its Zensical profile without changing repository-owned intent.
 ---
 
 # Upgrade a Process-PSModule consumer to v8
@@ -15,12 +15,18 @@ consumer repositories while developing or validating this skill.
 1. Inspect the consumer repository before editing. Read its local guidance,
    workflow, documentation configuration and content, tests, settings,
    dependencies, and existing validation commands.
-2. Work on a dedicated branch, open a draft pull request early, and use small
+2. Invoke
+   [`psmodule-repository-audit`](../psmodule-repository-audit/SKILL.md) in Audit
+   mode and record the resolved `Template-PSModule` commit.
+3. Invoke
+   [`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) for
+   every test set that does not already meet the Pester 6.1.0 contract.
+4. Work on a dedicated branch, open a draft pull request early, and use small
    commits. Include the required Copilot co-author trailer in every commit.
-3. Preserve test intent, fixtures, secrets, variables, documentation content,
+5. Preserve test intent, fixtures, secrets, variables, documentation content,
    custom theme assets, and repository-owned automation unless the upgrade
    requires a direct change.
-4. Report preserved TestData, Pester migration details, Zensical/theme changes,
+6. Report preserved TestData, Pester migration details, Zensical/theme changes,
    validation results, and blockers in the pull request.
 
 Use the repository's applicable MSX workflow and PR format guidance. Do not
@@ -50,90 +56,19 @@ the obsolete configuration only after the generated site validates.
 Use [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule)
 and the [PSModule Repository Standard](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/repository-standard.md)
 as the structural baseline for module repositories. Compare the consumer with
-the template's default files before adding, removing, or relocating anything.
-The template is a starting point, not a reason to overwrite module-specific
-content.
+the template's default files at one resolved commit before adding, removing, or
+relocating anything. Do not duplicate the template tree or file contents in
+this skill; the template default branch is the executable source.
 
-The current template's default repository anatomy is:
+Use the audit's classifications. Template-owned and parameterized files follow
+the template. Established `src/`, tests, examples, documentation content,
+settings overrides, and local automation remain repository-owned. Do not copy
+starter source or starter tests over working module code.
 
-```text
-<ModuleName>/
-├── .github/
-│   ├── CODEOWNERS
-│   ├── dependabot.yml
-│   ├── linters/
-│   │   ├── .codespellrc
-│   │   ├── .markdown-lint.yml
-│   │   ├── .powershell-psscriptanalyzer.psd1
-│   │   └── .textlintrc
-│   ├── PSModule.yml
-│   ├── pull_request_template.md
-│   ├── release.yml
-│   ├── workflows/
-│       └── Process-PSModule.yml
-│   └── zensical.toml
-├── examples/
-├── icon/
-├── src/
-│   ├── classes/
-│   ├── data/
-│   ├── formats/
-│   ├── functions/
-│   │   ├── private/
-│   │   └── public/
-│   ├── init/
-│   ├── modules/
-│   ├── scripts/
-│   ├── types/
-│   └── variables/
-├── tests/
-│   ├── AfterAll.ps1
-│   ├── BeforeAll.ps1
-│   └── <ModuleName>.Tests.ps1
-├── .gitattributes
-├── .gitignore
-├── AGENTS.md
-├── CONTRIBUTING.md
-├── LICENSE
-└── README.md
-```
-
-Treat files and directories as follows:
-
-- Required baseline files should be present in the consumer and remain
-  repository-local; do not rely on organization-level fallback files.
-- `src/`, especially `src/functions/public/` and `src/functions/private/`,
-  along with `tests/`, `examples/`, and `icon/`, is module-owned content.
-  Preserve its intent and only migrate paths when the framework contract
-  requires it.
-- `.github/PSModule.yml`, linters, Dependabot, CODEOWNERS, release metadata,
-  pull-request templates, and repository guidance are configuration surfaces.
-  Inspect and preserve them independently of the caller workflow.
-- `tests/BeforeAll.ps1` and `tests/AfterAll.ps1` are optional root-level
-  module-local phases, not recursively discovered test files.
-- Optional source folders such as `assemblies`, `formats`, `types`, `variables`,
-  `data`, `modules`, and `scripts` are added when the module needs them; do not
-  create empty placeholders solely to match the tree.
-- The template's starter test declares Pester 6 with `#Requires` and uses the
-  native `Describe`, `It`, and `Should-Be` syntax. Preserve that requirement
-  when the consumer already has the Pester 6 baseline.
-- The template's `.github/PSModule.yml` sets a zero code-coverage target and
-  carries explicit linter environment defaults; compare these settings before
-  replacing or deleting a consumer settings file.
-- The template's `AGENTS.md` points to Template-PSModule quickstart, repository
-  defaults, module anatomy, build/test/pack/publish, and standards guidance.
-  Preserve the consumer's local onboarding contract while updating stale links.
-
-If the template revision and the consumer's existing layout disagree, record
-the difference and migrate only the requested integration surface. In
-particular, the current template uses `.github/zensical.toml`, while this v8
-upgrade request uses `docs/zensical.toml`, `docs/content/`, and
-`docs/overrides/` (including `docs/overrides/assets/`) as its documentation
-contract; a separate `docs/assets/` directory is optional. When that requested
-documentation migration is in scope, move the template's Zensical settings
-and custom assets into the `docs/` contract rather than maintaining both
-configurations. When it is not in scope, preserve the consumer's existing
-working configuration and report the difference.
+If the template conflicts with the MSX or PSModule Repository Standard, block
+consumer alignment and report the upstream gap. The Process-PSModule change
+that introduced a new framework default is responsible for evaluating and
+coordinating the corresponding template update.
 
 For a documentation-only MkDocs migration, use the dedicated
 [`psmodule-zensical-migration`](../psmodule-zensical-migration/SKILL.md) skill
@@ -142,49 +77,11 @@ the caller workflow upgrade.
 
 ## Caller workflow contract
 
-Replace `.github/workflows/Process-PSModule.yml` with exactly this template:
+Copy `.github/workflows/Process-PSModule.yml` from the recorded
+`Template-PSModule` commit. Confirm that its reusable-workflow reference targets
+`PSModule/Process-PSModule/.github/workflows/workflow.yml@v8`.
 
-```yaml
-name: Process-PSModule
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
-      - opened
-      - reopened
-      - synchronize
-      - labeled
-      - unlabeled
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-permissions: {}
-
-jobs:
-  Process-PSModule:
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-```
-
-The only permitted variation is an optional `TestData` entry under
+The only permitted consumer variation is an optional `TestData` entry under
 `jobs.Process-PSModule.secrets`. Do not add `with:` inputs, extra jobs,
 conditions, schedule changes, `run-name`, permission changes, trigger changes,
 concurrency changes, debug options, or version overrides. Repository-owned
@@ -226,49 +123,33 @@ uses.
 
 ## Documentation integration
 
-Treat `docs/zensical.toml` as authoritative. Do not create or maintain
-`mkdocs.yml`, introduce MkDocs configuration, or replace the consumer's
-documentation design with a parallel theme.
+For a standard module repository,
+`Template-PSModule/.github/zensical.toml` is authoritative. Keep that path
+because Process-PSModule resolves it before `docs/zensical.toml` and root
+`zensical.toml`. Do not leave multiple active configurations.
 
-Compare the consumer's configuration with the Process-PSModule template and
-preserve or migrate these surfaces deliberately:
+The standard module profile omits `nav`. Zensical derives navigation from the
+staged folder structure, places index pages first, and sorts remaining pages
+alphabetically. Preserve repository-owned content and supported assets, but do
+not retain a manual navigation array merely because the legacy site had one.
 
-- `docs/zensical.toml`, including `docs_dir` and navigation.
-- `docs/content/` as the documentation source directory.
-- `docs/overrides/` and custom templates.
-- `docs/overrides/assets/stylesheets/navigation.css`.
-- `docs/overrides/assets/`, any optional `docs/assets/`, logo, favicon, palette,
-  fonts, and custom JavaScript/CSS.
-- Existing navigation labels, page paths, and custom theme behavior.
-
-Do not delete existing custom CSS/assets merely because the default theme also
-provides an equivalent feature. Resolve duplicate configuration in favor of
-the existing consumer source of truth, then validate the generated site.
+Invoke `psmodule-zensical-migration` when the repository has MkDocs, multiple
+documentation configurations, or a layout that must be migrated.
 
 ## Pester v6 migration
 
 The framework upgrade does not permit leaving tests on an undeclared or
-unsupported Pester version. Inspect module requirements, dependency manifests,
-local setup, CI installation, and every test entry point. Declare and run the
-repository's supported Pester 6 dependency. If Pester 6 is already declared,
-retain the declaration and focus on configuration, discovery, assertions,
-setup/teardown, and output compatibility.
+unsupported Pester version. The dedicated `psmodule-pester-migration` skill is
+a required subprocedure, not an optional reference.
 
-Rewrite tests using native Pester v6 terminology and APIs:
+Inventory and execute every test entry point, including hidden and nested test
+sets. Migrate discovery, configuration, setup and teardown, data-driven cases,
+mocks, pending behavior, tags, results, and coverage as that skill requires.
+Classic `Should -Be` syntax remains compatible and does not need a cosmetic
+rewrite; Pester 6 breaking changes and deterministic per-file execution do.
 
-- Prefer `New-PesterConfiguration` and
-  `Invoke-Pester -Configuration`.
-- Update discovery, run configuration, output, result, and coverage handling
-  without changing test intent.
-- Make each test file safe under Pester v6 per-file discovery and execution.
-- Preserve explicit fixture ownership and loading; do not silently import the
-  target module as a fallback for a broken framework setup.
-- Keep setup and teardown deterministic and scoped.
-- Preserve data-driven cases, mocks, pending behavior, names, tags, coverage,
-  and result reporting while applying the v6 compatibility rules.
-
-Do not merely rename commands. Run the migrated tests with the declared Pester
-6 dependency and investigate failures as migration or repository issues.
+Run every migrated test set with Pester 6.1.0. A declared dependency or one
+green default workflow is not evidence that every test set was migrated.
 
 ## Repository integration inventory
 
@@ -281,7 +162,7 @@ Before editing, record the current state and the intended v8 result for:
 | Pester dependency | `#Requires`, manifests, install steps, lockfiles | Pester 6 is declared and installed consistently |
 | Pester configuration | `Invoke-Pester`, output, result, coverage | Native configuration object and v6-compatible output |
 | Test setup | Before/After blocks, module load, fixtures, services | Explicit ownership and deterministic per-file behavior |
-| Documentation | Zensical config, content, overrides, assets | Existing Zensical design remains authoritative |
+| Documentation | Active config, content, supported overrides and assets | Template module profile with native navigation, or a documented exception |
 | Repository automation | Other workflows and scripts | Unrelated automation remains separate and unchanged |
 | Validation | Existing tests, lint, site build, workflow checks | Existing repository-native validation is rerun |
 
@@ -295,13 +176,9 @@ when a targeted check reveals a broader dependency:
    equivalent when available.
 3. Run the Pester v6 test suites with the repository's declared configuration.
 4. Run the repository's existing lint and test commands.
-5. When documentation exists, run:
-
-   ```powershell
-   Push-Location docs
-   zensical build --clean
-   Pop-Location
-   ```
+5. When documentation exists, run the repository's Process-PSModule site
+   staging and build path. Do not substitute a direct `docs/` build when the
+   module profile is stored in `.github/zensical.toml`.
 
 6. Review the diff for accidental workflow permissions, trigger changes,
    secret exposure, fixture removal, generated files, or unrelated refactoring.
@@ -313,6 +190,7 @@ workflow validation.
 ## References
 
 - [PSModule repository standard](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/repository-standard.md)
+- [Template-PSModule](https://github.com/PSModule/Template-PSModule)
 - [PSModule workflow inputs](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/workflow-inputs.md)
 - [PSModule pipeline stages](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/pipeline-stages.md)
 - [PSModule module test guidance](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/guides/writing-module-tests.md)

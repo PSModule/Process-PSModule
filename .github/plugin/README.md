@@ -30,8 +30,8 @@ skill for upgrading Process-PSModule consumer repositories to framework v8.
 It also provides
 [`psmodule-zensical-migration`](./psmodule/skills/psmodule-zensical-migration/SKILL.md)
 for migrating legacy MkDocs sites to the standard Zensical design, and
-[`psmodule-template-reconciliation`](./psmodule/skills/psmodule-template-reconciliation/SKILL.md)
-for comparing or reconciling module repositories with the current
+[`psmodule-repository-audit`](./psmodule/skills/psmodule-repository-audit/SKILL.md)
+for auditing or aligning module repositories with the current
 Template-PSModule baseline.
 Verify the installation with:
 

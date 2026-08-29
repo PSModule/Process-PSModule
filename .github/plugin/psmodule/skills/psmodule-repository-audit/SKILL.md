@@ -1,15 +1,21 @@
 ---
-name: psmodule-template-reconciliation
-description: Compare or reconcile a PSModule repository with the current Template-PSModule baseline while preserving repository-owned code, tests, settings, and content. Use for one-repository audits and fleet-wide template alignment.
+name: psmodule-repository-audit
+description: Audit a PSModule repository against the current Template-PSModule baseline and align the consumer when requested while preserving repository-owned code, tests, settings, and content.
 ---
 
-# Reconcile a PSModule repository with Template-PSModule
+# Audit a PSModule repository against Template-PSModule
 
-Use this skill when checking or updating an established PowerShell module
-repository against the standard files in
+Use this skill when checking an established PowerShell module repository
+against the standard files in
 [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule).
-Use the same procedure for one repository or as the repository-level operation
+Apply confirmed consumer updates only when the requested scope includes them.
+Use the same procedure for one repository or as the repository-level audit
 inside a fleet campaign.
+
+This skill does not maintain or reconcile `Template-PSModule`. Changes to
+Process-PSModule include an impact evaluation that determines whether the
+template also needs a coordinated update. Template changes are made and
+validated in the template repository before consumer alignment begins.
 
 ## Authority and precedence
 
@@ -29,20 +35,17 @@ Use that one commit throughout the run. Do not embed a snapshot of template
 file contents in this skill.
 
 When a higher-precedence standard and the template disagree, do not propagate
-the discrepancy. Correct the template first, then reconcile consumers against
-the corrected template commit. When prose and template implementation merely
-express the same requirement differently, use the template as the byte-level
-source.
+the discrepancy and do not repair the template from this skill. Report the
+upstream gap and block consumer alignment until the template is corrected.
+When prose and template implementation merely express the same requirement
+differently, use the template as the byte-level source.
 
 ## Modes
 
 - **Audit** reports drift without changing the target.
-- **Reconcile** applies confirmed template-owned changes to one target
-  repository.
-- **Maintain the template** changes `Template-PSModule` itself when the
-  executable baseline does not satisfy the governing standards.
+- **Align** applies confirmed template-owned changes to one consumer repository.
 
-State the selected mode before editing. A fleet run invokes Audit or Reconcile
+State the selected mode before editing. A fleet run invokes Audit or Align
 once per repository; it does not combine many repositories into one branch or
 pull request.
 
@@ -115,14 +118,14 @@ Template comparison does not prove that an established test suite is compatible
 with the template's Pester version. If the target does not already meet the
 template's Pester baseline, invoke
 [`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) and migrate
-every test set before declaring reconciliation complete.
+every test set before declaring alignment complete.
 
 When the Process-PSModule caller requires a major-version migration, invoke
 [`psmodule-v8-upgrade`](../psmodule-v8-upgrade/SKILL.md). Preserve supported
 `TestData` and repository-owned automation instead of replacing them with
 template examples.
 
-## Reconciliation output
+## Audit output
 
 Report each compared path with:
 
@@ -131,7 +134,7 @@ Report each compared path with:
 | Path | Repository-relative path. |
 | Class | One of the comparison classes above. |
 | Status | Aligned, missing, drifted, extra, accepted difference, or blocked. |
-| Action | None, add, update, preserve, remove, or fix template first. |
+| Action | None, add, update, preserve, remove, or report upstream. |
 | Evidence | Template commit and governing standard or documented exception. |
 
 Do not count an extra repository-owned file as drift. Do not call a repository
