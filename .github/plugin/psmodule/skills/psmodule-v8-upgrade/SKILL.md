@@ -19,8 +19,9 @@ consumer repositories while developing or validating this skill.
    [`psmodule-repository-audit`](../psmodule-repository-audit/SKILL.md) in Audit
    mode and record the resolved `Template-PSModule` commit.
 3. Invoke
-   [`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) for
-   every test set that does not already meet the Pester 6.1.0 contract.
+   [`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) to
+   inventory and validate every test set, then migrate every test set that does
+   not already meet the Pester 6.1.0 contract.
 4. Work on a dedicated branch, open a draft pull request early, and use small
    commits. Include the required Copilot co-author trailer in every commit.
 5. Preserve test intent, fixtures, secrets, variables, documentation content,
