@@ -17,7 +17,22 @@ It does not apply directly to:
 - Template repositories other than `Template-PSModule`.
 - Test, archive, service, or infrastructure repositories that are not published as module artifacts.
 
-Two baseline expectations still apply to every PSModule repository, including the types listed above. Each repository stands on its own: it carries its own governance and community files instead of relying on the organization `.github` fallback, and each repository ships the [agent onboarding files](#agent-onboarding-files) so an agent can work in it without prior context. What differs by type is the concrete file set and layout: the required files, README shape, and framework wiring on the rest of this page are the module standard, and non-module repositories keep only the equivalent baseline appropriate to their own type. This documentation project, maintained in `PSModule/Process-PSModule`, follows those two baseline expectations itself.
+Two baseline expectations still apply to every PSModule repository, including
+the types listed above. Each repository carries the repository-local files
+required for its type and ships the [agent onboarding files](#agent-onboarding-files)
+so an agent can work in it without prior context. Organization-owned community
+policies may be inherited from `PSModule/.github` when this standard explicitly
+allows it. What differs by type is the concrete file set and layout: the
+required files, README shape, and framework wiring on the rest of this page are
+the module standard, and non-module repositories keep only the equivalent
+baseline appropriate to their own type.
+
+`PSModule/Process-PSModule` is a documentation repository rather than a module
+repository. It intentionally inherits the Code of Conduct, security policy, and
+support guidance from [`PSModule/.github`](https://github.com/PSModule/.github/tree/main/.github)
+instead of carrying repository-local `.github/CODE_OF_CONDUCT.md`,
+`.github/SECURITY.md`, or `.github/SUPPORT.md`; this is an explicit
+repository-specific exception.
 
 Each initiative should keep its own repository standards in its central
 documentation repository. For the PSModule organization, this repository owns

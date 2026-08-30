@@ -1,7 +1,8 @@
 # Contributing
 
 Thank you for investing your time in contributing to this repository.
-Read the [Code of Conduct](CODE_OF_CONDUCT.md) before participating, and read
+Read the [PSModule Code of Conduct](https://github.com/PSModule/.github/blob/main/.github/CODE_OF_CONDUCT.md)
+before participating, and read
 [`AGENTS.md`](../AGENTS.md) for the full guidance chain and documentation
 references.
 
@@ -51,4 +52,4 @@ PowerShell and GitHub Actions in this repository follow the
 
 ## Questions
 
-Follow the repository's [support guidance](SUPPORT.md).
+Follow the [PSModule support guidance](https://github.com/PSModule/.github/blob/main/.github/SUPPORT.md).
