@@ -36,15 +36,11 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   │   └── .textlintrc                        # Text lint rules surfaced in Build Docs summaries
 │   ├── workflows/                             # Entry points for the reusable workflow
 │   │   └── Process-PSModule.yml               # Consumer hook into this workflow bundle
-│   ├── CODE_OF_CONDUCT.md                      # Community participation rules
 │   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
 │   ├── CONTRIBUTING.md                         # Repository-local contribution workflow
 │   ├── copilot-instructions.md                 # Copilot route to AGENTS.md
 │   ├── dependabot.yml                         # Dependency update cadence handled by GitHub
 │   ├── PSModule.yml                           # Settings parsed to drive matrices
-│   ├── release.yml                            # Release automation template invoked on publish
-│   ├── SECURITY.md                             # Private vulnerability reporting policy
-│   ├── SUPPORT.md                              # Support channels and issue routing
 │   └── zensical.toml                           # Site config consumed during site builds
 ├── examples/                                  # Samples referenced in generated documentation
 │   └── General.ps1                            # Example script ingested by Document-PSModule
