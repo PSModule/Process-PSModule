@@ -103,16 +103,12 @@ Module repositories use the PSModule framework layout:
 | `README.md` | Concise start page for the module. |
 | `LICENSE` | Repository license. PSModule module repositories default to MIT unless a different license is explicitly decided. |
 | `.github/CONTRIBUTING.md` | Self-contained contribution workflow for this repository. Does not rely on an organization-level fallback. |
-| `.github/SECURITY.md` | Security support policy and private vulnerability reporting instructions. |
-| `.github/SUPPORT.md` | Support expectations and where users ask for help. |
-| `.github/CODE_OF_CONDUCT.md` | Community conduct expectations. |
 | `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
 | `.claude/CLAUDE.md` | Claude Code entry point. Imports the root `AGENTS.md`. |
 | `.github/copilot-instructions.md` | Route for Copilot surfaces that do not read `AGENTS.md` directly. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
 | `.github/workflows/Process-PSModule.yml` | Caller workflow that runs the module's CI/CD by calling the shared Process-PSModule workflow. |
 | `.github/zensical.toml` | Canonical generated-site configuration copied from `Template-PSModule`. |
-| `.github/release.yml` | Release-note and changelog categorization for GitHub releases. |
 | `.github/linters/` | Linter configuration used by the framework's linting stage, including `.markdown-lint.yml` and `.powershell-psscriptanalyzer.psd1`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Ownership routing for reviews and protected areas. |
@@ -154,13 +150,13 @@ reference permitted by the MSX GitHub Actions standard.
 
 ## Required common files
 
-Every module repository must carry the same baseline community, governance, and automation files. GitHub's organization-level `.github` community-file fallback is useful for display defaults, but it is not enough as the long-term PSModule standard because:
-
-- agents and humans need the files in the repository they are changing, not only inherited through GitHub UI behavior;
-- tools such as Dependabot and CODEOWNERS read repository-local files — as do linters and release automation when the module uses those linters or generates releases;
-- reviews need diffs against the actual managed file in the target repository;
-- repository-local files make the standard portable to other initiatives such as MSXOrg, where each initiative should define its own standards and managed files;
-- central fallback files in `PSModule/.github` do not provide a reliable enforcement or update workflow across all repositories.
+Every module repository must carry the same baseline framework, governance, and
+automation files. The PSModule organization centrally manages the standard Code
+of Conduct, security policy, and support guidance in
+[`PSModule/.github`](https://github.com/PSModule/.github/tree/main/.github).
+GitHub surfaces those files for repositories that do not define local versions.
+Add a repository-local copy only when the repository intentionally deviates from
+the organization standard.
 
 Required baseline files for module repositories:
 
@@ -169,9 +165,6 @@ Required baseline files for module repositories:
 | `README.md` | Repository landing page and evergreen context for humans and agents. |
 | `LICENSE` | Clear legal terms for reuse, packaging, and redistribution. |
 | `.github/CONTRIBUTING.md` | Self-contained contribution workflow and expectations for this repository. |
-| `.github/SECURITY.md` | Private vulnerability reporting and latest-version support policy. |
-| `.github/SUPPORT.md` | Support channel and issue-routing expectations. |
-| `.github/CODE_OF_CONDUCT.md` | Community participation rules. |
 | `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
 | `.claude/CLAUDE.md` | Claude Code entry point that imports the root `AGENTS.md`. |
 | `.github/copilot-instructions.md` | Route to `AGENTS.md` for Copilot surfaces that need their own filename. |
@@ -182,17 +175,20 @@ Required baseline files for module repositories:
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
 
-Repositories can add local files, but they should not remove these baseline files unless the repository is explicitly outside the module standard.
+`.github/release.yml` is not part of the baseline. Process-PSModule does not
+use GitHub's built-in release configuration; its release behavior is driven by
+the framework's release action and settings.
 
-Each repository must stand on its own. It carries its own copy of every file above and does not depend on the organization `.github` fallback: that fallback is only surfaced in GitHub's web UI, and agents, linters, and local tooling do not read it.
+Repositories can add local files, but they should not remove the baseline files
+above unless the repository is explicitly outside the module standard.
 
-Keep repository-local community health files together under `.github/`.
-GitHub discovers `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and
-`SUPPORT.md` there, so root-level duplicates add no value and are not part of
-the PSModule layout. This is the PSModule initiative's explicit path override
-of the MSX repository default. `README.md`, `LICENSE`, and `AGENTS.md` remain
-at the repository root because they are repository entry points rather than
-community health files.
+Keep any repository-local community health overrides together under `.github/`.
+The organization-managed Code of Conduct, security policy, and support
+guidance do not need local copies. A local `CONTRIBUTING.md` remains part of the
+module baseline, and root-level duplicates of community files are not part of
+the PSModule layout. `README.md`, `LICENSE`, and `AGENTS.md` remain at the
+repository root because they are repository entry points rather than community
+health files.
 
 ## Agent onboarding files
 
@@ -389,11 +385,12 @@ Retain upstream attribution and licensing context. Credit, acknowledgements, don
 README pages should not duplicate generated command documentation. Do not add full command inventories, parameter tables, or long reference sections when those details are already produced from comment-based help.
 
 Do not add a community-file or policy link section by default. Readers can find
-standard files such as `LICENSE`, `.github/CONTRIBUTING.md`,
-`.github/SECURITY.md`, and `.github/CODE_OF_CONDUCT.md` through GitHub
-conventions and the repository file tree. Link them only when the module has an
-unusual rule the user must know before using it, or when it carries required
-upstream attribution.
+standard files such as `LICENSE` and `.github/CONTRIBUTING.md` through GitHub
+conventions and the repository file tree. The organization-managed Code of
+Conduct, security policy, and support guidance are provided by
+`PSModule/.github` unless the module overrides them locally. Link them only
+when the module has an unusual rule the user must know before using it, or when
+it carries required upstream attribution.
 
 ## Placeholder and in-progress repositories
 
