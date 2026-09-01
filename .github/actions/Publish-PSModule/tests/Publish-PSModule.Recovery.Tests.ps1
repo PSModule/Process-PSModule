@@ -84,4 +84,25 @@ Describe 'Publish-PSModule recovery' {
 
         $script:publishInvoked | Should -BeFalse
     }
+
+    It 'publishes when the resolved version is not in the Gallery' {
+        $publishMarkerPath = Join-Path -Path $script:workspacePath -ChildPath 'publish-invoked'
+        Set-Item -Path function:global:Find-PSResource -Value {
+            [CmdletBinding()]
+            param(
+                [string] $Name,
+                [string] $Version,
+                [string] $Repository
+            )
+
+            Write-Error "Package with name '$Name', version '$Version' could not be found in repository '$Repository'."
+        }
+        Set-Item -Path function:global:Publish-PSResource -Value {
+            $null = New-Item -Path (Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath 'publish-invoked') -ItemType File -Force
+        }
+
+        { & $script:publishScriptPath } | Should -Not -Throw
+
+        (Test-Path -Path $publishMarkerPath) | Should -BeTrue
+    }
 }
