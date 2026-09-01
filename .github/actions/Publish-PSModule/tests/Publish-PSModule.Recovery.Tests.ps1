@@ -29,9 +29,11 @@ AfterAll {
     foreach ($name in $script:environmentVariableNames) {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
-    Remove-Item -Path function:global:Find-PSResource -ErrorAction SilentlyContinue
-    Remove-Item -Path function:global:Publish-PSResource -ErrorAction SilentlyContinue
-    Remove-Item -Path function:global:Resolve-PSModuleDependency -ErrorAction SilentlyContinue
+    # The 'global:' scope qualifier is not a valid provider path, so it must be omitted here.
+    # Otherwise the shims leak into the global scope and shadow the real cmdlets in later test files.
+    Remove-Item -Path 'Function:\Find-PSResource' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Publish-PSResource' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\Resolve-PSModuleDependency' -ErrorAction SilentlyContinue
 }
 
 Describe 'Publish-PSModule recovery' {

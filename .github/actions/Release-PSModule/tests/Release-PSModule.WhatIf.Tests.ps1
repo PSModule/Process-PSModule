@@ -35,8 +35,10 @@ AfterAll {
     foreach ($name in $script:environmentVariableNames) {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
-    Remove-Item -Path function:global:gh -ErrorAction SilentlyContinue
-    Remove-Item -Path function:global:git -ErrorAction SilentlyContinue
+    # The 'global:' scope qualifier is not a valid provider path, so it must be omitted here.
+    # Otherwise the shims leak into the global scope and shadow the real commands in later test files.
+    Remove-Item -Path 'Function:\gh' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\git' -ErrorAction SilentlyContinue
 }
 
 Describe 'Release-PSModule WhatIf' {
