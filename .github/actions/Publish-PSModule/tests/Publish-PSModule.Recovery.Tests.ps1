@@ -29,8 +29,10 @@ AfterAll {
     foreach ($name in $script:environmentVariableNames) {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
-    # The 'global:' scope qualifier is not a valid provider path, so it must be omitted here.
-    # Otherwise the shims leak into the global scope and shadow the real cmdlets in later test files.
+    # Set-Item accepts 'function:global:X' and creates a function named 'X' in the global scope, but
+    # Remove-Item and Get-Item do not resolve that same path back to it, and fail silently rather than
+    # erroring. Removing by name is what actually deletes the shims; leaving them behind would shadow the
+    # real cmdlets for every test file that runs later in the session.
     Remove-Item -Path 'Function:\Find-PSResource' -ErrorAction SilentlyContinue
     Remove-Item -Path 'Function:\Publish-PSResource' -ErrorAction SilentlyContinue
     Remove-Item -Path 'Function:\Resolve-PSModuleDependency' -ErrorAction SilentlyContinue
