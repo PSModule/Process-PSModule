@@ -109,45 +109,6 @@ function Select-PullRequestForPush {
         Select-Object -First 1
 }
 
-function Test-ShouldResolveAssociatedPullRequest {
-    <#
-        .SYNOPSIS
-        Decides whether a commit's associated pull request must be resolved from the GitHub API.
-
-        .DESCRIPTION
-        A push to any branch resolves its associated pull request so a default-branch release
-        honours the merged pull request's version label. A manual dispatch on the default branch is
-        the documented recovery route for a failed or cancelled release run and targets the same
-        merge commit, so it must resolve the same pull request. Excluding it left the pull request
-        null and silently downgraded a labelled Major or Minor release to a Patch bump.
-
-        .OUTPUTS
-        Boolean. True when the association lookup must run.
-
-        .EXAMPLE
-        Test-ShouldResolveAssociatedPullRequest -IsPush $false -IsManualDispatchToDefaultBranch $true -CommitSha 'abc123'
-
-        Returns $true, because a default-branch dispatch releases the same commit a push would.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param(
-        # Whether the workflow was triggered by a push event.
-        [Parameter()]
-        [bool] $IsPush,
-
-        # Whether the workflow was manually dispatched against the default branch.
-        [Parameter()]
-        [bool] $IsManualDispatchToDefaultBranch,
-
-        # The commit the workflow is resolving a release for.
-        [Parameter()]
-        [string] $CommitSha
-    )
-
-    ($IsPush -or $IsManualDispatchToDefaultBranch) -and -not [string]::IsNullOrWhiteSpace($CommitSha)
-}
-
 function Get-DiscardedReleasePullRequest {
     <#
         .SYNOPSIS
@@ -203,6 +164,112 @@ function Get-DiscardedReleasePullRequest {
         if ($candidate.merge_commit_sha -eq $CommitSha) { continue }
 
         "#$($candidate.Number) was merged into [$DefaultBranch] with merge commit [$($candidate.merge_commit_sha)]"
+    }
+}
+
+function Resolve-ReleasePullRequest {
+    <#
+        .SYNOPSIS
+        Resolves the pull request whose version label drives the release for a commit.
+
+        .DESCRIPTION
+        A push resolves the pull request associated with the pushed commit so a default-branch
+        release honours the merged pull request's version label. A manual dispatch on the default
+        branch is the documented recovery route for a failed or cancelled release run and targets
+        the same merge commit, so it must resolve the same pull request. Excluding it left the pull
+        request unresolved, and the version silently fell back to a patch bump through AutoPatching.
+
+        When no pull request is selected, the outcome depends on why. A commit pushed directly to
+        the default branch has no label to honour, so the release proceeds with the default patch
+        bump. A commit associated with a merged default-branch pull request that does not match it
+        does carry a label, and applying a patch bump would publish a version nobody asked for. A
+        PowerShell Gallery version cannot be reclaimed, so that case throws instead.
+
+        .OUTPUTS
+        PSCustomObject with Resolved, indicating whether the lookup ran, and PullRequest, which is
+        null when the commit has no associated release pull request.
+
+        .EXAMPLE
+        Resolve-ReleasePullRequest -EventName workflow_dispatch -CommitSha $sha -DefaultBranch main `
+            -IsManualDispatchToDefaultBranch $true -GetAssociatedPullRequest { param($Sha) $pulls }
+
+        Resolves the merged pull request for a recovery dispatch so its version label is honoured.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
+        Justification = 'Parameters are used inside a LogGroup script block.')]
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        # The name of the GitHub event that triggered the workflow.
+        [Parameter(Mandatory)]
+        [string] $EventName,
+
+        # The commit the workflow is resolving a release for.
+        [Parameter()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [string] $CommitSha,
+
+        # The repository default branch a release must target.
+        [Parameter(Mandatory)]
+        [string] $DefaultBranch,
+
+        # Whether the workflow was triggered by a push to the default branch.
+        [Parameter()]
+        [bool] $IsPushToDefaultBranch,
+
+        # Whether the workflow was manually dispatched against the default branch.
+        [Parameter()]
+        [bool] $IsManualDispatchToDefaultBranch,
+
+        # Returns the pull requests GitHub associates with a commit. Takes the commit SHA.
+        [Parameter(Mandatory)]
+        [scriptblock] $GetAssociatedPullRequest
+    )
+
+    $isPush = $EventName -eq 'push'
+    $shouldResolve = (
+        ($isPush -or $IsManualDispatchToDefaultBranch) -and
+        -not [string]::IsNullOrWhiteSpace($CommitSha)
+    )
+    if (-not $shouldResolve) {
+        return [pscustomobject]@{ Resolved = $false; PullRequest = $null }
+    }
+
+    LogGroup "Resolve pull request for commit [$CommitSha]" {
+        $associated = @((& $GetAssociatedPullRequest $CommitSha) | Where-Object { $null -ne $_ })
+        $pullRequest = Select-PullRequestForPush -PullRequest $associated `
+            -DefaultBranch $DefaultBranch `
+            -CommitSha $CommitSha
+
+        if ($pullRequest) {
+            Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$CommitSha]."
+            return [pscustomobject]@{ Resolved = $true; PullRequest = $pullRequest }
+        }
+
+        # Only a release-bearing event can publish a wrong version. A push to a feature branch has
+        # no release to get wrong, and its commit is legitimately claimed by an open pull request.
+        $isReleaseEvent = $IsPushToDefaultBranch -or $IsManualDispatchToDefaultBranch
+        $discarded = if ($isReleaseEvent) {
+            @(Get-DiscardedReleasePullRequest -PullRequest $associated `
+                    -DefaultBranch $DefaultBranch `
+                    -CommitSha $CommitSha)
+        } else {
+            @()
+        }
+        if ($discarded.Count -gt 0) {
+            throw (
+                "Commit [$CommitSha] cannot be released because its version label cannot be determined. " +
+                'The following merged pull request(s) are associated with it but none matches the commit ' +
+                "being released: $($discarded -join '; '). " +
+                'Refusing to fall back to a patch bump, because a wrong version published to the ' +
+                'PowerShell Gallery cannot be reclaimed. Re-run the workflow against the merge commit ' +
+                'of the pull request you intend to release.'
+            )
+        }
+
+        Write-Host "::notice::No pull request is associated with commit [$CommitSha]."
+        [pscustomobject]@{ Resolved = $true; PullRequest = $null }
     }
 }
 
