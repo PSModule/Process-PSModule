@@ -122,7 +122,7 @@ Describe 'Publish-PSModule recovery' {
 
             # A transient Gallery failure carries a different error ID and must not be mistaken for
             # 'version not published', otherwise an already-published version would be re-uploaded.
-            Write-Error -Message "Error occured while trying to find '$Name' '$Version' in repository '$Repository': Service Unavailable" `
+            Write-Error -Message "Failed to find '$Name' '$Version' in repository '$Repository': Service Unavailable" `
                 -ErrorId 'HttpRequestCallFailure' -Category ResourceUnavailable -TargetObject $Name
         }
 
