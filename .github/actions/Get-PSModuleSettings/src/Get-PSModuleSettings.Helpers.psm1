@@ -109,6 +109,103 @@ function Select-PullRequestForPush {
         Select-Object -First 1
 }
 
+function Test-ShouldResolveAssociatedPullRequest {
+    <#
+        .SYNOPSIS
+        Decides whether a commit's associated pull request must be resolved from the GitHub API.
+
+        .DESCRIPTION
+        A push to any branch resolves its associated pull request so a default-branch release
+        honours the merged pull request's version label. A manual dispatch on the default branch is
+        the documented recovery route for a failed or cancelled release run and targets the same
+        merge commit, so it must resolve the same pull request. Excluding it left the pull request
+        null and silently downgraded a labelled Major or Minor release to a Patch bump.
+
+        .OUTPUTS
+        Boolean. True when the association lookup must run.
+
+        .EXAMPLE
+        Test-ShouldResolveAssociatedPullRequest -IsPush $false -IsManualDispatchToDefaultBranch $true -CommitSha 'abc123'
+
+        Returns $true, because a default-branch dispatch releases the same commit a push would.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        # Whether the workflow was triggered by a push event.
+        [Parameter()]
+        [bool] $IsPush,
+
+        # Whether the workflow was manually dispatched against the default branch.
+        [Parameter()]
+        [bool] $IsManualDispatchToDefaultBranch,
+
+        # The commit the workflow is resolving a release for.
+        [Parameter()]
+        [string] $CommitSha
+    )
+
+    ($IsPush -or $IsManualDispatchToDefaultBranch) -and -not [string]::IsNullOrWhiteSpace($CommitSha)
+}
+
+function Get-DiscardedReleasePullRequest {
+    <#
+        .SYNOPSIS
+        Reports merged default-branch pull requests whose version label would be discarded.
+
+        .DESCRIPTION
+        Select-PullRequestForPush returns nothing both when a commit has no associated pull request
+        and when every associated pull request fails its criteria. Only the first case is safe: a
+        commit pushed directly to the default branch has no label to honour, so the direct-release
+        path applies the default patch bump.
+
+        The unsafe case is a pull request that was merged into the default branch, and therefore
+        carries the version label that was meant to drive the release, but was not selected because
+        its merge commit does not match the commit being released. Falling back to a patch bump
+        there publishes a version nobody asked for, and a PowerShell Gallery version cannot be
+        reclaimed, so the caller must fail instead.
+
+        Pull requests that are not merged are ignored. The GitHub commit association endpoint also
+        returns open pull requests whose branch contains the commit, which is expected and carries
+        no release intent.
+
+        .OUTPUTS
+        String, one description per merged pull request that was rejected. Nothing when the
+        associated pull requests carry no release intent.
+
+        .EXAMPLE
+        Get-DiscardedReleasePullRequest -PullRequest $associated -DefaultBranch main -CommitSha $sha
+
+        Returns '#412 was merged into [main] with merge commit [abc123]'.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        # The pull requests the GitHub API associated with the commit.
+        [Parameter()]
+        [object[]] $PullRequest,
+
+        # The repository default branch a release must target.
+        [Parameter(Mandatory)]
+        [string] $DefaultBranch,
+
+        # The commit the workflow is resolving a release for.
+        [Parameter(Mandatory)]
+        [string] $CommitSha
+    )
+
+    foreach ($candidate in ($PullRequest | Where-Object { $null -ne $_ })) {
+        $isMergedToDefaultBranch = (
+            $candidate.Base.Ref -eq $DefaultBranch -and
+            -not [string]::IsNullOrWhiteSpace($candidate.merged_at)
+        )
+        if (-not $isMergedToDefaultBranch) { continue }
+        if ($candidate.merge_commit_sha -eq $CommitSha) { continue }
+
+        "#$($candidate.Number) was merged into [$DefaultBranch] with merge commit [$($candidate.merge_commit_sha)]"
+    }
+}
+
 function Get-FilesFromGitTree {
     <#
         .SYNOPSIS

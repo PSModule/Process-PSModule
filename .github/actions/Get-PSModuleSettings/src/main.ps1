@@ -242,12 +242,20 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isManualDispatchToDefaultBranch = $isManualDispatch -and $workflowRef -eq $defaultBranch
     $pullRequest = $eventData.PullRequest
 
-    if ($isPush -and $commitSha) {
+    # A manual dispatch on the default branch is the documented recovery route for a failed or
+    # cancelled release run. It targets the same merge commit as the push it replaces, so it must
+    # resolve the same pull request and honour the same version label. Gating this lookup on
+    # $isPush alone left $pullRequest null for a dispatch, which silently downgraded a labelled
+    # Major or Minor release to a Patch bump through the AutoPatching fallback.
+    $shouldResolvePullRequest = Test-ShouldResolveAssociatedPullRequest -IsPush $isPush `
+        -IsManualDispatchToDefaultBranch $isManualDispatchToDefaultBranch `
+        -CommitSha $commitSha
+    if ($shouldResolvePullRequest) {
         LogGroup "Resolve pull request for commit [$commitSha]" {
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
             $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$commitSha/pulls" -Method GET
-            $associatedPullRequests = @($response.Response)
+            $associatedPullRequests = @($response.Response | Where-Object { $null -ne $_ })
             $pullRequest = Select-PullRequestForPush -PullRequest $associatedPullRequests `
                 -DefaultBranch $defaultBranch `
                 -CommitSha $commitSha
@@ -255,6 +263,31 @@ LogGroup 'Calculate Job Run Conditions:' {
             if ($pullRequest) {
                 Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$commitSha]."
             } else {
+                # Distinguish 'no pull request carries release intent' from 'a merged default-branch
+                # pull request exists but was not selected'. The first is a legitimate direct push to
+                # the default branch, which the direct-release path handles with the default patch
+                # bump. The second means the commit carries a version label that would be discarded,
+                # and a wrong version published to the PowerShell Gallery cannot be reclaimed, so
+                # fail loudly instead. Only release-bearing events are checked; a push to a feature
+                # branch has no release to get wrong.
+                $isReleaseEvent = $isPushToDefaultBranch -or $isManualDispatchToDefaultBranch
+                $discardedPullRequests = if ($isReleaseEvent) {
+                    @(Get-DiscardedReleasePullRequest -PullRequest $associatedPullRequests `
+                            -DefaultBranch $defaultBranch `
+                            -CommitSha $commitSha)
+                } else {
+                    @()
+                }
+                if ($discardedPullRequests.Count -gt 0) {
+                    throw (
+                        "Commit [$commitSha] cannot be released because its version label cannot be determined. " +
+                        'The following merged pull request(s) are associated with it but none matches the commit ' +
+                        "being released: $($discardedPullRequests -join '; '). " +
+                        'Refusing to fall back to a patch bump, because a wrong version published to the ' +
+                        'PowerShell Gallery cannot be reclaimed. Re-run the workflow against the merge commit ' +
+                        'of the pull request you intend to release.'
+                    )
+                }
                 Write-Host "::notice::No pull request is associated with commit [$commitSha]."
             }
         }
