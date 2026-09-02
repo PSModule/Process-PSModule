@@ -70,25 +70,28 @@ Describe 'Publish-PSModule recovery' {
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY = 'test-key'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'
-        $script:publishInvoked = $false
+        # The publish script runs in its own scope, so a $script: flag set inside a shim never reaches the
+        # test. A hashtable captured by GetNewClosure() is shared by reference and records the call reliably.
+        # The closure captures local variables only, so $calls must be local here, not $script:-qualified.
+        $calls = @{ PublishInvoked = $false }
+        $script:calls = $calls
 
         Set-Item -Path function:global:Resolve-PSModuleDependency -Value {}
         Set-Item -Path function:global:Find-PSResource -Value {
             [PSCustomObject]@{ Name = 'TestModule'; Version = '1.2.4' }
         }
         Set-Item -Path function:global:Publish-PSResource -Value {
-            $script:publishInvoked = $true
-        }
+            $calls.PublishInvoked = $true
+        }.GetNewClosure()
     }
 
     It 'skips Gallery publication when the resolved version already exists' {
         { & $script:publishScriptPath } | Should -Not -Throw
 
-        $script:publishInvoked | Should -BeFalse
+        $script:calls.PublishInvoked | Should -BeFalse
     }
 
     It 'publishes when the resolved version is not in the Gallery' {
-        $publishMarkerPath = Join-Path -Path $script:workspacePath -ChildPath 'publish-invoked'
         Set-Item -Path function:global:Find-PSResource -Value {
             [CmdletBinding()]
             param(
@@ -97,14 +100,34 @@ Describe 'Publish-PSModule recovery' {
                 [string] $Repository
             )
 
-            Write-Error "Package with name '$Name', version '$Version' could not be found in repository '$Repository'."
-        }
-        Set-Item -Path function:global:Publish-PSResource -Value {
-            $null = New-Item -Path (Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath 'publish-invoked') -ItemType File -Force
+            # Mirrors how PSResourceGet reports an absent version: an error with the PackageNotFound error ID
+            # that honours -ErrorAction, so the shim reacts to -ErrorAction the same way the real cmdlet does.
+            Write-Error -Message "Package with name '$Name', version '$Version' could not be found in repository '$Repository'." `
+                -ErrorId 'PackageNotFound' -Category ObjectNotFound -TargetObject $Name
         }
 
         { & $script:publishScriptPath } | Should -Not -Throw
 
-        (Test-Path -Path $publishMarkerPath) | Should -BeTrue
+        $script:calls.PublishInvoked | Should -BeTrue
+    }
+
+    It 'fails without publishing when the Gallery lookup errors for another reason' {
+        Set-Item -Path function:global:Find-PSResource -Value {
+            [CmdletBinding()]
+            param(
+                [string] $Name,
+                [string] $Version,
+                [string] $Repository
+            )
+
+            # A transient Gallery failure carries a different error ID and must not be mistaken for
+            # 'version not published', otherwise an already-published version would be re-uploaded.
+            Write-Error -Message "Error occured while trying to find '$Name' '$Version' in repository '$Repository': Service Unavailable" `
+                -ErrorId 'HttpRequestCallFailure' -Category ResourceUnavailable -TargetObject $Name
+        }
+
+        { & $script:publishScriptPath } | Should -Throw
+
+        $script:calls.PublishInvoked | Should -BeFalse
     }
 }
