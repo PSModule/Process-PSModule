@@ -145,7 +145,18 @@ LogGroup 'Publish to PSGallery' {
     if ($whatIf) {
         Write-Host "Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey ***"
     } else {
-        $publishedPackage = Find-PSResource -Name $name -Version $publishPSVersion -Repository PSGallery -ErrorAction Stop
+        # A version that is not on the Gallery is the expected state for a new release, but PSResourceGet
+        # reports it as a PackageNotFound error, which -ErrorAction Stop turns into a throw. Only that error
+        # may be treated as 'not published'; any other failure (for example a Gallery outage) must stay fatal,
+        # otherwise a version that already exists would be re-published and fail the upload with a conflict.
+        $publishedPackage = $null
+        try {
+            $publishedPackage = Find-PSResource -Name $name -Version $publishPSVersion -Repository PSGallery -ErrorAction Stop
+        } catch {
+            if ($_.FullyQualifiedErrorId -notlike 'PackageNotFound,*') { throw }
+            Write-Host "$name $publishPSVersion is not on the PowerShell Gallery yet."
+        }
+
         if ($publishedPackage) {
             Write-Host (
                 "::notice title=♻️ Resuming Gallery-only publication::$name $publishPSVersion is already " +
