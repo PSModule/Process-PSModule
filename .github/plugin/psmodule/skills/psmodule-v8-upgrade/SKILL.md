@@ -321,4 +321,4 @@ workflow validation.
 - [Pester v6 quick start](https://pester.dev/docs/v6/quick-start)
 - [Pester `New-PesterConfiguration` command](https://pester.dev/docs/commands/New-PesterConfiguration)
 - [Pester `Invoke-Pester` command](https://pester.dev/docs/commands/Invoke-Pester)
-- [MSX PR format](https://msxorg.github.io/docs/Ways-of-Working/PR-Format/)
+- [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/)

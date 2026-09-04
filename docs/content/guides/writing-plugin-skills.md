@@ -89,6 +89,6 @@ update the skill without duplicating the common documentation.
 
 - [PSModule process plugin](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin)
 - [MSX Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/)
-- [MSX Documentation Model](https://msxorg.github.io/docs/Ways-of-Working/Documentation-Model/)
-- [MSX Markdown standard](https://msxorg.github.io/docs/Coding-Standards/Markdown/)
-- [MSX Natural Language standard](https://msxorg.github.io/docs/Coding-Standards/Natural-Language/)
+- [MSX Documentation Model](https://msx.no/docs/Ways-of-Working/Documentation-Model/)
+- [MSX Markdown standard](https://msx.no/docs/Coding-Standards/Markdown/)
+- [MSX Natural Language standard](https://msx.no/docs/Coding-Standards/Natural-Language/)
