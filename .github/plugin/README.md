@@ -34,6 +34,10 @@ The
 [`psmodule-module-development-orchestration`](./psmodule/skills/psmodule-module-development-orchestration/SKILL.md)
 skill coordinates substantial module work across parent and child sessions
 using the repository's trunk-based development and bootstrap guidance.
+The
+[`psmodule-skill-authoring`](./psmodule/skills/psmodule-skill-authoring/SKILL.md)
+skill keeps plugin skills thin and points shared authoring guidance to the
+documentation site.
 Verify the installation with:
 
 ```console
