@@ -87,6 +87,10 @@ The framework namespace is `Process-PSModule-${{ github.workflow }}`. One stable
 
 Each group belongs to the router's `uses` job, not to `Plan`, each matrix leg, or every nested workflow. [Reusable-workflow calling jobs support concurrency][reusable]. The processing workflow does not reacquire the router's group. Only one track job is eligible per invocation.
 
+With a default-deny workflow permission floor, every router job calling a nested reusable workflow MUST declare the
+least-privilege permissions its child requires. A nested workflow can restrict, but cannot elevate, its caller's
+`GITHUB_TOKEN`. This is independent of any scoped GitHub App token minted inside the child.
+
 For example, this production-job excerpt depends on the preflight job; its reusable target contains the complete processing DAG:
 
 ```yaml
@@ -100,6 +104,10 @@ jobs:
       group: Process-PSModule-${{ github.workflow }}-production
       queue: max
       cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/Process.yml
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
