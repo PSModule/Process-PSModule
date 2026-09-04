@@ -1,10 +1,26 @@
 name: Workflow-Test [Default]
 
-run-name: 'Workflow-Test [Default] - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}'
+run-name: 'Workflow-Test [Default] - ${{ github.event_name }} [${{ github.event.pull_request.title || github.event.head_commit.message || github.ref_name }}] by @${{ github.actor }}'
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/**'
+      - 'tests/srcTestRepo/**'
+      - '!.github/workflows/Release.yml'
+      - '!.github/workflows/Linter.yml'
   pull_request:
+    types:
+      - closed
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
     paths:
       - '.github/actions/**'
       - '.github/workflows/**'
@@ -15,13 +31,11 @@ on:
     - cron: '0 0 * * *'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
+  contents: read
   pages: write
   id-token: write
 
@@ -30,7 +44,9 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     uses: ./.github/workflows/workflow.yml
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
       TestData: >-
         {
           "secrets": {
@@ -43,25 +59,25 @@ jobs:
     with:
       WorkingDirectory: tests/srcTestRepo
       ImportantFilePatterns: |
-        ^src/
-        ^README\.md$
+        ^tests/srcTestRepo/
         ^\.github/actions/
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
 
   VerifyRootFunctionsIndexDefault:
+    if: github.event.action != 'closed'
     name: Verify root Functions index [Default]
     runs-on: ubuntu-latest
     needs:
       - WorkflowTestDefault
     steps:
       - name: Checkout repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Download docs artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: docs
           path: tests/srcTestRepo/outputs/docs

@@ -77,8 +77,12 @@ Summary:
 
 ## Requirements
 
-1. **Pester Code Coverage Reports**
+1. **Pester 6.1 Code Coverage Reports**
+
    Preceding steps must generate JSON coverage reports named `*-CodeCoverage*.json`
+   from the Pester 6.1 `CodeCoverage` result object. The action consumes
+   `CoveragePercent`, `CoveragePercentTarget`, `CommandsMissed`,
+   `CommandsExecuted`, and `FilesAnalyzed` plus their count properties.
 
 2. **GitHub CLI**
    The action uses `gh run download` to fetch artifacts from the current workflow run

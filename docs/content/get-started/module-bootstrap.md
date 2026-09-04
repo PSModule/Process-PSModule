@@ -20,7 +20,7 @@ Scope the integration branch to exactly that core, not to everything planned for
 
 1. Cut one long-lived branch from the default branch for the initial release, named for the outcome, e.g. `build-thing-module`.
 2. Open one pull request per function (or small group of related functions) targeting that branch instead of `main`. These PRs can land in parallel — there is no strict order between them, unlike a [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests).
-3. Once the load-bearing core is coherent and complete, open the pull request that merges the integration branch into `main`. This becomes the module's first real release (`v1.0.0`).
+3. Once the load-bearing core is coherent and complete, open the pull request that merges the integration branch into `main`. Its resulting important push becomes the module's first real release (`v1.0.0`).
 4. Smaller follow-up features (one more function, a formatter, an alias) can keep targeting the integration branch before it lands, the same way they targeted it during bootstrap.
 
 ## After the core lands
@@ -60,6 +60,6 @@ A module bootstrapped this way:
 ## When to use this
 
 - The module has no usable release yet, and the load-bearing core hasn't landed.
-- Use this only for the initial bootstrap. Once `main` has a first release, ongoing feature work targets `main` directly with ordinary topic branches, or a [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests) when changes genuinely depend on each other.
+- Use this only for the initial bootstrap. Once `main` has a first release, ongoing feature work targets `main` directly with ordinary topic branches, or uses a [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests) when changes genuinely depend on each other.
 
 For the general branching and merge model, see [MSX Branching and Merging](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/).

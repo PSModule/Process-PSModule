@@ -8,7 +8,7 @@ Import-Module -Name "$PSScriptRoot/Resolve-PSModuleVersion.Helpers.psm1" -Force
 
 $actionInput = Read-ActionInput
 $config = Get-PublishConfiguration -SettingsJson $actionInput.SettingsJson
-$pullRequest = Get-GitHubPullRequest
+$pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
 
 $decision = if ($null -eq $pullRequest) {
     # Non-PR event (for example workflow_dispatch or schedule): there are no pull request
@@ -31,15 +31,15 @@ $decision = if ($null -eq $pullRequest) {
 $releases = @(Get-GitHubRelease)
 $ghVersion = Get-LatestGitHubVersion -Releases $releases
 $psGalleryVersion = Get-LatestPSGalleryVersion -ModuleName $actionInput.Name
-$latestVersion = Get-LatestPublishedVersion -GitHubVersion $ghVersion -PSGalleryVersion $psGalleryVersion
 
 $params = @{
-    LatestVersion = $latestVersion
-    Decision      = $decision
-    Configuration = $config
-    ModuleName    = $actionInput.Name
-    Releases      = $releases
+    GitHubVersion    = $ghVersion
+    PSGalleryVersion = $psGalleryVersion
+    Decision         = $decision
+    Configuration    = $config
+    ModuleName       = $actionInput.Name
+    Releases         = $releases
 }
-$newVersion = Get-NextModuleVersion @params
+$newVersion = Get-ResolvedModuleVersion @params
 
 Write-ActionOutput -Decision $decision -NewVersion $newVersion

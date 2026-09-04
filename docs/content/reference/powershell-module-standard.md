@@ -111,15 +111,22 @@ Keep related things together so the connection between code and its context is v
 
 ### Linear versioning
 
-The release process treats each merged PR as a release on a single linear ancestry. There is no patching of older versions — security fixes go on the current tip of `main` only.
+The release process treats each important default-branch push as a release on a single linear ancestry. A merged pull
+request supplies release metadata when its merge commit exactly matches that push. There is no patching of older
+versions — security fixes go on the current tip of `main` only.
 
-### Release and feature branches
+### Feature branches
 
-For large work, open a release branch and target it from feature branches. Apply the `Prerelease` label on the release branch PR to publish preview versions before the final merge to `main`.
+Keep feature branches short-lived and target `main` directly. Use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+only when changes genuinely depend on each other. Apply the `Prerelease` label to a
+feature pull request to publish a preview before merging it to `main`.
 
 ## CI/CD pipeline
 
-The [Process-PSModule](https://github.com/PSModule/Process-PSModule) workflow orchestrates the full lifecycle. Every PR triggers a **Plan** job that resolves configuration and version, then conditionally runs build, test, lint, and publish stages.
+The [Process-PSModule](https://github.com/PSModule/Process-PSModule) workflow orchestrates the full lifecycle. Pull
+requests and default-branch pushes trigger a **Plan** job that resolves configuration and version, then conditionally
+runs build, test, lint, and publish stages.
 
 ### Pipeline stages
 
@@ -147,20 +154,20 @@ graph LR
 
 | Stage | Runs on | Purpose |
 | ----- | ------- | ------- |
-| **Plan** | All events | Loads `.github/PSModule.yml`, resolves version from PR labels, produces the Settings JSON |
+| **Plan** | All events | Loads `.github/PSModule.yml`, resolves the release context, produces the Settings JSON |
 | **Lint-Repository** | Open/Updated PR | Runs super-linter on the full repo (Markdown, YAML, etc.) |
-| **Lint-SourceCode** | Open/Updated PR, Merged PR, Manual | Runs PSScriptAnalyzer against `src/` |
-| **Build-Module** | Open/Updated PR, Merged PR, Manual | Compiles source into a versioned module artifact |
-| **Test-SourceCode** | Open/Updated PR, Merged PR, Manual | Framework tests on raw source files |
-| **Test-Module** | Open/Updated PR, Merged PR, Manual | Pester tests against the built module artifact |
-| **BeforeAll-ModuleLocal** | Open/Updated PR, Merged PR, Manual | Runs `tests/BeforeAll.ps1` once before the local test matrix |
-| **Test-ModuleLocal** | Open/Updated PR, Merged PR, Manual | Pester tests with the module installed locally (cross-OS matrix) |
+| **Lint-SourceCode** | Open/Updated PR, default-branch push/manual run | Runs PSScriptAnalyzer against `src/` |
+| **Build-Module** | Open/Updated PR, default-branch push/manual run | Compiles source into a versioned module artifact |
+| **Test-SourceCode** | Open/Updated PR, default-branch push/manual run | Framework tests on raw source files |
+| **Test-Module** | Open/Updated PR, default-branch push/manual run | Pester tests against the built module artifact |
+| **BeforeAll-ModuleLocal** | Open/Updated PR, default-branch push/manual run | Runs `tests/BeforeAll.ps1` once before the local test matrix |
+| **Test-ModuleLocal** | Open/Updated PR, default-branch push/manual run | Pester tests with the module installed locally (cross-OS matrix) |
 | **AfterAll-ModuleLocal** | Always (if tests started) | Runs `tests/AfterAll.ps1` for cleanup |
 | **Get-TestResults** | Always (if Plan succeeded) | Aggregates and reports test results |
 | **Get-CodeCoverage** | Always (if Plan succeeded) | Calculates and reports code coverage |
-| **Publish-Module** | Merged PR (or Prerelease label) | Publishes to PowerShell Gallery and creates a GitHub Release |
-| **Build-Docs / Build-Site** | Open/Updated PR, Merged PR, Manual | Generates documentation site from source |
-| **Publish-Site** | Merged PR | Deploys documentation site to GitHub Pages |
+| **Publish-Module** | Prerelease PR, stable default-branch push/manual run, or closed PR | Publishes a prerelease or stable release, or cleans up closed-PR prereleases |
+| **Build-Docs / Build-Site** | Open/Updated PR, default-branch push/manual run | Generates documentation site from source |
+| **Publish-Site** | Stable default-branch push/manual run | Deploys documentation site to GitHub Pages unless `Publish.Site.Skip` is set |
 
 ### Important file patterns
 
@@ -186,7 +193,7 @@ The **Plan** job resolves the next version before any build occurs. This means t
 
 **Flow:**
 
-1. `Get-PSModuleSettings` loads `.github/PSModule.yml` and determines `ReleaseType` from PR labels
+1. `Get-PSModuleSettings` loads `.github/PSModule.yml` and determines `ReleaseType` from the normalized event context
 2. `Resolve-PSModuleVersion` calculates the next semantic version from the latest Git tag
 3. `Build-PSModule` stamps the resolved version into the compiled manifest
 4. `Publish-PSModule` reads the version from the manifest (read-only) and publishes
@@ -202,6 +209,9 @@ The **Plan** job resolves the next version before any build occurs. This means t
 | None of the above | Patch (when `AutoPatching: true`) | — |
 
 **Prerelease versions:** Adding a `Prerelease` label to the PR produces a prerelease tag (e.g., `1.2.3-preview0001`). The format is controlled by `IncrementalPrerelease` (sequential numbering) or `DatePrereleaseFormat` (.NET DateTime format string).
+
+An important direct default-branch push and a default-branch manual dispatch always resolve to `Patch`, regardless of
+`AutoPatching`. A push that exactly matches a merged pull request uses that PR's version label instead.
 
 **Tag format:** Releases are tagged with a configurable prefix (default `v`) — e.g., `v1.2.3`.
 
@@ -246,9 +256,11 @@ Test:
     PercentTarget: 0
 
 Publish:
+  Site:
+    Skip: false
   Module:
     Skip: false
-    AutoCleanup: true           # Delete prerelease tags after stable release
+    AutoCleanup: true           # Delete prerelease tags after stable release or PR closure
     AutoPatching: true           # Unlabeled PRs default to patch bump
     IncrementalPrerelease: true  # Sequential prerelease numbering
     DatePrereleaseFormat: ''     # Alternative: .NET DateTime format for prerelease
@@ -274,16 +286,17 @@ The `Publish-Module` stage:
 2. Reads the version from the compiled manifest (no recalculation)
 3. Publishes to the PowerShell Gallery
 4. Creates a GitHub Release with the module attached as a ZIP artifact
-5. Comments on the PR with links to the Gallery package and GitHub Release
+5. Comments on the associated PR with links to the Gallery package and GitHub Release
 6. Cleans up old prerelease tags when publishing a stable release (if `AutoCleanup: true`)
 
 The publish step only runs when:
 
 - All tests and code coverage pass (or are skipped)
-- The PR is merged to the default branch (stable release), or
-- The PR carries the `Prerelease` label (prerelease from the feature/release branch)
+- An important push reaches the default branch (stable release), or
+- The PR carries the `Prerelease` label (prerelease from the feature branch)
 
-On abandoned (closed without merge) PRs, the pipeline cleans up any prerelease tags created for that branch.
+On any closed PR, the pipeline cleans up any prerelease tags created for that branch. A closed pull request cannot
+create a stable release.
 
 ## Tests
 
@@ -308,7 +321,7 @@ Process-PSModule derives `TestName` from the file's basename before the first do
 Each `*.Tests.ps1` file must declare the Pester 6 requirement:
 
 ```powershell
-#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.*' }
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.1.0'; MaximumVersion = '6.*' }
 ```
 
 Tests run against the built module artifact installed locally, across a multi-OS matrix (Linux, macOS, Windows). The full suite must also remain runnable locally without mandatory cloud resources, special access, or secrets that cannot be mocked.
@@ -347,6 +360,7 @@ The CI pipeline automatically tests every source file against the following rule
 | `CmdletBinding` | Every function must have `[CmdletBinding()]` |
 | `ParamBlock` | Every function must have a `param()` block |
 | `FunctionTest` | Every public function must be referenced by the tests; its behavior must be covered whether the suite is per-command or grouped |
+| `PublicHelpLink` | Every public function must have a first `.LINK` entry with an absolute HTTPS URL whose path is `/Module/Functions/<relative-command>/` |
 
 To skip a specific rule for one file only, add a comment at the very top of that file:
 

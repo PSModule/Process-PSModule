@@ -1,4 +1,5 @@
 ﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
+Import-Module -Name "$PSScriptRoot/Get-PSModuleSettings.Helpers.psm1" -Force
 
 $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
 $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
@@ -202,6 +203,9 @@ $settings = [pscustomobject]@{
             UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
         }
+        Site   = [pscustomobject]@{
+            Skip = $settings.Publish.Site.Skip ?? $false
+        }
     }
     Linter                = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
@@ -226,43 +230,108 @@ LogGroup 'Calculate Job Run Conditions:' {
         $eventData | ConvertTo-Json -Depth 10 | Out-String
     }
 
-    $pullRequestAction = $eventData.Action
-    $pullRequest = $eventData.PullRequest
-    $pullRequestIsMerged = $pullRequest.Merged
-    $targetBranch = $pullRequest.Base.Ref
+    $eventName = $env:GITHUB_EVENT_NAME
+    $isPush = $eventName -eq 'push'
+    $isManualDispatch = $eventName -eq 'workflow_dispatch'
     $defaultBranch = $eventData.Repository.default_branch
+    $pullRequestAction = $eventData.Action
+    $commitSha = if ($isPush) { $eventData.After ?? $env:GITHUB_SHA } else { $env:GITHUB_SHA }
+    $pushBranch = if ($isPush) { $eventData.Ref -replace '^refs/heads/', '' } else { '' }
+    $workflowRef = if ($isPush) { $pushBranch } else { $env:GITHUB_REF_NAME }
+    $isPushToDefaultBranch = $isPush -and $pushBranch -eq $defaultBranch
+    $isManualDispatchToDefaultBranch = $isManualDispatch -and $workflowRef -eq $defaultBranch
+    $pullRequest = $eventData.PullRequest
+
+    if ($isPush -and $commitSha) {
+        LogGroup "Resolve pull request for commit [$commitSha]" {
+            $owner = $env:GITHUB_REPOSITORY_OWNER
+            $repo = $env:GITHUB_REPOSITORY_NAME
+            $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$commitSha/pulls" -Method GET
+            $associatedPullRequests = @($response.Response)
+            $pullRequest = Select-PullRequestForPush -PullRequest $associatedPullRequests `
+                -DefaultBranch $defaultBranch `
+                -CommitSha $commitSha
+
+            if ($pullRequest) {
+                Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$commitSha]."
+            } else {
+                Write-Host "::notice::No pull request is associated with commit [$commitSha]."
+            }
+        }
+    }
+
+    $pullRequestIsMerged = if ($null -eq $pullRequest) {
+        $false
+    } elseif ($null -ne $pullRequest.Merged) {
+        [bool]$pullRequest.Merged
+    } else {
+        -not [string]::IsNullOrWhiteSpace($pullRequest.merged_at)
+    }
+    $pullRequestIsClosed = $null -ne $pullRequest -and $pullRequest.State -eq 'closed'
+    $isOpenOrUpdatedPR = (
+        $eventName -eq 'pull_request' -and
+        -not $pullRequestIsClosed -and
+        $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
+    )
+    $targetBranch = if ($pullRequest) { $pullRequest.Base.Ref } elseif ($isPush) { $pushBranch } else { $workflowRef }
     $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
+    $pullRequestContext = if ($pullRequest) {
+        [pscustomobject]@{
+            Number         = $pullRequest.Number
+            Title          = $pullRequest.Title
+            Body           = $pullRequest.Body
+            HeadRef        = $pullRequest.Head.Ref
+            BaseRef        = $pullRequest.Base.Ref
+            Labels         = @($pullRequest.Labels.Name)
+            Merged         = $pullRequestIsMerged
+            Closed         = $pullRequestIsClosed
+            MergeCommitSha = $pullRequest.merge_commit_sha
+            HtmlUrl        = $pullRequest.html_url
+        }
+    } else {
+        $null
+    }
+
+    $settings | Add-Member -MemberType NoteProperty -Name Context -Value ([pscustomobject]@{
+            EventName                       = $eventName
+            EventAction                     = $pullRequestAction
+            CommitSha                       = $commitSha
+            Ref                             = if ($isPush) { $eventData.Ref } else { $env:GITHUB_REF }
+            DefaultBranch                   = $defaultBranch
+            IsPushToDefaultBranch           = $isPushToDefaultBranch
+            IsManualDispatchToDefaultBranch = $isManualDispatchToDefaultBranch
+            PullRequest                     = $pullRequestContext
+        }) -Force
 
     Write-Host 'GitHub event inputs:'
     [pscustomobject]@{
-        GITHUB_EVENT_NAME                = $env:GITHUB_EVENT_NAME
+        GITHUB_EVENT_NAME                = $eventName
         GITHUB_EVENT_ACTION              = $pullRequestAction
         GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
+        GITHUB_EVENT_PULL_REQUEST_CLOSED = $pullRequestIsClosed
+        CommitSha                        = $commitSha
+        PushBranch                       = $pushBranch
         TargetBranch                     = $targetBranch
         DefaultBranch                    = $defaultBranch
         IsTargetDefaultBranch            = $isTargetDefaultBranch
+        IsPushToDefaultBranch            = $isPushToDefaultBranch
+        IsManualDispatchToDefaultBranch  = $isManualDispatchToDefaultBranch
+        AssociatedPullRequest            = $pullRequestContext.Number
     } | Format-List | Out-String
-
-    $isPR = $env:GITHUB_EVENT_NAME -eq 'pull_request'
-    $isOpenOrUpdatedPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
-    $isAbandonedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -ne $true
-    $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
-    $isNotAbandonedPR = -not $isAbandonedPR
 
     # Check if a prerelease label exists on the PR
     $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
-    $prLabels = @($pullRequest.labels.name)
+    $prLabels = @($pullRequestContext.Labels)
     $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
-    $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
     # Check if important files have changed in the PR
     # Important files are determined by the configured ImportantFilePatterns setting
     $hasImportantChanges = $false
-    if ($isPR -and $pullRequest.Number) {
+    if ($eventName -eq 'pull_request' -and $pullRequestContext.Number) {
         LogGroup 'Check for Important File Changes' {
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
-            $prNumber = $pullRequest.Number
+            $prNumber = $pullRequestContext.Number
 
             Write-Host "Fetching changed files for PR #$prNumber..."
             $changedFiles = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/pulls/$prNumber/files" -Method GET |
@@ -332,38 +401,71 @@ If you believe this is incorrect, please verify that your changes are in the cor
                 }
             }
         }
+    } elseif ($isPushToDefaultBranch) {
+        LogGroup 'Check for Important File Changes' {
+            $beforeCommitSha = $eventData.Before
+            $owner = $env:GITHUB_REPOSITORY_OWNER
+            $repo = $env:GITHUB_REPOSITORY_NAME
+            if ([string]::IsNullOrWhiteSpace($beforeCommitSha) -or $beforeCommitSha -match '^0+$') {
+                Write-Host "Fetching files for the initial push commit [$commitSha]..."
+                $commit = (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/git/commits/$commitSha" -Method GET).Response
+                $treeSha = $commit.tree.sha
+                if ([string]::IsNullOrWhiteSpace($treeSha)) {
+                    throw "Cannot determine changed files because commit [$commitSha] has no tree."
+                }
+
+                $tree = (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/git/trees/$treeSha?recursive=1" -Method GET).Response
+                $changedFiles = Get-FilesFromGitTree -Tree $tree
+            } else {
+                Write-Host "Fetching changed files between [$beforeCommitSha] and [$commitSha]..."
+                $comparison = (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/compare/$beforeCommitSha...$commitSha" -Method GET).Response
+                $changedFiles = Get-FilesFromGitHubComparison -Comparison $comparison
+            }
+
+            Write-Host "Changed files ($($changedFiles.Count)):"
+            $changedFiles | ForEach-Object { Write-Host "  - $_" }
+
+            foreach ($file in $changedFiles) {
+                foreach ($pattern in $settings.ImportantFilePatterns) {
+                    if ($file -match $pattern) {
+                        $hasImportantChanges = $true
+                        Write-Host "Important file changed: [$file] (matches pattern: $pattern)"
+                        break
+                    }
+                }
+                if ($hasImportantChanges) { break }
+            }
+        }
     } else {
-        # Not a PR event or no PR number - consider as having important changes (e.g., workflow_dispatch, schedule)
+        # Manual dispatch and schedule runs retain their existing build/test behavior.
         $hasImportantChanges = $true
-        Write-Host 'Not a PR event or missing PR number - treating as having important changes'
+        Write-Host 'Non-PR event - treating as having important changes'
     }
 
-    # Prerelease requires both: prerelease label AND important file changes
-    # No point creating a prerelease if only non-module files changed
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasImportantChanges
-
-    # Determine ReleaseType - what type of release to create
-    # Values: 'Release', 'Prerelease', 'None'
-    # Release only happens when important files changed (actual module code/docs)
-    # Merged PRs without important changes should only trigger cleanup, not a new release
-    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges) {
-        'Release'
-    } elseif ($shouldPrerelease) {
-        'Prerelease'
-    } else {
-        'None'
-    }
+    $routing = Resolve-WorkflowEventRouting -EventName $eventName `
+        -EventAction $pullRequestAction `
+        -PullRequestIsMerged $pullRequestIsMerged `
+        -PullRequestIsClosed $pullRequestIsClosed `
+        -IsTargetDefaultBranch $isTargetDefaultBranch `
+        -IsPushToDefaultBranch $isPushToDefaultBranch `
+        -IsManualDispatchToDefaultBranch $isManualDispatchToDefaultBranch `
+        -HasImportantChanges $hasImportantChanges `
+        -HasPrereleaseLabel $hasPrereleaseLabel
+    $releaseType = $routing.ReleaseType
 
     [pscustomobject]@{
-        isPR                  = $isPR
-        isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
-        isOpenOrLabeledPR     = $isOpenOrLabeledPR
-        isAbandonedPR         = $isAbandonedPR
-        isMergedPR            = $isMergedPR
-        isNotAbandonedPR      = $isNotAbandonedPR
-        isTargetDefaultBranch = $isTargetDefaultBranch
+        isPR                  = $routing.IsPR
+        isOpenOrUpdatedPR     = $routing.IsOpenOrUpdatedPR
+        isOpenOrLabeledPR     = $routing.IsOpenOrLabeledPR
+        isClosedPR            = $routing.IsClosedPR
+        isAbandonedPR         = $routing.IsAbandonedPR
+        isMergedPR            = $routing.IsMergedPR
+        isPush                = $routing.IsPush
+        isManualDispatch      = $routing.IsManualDispatch
+        isPushToDefaultBranch = $routing.IsPushToDefaultBranch
+        isTargetDefaultBranch = $routing.IsTargetDefaultBranch
         hasPrereleaseLabel    = $hasPrereleaseLabel
-        shouldPrerelease      = $shouldPrerelease
+        shouldPrerelease      = $routing.ShouldPrerelease
         ReleaseType           = $releaseType
         HasImportantChanges   = $hasImportantChanges
     } | Format-List | Out-String
@@ -531,24 +633,14 @@ $settings.Test.Module | Add-Member -MemberType NoteProperty -Name Suites -Value 
 
 # Calculate job-specific conditions and add to settings
 LogGroup 'Calculate Job Run Conditions:' {
-    # Calculate if prereleases should be cleaned up:
-    # True if (Release, merged PR to default branch, or Abandoned PR) AND user has AutoCleanup enabled (defaults to true)
-    # Even if no important files changed, we still want to cleanup prereleases when merging to default branch
-    $isReleaseOrMergedOrAbandoned = (
-        ($releaseType -eq 'Release') -or
-        ($isMergedPR -and $isTargetDefaultBranch) -or
-        $isAbandonedPR
-    )
-    $shouldAutoCleanup = $isReleaseOrMergedOrAbandoned -and ($settings.Publish.Module.AutoCleanup -eq $true)
+    $shouldAutoCleanup = $routing.ShouldRunCleanup -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
     $settings.Publish.Module.AutoCleanup = $shouldAutoCleanup
 
-    # For open PRs, we only want to run build/test stages if important files changed.
-    # For merged PRs, workflow_dispatch, schedule - $hasImportantChanges is already true.
-    # Note: $shouldPrerelease already requires $hasImportantChanges, so no separate check needed.
-    $shouldRunBuildTest = $isNotAbandonedPR -and $hasImportantChanges
+    # Closed PR events are cleanup-only. Other events run build/test only for important changes.
+    $shouldRunBuildTest = $routing.ShouldRunBuildTest
 
     # Check if setup/teardown scripts exist in the repository
     $hasBeforeAllScript = Test-Path -Path 'tests/BeforeAll.ps1'
@@ -606,10 +698,10 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
-    $settings.Publish | Add-Member -MemberType NoteProperty -Name Site -Value ([pscustomobject]@{
-            Desired = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
-            Enabled = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
-        }) -Force
+    $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Desired -Value ($releaseType -eq 'Release') -Force
+    $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value (
+        $releaseType -eq 'Release' -and -not $settings.Publish.Site.Skip
+    ) -Force
 
     $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasImportantChanges
 

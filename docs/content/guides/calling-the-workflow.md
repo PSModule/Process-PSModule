@@ -21,6 +21,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -30,33 +33,45 @@ on:
       - reopened
       - synchronize
       - labeled
+      - unlabeled
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
-  statuses: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
 </details>
 
+Stable releases are evaluated from a push to the default branch. A merged pull request supplies its version label and
+release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
+Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
+
+The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
+resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
+the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
+The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
+waits for it to finish.
+
 ## Passing test data
 
-The reusable workflow at `.github/workflows/workflow.yml` declares only two workflow-call secrets,
+The reusable workflow at `.github/workflows/workflow.yml` declares four workflow-call secrets,
 which keeps the calling workflow in full control of the credentials that are exposed.
-`secrets: inherit` is intentionally not required. `APIKey` publishes to the PowerShell Gallery; `TestData` carries
-everything the module's own tests need.
+`secrets: inherit` is intentionally not required. `PSGALLERY_API_KEY` publishes to the PowerShell Gallery,
+`GitHubAppClientId` and `GitHubAppPrivateKey` authenticate GitHub API operations, and `TestData`
+carries everything the module's own tests need.
 
 ### Breaking change: fixed test secrets use `TestData`
 
@@ -77,9 +92,11 @@ changes:
 ```yaml
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
       TestData: >-
         { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
         "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
@@ -104,9 +121,11 @@ content lines stay at the same indentation level:
 ```yaml
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
-      APIKey: ${{ secrets.APIKey }}
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
       TestData: >-
         { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
         "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},
@@ -168,9 +187,9 @@ Notes:
 
 ## Important file change detection
 
-The workflow automatically detects whether a pull request contains changes to "important" files that should enter the
-build, test, and publish path. This prevents unnecessary work and releases when only files outside the configured
-patterns are modified.
+The workflow automatically detects whether a pull request or default-branch push contains changes to "important" files
+that should enter the build, test, and publish path. This prevents unnecessary work and releases when only files outside
+the configured patterns are modified.
 
 ### Files that trigger the important-change path
 
@@ -214,7 +233,7 @@ You can also pass patterns via the workflow input:
 ```yaml
 jobs:
   Process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     with:
       ImportantFilePatterns: |
         ^src/
@@ -227,7 +246,7 @@ To disable triggering via the workflow input, pass an explicit empty string:
 ```yaml
 jobs:
   process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     with:
       ImportantFilePatterns: ''
 ```

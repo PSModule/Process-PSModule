@@ -9,7 +9,11 @@ An end-to-end PowerShell module pipeline that automates the entire lifecycle of 
 
 ## How it works
 
-The workflow is triggered on pull requests to the repository's default branch. When a pull request is opened, closed, reopened, synchronized (push), or labeled, the workflow runs. Depending on the labels on the pull request, the [workflow results in different outcomes](reference/scenario-matrix.md).
+The caller workflow runs for pull-request lifecycle events and pushes to the repository's default branch. Open pull
+requests run CI and can publish prereleases; closed pull requests clean up their prereleases. An important
+default-branch push is the sole authority for a stable release. When that push is the exact merge commit of a pull
+request, its labels and release notes supply the release metadata. See the
+[scenario matrix](reference/scenario-matrix.md) for the resulting job execution.
 
 Everything is packaged into a single reusable workflow so that a module repository only needs a small caller workflow and one settings file. A user configures the behaviour by editing `.github/PSModule.yml`.
 
@@ -22,8 +26,8 @@ New to Process-PSModule? Work through these in order.
 | Page | Description |
 | --- | --- |
 | [Get started](get-started/index.md) | Create a module repository from the template and get the pipeline running. |
-| [Repository setup](get-started/repository-setup.md) | Configure GitHub Pages, the PowerShell Gallery API key, permissions, and the caller workflow. |
-| [Your first release](get-started/your-first-release.md) | The pull request flow, version labels, and what happens on merge. |
+| [Repository setup](get-started/repository-setup.md) | Configure GitHub Pages, `PSGALLERY_API_KEY`, permissions, and the caller workflow. |
+| [Your first release](get-started/your-first-release.md) | The pull request flow, version labels, and the resulting default-branch release. |
 
 ## Guides
 
@@ -32,9 +36,11 @@ Task-oriented deep dives into the pipeline's functionality.
 | Page | Description |
 | --- | --- |
 | [Calling the workflow](guides/calling-the-workflow.md) | The caller workflow, passing test secrets and variables with `TestData`, and important-file change detection. |
+| [GitHub App authentication](guides/github-app-authentication.md) | Configure Shelly credentials and the scoped tokens used for repository API operations. |
 | [Configuring the pipeline](guides/configuring-the-pipeline.md) | Worked examples for coverage targets, rapid testing, linting, and PR-based release notes. |
 | [Structuring your module](guides/structuring-your-module.md) | The repository and module source layout the workflow expects, and how to declare dependencies. |
 | [Writing module tests](guides/writing-module-tests.md) | Test discovery, setup and teardown phases, and shared test infrastructure. |
+| [PSModule process marketplace](https://github.com/PSModule/Process-PSModule/tree/main/.github/plugin) | Register the initiative marketplace and install the PSModule process plugin. |
 | [Skipping framework tests](guides/skipping-framework-tests.md) | Skip individual framework tests on a per-file basis. |
 | [Versioning and releases](guides/versioning-and-releases.md) | Label-driven versioning, prereleases, and what a release produces. |
 | [Validating before review](guides/validating-before-review.md) | The PSModule validation pass before a draft pull request is marked ready. |
@@ -58,6 +64,7 @@ Look up the framework's exact contracts and the module-development standards it 
 | [Scenario matrix](reference/scenario-matrix.md) | Which jobs run for each trigger scenario. |
 | [Framework test IDs](reference/framework-test-ids.md) | The framework tests enforced on source code and on the built module. |
 | [Dependencies](reference/dependencies.md) | The actions, modules, and services the workflow composes. |
+| [PowerShell guidance scripts](reference/guidance-scripts.md) | Runnable reference scripts for common PowerShell implementation patterns. |
 
 ## Specification
 

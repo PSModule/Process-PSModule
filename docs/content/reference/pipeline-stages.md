@@ -64,7 +64,7 @@ suite matrices are computed under each owning test phase, and resolved version m
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Test-SourceCode.yml)
 
 - Tests the source code in parallel (matrix) using:
-  - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#sourcecode-tests)
+  - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Test-PSModule/src/tests/SourceCode)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 
 For the coding practices this step enforces, see [framework test IDs](framework-test-ids.md#source-code-tests).
@@ -82,7 +82,7 @@ For the coding practices this step enforces, see [framework test IDs](framework-
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Test-Module.yml)
 
 - Tests and lints the module in parallel (matrix) using:
-  - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Test-PSModule?tab=readme-ov-file#module-tests)
+  - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Test-PSModule/src/tests/Module)
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
 - This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
 - **Code coverage for framework-generated code**: This step collects code coverage for framework-generated
@@ -132,8 +132,11 @@ How to write these tests, including the Pester version requirement and shared-in
 
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Publish-Module.yml)
 
+- An important default-branch push is the only stable-publication authority. A closed pull request performs
+  prerelease cleanup only.
 - Publishes the artifact to the PowerShell Gallery exactly as built — no version mutation.
-- Creates a GitHub Release using the version already stamped in the manifest.
+- Creates a GitHub Release only after the Gallery publication succeeds, targeting the exact tested push SHA and using
+  the version already stamped in the manifest.
 - Attaches the built module as a `.zip` asset on the GitHub Release so consumers can download the exact bytes that were tested and pushed to the PowerShell Gallery.
 - **Abandoned PR cleanup**: When a PR is closed without merging (abandoned), the workflow automatically cleans up any
   prerelease versions and tags that were created for that PR. This ensures that abandoned work doesn't leave orphaned
@@ -157,4 +160,4 @@ How to write these tests, including the Pester version requirement and shared-in
 
 ## Publish Docs
 
-[workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Publish-Docs.yml)
+[workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Publish-Site.yml)
