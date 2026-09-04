@@ -62,7 +62,7 @@ function Get-ComplexData {
         This file intentionally skips only the FunctionCount framework test.
 
         .LINK
-        https://psmodule.io/<ModuleName>/Functions/Get-ComplexData
+        https://<DocumentationHost>/<ModuleName>/Functions/Get-ComplexData
     #>
     [OutputType([PSCustomObject])]
     [CmdletBinding()]
@@ -104,7 +104,7 @@ function Get-RawData {
         This function is a private helper for Get-ComplexData.
 
         .LINK
-        https://psmodule.io/<ModuleName>/Functions/Get-ComplexData
+        https://<DocumentationHost>/<ModuleName>/Functions/Get-ComplexData
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -145,7 +145,7 @@ function Format-ComplexData {
         This function is a private helper for Get-ComplexData.
 
         .LINK
-        https://psmodule.io/<ModuleName>/Functions/Get-ComplexData
+        https://<DocumentationHost>/<ModuleName>/Functions/Get-ComplexData
     #>
     [OutputType([PSCustomObject])]
     [CmdletBinding()]
@@ -163,7 +163,7 @@ function Format-ComplexData {
 }
 ```
 
-Replace `<ModuleName>` with the module's published name. If the public function belongs to a group, insert `<Group>/` between `Functions/` and `Get-ComplexData`.
+Replace `<DocumentationHost>` with the HTTPS host that publishes the module documentation and `<ModuleName>` with the module's published name. If the public function belongs to a group, insert `<Group>/` between `Functions/` and `Get-ComplexData`.
 
 The skip exempts only `FunctionCount`. Every function in the file must still follow the [PowerShell function standard](https://msx.no/docs/Coding-Standards/PowerShell/Functions/), including complete comment-based help, matching `[OutputType()]` and `.OUTPUTS` metadata, typed parameters, and implicit output.
 
