@@ -117,11 +117,19 @@ The module repository owns a caller workflow; the framework owns the reusable wo
 | Caller workflow | The module repository | `.github/workflows/Process-PSModule.yml` |
 | Reusable workflow | [`PSModule/Process-PSModule`](https://github.com/PSModule/Process-PSModule) | `.github/workflows/workflow.yml` |
 
-The caller workflow declares the triggers, concurrency, and permissions for the module repository, and delegates the work:
+The caller workflow declares the triggers, concurrency, and permissions for the module repository. Its production and
+pull-request jobs use the same reusable workflow and explicit secret mapping:
 
 ```yaml
 jobs:
-  Process-PSModule:
+  Process-PSModule-Production:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@<commit-sha> # <version tag>
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+
+  Process-PSModule-PullRequest:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@<commit-sha> # <version tag>
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}

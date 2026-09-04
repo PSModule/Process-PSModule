@@ -52,18 +52,34 @@ on:
       - labeled
       - unlabeled
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 jobs:
-  Process-PSModule:
+  Process-PSModule-Production:
+    if: ${{ github.event_name != 'pull_request' }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      queue: max
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+
+  Process-PSModule-PullRequest:
+    if: ${{ github.event_name == 'pull_request' }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+      queue: single
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
@@ -71,14 +87,16 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-Every permission in that block is required. GitHub App installation tokens perform repository writes. A push to `main` publishes a stable release after the full pipeline passes;
-the pull-request trigger handles CI, prereleases, and prerelease cleanup. See
+Every permission on the calling jobs is required. GitHub App installation tokens perform repository writes. A push to
+`main` publishes a stable release after the full pipeline passes; the pull-request trigger handles CI, prereleases,
+and prerelease cleanup. See
 [Workflow inputs](../reference/workflow-inputs.md) for what each permission is used for, and
 [Calling the workflow](../guides/calling-the-workflow.md) for passing test secrets and variables.
 
-The caller-level concurrency block retains production and manual work while replacing obsolete work for the same pull
-request. The fallback expression uses the pull-request number for every pull-request action, including `closed`; other
-events use their Git ref. Keep its group distinct from the reusable workflow's prefixed group.
+The production job retains pushes, dispatches, and scheduled work in the maximum native queue. The pull-request job
+cancels obsolete activity and uses the pull-request number for every action, including `closed`. GitHub requires a
+literal queue value and does not permit cancellation with `queue: max`, so the two jobs use separate compatible
+policies. Keep both groups distinct from the reusable workflow's prefixed group.
 
 ## 4. Add the settings file
 

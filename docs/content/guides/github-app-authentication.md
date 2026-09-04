@@ -18,11 +18,18 @@ The reusable workflow declares two required secrets at its `workflow_call` bound
 | `GitHubAppPrivateKey` | The GitHub App private key passed to the token action. |
 
 The names are the reusable workflow contract, not a requirement for the caller's repository or organization secret
-names. Map the caller's secrets explicitly:
+names. Map the caller's secrets explicitly in both caller jobs:
 
 ```yaml
 jobs:
-  Process-PSModule:
+  Process-PSModule-Production:
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+
+  Process-PSModule-PullRequest:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}

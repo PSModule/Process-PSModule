@@ -165,14 +165,30 @@ on:
       - labeled
       - unlabeled
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 permissions: {}
 
 jobs:
-  Process-PSModule:
+  Process-PSModule-Production:
+    if: ${{ github.event_name != 'pull_request' }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      queue: max
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+
+  Process-PSModule-PullRequest:
+    if: ${{ github.event_name == 'pull_request' }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+      queue: single
+      cancel-in-progress: true
     permissions:
       contents: read
       pages: write
@@ -184,11 +200,10 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-The only permitted variation is an optional `TestData` entry under
-`jobs.Process-PSModule.secrets`. Do not add `with:` inputs, extra jobs,
-conditions, schedule changes, `run-name`, permission changes, trigger changes,
-concurrency changes, debug options, or version overrides. Repository-owned
-automation belongs in separate workflow files.
+The only permitted variation is an optional identical `TestData` entry under both caller jobs' `secrets` mappings.
+Do not add `with:` inputs, extra jobs, conditions, schedule changes, `run-name`, permission changes, trigger changes,
+concurrency changes, debug options, or version overrides. Repository-owned automation belongs in separate workflow
+files.
 
 ### TestData preservation
 
