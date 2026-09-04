@@ -90,7 +90,7 @@ Describe 'Resolve-PSModulePublishSetting' {
         $result.MajorLabels | Should -BeExactly 'release:major'
         $result.MinorLabels | Should -BeExactly 'release:minor'
         $result.PatchLabels | Should -BeExactly 'release:patch'
-        $result.PrereleaseLabels | Should -BeExactly 'release:pre-release'
+        $result.PrereleaseLabels | Should -BeExactly 'release:prerelease'
         $result.IgnoreLabels | Should -BeExactly 'release:skip'
     }
 
@@ -125,7 +125,7 @@ Describe 'Resolve-PSModulePublishSetting' {
         $moduleProperties.MajorLabels.default | Should -BeExactly 'release:major'
         $moduleProperties.MinorLabels.default | Should -BeExactly 'release:minor'
         $moduleProperties.PatchLabels.default | Should -BeExactly 'release:patch'
-        $moduleProperties.PrereleaseLabels.default | Should -BeExactly 'release:pre-release'
+        $moduleProperties.PrereleaseLabels.default | Should -BeExactly 'release:prerelease'
         $moduleProperties.IgnoreLabels.default | Should -BeExactly 'release:skip'
     }
 

@@ -143,7 +143,7 @@ function Resolve-PSModulePublishSetting {
         MinorLabels              = $PublishModule.MinorLabels ?? 'release:minor'
         PatchLabels              = $PublishModule.PatchLabels ?? 'release:patch'
         IgnoreLabels             = $PublishModule.IgnoreLabels ?? 'release:skip'
-        PrereleaseLabels         = $PublishModule.PrereleaseLabels ?? 'release:pre-release'
+        PrereleaseLabels         = $PublishModule.PrereleaseLabels ?? 'release:prerelease'
         UsePRTitleAsReleaseName  = $PublishModule.UsePRTitleAsReleaseName ?? $false
         UsePRBodyAsReleaseNotes  = $PublishModule.UsePRBodyAsReleaseNotes ?? $true
         UsePRTitleAsNotesHeading = $PublishModule.UsePRTitleAsNotesHeading ?? $true

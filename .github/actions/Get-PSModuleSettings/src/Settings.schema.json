@@ -183,7 +183,7 @@
             "PrereleaseLabels": {
               "type": "string",
               "description": "Comma-separated labels that trigger a prerelease",
-              "default": "release:pre-release"
+              "default": "release:prerelease"
             },
             "UsePRTitleAsReleaseName": {
               "type": "boolean",
