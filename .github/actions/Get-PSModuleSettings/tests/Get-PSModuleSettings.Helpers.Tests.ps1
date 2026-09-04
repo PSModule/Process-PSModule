@@ -82,6 +82,73 @@ Describe 'Resolve-WorkflowEventRouting' {
     }
 }
 
+Describe 'Resolve-PSModulePublishSetting' {
+    It 'uses the canonical release-label defaults' {
+        $result = Resolve-PSModulePublishSetting -PublishModule $null
+
+        $result.DefaultBump | Should -BeExactly 'patch'
+        $result.MajorLabels | Should -BeExactly 'release:major'
+        $result.MinorLabels | Should -BeExactly 'release:minor'
+        $result.PatchLabels | Should -BeExactly 'release:patch'
+        $result.PrereleaseLabels | Should -BeExactly 'release:prerelease'
+        $result.IgnoreLabels | Should -BeExactly 'release:skip'
+    }
+
+    It 'preserves consumer-controlled release settings' {
+        $publishModule = [pscustomobject]@{
+            DefaultBump      = 'minor'
+            MajorLabels      = 'custom:major'
+            MinorLabels      = 'custom:minor'
+            PatchLabels      = 'custom:patch'
+            PrereleaseLabels = 'custom:pre-release'
+            IgnoreLabels     = 'custom:skip'
+        }
+
+        $result = Resolve-PSModulePublishSetting -PublishModule $publishModule
+
+        $result.DefaultBump | Should -BeExactly 'minor'
+        $result.MajorLabels | Should -BeExactly 'custom:major'
+        $result.MinorLabels | Should -BeExactly 'custom:minor'
+        $result.PatchLabels | Should -BeExactly 'custom:patch'
+        $result.PrereleaseLabels | Should -BeExactly 'custom:pre-release'
+        $result.IgnoreLabels | Should -BeExactly 'custom:skip'
+    }
+
+    It 'declares the same canonical defaults in the settings schema' {
+        $schemaPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/Settings.schema.json'
+        $schema = Get-Content -Path $schemaPath -Raw | ConvertFrom-Json
+        $moduleProperties = $schema.properties.Publish.properties.Module.properties
+
+        $moduleProperties.DefaultBump.default | Should -BeExactly 'patch'
+        $moduleProperties.DefaultBump.enum | Should -Be @('patch', 'minor', 'major')
+        $moduleProperties.PSObject.Properties.Name | Should -Not -Contain 'AutoPatching'
+        $moduleProperties.MajorLabels.default | Should -BeExactly 'release:major'
+        $moduleProperties.MinorLabels.default | Should -BeExactly 'release:minor'
+        $moduleProperties.PatchLabels.default | Should -BeExactly 'release:patch'
+        $moduleProperties.PrereleaseLabels.default | Should -BeExactly 'release:prerelease'
+        $moduleProperties.IgnoreLabels.default | Should -BeExactly 'release:skip'
+    }
+
+    It 'rejects the invalid DefaultBump value <DefaultBump>' -ForEach @(
+        @{ DefaultBump = $null }
+        @{ DefaultBump = '' }
+        @{ DefaultBump = 'Patch' }
+        @{ DefaultBump = 'none' }
+    ) {
+        $publishModule = [pscustomobject]@{ DefaultBump = $DefaultBump }
+
+        { Resolve-PSModulePublishSetting -PublishModule $publishModule } |
+            Should -Throw '*Valid values are: patch, minor, major*'
+    }
+
+    It 'rejects AutoPatching with migration guidance' {
+        $publishModule = [pscustomobject]@{ AutoPatching = $true }
+
+        { Resolve-PSModulePublishSetting -PublishModule $publishModule } |
+            Should -Throw '*AutoPatching was removed*Replace it with Publish.Module.DefaultBump*'
+    }
+}
+
 Describe 'Select-PullRequestForPush' {
     It 'selects the merged PR whose merge commit matches the pushed commit' {
         $pullRequests = @(

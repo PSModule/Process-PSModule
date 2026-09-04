@@ -251,7 +251,7 @@ jobs:
       Settings: ${{ needs.Plan.outputs.Settings }}
 
   # Runs on:
-  # - ✅ Open/Updated PR - Only with prerelease label: publishes prerelease version
+  # - ✅ Open/Updated PR - With prerelease intent and a resolved bump: publishes a prerelease
   # - ✅ Default push    - Publishes a stable release when all tests/coverage/build succeed
   # - ✅ Closed PR       - Cleans up prereleases for the closed branch (no version published)
   # - ✅ Manual run      - Publishes a stable default-branch release

@@ -16,8 +16,9 @@ patch.
 
 If you need to work forth a bigger release, create a branch representing the release (a release branch) and open a PR towards `main` for this branch.
 For each topic or feature to add to the release, open a new branch representing the feature (a feature branch) and open a PR towards the release
-branch. Optionally add the `Prerelease` label on the PR for the release branch, to release preview versions before merging and releasing a published
-version of the PowerShell module.
+branch. Optionally add the configured prerelease label (`release:pre-release` by default) on the PR for the release
+branch. AutoPatching supplies a patch bump by default; when it is disabled, add one configured bump label to publish
+preview versions before merging and releasing a published version of the PowerShell module.
 
 ## Colocation of concerns
 

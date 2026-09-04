@@ -6,8 +6,8 @@ description: How Process-PSModule resolves a version from pull-request labels, p
 # Versioning and releases
 
 Process-PSModule orchestrates the module lifecycle through GitHub Actions. Version progression is label-driven in pull
-requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs only from a push to
-the configured default branch.
+requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs from a push or
+manual dispatch on the configured default branch.
 
 ## Flow
 
@@ -29,18 +29,20 @@ The bump comes from the pull-request label; the next version is computed as `cur
 
 | Label | Effect |
 | --- | --- |
-| `major` / `breaking` | Breaking change; bump `MAJOR`. |
-| `minor` / `feature` | New feature; bump `MINOR`. |
-| `patch` / `fix` | Bugfix; bump `PATCH`. |
-| `Prerelease` | Publish as a prerelease; not promoted to latest. |
-| `NoRelease` | Run the pipeline, skip publication. |
+| `release:major` | Breaking change; bump `MAJOR`. |
+| `release:minor` | New feature; bump `MINOR`. |
+| `release:patch` | Bugfix; bump `PATCH`. |
+| `release:pre-release` | Publish as a prerelease; not promoted to latest. |
+| `release:skip` | Run the pipeline, skip publication. |
 
-Multiple or conflicting version labels (for example `major` together with `NoRelease`) are rejected and block the merge.
+Multiple or conflicting version labels (for example `release:major` together with `release:skip`) are rejected whenever
+a release is resolved. A prerelease conflict fails the pull-request check; a stable conflict fails the resulting
+default-branch release run.
 With `AutoPatching: true`, an unlabeled pull request defaults to `Patch`; otherwise it needs an explicit version label.
 Direct pushes and manual dispatches on the default branch always use `Patch`, regardless of `AutoPatching`.
 
-The label names are configurable through `Publish.Module.MajorLabels`, `MinorLabels`, `PatchLabels`, and
-`IgnoreLabels` — see [Settings](../reference/settings.md).
+These are default names. They remain configurable through `Publish.Module.MajorLabels`, `MinorLabels`, `PatchLabels`,
+`PrereleaseLabels`, and `IgnoreLabels` — see [Settings](../reference/settings.md).
 
 ## Branch types
 
@@ -54,9 +56,10 @@ Exactly one branch is authorized to publish stable releases, so consumers always
 
 ## Prereleases
 
-A pull request labelled `Prerelease` publishes a prerelease version (for example `v1.2.3-pr.1.5`) that is installable
-but not promoted as latest. When that pull request is merged with a version label, the stable version is computed from
-the label and the current version on the release branch.
+With `AutoPatching: true`, a pull request labeled with the default `release:pre-release` name publishes a patch
+prerelease version (for example `v1.2.3-pr.1.5`) that is installable but not promoted as latest. When AutoPatching is
+disabled, the pull request also needs one configured bump label. When that pull request is merged with a version label,
+the stable version is computed from the label and the current version on the release branch.
 
 When a pull request closes, the prerelease versions and tags created for it are removed, so abandoned or promoted work
 leaves no orphaned prereleases. This is controlled by `Publish.Module.AutoCleanup`.

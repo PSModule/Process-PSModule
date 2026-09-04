@@ -19,6 +19,37 @@
     ($Value -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 }
 
+function Resolve-DefaultBump {
+    <#
+        .SYNOPSIS
+        Validates and returns the configured default version bump.
+
+        .OUTPUTS
+        System.String
+
+        .EXAMPLE
+        Resolve-DefaultBump -DefaultBump 'patch'
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        # The default bump name.
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string] $DefaultBump
+    )
+
+    $validDefaultBumps = @('patch', 'minor', 'major')
+    if ($validDefaultBumps -cnotcontains $DefaultBump) {
+        throw (
+            "Invalid Publish.Module.DefaultBump: [$DefaultBump]. " +
+            "Valid values are: $($validDefaultBumps -join ', ')."
+        )
+    }
+
+    $DefaultBump
+}
+
 function Read-ActionInput {
     <#
         .SYNOPSIS
@@ -66,7 +97,7 @@ function Get-PublishConfiguration {
         Parses the settings JSON into a publish configuration object.
 
         .DESCRIPTION
-        Extracts publish module settings including auto-patching flags, version prefix,
+        Extracts publish module settings including the default bump, version prefix,
         release type, and label classification arrays.
 
         .OUTPUTS
@@ -89,9 +120,10 @@ function Get-PublishConfiguration {
     LogGroup 'Resolve configuration' {
         $settings = $SettingsJson | ConvertFrom-Json
         $publishModule = $settings.Publish.Module
+        $defaultBump = Resolve-DefaultBump -DefaultBump ([string]$publishModule.DefaultBump)
 
         $config = [PSCustomObject]@{
-            AutoPatching          = [bool]$publishModule.AutoPatching
+            DefaultBump           = $defaultBump
             IncrementalPrerelease = [bool]$publishModule.IncrementalPrerelease
             DatePrereleaseFormat  = [string]$publishModule.DatePrereleaseFormat
             VersionPrefix         = [string]$publishModule.VersionPrefix
@@ -104,7 +136,7 @@ function Get-PublishConfiguration {
 
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
-                AutoPatching          = $config.AutoPatching
+                DefaultBump           = $config.DefaultBump
                 IncrementalPrerelease = $config.IncrementalPrerelease
                 DatePrereleaseFormat  = $config.DatePrereleaseFormat
                 VersionPrefix         = $config.VersionPrefix
@@ -129,7 +161,7 @@ function Get-GitHubPullRequest {
         The settings action resolves the pull request associated with a default-branch push
         before this action runs. When no pull request exists, a direct push or manual
         dispatch on the default branch still receives release context so it resolves the
-        default patch bump.
+        configured default bump.
 
         .OUTPUTS
         PSCustomObject with pull-request metadata, or a default-branch direct-release
@@ -164,7 +196,7 @@ function Get-GitHubPullRequest {
             }
 
             if ($context.IsPushToDefaultBranch -or $context.IsManualDispatchToDefaultBranch) {
-                Write-Host 'Using direct default-branch release context with the default patch bump.'
+                Write-Host 'Using direct default-branch release context with the configured default bump.'
                 return [PSCustomObject]@{
                     Number          = $null
                     HeadRef         = $context.DefaultBranch
@@ -238,6 +270,7 @@ function Resolve-ReleaseDecision {
         $prereleaseName = $PullRequest.HeadRef -replace '[^a-zA-Z0-9]'
         $labels = $PullRequest.Labels
         $releaseType = $Configuration.ReleaseType
+        $defaultBump = Resolve-DefaultBump -DefaultBump ([string]$Configuration.DefaultBump)
 
         $validReleaseTypes = @('Release', 'Prerelease', 'None')
         if ([string]::IsNullOrWhiteSpace($releaseType)) {
@@ -285,20 +318,16 @@ function Resolve-ReleaseDecision {
 
         $majorRelease = $majorLabels.Count -eq 1
         $minorRelease = $minorLabels.Count -eq 1
-        $isDirectStableRelease = $createRelease -and $PullRequest.IsDirectRelease
-        $patchRelease = $patchLabels.Count -eq 1 -or (
-            -not $majorRelease -and
-            -not $minorRelease -and
-            ($Configuration.AutoPatching -or $isDirectStableRelease)
-        )
-        $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
+        $patchRelease = $patchLabels.Count -eq 1
 
-        if (-not $hasVersionBump) {
-            Write-Host 'No version bump label and AutoPatching disabled; previewing a patch version without publishing.'
-            $patchRelease = $true
-            $hasVersionBump = $true
-            $shouldPublish = $false
+        if (-not $majorRelease -and -not $minorRelease -and -not $patchRelease) {
+            switch -CaseSensitive ($defaultBump) {
+                'major' { $majorRelease = $true }
+                'minor' { $minorRelease = $true }
+                'patch' { $patchRelease = $true }
+            }
         }
+        $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
 
         if ($ignoreRelease) {
             $createRelease = $false
@@ -316,6 +345,7 @@ function Resolve-ReleaseDecision {
                 ShouldPublish    = $shouldPublish
                 CreateRelease    = $createRelease
                 CreatePrerelease = $createPrerelease
+                DefaultBump      = $defaultBump
                 Major            = $majorRelease
                 Minor            = $minorRelease
                 Patch            = $patchRelease

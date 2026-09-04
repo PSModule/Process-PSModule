@@ -29,24 +29,26 @@ release with commit-based notes. It has no pull-request labels or body to use as
 
 | Label | Effect |
 | --- | --- |
-| `major` / `breaking` | Bump `MAJOR`. |
-| `minor` / `feature` | Bump `MINOR`. |
-| `patch` / `fix` | Bump `PATCH`. This is the default for an unlabeled PR when `AutoPatching` is enabled. |
-| `Prerelease` | Publish a prerelease version from the pull request, before it is merged. |
-| `NoRelease` | Run the pipeline but skip publication. |
+| `release:major` | Bump `MAJOR`. |
+| `release:minor` | Bump `MINOR`. |
+| `release:patch` | Bump `PATCH`. This is the default for an unlabeled PR when `AutoPatching` is enabled. |
+| `release:pre-release` | Publish a prerelease version from the pull request, before it is merged. |
+| `release:skip` | Run the pipeline but skip publication. |
 
-Conflicting labels (for example `major` together with `NoRelease`) are rejected and block the merge. The label names are
-configurable — see [Settings](../reference/settings.md).
+Conflicting labels (for example `release:major` together with `release:skip`) are rejected whenever that run resolves a
+release. A prerelease conflict fails the pull-request check; a stable conflict fails the resulting release run. These
+are the defaults; every label mapping remains configurable — see [Settings](../reference/settings.md).
 
 For the full model, including prerelease promotion and what a release produces, see
 [Versioning and releases](../guides/versioning-and-releases.md).
 
 ## Testing before you merge
 
-Add the `Prerelease` label to publish a prerelease version from the open pull request. The prerelease is installable
-from the PowerShell Gallery but is not promoted as the latest stable version, so it can be validated before the pull
-request is merged. When the pull request is closed without merging, the prerelease versions and tags created for it are
-cleaned up automatically.
+With the default `AutoPatching: true`, add `release:pre-release` to publish a patch prerelease from the open pull
+request. When AutoPatching is disabled, also apply one configured bump label. The prerelease is installable from the
+PowerShell Gallery but is not promoted as the latest stable version, so it can be validated before the pull request is
+merged. When the pull request is closed without merging, the prerelease versions and tags created for it are cleaned up
+automatically.
 
 ## When nothing is released
 

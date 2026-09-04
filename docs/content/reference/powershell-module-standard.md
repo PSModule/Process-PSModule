@@ -117,8 +117,8 @@ versions — security fixes go on the current tip of `main` only.
 
 ### Release and feature branches
 
-For large work, open a release branch and target it from feature branches. Apply the `Prerelease` label on the release
-branch PR to publish preview versions before its final merge creates the stable default-branch push.
+For large work, open a release branch and target it from feature branches. Apply the default `release:pre-release` label
+on the release branch PR to publish preview versions before its final merge creates the stable default-branch push.
 
 ## CI/CD pipeline
 
@@ -200,13 +200,18 @@ The **Plan** job resolves the next version before any build occurs. This means t
 
 | Labels (configurable) | Bump type | Default label values |
 | --------------------- | --------- | -------------------- |
-| Major | Major (`X.0.0`) | `major`, `breaking` |
-| Minor | Minor (`x.Y.0`) | `minor`, `feature` |
-| Patch | Patch (`x.y.Z`) | `patch`, `fix` |
-| Ignore | No release | `NoRelease` |
+| Major | Major (`X.0.0`) | `release:major` |
+| Minor | Minor (`x.Y.0`) | `release:minor` |
+| Patch | Patch (`x.y.Z`) | `release:patch` |
+| Ignore | No release | `release:skip` |
 | None of the above | Patch (when `AutoPatching: true`) | — |
 
-**Prerelease versions:** Adding a `Prerelease` label to the PR produces a prerelease tag (e.g., `1.2.3-preview0001`). The format is controlled by `IncrementalPrerelease` (sequential numbering) or `DatePrereleaseFormat` (.NET DateTime format string).
+**Prerelease versions:** With `AutoPatching: true`, adding the default `release:pre-release` label to the PR produces a
+patch prerelease tag (e.g., `1.2.3-preview0001`). When AutoPatching is disabled, also apply one configured bump label.
+The format is controlled by `IncrementalPrerelease` (sequential numbering) or `DatePrereleaseFormat` (.NET DateTime
+format string).
+
+All five label mappings remain configurable in `.github/PSModule.yml`.
 
 An important direct default-branch push and a default-branch manual dispatch always resolve to `Patch`, regardless of
 `AutoPatching`. A push that exactly matches a merged pull request uses that PR's version label instead.
@@ -263,10 +268,11 @@ Publish:
     IncrementalPrerelease: true  # Sequential prerelease numbering
     DatePrereleaseFormat: ''     # Alternative: .NET DateTime format for prerelease
     VersionPrefix: 'v'          # Git tag prefix
-    MajorLabels: 'major, breaking'
-    MinorLabels: 'minor, feature'
-    PatchLabels: 'patch, fix'
-    IgnoreLabels: 'NoRelease'
+    MajorLabels: 'release:major'
+    MinorLabels: 'release:minor'
+    PatchLabels: 'release:patch'
+    IgnoreLabels: 'release:skip'
+    PrereleaseLabels: 'release:pre-release'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true
@@ -291,7 +297,7 @@ The publish step only runs when:
 
 - All tests and code coverage pass (or are skipped)
 - An important push reaches the default branch (stable release), or
-- The PR carries the `Prerelease` label (prerelease from the feature/release branch)
+- The PR carries the configured prerelease label and resolves a bump
 
 On any closed PR, the pipeline cleans up any prerelease tags created for that branch. A closed pull request cannot
 create a stable release.

@@ -65,10 +65,11 @@ For worked examples, see [Configuring the pipeline](../guides/configuring-the-pi
 | `Publish.Module.IncrementalPrerelease`    | `Boolean` | Use incremental prerelease versioning                                                                                                                                | `true`              |
 | `Publish.Module.DatePrereleaseFormat`     | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
 | `Publish.Module.VersionPrefix`            | `String`  | Prefix for version tags                                                                                                                                              | `'v'`               |
-| `Publish.Module.MajorLabels`              | `String`  | Labels indicating a major version bump                                                                                                                               | `'major, breaking'` |
-| `Publish.Module.MinorLabels`              | `String`  | Labels indicating a minor version bump                                                                                                                               | `'minor, feature'`  |
-| `Publish.Module.PatchLabels`              | `String`  | Labels indicating a patch version bump                                                                                                                               | `'patch, fix'`      |
-| `Publish.Module.IgnoreLabels`             | `String`  | Labels indicating no release                                                                                                                                         | `'NoRelease'`       |
+| `Publish.Module.MajorLabels`              | `String`  | Labels indicating a major version bump                                                                                                                               | `'release:major'`   |
+| `Publish.Module.MinorLabels`              | `String`  | Labels indicating a minor version bump                                                                                                                               | `'release:minor'`   |
+| `Publish.Module.PatchLabels`              | `String`  | Labels indicating a patch version bump                                                                                                                               | `'release:patch'`   |
+| `Publish.Module.IgnoreLabels`             | `String`  | Labels indicating no release                                                                                                                                         | `'release:skip'`    |
+| `Publish.Module.PrereleaseLabels`         | `String`  | Labels indicating a prerelease                                                                                                                                       | `'release:pre-release'` |
 | `Publish.Module.UsePRTitleAsReleaseName`  | `Boolean` | Use the PR title as the GitHub release name instead of version string                                                                                                | `false`             |
 | `Publish.Module.UsePRBodyAsReleaseNotes`  | `Boolean` | Use the PR body as the release notes content                                                                                                                         | `true`              |
 | `Publish.Module.UsePRTitleAsNotesHeading` | `Boolean` | Prepend PR title as H1 heading with PR number link before the body                                                                                                   | `true`              |
@@ -147,10 +148,11 @@ Publish:
     IncrementalPrerelease: true
     DatePrereleaseFormat: ''
     VersionPrefix: 'v'
-    MajorLabels: 'major, breaking'
-    MinorLabels: 'minor, feature'
-    PatchLabels: 'patch, fix'
-    IgnoreLabels: 'NoRelease'
+    MajorLabels: 'release:major'
+    MinorLabels: 'release:minor'
+    PatchLabels: 'release:patch'
+    IgnoreLabels: 'release:skip'
+    PrereleaseLabels: 'release:pre-release'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true

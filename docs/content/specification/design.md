@@ -50,8 +50,9 @@ That enriched object is an internal inter-workflow contract, not an authoring fo
 Release intent is resolved once, in the Plan job. A default-branch push resolves the merged pull request for its
 labels only when its merge commit exactly matches the pushed SHA; a direct push or manual dispatch defaults to `Patch`
 regardless of `AutoPatching`. Closed pull requests clean up prereleases but cannot authorize a stable release. The
-label-to-bump mapping, handling of conflicting labels, and branch types that may publish are documented in
-[Versioning and releases](../guides/versioning-and-releases.md).
+default label-to-bump mapping is `release:major`, `release:minor`, `release:patch`, `release:pre-release`, and
+`release:skip`. Repositories can override those names in `.github/PSModule.yml`. Handling of conflicting labels and
+branch types that may publish are documented in [Versioning and releases](../guides/versioning-and-releases.md).
 
 Tests run on **Windows** (latest), **Linux** (Ubuntu latest), and **macOS** (latest). Failures on any platform block
 the build. Each platform runs four suites in parallel:

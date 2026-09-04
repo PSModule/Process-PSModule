@@ -79,6 +79,77 @@ function Resolve-WorkflowEventRouting {
     }
 }
 
+function Resolve-PSModulePublishSetting {
+    <#
+        .SYNOPSIS
+        Resolves module publication settings and their defaults.
+
+        .DESCRIPTION
+        Applies Process-PSModule defaults while preserving every consumer-provided
+        publication and release-label mapping. Rejects the removed AutoPatching
+        setting and invalid DefaultBump values with migration guidance.
+
+        .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        .EXAMPLE
+        Resolve-PSModulePublishSetting -PublishModule $settings.Publish.Module
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        [Parameter()]
+        [AllowNull()]
+        [object] $PublishModule
+    )
+
+    $propertyNames = if ($null -eq $PublishModule) {
+        @()
+    } elseif ($PublishModule -is [System.Collections.IDictionary]) {
+        @($PublishModule.Keys)
+    } else {
+        @($PublishModule.PSObject.Properties.Name)
+    }
+
+    if ($propertyNames -contains 'AutoPatching') {
+        throw (
+            'Publish.Module.AutoPatching was removed in Process-PSModule v9. ' +
+            'Replace it with Publish.Module.DefaultBump set to patch, minor, or major.'
+        )
+    }
+
+    $hasDefaultBump = $propertyNames -contains 'DefaultBump'
+    $defaultBump = if ($hasDefaultBump) {
+        [string]$PublishModule.DefaultBump
+    } else {
+        'patch'
+    }
+    $validDefaultBumps = @('patch', 'minor', 'major')
+    if ($validDefaultBumps -cnotcontains $defaultBump) {
+        throw (
+            "Invalid Publish.Module.DefaultBump: [$defaultBump]. " +
+            "Valid values are: $($validDefaultBumps -join ', ')."
+        )
+    }
+
+    [pscustomobject]@{
+        Skip                     = $PublishModule.Skip ?? $false
+        AutoCleanup              = $PublishModule.AutoCleanup ?? $true
+        DefaultBump              = $defaultBump
+        IncrementalPrerelease    = $PublishModule.IncrementalPrerelease ?? $true
+        DatePrereleaseFormat     = $PublishModule.DatePrereleaseFormat ?? ''
+        VersionPrefix            = $PublishModule.VersionPrefix ?? 'v'
+        MajorLabels              = $PublishModule.MajorLabels ?? 'release:major'
+        MinorLabels              = $PublishModule.MinorLabels ?? 'release:minor'
+        PatchLabels              = $PublishModule.PatchLabels ?? 'release:patch'
+        IgnoreLabels             = $PublishModule.IgnoreLabels ?? 'release:skip'
+        PrereleaseLabels         = $PublishModule.PrereleaseLabels ?? 'release:prerelease'
+        UsePRTitleAsReleaseName  = $PublishModule.UsePRTitleAsReleaseName ?? $false
+        UsePRBodyAsReleaseNotes  = $PublishModule.UsePRBodyAsReleaseNotes ?? $true
+        UsePRTitleAsNotesHeading = $PublishModule.UsePRTitleAsNotesHeading ?? $true
+    }
+}
+
 function Select-PullRequestForPush {
     <#
         .SYNOPSIS
