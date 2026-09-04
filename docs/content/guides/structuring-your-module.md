@@ -40,7 +40,7 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   ├── PSModule.yml                           # Settings parsed to drive matrices
 │   └── release.yml                            # Release automation template invoked on publish
 ├── examples/                                  # Samples referenced in generated documentation
-│   └── General.ps1                            # Example script ingested by Document-PSModule
+│   └── General.ps1                            # Example script processed by Process-PSModule
 ├── icon/                                      # Icon assets linked from manifest and documentation
 │   └── icon.png                               # Default module icon (PNG format)
 ├── src/                                       # Module source, see "Module source code structure" below
@@ -72,9 +72,9 @@ Key expectations:
 
 ### Grouping and published help URLs
 
-`Document-PSModule` generates command help and then moves each page to mirror the relative path under `src/functions/public/`. Moving an existing command into a group therefore changes its published URL from `https://psmodule.io/<ModuleName>/Functions/<Name>/` to `https://psmodule.io/<ModuleName>/Functions/<Group>/<Name>/`.
+Process-PSModule generates command help and publishes each page to mirror the relative path under `src/functions/public/`. Moving an existing command into a group therefore changes its published URL from `https://psmodule.io/<ModuleName>/Functions/<Name>/` to `https://psmodule.io/<ModuleName>/Functions/<Group>/<Name>/`.
 
-When regrouping a command, update its first public `.LINK`, every private-helper `.LINK` that points to it, and any other references to the old URL in the same change. `Document-PSModule` does not create redirects for the old path; arrange a redirect separately in the publishing layer when existing links must continue to work.
+When regrouping a command, update its first public `.LINK`, every private-helper `.LINK` that points to it, and any other references to the old URL in the same change. Process-PSModule does not create redirects for the old path; arrange a redirect separately in the publishing layer when existing links must continue to work.
 
 ## Module source code structure
 
@@ -125,7 +125,7 @@ How the module is built.
 │   ├── finally.ps1                         # Cleanup script appended to the root module
 │   ├── header.ps1                          # Optional header injected at the top of the module
 │   ├── manifest.psd1 (optional)            # Source manifest reused when present
-│   └── README.md                           # Module-level docs ingested by Document-PSModule
+│   └── README.md                           # Module-level docs processed by Process-PSModule
 ```
 
 ### Declaring module dependencies
