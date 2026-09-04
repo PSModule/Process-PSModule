@@ -89,4 +89,4 @@ Cross-org standards and reusable solution documentation are now canonical in [MS
 
 - [Coding Standards](https://msx.no/docs/Coding-Standards/)
 - [Capabilities](https://msx.no/docs/Capabilities/)
-- [Frameworks](https://msx.no/docs/Frameworks/)
+- [Frameworks](https://msx.no/docs/Capabilities/)

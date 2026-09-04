@@ -175,7 +175,7 @@ See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule) 
 
 `AGENTS.md` and `CLAUDE.md` are the required set. `AGENTS.md` is the entry point that AGENTS.md-aware runtimes read directly, so a repository is usable by an agent without a per-runtime copy of the same pointer.
 
-Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
+Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 

@@ -71,7 +71,7 @@ changes, or claim release readiness.
 - [Module development orchestration](../../../../../docs/content/guides/module-development-orchestration.md)
 - [PSModule repository standard](../../../../../docs/content/reference/repository-standard.md)
 - [Structuring your module](../../../../../docs/content/guides/structuring-your-module.md)
-- [MSX Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/)
+- [MSX Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
 - [MSX Workflow](https://msx.no/docs/Ways-of-Working/Workflow/)
 - [MSX Branching and Merging](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/)
 - [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/)
