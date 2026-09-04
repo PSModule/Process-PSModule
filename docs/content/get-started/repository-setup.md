@@ -52,8 +52,6 @@ on:
       - labeled
       - unlabeled
 
-permissions: {}
-
 jobs:
   Process-PSModule-Production:
     if: ${{ github.event_name != 'pull_request' }}
