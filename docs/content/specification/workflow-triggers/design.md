@@ -15,7 +15,7 @@ The reusable entry point, `.github/workflows/workflow.yml`, routes events into c
 
 Use three mutually exclusive entry jobs with literal concurrency policies. The production and activity jobs each call the complete processing workflow, retaining their concurrency slot until its nested jobs finish. The close job calls only closure coordination and cleanup. A small framework-owned preflight records invocation identity before these jobs become eligible; it performs no planning, version resolution, or module execution.
 
-This avoids an expression-valued `queue` and a short-lived admission job that releases its slot before the pipeline starts. A live GitHub.com experiment accepted an expression-valued `queue` for an uncontended run and for pull-request replacement, but concurrent production invocations failed before creating jobs rather than entering the `max` queue. The framework therefore uses literal policies. `Plan` and version resolution execute inside the processing call, after admission.
+This avoids an expression-valued `queue` and a short-lived admission job that releases its slot before the pipeline starts. A live GitHub.com experiment accepted an expression-valued `queue` for an uncontended run and for pull-request replacement, but concurrent production invocations failed before creating jobs rather than entering the `max` queue. The same top-level producer group with literal `max` and `false` also failed under production contention when its key contained `github.workflow` and the PR-or-ref fallback. The equivalent static group worked at the caller workflow level. The framework therefore uses literal policies on internal router jobs. `Plan` and version resolution execute inside the processing call, after admission.
 
 ### Platform contract
 
@@ -36,8 +36,9 @@ These are [GitHub's concurrency guarantees][concurrency] and [Actions limits][li
 | Option | Trade-offs | Verdict |
 | --- | --- | --- |
 | Internal router with literal per-track policies | Adds one reusable-workflow layer; keeps caller configuration small and protects the complete pipeline. | Chosen. |
-| One conditional workflow-level group | Fewer internal jobs, but a conditional `queue` plus conditional cancellation fails concurrent production admission before jobs run. A static `max` queue cannot cancel PR activity; a static `single` queue cannot retain the production burst. | Rejected. |
-| Caller-owned concurrency | Can protect the entire caller, but duplicates policy and can discard work before the framework receives it. | Rejected for the standard caller. |
+| One conditional producer workflow-level group | Fewer internal jobs, but a conditional `queue` plus conditional cancellation fails concurrent production admission before jobs run. A static group using the same `github.workflow` and PR-or-ref identity also fails under production contention. | Rejected. |
+| One caller-side static workflow-level group | `queue: max` and `cancel-in-progress: false` retain and serialize every production event, PR update, and closure for a stable PR-or-ref key. The exact expression works as a caller workflow's concurrency group. | Rejected for the standard caller: the caller owns policy, PR updates do not converge, and closure waits behind obsolete activity. |
+| Caller-owned concurrency | Can protect caller-side sibling work, but duplicates policy and can discard work before the framework receives it when it uses the wrong queue policy. | Rejected for the standard caller. |
 | One cancelable group for activity and closure | Close can supersede activity natively, but reopening or another update can cancel cleanup. | Rejected. |
 | Concurrency only on publication or on a short admission job | Allows planning/version races or releases the lock before processing ends. | Rejected. |
 | Durable external dispatcher | Can provide stronger ordering and retention but adds persistent state and operational ownership. | Outside the bounded native-queue contract. |
