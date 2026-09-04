@@ -30,18 +30,49 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 jobs:
   WorkflowTestDefault:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event_name != 'pull_request' }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      queue: max
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/workflow.yml
+    secrets:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
+      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+      TestData: >-
+        {
+          "secrets": {
+            "PSMODULE_TEST_SINGLELINE_SECRET": "${{ secrets.PSMODULE_TEST_SINGLELINE_SECRET }}"
+          },
+          "variables": {
+            "PSMODULE_TEST_VARIABLE": ${{ toJSON(vars.PSMODULE_TEST_VARIABLE) }}
+          }
+        }
+    with:
+      WorkingDirectory: tests/srcTestRepo
+      ImportantFilePatterns: |
+        ^tests/srcTestRepo/
+        ^\.github/actions/
+        ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
+
+  WorkflowTestDefaultPullRequest:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+      queue: single
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/workflow.yml
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
@@ -64,11 +95,17 @@ jobs:
         ^\.github/workflows/(?!Release\.yml$|Linter\.yml$)
 
   VerifyRootFunctionsIndexDefault:
-    if: github.event.action != 'closed'
+    if: >-
+      ${{ always() && github.event.action != 'closed' &&
+      (needs.WorkflowTestDefault.result == 'success' ||
+      needs.WorkflowTestDefaultPullRequest.result == 'success') }}
     name: Verify root Functions index [Default]
     runs-on: ubuntu-latest
     needs:
       - WorkflowTestDefault
+      - WorkflowTestDefaultPullRequest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
