@@ -65,7 +65,7 @@ runs:
       shell: pwsh
       working-directory: ${{ inputs.WorkingDirectory }}
       env:
-        GH_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ env.GH_TOKEN }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Settings: ${{ inputs.Settings }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson: ${{ inputs.EventJson }}
