@@ -12,7 +12,7 @@ source-code test has an ID that can be used to
 ## Source-code tests
 
 Run by the [Test source code](pipeline-stages.md#test-source-code) job against files in `src/`. Implemented in
-[PSModule - SourceCode tests](https://github.com/PSModule/Process-PSModule/blob/main/scripts/tests/SourceCode/PSModule/PSModule.Tests.ps1).
+[PSModule - SourceCode tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/SourceCode/PSModule/PSModule.Tests.ps1).
 
 | ID | Category | Description | Example skip comment |
 | ---- | ---------- | ------------- | ---------------------- |
@@ -32,7 +32,7 @@ Run by the [Test source code](pipeline-stages.md#test-source-code) job against f
 
 Run by the [Framework test](pipeline-stages.md#framework-test) job against the compiled module in
 `outputs/module`. Implemented in
-[PSModule - Module tests](https://github.com/PSModule/Process-PSModule/blob/main/scripts/tests/Module/PSModule/PSModule.Tests.ps1).
+[PSModule - Module tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/Module/PSModule/PSModule.Tests.ps1).
 
 | Name | Description |
 | ---- | ----------- |

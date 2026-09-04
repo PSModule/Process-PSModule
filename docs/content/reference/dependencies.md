@@ -22,5 +22,6 @@ packages. Each is versioned independently, and the main workflow pins versions e
 | PowerShell Gallery API | Publishes module packages. |
 | GitHub Pages | Hosts the documentation site. |
 
-For the full dependency tree, including diagrams and a reference of every transitive dependency, see
-[DEPENDENCIES.md](https://github.com/PSModule/Process-PSModule/blob/main/DEPENDENCIES.md).
+The composition itself is the reference: see the
+[reusable workflows](https://github.com/PSModule/Process-PSModule/tree/main/.github/workflows) and the
+[actions they call](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions).
