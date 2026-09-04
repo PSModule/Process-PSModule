@@ -61,7 +61,7 @@ Versions MUST follow [SemVer 2.0.0](https://semver.org/) (`vMAJOR.MINOR.PATCH` o
 
 ### NFR2 — Serialized releases {#nfr2}
 
-Production pipelines MUST execute serially from planning through their final enabled stage, retaining pending work within the platform's maximum queue capacity. Pull-request updates MUST supersede obsolete activity without canceling production or closure cleanup. The [workflow trigger spec](workflow-triggers/spec.md) owns admission, ordering boundaries, and cleanup guarantees.
+Production pipelines MUST execute serially from planning through their final enabled stage, retaining pending work within the platform's maximum queue capacity. Pull-request updates MUST supersede obsolete activity without canceling production or work for other pull requests; closing a pull request supersedes its activity. The [workflow trigger spec](workflow-triggers/spec.md) owns admission, ordering boundaries, and cleanup guarantees.
 
 ### NFR3 — Single production authority {#nfr3}
 

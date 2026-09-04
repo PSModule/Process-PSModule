@@ -54,7 +54,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -74,6 +75,10 @@ Every permission in that block is required. GitHub App installation tokens perfo
 the pull-request trigger handles CI, prereleases, and prerelease cleanup. See
 [Workflow inputs](../reference/workflow-inputs.md) for what each permission is used for, and
 [Calling the workflow](../guides/calling-the-workflow.md) for passing test secrets and variables.
+
+The caller-level concurrency block retains production and manual work while replacing obsolete work for the same pull
+request. The fallback expression uses the pull-request number for every pull-request action, including `closed`; other
+events use their Git ref. Keep its group distinct from the reusable workflow's prefixed group.
 
 ## 4. Add the settings file
 

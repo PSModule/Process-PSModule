@@ -37,7 +37,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -59,11 +60,10 @@ Stable releases are evaluated from a push to the default branch. A merged pull r
 release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
 Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
 
-The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
-resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
-the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
-The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
-waits for it to finish.
+The concurrency key keeps each pull request distinct from the default branch, so a close event interrupts only its own
+pull-request activity and does not block the resulting stable release. Pull-request events replace obsolete activity;
+all other events, including a manual default-branch release, retain the maximum native queue. The reusable workflow
+uses a distinct prefixed concurrency group. Do not give the caller the reusable workflow's group name.
 
 ## Passing test data
 

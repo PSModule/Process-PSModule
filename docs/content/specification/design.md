@@ -19,10 +19,10 @@ documented in [Workflow inputs](../reference/workflow-inputs.md).
 
 ### Trigger admission
 
-The [workflow trigger design](workflow-triggers/design.md) owns admission before processing: a retained production queue,
-replaceable pull-request activity, and protected closure coordination. Concurrency belongs to the reusable entry point,
-not to caller templates or individual processing stages. The complete processing call retains its admission slot through
-the final enabled stage; closure stops obsolete activity before optional prerelease cleanup.
+The [workflow trigger design](workflow-triggers/design.md) owns caller-level admission before processing: a retained
+production queue and replaceable pull-request activity. The caller's workflow-level group covers the complete reusable
+workflow call through its final enabled stage; the reusable workflow identifies closure and performs optional prerelease
+cleanup.
 
 ### Composed reusable workflows
 
