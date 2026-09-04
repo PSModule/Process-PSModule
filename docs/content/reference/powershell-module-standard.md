@@ -358,6 +358,7 @@ The CI pipeline automatically tests every source file against the following rule
 | `CmdletBinding` | Every function must have `[CmdletBinding()]` |
 | `ParamBlock` | Every function must have a `param()` block |
 | `FunctionTest` | Every public function must be referenced by the tests; its behavior must be covered whether the suite is per-command or grouped |
+| `PublicHelpLink` | Every public function must have a first `.LINK` entry with an absolute HTTPS URL whose path is `/Module/Functions/<relative-command>/` |
 
 To skip a specific rule for one file only, add a comment at the very top of that file:
 

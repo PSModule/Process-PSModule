@@ -26,6 +26,7 @@ Run by the [Test source code](pipeline-stages.md#test-source-code) job against f
 | `CmdletBinding` | Functions (Generic) | Functions should include the `[CmdletBinding()]` attribute. | `#SkipTest:CmdletBinding:Simple helper function` |
 | `ParamBlock` | Functions (Generic) | Functions should have a parameter block (`param()`). | `#SkipTest:ParamBlock:No parameters needed` |
 | `FunctionTest` | Functions (Public) | All public functions and filters should have corresponding tests. | `#SkipTest:FunctionTest:Test in development` |
+| `PublicHelpLink` | Functions (Public) | Every public function and filter should have a first `.LINK` entry with an absolute HTTPS URL whose path matches its generated command documentation path. | `#SkipTest:PublicHelpLink:Legacy documentation link` |
 
 ## Module tests
 
