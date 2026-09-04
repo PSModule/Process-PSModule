@@ -359,7 +359,7 @@ Describe 'PSModule - SourceCode tests' {
                     $tokens.count -ne 0
                 }
             }
-            It 'Should put the canonical documentation link first for <DocumentationPath> (ID: PublicHelpLink)' -ForEach $publicHelpLinkTestCases {
+            It 'Should require a canonical documentation link for <DocumentationPath> (ID: PublicHelpLink)' -ForEach $publicHelpLinkTestCases {
                 param($DocumentationPath, $FilePath)
 
                 $content = Get-Content -Path $FilePath -Raw
