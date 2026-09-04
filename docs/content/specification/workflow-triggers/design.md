@@ -15,7 +15,7 @@ The reusable entry point, `.github/workflows/workflow.yml`, routes events into c
 
 Use three mutually exclusive entry jobs with literal concurrency policies. The production and activity jobs each call the complete processing workflow, retaining their concurrency slot until its nested jobs finish. The close job calls only closure coordination and cleanup. A small framework-owned preflight records invocation identity before these jobs become eligible; it performs no planning, version resolution, or module execution.
 
-This avoids an expression-valued `queue`, whose official parser support is stronger than its documented examples, and avoids a short-lived admission job that releases its slot before the pipeline starts. `Plan` and version resolution execute inside the processing call, after admission.
+This avoids an expression-valued `queue` and a short-lived admission job that releases its slot before the pipeline starts. A live GitHub.com experiment accepted an expression-valued `queue` for an uncontended run and for pull-request replacement, but concurrent production invocations failed before creating jobs rather than entering the `max` queue. The framework therefore uses literal policies. `Plan` and version resolution execute inside the processing call, after admission.
 
 ### Platform contract
 
@@ -36,7 +36,7 @@ These are [GitHub's concurrency guarantees][concurrency] and [Actions limits][li
 | Option | Trade-offs | Verdict |
 | --- | --- | --- |
 | Internal router with literal per-track policies | Adds one reusable-workflow layer; keeps caller configuration small and protects the complete pipeline. | Chosen. |
-| Conditional workflow-level concurrency | Fewer internal jobs, but conditional `queue` needs live-service evidence beyond parser support. | Not required for this design. |
+| One conditional workflow-level group | Fewer internal jobs, but a conditional `queue` plus conditional cancellation fails concurrent production admission before jobs run. A static `max` queue cannot cancel PR activity; a static `single` queue cannot retain the production burst. | Rejected. |
 | Caller-owned concurrency | Can protect the entire caller, but duplicates policy and can discard work before the framework receives it. | Rejected for the standard caller. |
 | One cancelable group for activity and closure | Close can supersede activity natively, but reopening or another update can cancel cleanup. | Rejected. |
 | Concurrency only on publication or on a short admission job | Allows planning/version races or releases the lock before processing ends. | Rejected. |
