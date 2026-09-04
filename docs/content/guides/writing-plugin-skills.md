@@ -64,14 +64,7 @@ agents, define the parent owner, child boundary, expected handoff, validation,
 report-back, and stop conditions. Do not silently broaden a skill into
 unrelated repository work.
 
-## Contribution and validation
-
-Work on a dedicated branch, open a draft pull request early, and use small
-commits. Include the required co-author trailer in every commit:
-
-```text
-Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>
-```
+## Validation
 
 Run the smallest existing checks that cover the changed surfaces:
 
