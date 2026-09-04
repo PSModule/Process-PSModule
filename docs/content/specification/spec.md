@@ -61,7 +61,7 @@ Versions MUST follow [SemVer 2.0.0](https://semver.org/) (`vMAJOR.MINOR.PATCH` o
 
 ### NFR2 — Serialized releases {#nfr2}
 
-Only one release process MUST run against a given version of the codebase at a time. Concurrent releases to the same ref MUST be prevented, so the tag, version counter, and published artifact remain consistent.
+Production pipelines MUST execute serially from planning through their final enabled stage, retaining pending work within the platform's maximum queue capacity. Pull-request updates MUST supersede obsolete activity without canceling production or closure cleanup. The [workflow trigger spec](workflow-triggers/spec.md) owns admission, ordering boundaries, and cleanup guarantees.
 
 ### NFR3 — Single production authority {#nfr3}
 
@@ -73,7 +73,7 @@ Pipeline failures MUST be visible in the pull request and block merge. Contribut
 
 ### NFR5 — Reproducible and auditable {#nfr5}
 
-The entire pipeline and its decisions MUST be stored in git, so the build is reproducible and auditable from the commit alone. No external configuration, API calls, or out-of-band decisions.
+Pipeline policy and configuration MUST be version-controlled. Each run MUST record its triggering revision and the authenticated event, release, and configuration metadata used for its decisions, so queuing or later metadata changes do not erase the decision trail.
 
 ## Success Criteria
 
@@ -151,6 +151,7 @@ Scenario: Handle documentation generation failure
 ## Where this connects
 
 - [Design](design.md) — how these requirements are delivered.
+- [Workflow triggers](workflow-triggers/index.md) — production, pull-request, and closure scheduling.
 - [Pipeline stages](../reference/pipeline-stages.md) — the job-by-job breakdown of the workflow.
 - [Calling the workflow](../guides/calling-the-workflow.md) — how to invoke the workflow.
 - [Settings](../reference/settings.md) — the settings file and its options.

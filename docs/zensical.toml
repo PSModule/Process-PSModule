@@ -55,6 +55,11 @@ nav = [
     "specification/index.md",
     {"Spec" = "specification/spec.md"},
     {"Design" = "specification/design.md"},
+    {"Workflow triggers" = [
+      "specification/workflow-triggers/index.md",
+      {"Spec" = "specification/workflow-triggers/spec.md"},
+      {"Design" = "specification/workflow-triggers/design.md"},
+    ]},
     {"Principles and practices" = "specification/principles-and-practices.md"},
   ]},
   {"Modules" = "Modules/index.md"},

@@ -79,6 +79,8 @@ An update to an open pull request MUST request cancellation of older running wor
 
 The rule applies to revision updates and supported release-intent changes, including label removal. Cancellation MAY allow already-started steps or external requests to finish. A burst therefore guarantees latest-state convergence, not exactly one workflow start.
 
+Supersession follows admission order, not a guaranteed chronological delivery order. If delayed delivery displaces the current revision and leaves only obsolete work, the framework MUST reject stale work and report that the current revision needs a rerun rather than report current validation as successful.
+
 #### Supersession scenarios
 
 ```gherkin
@@ -201,6 +203,7 @@ Scenario: Clean an abandoned change with the standard caller
 ## Constraints and assumptions
 
 - **Constraint:** Platform scheduling and cancellation are asynchronous. Cancellation does not undo PowerShell Gallery uploads or already-accepted API requests.
+- **Constraint:** Native supersession selects the latest admitted invocation. Freshness checks prevent obsolete publication but do not make event delivery and cancellation atomic.
 - **Constraint:** The caller controls event delivery, filtering, permissions, and any outer concurrency policy. The framework cannot recover events the caller never invokes.
 - **Constraint:** Guarantees apply within documented platform queue and runtime limits, not to arbitrary external cancellation or failed quality gates.
 - **Assumption:** A repository has one production caller for a module. Independent modules or unrelated workflows are not coordinated unless they share an explicit framework identity.

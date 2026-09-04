@@ -13,4 +13,5 @@ delivered. They are aimed at people maintaining Process-PSModule itself. Module 
 | --- | --- |
 | [Spec](spec.md) | Requirements — an end-to-end pipeline guaranteeing build, testing, quality gates, documentation, and versioned publication. |
 | [Design](design.md) | How the spec is delivered — a single reusable workflow composing sub-workflows, and the settings contract. |
+| [Workflow triggers](workflow-triggers/index.md) | Production queuing, pull-request supersession, and optional closure cleanup, with a dedicated spec and design. |
 | [Principles and practices](principles-and-practices.md) | The versioning, branching, and colocation principles behind the design. |

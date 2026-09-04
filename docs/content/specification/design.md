@@ -17,6 +17,13 @@ passes the required secrets. The full caller template is in
 [Repository setup](../get-started/repository-setup.md#3-add-the-caller-workflow), and the interface it targets is
 documented in [Workflow inputs](../reference/workflow-inputs.md).
 
+### Trigger admission
+
+The [workflow trigger design](workflow-triggers/design.md) owns admission before processing: a retained production queue,
+replaceable pull-request activity, and protected closure coordination. Concurrency belongs to the reusable entry point,
+not to caller templates or individual processing stages. The complete processing call retains its admission slot through
+the final enabled stage; closure stops obsolete activity before optional prerelease cleanup.
+
 ### Composed reusable workflows
 
 The main workflow composes work across specialized reusable workflows, each owning a pipeline stage:
@@ -110,6 +117,7 @@ independently; the main workflow pins versions explicitly. The full list is in
 ## Where this connects
 
 - [Spec](spec.md) — the requirements this design delivers.
+- [Workflow triggers](workflow-triggers/index.md) — scheduling requirements and the event-routing design.
 - [Pipeline stages](../reference/pipeline-stages.md) — detailed breakdown of each job.
 - [Calling the workflow](../guides/calling-the-workflow.md) — how to invoke it.
 - [Settings](../reference/settings.md) — the settings file reference.
