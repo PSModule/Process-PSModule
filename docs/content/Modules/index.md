@@ -1,19 +1,23 @@
 # Modules
 
-Process-PSModule now hosts PSModule-org module documentation.
+This page indexes modules maintained in the PSModule organization and what each module does.
 
-This section is the local source of truth for:
+Modules are separate from the [Process-PSModule framework](../index.md). Use the framework documentation to build and release a module; use this page to discover the modules available to install and use.
 
-- module catalog and module-level specs
-- Process-PSModule structure and build flow
-- repository anatomy and template onboarding
+## Scope
 
-## Sections
+Each module page should capture:
 
-- [Repository Standard](Repository-Standard.md)
-- [Standards](Standards.md)
-- [Module types](Module-Types.md)
-- [Test Specification](Test-Specification.md)
-- [Versioning](Versioning.md)
-- [Catalog](Catalog/index.md) (auto-generated from PSModule repo metadata, release data, and README summaries)
-- [Process-PSModule](Process-PSModule/index.md)
+- purpose and problem statement
+- install and import baseline
+- key exported capabilities
+- owner and maintenance notes
+- lifecycle status
+
+## Module index generation
+
+The module list and linked module pages are generated from PSModule repository metadata and README content, then refreshed automatically.
+
+<!-- MODULE_CATALOG_START -->
+
+<!-- MODULE_CATALOG_END -->

@@ -3,8 +3,14 @@ name: Publish-Module
 on:
   workflow_call:
     secrets:
-      APIKey:
+      PSGALLERY_API_KEY:
         description: The API key for the PowerShell Gallery.
+        required: true
+      GitHubAppClientId:
+        description: The client ID of the GitHub App used for repository API calls.
+        required: true
+      GitHubAppPrivateKey:
+        description: The private key of the GitHub App used for repository API calls.
         required: true
     inputs:
       Settings:
@@ -12,14 +18,14 @@ on:
         description: The complete settings object.
         required: true
 
-permissions:
-  contents: write # to checkout the repo, create releases, and upload release artifacts
-  pull-requests: write # to comment on PRs
+permissions: {}
 
 jobs:
   Publish-Module:
     name: Publish-Module
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read # Checkout uses github.token.
     env:
       SETTINGS: ${{ inputs.Settings }}
     steps:
@@ -36,28 +42,65 @@ jobs:
           path: _wf
           persist-credentials: false
 
+      - name: Create GitHub App token
+        id: App-Token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.GitHubAppClientId }}
+          private-key: ${{ secrets.GitHubAppPrivateKey }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Publish module
+        id: publish-module
         if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None'
         uses: ./_wf/.github/actions/Publish-PSModule
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
           ModulePath: outputs/module
-          APIKey: ${{ secrets.APIKey }}
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+          PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
+          WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
+          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+
+      - name: Create GitHub release
+        id: create-github-release
+        if: >-
+          !cancelled() &&
+          fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'None' &&
+          steps.publish-module.outcome == 'success'
+        uses: ./_wf/.github/actions/Release-PSModule
+        env:
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
+        with:
+          Name: ${{ fromJson(inputs.Settings).Name }}
+          ModulePath: outputs/module
+          ArtifactName: module
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
           UsePRBodyAsReleaseNotes: ${{ fromJson(inputs.Settings).Publish.Module.UsePRBodyAsReleaseNotes }}
           UsePRTitleAsNotesHeading: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsNotesHeading }}
-          VersionPrefix: ${{ fromJson(inputs.Settings).Publish.Module.VersionPrefix }}
+          ReleaseTag: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.FullVersion }}
+          PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
+          CommitSha: ${{ fromJson(inputs.Settings).Context.CommitSha }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
       - name: Cleanup prereleases
-        if: fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease'
+        if: >-
+          always() && !cancelled() &&
+          fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType != 'Prerelease' &&
+          (fromJson(inputs.Settings).Publish.Module.Resolution.ReleaseType == 'None' ||
+          (steps.publish-module.outcome == 'success' &&
+          steps.create-github-release.outcome == 'success'))
         uses: ./_wf/.github/actions/Cleanup-PSModulePrereleases
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           AutoCleanup: ${{ fromJson(inputs.Settings).Publish.Module.AutoCleanup }}
+          ReleaseTag: ${{ steps.create-github-release.outputs.ReleaseTag }}
+          PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}

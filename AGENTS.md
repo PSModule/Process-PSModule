@@ -15,7 +15,7 @@ If you find a problem or improvement, fix if small; otherwise open an issue.
 Regarding repo structure, module source code, and how the Process-PSModule workflow
 works. For PSModule-specific build, layout, and process guidance:
 
-- [Process-PSModule docs](https://psmodule.github.io/docs/Modules/Process-PSModule/) —
+- [Process-PSModule docs](https://psmodule.io/docs/) —
   repository structure, module anatomy, and the build/test/pack/publish pipeline.
 - [Repository defaults](https://psmodule.github.io/docs/Modules/Repository-Defaults/) —
   the expected repository layout and required files.
@@ -28,11 +28,11 @@ works. For PSModule-specific build, layout, and process guidance:
 
 For cross-cutting ways of working and standards:
 
-- [Agentic Development](https://msxorg.github.io/docs/Ways-of-Working/Agentic-Development/) —
+- [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) —
   how agents and humans collaborate in this ecosystem.
-- [Ways of Working](https://msxorg.github.io/docs/Ways-of-Working/) — contribution
+- [Ways of Working](https://msx.no/docs/Ways-of-Working/) — contribution
   workflow, branching, PRs, issues.
-- [Coding Standards](https://msxorg.github.io/docs/Coding-Standards/) — language-level
+- [Coding Standards](https://msx.no/docs/Coding-Standards/) — language-level
   conventions.
 - [MSXOrg/memory](https://github.com/MSXOrg/memory) — durable agent working memory:
   gotchas, knowledge, and agent role notes.

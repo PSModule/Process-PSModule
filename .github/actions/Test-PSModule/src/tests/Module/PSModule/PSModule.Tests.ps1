@@ -43,7 +43,7 @@ if ($hasClassExporter) {
 
 
 # Run-phase setup — recompute from $Path so that It/Context blocks can use these variables.
-# Pester v5 Discovery and Run are separate executions. The script-scope variables above drive
+# Pester 6 Discovery and Run are separate executions. The script-scope variables above drive
 # -Skip and -ForEach during Discovery. This BeforeAll recomputes the same values for the Run
 # phase, where It blocks actually execute. The duplication is intentional and required.
 BeforeAll {
