@@ -28,4 +28,4 @@ Run an individual script only when its scenario is suitable for the local enviro
 
 ## Maintenance
 
-The files were imported byte-for-byte from [`PSModule/docs/guidance`](https://github.com/PSModule/docs/tree/main/guidance). When that published set changes, import the complete current file from its Git blob into this directory and preserve its contents. Keep this index synchronized with the directory so users can discover every available script.
+The files are maintained in the [`guidance` directory](https://github.com/PSModule/Process-PSModule/tree/main/guidance). When that published set changes, import the complete current file from its Git blob into this directory and preserve its contents. Keep this index synchronized with the directory so users can discover every available script.
