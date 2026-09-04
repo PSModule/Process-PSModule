@@ -17,13 +17,35 @@ It does not apply directly to:
 - Template repositories other than `Template-PSModule`.
 - Test, archive, service, or infrastructure repositories that are not published as module artifacts.
 
-Two baseline expectations still apply to every PSModule repository, including the types listed above. Each repository stands on its own: it carries its own governance and community files instead of relying on the organization `.github` fallback, and each repository ships the [agent onboarding files](#agent-onboarding-files) so an agent can work in it without prior context. What differs by type is the concrete file set and layout: the required files, README shape, and framework wiring on the rest of this page are the module standard, and non-module repositories keep only the equivalent baseline appropriate to their own type. This documentation project, maintained in `PSModule/Process-PSModule`, follows those two baseline expectations itself.
+Two baseline expectations still apply to every PSModule repository, including
+the types listed above. Each repository carries the repository-local files
+required for its type and ships the [agent onboarding files](#agent-onboarding-files)
+so an agent can work in it without prior context. Organization-owned community
+policies may be inherited from `PSModule/.github` when this standard explicitly
+allows it. What differs by type is the concrete file set and layout: the
+required files, README shape, and framework wiring on the rest of this page are
+the module standard, and non-module repositories keep only the equivalent
+baseline appropriate to their own type.
 
-Each initiative should keep its own repository standards in its central documentation repository. For the PSModule organization, this repository is the source of truth.
+`PSModule/Process-PSModule` is a documentation repository rather than a module
+repository. It intentionally inherits the Code of Conduct, security policy, and
+support guidance from [`PSModule/.github`](https://github.com/PSModule/.github/tree/main/.github)
+instead of carrying repository-local `.github/CODE_OF_CONDUCT.md`,
+`.github/SECURITY.md`, or `.github/SUPPORT.md`; this is an explicit
+repository-specific exception.
+
+Each initiative should keep its own repository standards in its central
+documentation repository. For the PSModule organization, this repository owns
+the requirements and `Template-PSModule` owns their executable file
+implementations.
 
 ## Repository creation
 
-Create new module repositories from [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule). The template provides the framework wiring, starter layout, and CI/CD expectations.
+Create new module repositories from
+[`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule).
+The template is the executable baseline for standard files, framework wiring,
+starter layout, and CI/CD expectations. Do not recreate those files from
+examples in this documentation.
 
 After creating the repository:
 
@@ -80,15 +102,13 @@ Module repositories use the PSModule framework layout:
 | ---- | --------------- |
 | `README.md` | Concise start page for the module. |
 | `LICENSE` | Repository license. PSModule module repositories default to MIT unless a different license is explicitly decided. |
-| `CONTRIBUTING.md` | Self-contained contribution workflow for this repository. Does not rely on an organization-level fallback. |
-| `SECURITY.md` | Security support policy and private vulnerability reporting instructions. |
-| `SUPPORT.md` | Support expectations and where users ask for help. |
-| `CODE_OF_CONDUCT.md` | Community conduct expectations. |
-| `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/docs/`. |
-| `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
+| `.github/CONTRIBUTING.md` | Self-contained contribution workflow for this repository. Does not rely on an organization-level fallback. |
+| `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
+| `.claude/CLAUDE.md` | Claude Code entry point. Imports the root `AGENTS.md`. |
+| `.github/copilot-instructions.md` | Route for Copilot surfaces that do not read `AGENTS.md` directly. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
 | `.github/workflows/Process-PSModule.yml` | Caller workflow that runs the module's CI/CD by calling the shared Process-PSModule workflow. |
-| `.github/release.yml` | Release-note and changelog categorization for GitHub releases. |
+| `.github/zensical.toml` | Canonical generated-site configuration copied from `Template-PSModule`. |
 | `.github/linters/` | Linter configuration used by the framework's linting stage, including `.markdown-lint.yml` and `.powershell-psscriptanalyzer.psd1`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Ownership routing for reviews and protected areas. |
@@ -117,29 +137,26 @@ The module repository owns a caller workflow; the framework owns the reusable wo
 | Caller workflow | The module repository | `.github/workflows/Process-PSModule.yml` |
 | Reusable workflow | [`PSModule/Process-PSModule`](https://github.com/PSModule/Process-PSModule) | `.github/workflows/workflow.yml` |
 
-The caller workflow declares the triggers, concurrency, and permissions for the module repository, and delegates the work:
+The caller workflow declares the triggers, concurrency, and permissions for the
+module repository, then delegates the work. Copy
+[`Template-PSModule/.github/workflows/Process-PSModule.yml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/workflows/Process-PSModule.yml)
+instead of maintaining another example here.
 
-```yaml
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@<commit-sha> # <version tag>
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-```
-
-Name the caller file `Process-PSModule.yml`, matching [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) and every existing module repository. `workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the `uses:` reference. Pin the reference to a commit SHA with the version tag in a trailing comment so Dependabot can update it.
+Name the caller file `Process-PSModule.yml`. `workflow.yml` is the reusable
+workflow's own filename inside `PSModule/Process-PSModule` and belongs only in
+the `uses:` reference. Process-PSModule is initiative-owned automation with a
+controlled release process, so the template uses the floating `@v8` major
+reference permitted by the MSX GitHub Actions standard.
 
 ## Required common files
 
-Every module repository must carry the same baseline community, governance, and automation files. GitHub's organization-level `.github` community-file fallback is useful for display defaults, but it is not enough as the long-term PSModule standard because:
-
-- agents and humans need the files in the repository they are changing, not only inherited through GitHub UI behavior;
-- tools such as Dependabot and CODEOWNERS read repository-local files — as do linters and release automation when the module uses those linters or generates releases;
-- reviews need diffs against the actual managed file in the target repository;
-- repository-local files make the standard portable to other initiatives such as MSXOrg, where each initiative should define its own standards and managed files;
-- central fallback files in `PSModule/.github` do not provide a reliable enforcement or update workflow across all repositories.
+Every module repository must carry the same baseline framework, governance, and
+automation files. The PSModule organization centrally manages the standard Code
+of Conduct, security policy, and support guidance in
+[`PSModule/.github`](https://github.com/PSModule/.github/tree/main/.github).
+GitHub surfaces those files for repositories that do not define local versions.
+Add a repository-local copy only when the repository intentionally deviates from
+the organization standard.
 
 Required baseline files for module repositories:
 
@@ -147,12 +164,10 @@ Required baseline files for module repositories:
 | ---- | ------------------ |
 | `README.md` | Repository landing page and evergreen context for humans and agents. |
 | `LICENSE` | Clear legal terms for reuse, packaging, and redistribution. |
-| `CONTRIBUTING.md` | Self-contained contribution workflow and expectations for this repository. |
-| `SECURITY.md` | Private vulnerability reporting and latest-version support policy. |
-| `SUPPORT.md` | Support channel and issue-routing expectations. |
-| `CODE_OF_CONDUCT.md` | Community participation rules. |
-| `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/docs/`. |
-| `CLAUDE.md` | Claude Code entry point that imports `AGENTS.md`. |
+| `.github/CONTRIBUTING.md` | Self-contained contribution workflow and expectations for this repository. |
+| `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
+| `.claude/CLAUDE.md` | Claude Code entry point that imports the root `AGENTS.md`. |
+| `.github/copilot-instructions.md` | Route to `AGENTS.md` for Copilot surfaces that need their own filename. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
 | `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
@@ -160,34 +175,93 @@ Required baseline files for module repositories:
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
 
-Repositories can add local files, but they should not remove these baseline files unless the repository is explicitly outside the module standard.
+`.github/release.yml` is not part of the baseline. Process-PSModule does not
+use GitHub's built-in release configuration; its release behavior is driven by
+the framework's release action and settings.
 
-Each repository must stand on its own. It carries its own copy of every file above and does not depend on the organization `.github` fallback: that fallback is only surfaced in GitHub's web UI, and agents, linters, and local tooling do not read it.
+Repositories can add local files, but they should not remove the baseline files
+above unless the repository is explicitly outside the module standard.
+
+Keep any repository-local community health overrides together under `.github/`.
+The organization-managed Code of Conduct, security policy, and support
+guidance do not need local copies. A local `CONTRIBUTING.md` remains part of the
+module baseline, and root-level duplicates of community files are not part of
+the PSModule layout. `README.md`, `LICENSE`, and `AGENTS.md` remain at the
+repository root because they are repository entry points rather than community
+health files.
 
 ## Agent onboarding files
 
 Every repository must be usable by an agent that has never seen it before, without special configuration. Each repository carries its own agent entry points that point to the authoritative documentation instead of restating it:
 
-- `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/docs](https://psmodule.io/docs/).
-- `CLAUDE.md`: a thin file that imports `AGENTS.md` with `@AGENTS.md` so Claude Code reads the same instructions. Claude-specific notes, if any, go below the import.
+- `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/Process-PSModule](https://psmodule.io/Process-PSModule/).
+- `.claude/CLAUDE.md`: a thin file that imports the root router with
+  `@../AGENTS.md`.
+- `.github/copilot-instructions.md`: a thin link to `../AGENTS.md` for Copilot
+  surfaces that do not read the root router directly.
 
-See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule) for a concrete implementation example of `AGENTS.md` and `CLAUDE.md`.
+See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule)
+for the concrete implementation.
 
-`AGENTS.md` and `CLAUDE.md` are the required set. `AGENTS.md` is the entry point that AGENTS.md-aware runtimes read directly, so a repository is usable by an agent without a per-runtime copy of the same pointer.
+`AGENTS.md`, `.claude/CLAUDE.md`, and
+`.github/copilot-instructions.md` are the required set. `AGENTS.md` is the
+entry point that AGENTS.md-aware runtimes read directly.
 
-Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
+Additional runtime-specific adapters and
+`.github/instructions/*.instructions.md` are optional. MSX treats them as
+client routes or path-scoped caveats, described in
+[Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
+and its
+[capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/).
+Keep routes pointing at `AGENTS.md` rather than restating it.
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 
-## Managed file distribution
+## Template ownership and reconciliation {#managed-file-distribution}
 
-**Policy ownership and distribution runtime are separate concerns.** This page — and this documentation project in [`PSModule/Process-PSModule`](https://github.com/PSModule/Process-PSModule) — defines *what* files must exist in module repositories and *what standards they must meet*. The distribution runtime is handled by [`MSXOrg/Custo`](https://github.com/MSXOrg/Custo).
+Policy ownership, executable templates, and distribution are separate
+concerns:
 
-For PSModule module repositories, the requirements are:
+| Concern | Source of truth |
+| --- | --- |
+| Enterprise requirements | [MSX Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/) |
+| PowerShell module requirements | This PSModule Repository Standard |
+| Exact standard-file implementation | The default branch of [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) |
+| Repository-specific code and content | The consumer repository |
 
-- Repositories must contain the required baseline files defined on this page.
-- Managed copies of those files are treated as generated distribution artifacts, not repository-specific source.
-- Standard changes to managed-file content are made in the distribution engine, not by patching generated copies in receiving repositories.
+The PSModule standard inherits MSX defaults and may explicitly adjust them for
+PowerShell module repositories. For the shared Zensical presentation profile,
+the MSXOrg documentation design takes precedence when it differs from the
+Process-PSModule documentation site. Once the governing policy is clear, the
+template is the byte-level source for standard module files. This keeps exact
+file content in one place instead of duplicating templates in documentation or
+skills.
+
+Every standard file for a new module repository must exist in
+`Template-PSModule`. Template files have one of these relationships to an
+established repository:
+
+| Relationship | Reconciliation behavior |
+| --- | --- |
+| Template-owned standard | Match the template unless a documented exception applies. |
+| Parameterized standard | Match after applying only declared repository identity substitutions. |
+| Configurable standard | Preserve supported repository-specific values and compare the remaining defaults. |
+| Creation scaffold | Use when creating a repository; do not overwrite established source, tests, examples, or content. |
+| Repository-owned addition | Preserve unless it violates a governing standard or framework contract. |
+
+Use the
+[`psmodule-repository-audit`](https://github.com/PSModule/Process-PSModule/blob/main/.github/plugin/psmodule/skills/psmodule-repository-audit/SKILL.md)
+skill to audit a consumer repository. The skill never changes the template or
+consumer; alignment is a separate delivery task. Each run records the resolved
+template commit so its result remains reproducible after the template changes.
+
+Automated managed-file distribution is not operating across the PSModule fleet.
+Setting `SubscribeTo` does not currently synchronize files. Until a distribution
+runtime is implemented, maintainers apply template changes through
+repository-specific pull requests and use the repository audit skill to detect
+drift. A future runtime must consume `Template-PSModule` rather than maintain a
+second copy of standard files. Process-PSModule maintainers own detecting when
+repository audits or distribution stop operating.
 
 ## Supply-chain defaults
 
@@ -310,7 +384,13 @@ Retain upstream attribution and licensing context. Credit, acknowledgements, don
 
 README pages should not duplicate generated command documentation. Do not add full command inventories, parameter tables, or long reference sections when those details are already produced from comment-based help.
 
-Do not add a community-file or policy link section by default. Readers can find standard repository files such as `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md` through GitHub conventions and the repository file tree. Link them only when the module has an unusual rule the user must know before using it, or when it carries required upstream attribution.
+Do not add a community-file or policy link section by default. Readers can find
+standard files such as `LICENSE` and `.github/CONTRIBUTING.md` through GitHub
+conventions and the repository file tree. The organization-managed Code of
+Conduct, security policy, and support guidance are provided by
+`PSModule/.github` unless the module overrides them locally. Link them only
+when the module has an unusual rule the user must know before using it, or when
+it carries required upstream attribution.
 
 ## Placeholder and in-progress repositories
 
@@ -370,6 +450,30 @@ Use these defaults:
 
 This keeps the repository landing page readable and prevents drift between README content, PowerShell help, and generated documentation.
 
+### Zensical configuration
+
+The canonical module-site configuration is
+[`Template-PSModule/.github/zensical.toml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/zensical.toml).
+Keep its repository placeholders: Process-PSModule resolves them while staging
+the generated site. The template carries the portable subset of the MSXOrg and
+Process-PSModule documentation design, with the MSXOrg design taking precedence
+when they differ.
+
+Do not declare `nav` in a standard module repository. Zensical derives
+navigation from the staged folder structure, places index pages first, and
+sorts the remaining pages alphabetically. Organize generated function
+references through their source folders instead of maintaining a second
+navigation tree in TOML.
+
+The template does not define `[project.extra.consent]`. Standard generated
+module sites do not enable cookie-based measurement and must not display a
+consent prompt. A repository adds consent configuration only when its own
+documented functionality requires it.
+
+Repository-specific documentation content remains repository-owned. A module
+may depart from the template's site configuration only for a documented
+requirement that the shared generated-site profile cannot satisfy.
+
 ## Release and PR defaults
 
 Module repositories use the Process-PSModule workflow. Version and release behavior is driven by PR labels and workflow settings.
@@ -385,6 +489,11 @@ See [Versioning](versioning.md) for semantic version rules and [PowerShell modul
 
 ## Template maintenance
 
-`Template-PSModule` defines the default README shape and starter repository contract. When this page changes a default, update `Template-PSModule` in the same work item when practical.
+`Template-PSModule` contains the concrete files for the complete starter
+repository contract. Every Process-PSModule change includes an impact
+evaluation that determines whether the template must change. When a framework
+contract or this page changes a default, update the template in the same work
+item before aligning consumer repositories. A standard is not complete while
+its required implementation is absent from the template.
 
 The template README may contain tokens, but generated module repositories should not keep them after the initial setup commit.

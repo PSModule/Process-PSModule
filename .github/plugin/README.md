@@ -29,7 +29,10 @@ skill for migrating every Pester test set in a PSModule repository to Pester
 skill for upgrading Process-PSModule consumer repositories to framework v8.
 It also provides
 [`psmodule-zensical-migration`](./psmodule/skills/psmodule-zensical-migration/SKILL.md)
-for migrating legacy MkDocs sites to the Process-PSModule Zensical design.
+for migrating legacy MkDocs sites to the standard Zensical design, and
+[`psmodule-repository-audit`](./psmodule/skills/psmodule-repository-audit/SKILL.md)
+for auditing module repositories against the current Template-PSModule
+baseline.
 Verify the installation with:
 
 ```console

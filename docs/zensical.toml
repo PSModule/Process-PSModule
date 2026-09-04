@@ -3,63 +3,17 @@
 
 [project]
 site_name = "PSModule / Docs"
-site_url = "https://psmodule.io/docs/"
+site_url = "https://psmodule.io/Process-PSModule/"
 docs_dir = "content"
 repo_name = "PSModule/Process-PSModule"
 repo_url = "https://github.com/PSModule/Process-PSModule"
 edit_uri = "edit/main/docs/content/"
-copyright = "Copyright &copy; 2023 - 2025 PSModule"
+copyright = "Copyright &copy; 2023 - 2026 PSModule"
 extra_javascript = [
-  "https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js",
+  "assets/javascripts/tablesort.min.js",
   "assets/javascripts/tablesort.js",
 ]
-extra_css = [
-  "assets/stylesheets/navigation.css",
-]
 watch = ["includes"]
-nav = [
-  "index.md",
-  {"Get started" = [
-    "get-started/index.md",
-    {"Repository setup" = "get-started/repository-setup.md"},
-    {"Your first release" = "get-started/your-first-release.md"},
-    {"Module bootstrap" = "get-started/module-bootstrap.md"},
-  ]},
-  {"Guides" = [
-    {"Calling the workflow" = "guides/calling-the-workflow.md"},
-    {"Configuring the pipeline" = "guides/configuring-the-pipeline.md"},
-    {"Structuring your module" = "guides/structuring-your-module.md"},
-    {"Writing module tests" = "guides/writing-module-tests.md"},
-    {"Skipping framework tests" = "guides/skipping-framework-tests.md"},
-    {"Versioning and releases" = "guides/versioning-and-releases.md"},
-    {"Validating before review" = "guides/validating-before-review.md"},
-  ]},
-  {"Reference" = [
-    {"Module development foundations" = "reference/module-development-foundations.md"},
-    {"Repository Standard" = "reference/repository-standard.md"},
-    {"PowerShell module standard" = "reference/powershell-module-standard.md"},
-    {"Module types" = "reference/module-types.md"},
-    {"Test Specification" = "reference/test-specification.md"},
-    {"Versioning" = "reference/versioning.md"},
-    {"Settings" = "reference/settings.md"},
-    {"Workflow inputs" = "reference/workflow-inputs.md"},
-    {"Pipeline stages" = "reference/pipeline-stages.md"},
-    {"Scenario matrix" = "reference/scenario-matrix.md"},
-    {"Framework test IDs" = "reference/framework-test-ids.md"},
-    {"Dependencies" = "reference/dependencies.md"},
-    {"PowerShell guidance scripts" = "reference/guidance-scripts.md"},
-  ]},
-  {"Specification" = [
-    "specification/index.md",
-    {"Spec" = "specification/spec.md"},
-    {"Design" = "specification/design.md"},
-    {"Principles and practices" = "specification/principles-and-practices.md"},
-  ]},
-  {"Modules" = "Modules/index.md"},
-  {"Dictionary" = [
-    "Dictionary/index.md",
-  ]},
-]
 
 [project.theme]
 language = "en"

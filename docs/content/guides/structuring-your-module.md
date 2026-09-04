@@ -27,6 +27,8 @@ The goal is a stable repository anatomy so both humans and automation know exact
 
 ```plaintext
 <ModuleName>/
+├── .claude/
+│   └── CLAUDE.md                               # Claude Code route to AGENTS.md
 ├── .github/                                   # Workflow config, doc/site templates, automation policy
 │   ├── linters/                               # Rule sets applied by shared lint steps
 │   │   ├── .markdown-lint.yml                 # Markdown rules enforced via super-linter
@@ -35,10 +37,11 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   ├── workflows/                             # Entry points for the reusable workflow
 │   │   └── Process-PSModule.yml               # Consumer hook into this workflow bundle
 │   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
+│   ├── CONTRIBUTING.md                         # Repository-local contribution workflow
+│   ├── copilot-instructions.md                 # Copilot route to AGENTS.md
 │   ├── dependabot.yml                         # Dependency update cadence handled by GitHub
-│   ├── zensical.toml                          # Site config consumed during site builds
 │   ├── PSModule.yml                           # Settings parsed to drive matrices
-│   └── release.yml                            # Release automation template invoked on publish
+│   └── zensical.toml                           # Site config consumed during site builds
 ├── examples/                                  # Samples referenced in generated documentation
 │   └── General.ps1                            # Example script ingested by Document-PSModule
 ├── icon/                                      # Icon assets linked from manifest and documentation
@@ -50,6 +53,7 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   └── <ModuleName>.Tests.ps1                 # Simple: one root-level module suite
 ├── .gitattributes                             # Normalizes line endings across platforms
 ├── .gitignore                                 # Excludes build artifacts from source control
+├── AGENTS.md                                  # Cross-client agent guidance router
 ├── LICENSE                                    # License text surfaced in manifest metadata
 └── README.md                                  # Repository overview rendered on GitHub and docs landing
 ```
@@ -61,7 +65,9 @@ These names describe repository conventions, not settings. `.github/PSModule.yml
 Key expectations:
 
 - Keep at least one exported function under `src/functions/public/` and corresponding tests in `tests/` using a [documented test profile](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles).
-- Keep documentation site configuration in `.github/zensical.toml`.
+- Keep documentation site configuration aligned with
+  `Template-PSModule/.github/zensical.toml`. Omit `nav`; Zensical follows the
+  generated folder structure and sorts pages alphabetically.
 - Optional folders (`assemblies`, `formats`, `types`, `variables`, and others) are processed automatically when present.
 - Markdown files in `src/functions/public` subfolders become documentation pages alongside generated help.
 - A group's overview page (`<Category>/<Category>.md` named after the folder, or `<Category>/index.md`) becomes that group's section landing page in the docs navigation.
