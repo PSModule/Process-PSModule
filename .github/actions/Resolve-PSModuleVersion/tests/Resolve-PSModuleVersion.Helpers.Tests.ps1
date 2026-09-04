@@ -523,6 +523,46 @@ Describe 'Resolve-PSModuleVersion' {
             $result.Labels | Should -BeNullOrEmpty
             $result.IsDirectRelease | Should -BeTrue
         }
+
+        It 'honours the version label from a pull request resolved by a default-branch dispatch' {
+            # Regression guard for issue #530. Before the fix, a manual dispatch resolved no pull
+            # request, so Context.PullRequest was null and the direct-release branch applied a patch
+            # bump. With the pull request resolved, the minor label must be carried through.
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = @{
+                        Number  = 64
+                        HeadRef = 'feature/recovered-release'
+                        Labels  = @('minor')
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -Be 64
+            $result.Labels | Should -Be @('minor')
+            $result.IsDirectRelease | Should -BeNullOrEmpty
+        }
+
+        It 'creates default patch context for a direct default-branch dispatch' {
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $null
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -BeNullOrEmpty
+            $result.IsDirectRelease | Should -BeTrue
+        }
     }
 
     Describe 'Resolve-ReleaseDecision' {
@@ -532,6 +572,47 @@ Describe 'Resolve-PSModuleVersion' {
 
             $result.ShouldPublish | Should -BeTrue
             $result.PatchRelease | Should -BeTrue
+        }
+
+        It 'resolves the labeled minor version once a recovery dispatch supplies pull request context' {
+            # End-to-end guard for issue #530, using the reproduction numbers from
+            # MariusStorhaug/MariusTestModule: latest release v0.4.13 and merged pull request #64
+            # labeled 'minor', so the correct release is 0.5.0. This asserts the version consequence
+            # of the two possible contexts a default-branch dispatch can produce. Get-PSModuleSettings
+            # decides which one it is; that decision is guarded by
+            # Test-ShouldResolveAssociatedPullRequest in the settings action tests.
+            $configuration = Get-TestConfiguration
+            $versionFor = {
+                param($SettingsJson)
+                $pullRequest = Get-GitHubPullRequest -SettingsJson $SettingsJson
+                $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+                $resolved = Get-ResolvedModuleVersion -GitHubVersion ([PSSemVer]'0.4.13') `
+                    -PSGalleryVersion ([PSSemVer]'0.4.13') `
+                    -Decision $decision `
+                    -Configuration $configuration `
+                    -ModuleName 'MariusTestModule'
+                $resolved.ToString()
+            }
+
+            $dispatchContext = @{
+                IsPushToDefaultBranch           = $false
+                IsManualDispatchToDefaultBranch = $true
+                DefaultBranch                   = 'main'
+            }
+
+            $withoutPullRequest = & $versionFor (@{
+                    Context = $dispatchContext + @{ PullRequest = $null }
+                } | ConvertTo-Json -Depth 5)
+            $withPullRequest = & $versionFor (@{
+                    Context = $dispatchContext + @{
+                        PullRequest = @{ Number = 64; HeadRef = 'feature/recovered-release'; Labels = @('minor') }
+                    }
+                } | ConvertTo-Json -Depth 5)
+
+            # The silent downgrade the defect produced.
+            $withoutPullRequest | Should -Be 'v0.4.14'
+            # The version the merged pull request's label asks for.
+            $withPullRequest | Should -Be 'v0.5.0'
         }
 
         It 'does not publish an unlabeled prerelease when AutoPatching is disabled' {
