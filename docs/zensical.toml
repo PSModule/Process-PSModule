@@ -33,6 +33,7 @@ nav = [
     {"Skipping framework tests" = "guides/skipping-framework-tests.md"},
     {"Versioning and releases" = "guides/versioning-and-releases.md"},
     {"Validating before review" = "guides/validating-before-review.md"},
+    {"Writing plugin skills" = "guides/writing-plugin-skills.md"},
     {"Module development orchestration" = "guides/module-development-orchestration.md"},
   ]},
   {"Reference" = [

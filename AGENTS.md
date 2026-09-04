@@ -28,7 +28,7 @@ works. For PSModule-specific build, layout, and process guidance:
 
 For cross-cutting ways of working and standards:
 
-- [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) —
+- [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/) —
   how agents and humans collaborate in this ecosystem.
 - [Ways of Working](https://msx.no/docs/Ways-of-Working/) — contribution
   workflow, branching, PRs, issues.

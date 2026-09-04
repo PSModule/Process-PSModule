@@ -44,6 +44,7 @@ Task-oriented deep dives into the pipeline's functionality.
 | [Skipping framework tests](guides/skipping-framework-tests.md) | Skip individual framework tests on a per-file basis. |
 | [Versioning and releases](guides/versioning-and-releases.md) | Label-driven versioning, prereleases, and what a release produces. |
 | [Validating before review](guides/validating-before-review.md) | The PSModule validation pass before a draft pull request is marked ready. |
+| [Writing plugin skills](guides/writing-plugin-skills.md) | Author and maintain thin plugin skills that point to shared documentation. |
 | [Module development orchestration](guides/module-development-orchestration.md) | Coordinate substantial work across an orchestrator session and narrowly scoped child sessions. |
 
 ## Reference
@@ -89,4 +90,4 @@ Cross-org standards and reusable solution documentation are now canonical in [MS
 
 - [Coding Standards](https://msx.no/docs/Coding-Standards/)
 - [Capabilities](https://msx.no/docs/Capabilities/)
-- [Frameworks](https://msx.no/docs/Frameworks/)
+- [Frameworks](https://msx.no/docs/Capabilities/)
