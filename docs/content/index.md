@@ -45,6 +45,7 @@ Task-oriented deep dives into the pipeline's functionality.
 | [Versioning and releases](guides/versioning-and-releases.md) | Label-driven versioning, prereleases, and what a release produces. |
 | [Validating before review](guides/validating-before-review.md) | The PSModule validation pass before a draft pull request is marked ready. |
 | [Writing plugin skills](guides/writing-plugin-skills.md) | Author and maintain thin plugin skills that point to shared documentation. |
+| [Module development orchestration](guides/module-development-orchestration.md) | Coordinate substantial work across an orchestrator session and narrowly scoped child sessions. |
 
 ## Reference
 
