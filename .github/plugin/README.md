@@ -30,6 +30,10 @@ skill for upgrading Process-PSModule consumer repositories to framework v8.
 It also provides
 [`psmodule-zensical-migration`](./psmodule/skills/psmodule-zensical-migration/SKILL.md)
 for migrating legacy MkDocs sites to the Process-PSModule Zensical design.
+The
+[`psmodule-module-development-orchestration`](./psmodule/skills/psmodule-module-development-orchestration/SKILL.md)
+skill coordinates substantial module work across parent and child sessions
+using the repository's trunk-based development and bootstrap guidance.
 Verify the installation with:
 
 ```console
