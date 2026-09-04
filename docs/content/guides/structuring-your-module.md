@@ -67,12 +67,12 @@ Key expectations:
 - A group's overview page (`<Category>/<Category>.md` named after the folder, or `<Category>/index.md`) becomes that group's section landing page in the docs navigation.
 - The build step compiles `src/` into a root module file and removes the original project layout from the artifact.
 - Documentation generation mirrors the `src/functions/public` hierarchy so help content always aligns with source.
-- Put the canonical public help URL first in each public command's comment-based help. For a command at `src/functions/public/<Group>/<Name>.ps1`, use `https://psmodule.io/<ModuleName>/Functions/<Group>/<Name>/`. `Test-PSModule` enforces this as `PublicHelpLink`; additional `.LINK` entries may follow.
+- Put the canonical public help URL first in each public command's comment-based help. For a command at `src/functions/public/<Group>/<Name>.ps1`, use `https://<DocumentationHost>/<ModuleName>/Functions/<Group>/<Name>/` with the HTTPS host that publishes the module documentation. `Test-PSModule` enforces this as `PublicHelpLink`; additional `.LINK` entries may follow.
 - Point each private helper's `.LINK` entry to the public command it supports, using that command's canonical grouped URL.
 
 ### Grouping and published help URLs
 
-Process-PSModule generates command help and publishes each page to mirror the relative path under `src/functions/public/`. Moving an existing command into a group therefore changes its published URL from `https://psmodule.io/<ModuleName>/Functions/<Name>/` to `https://psmodule.io/<ModuleName>/Functions/<Group>/<Name>/`.
+Process-PSModule generates command help and publishes each page to mirror the relative path under `src/functions/public/`. Moving an existing command into a group therefore changes its published URL from `https://<DocumentationHost>/<ModuleName>/Functions/<Name>/` to `https://<DocumentationHost>/<ModuleName>/Functions/<Group>/<Name>/`.
 
 When regrouping a command, update its first public `.LINK`, every private-helper `.LINK` that points to it, and any other references to the old URL in the same change. Process-PSModule does not create redirects for the old path; arrange a redirect separately in the publishing layer when existing links must continue to work.
 
