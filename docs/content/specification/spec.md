@@ -43,7 +43,7 @@ The pipeline MUST generate module documentation from the source (cmdlet help, RE
 
 ### FR5 — Support label-driven versioning and publication { #fr5 }
 
-The pipeline MUST read pull-request labels (`Major`, `Minor`, `Patch`, `Prerelease`, `NoRelease`) to decide the semantic-version bump. It MUST compute the next version automatically, never reading or writing a hand-edited version file. A merge to the release branch MUST trigger publication to the PowerShell Gallery and documentation site; a prerelease label MUST result in a prerelease version available for testing before stable release.
+The pipeline MUST read pull-request labels (`Major`, `Minor`, `Patch`, `Prerelease`, `NoRelease`) to decide the semantic-version bump. It MUST compute the next version automatically, never reading or writing a hand-edited version file. A merge to the default branch MUST trigger publication to the PowerShell Gallery and documentation site; a prerelease label MUST result in a prerelease version available for testing before stable release.
 
 ### FR6 — Produce immutable, linkable releases { #fr6 }
 
@@ -61,7 +61,7 @@ Only one release process MUST run against a given version of the codebase at a t
 
 ### NFR3 — Single production authority { #nfr3 }
 
-Exactly one branch (typically `main`) MUST be authorized to publish stable releases. All other release branches MUST publish only prerelease versions. This ensures consumers have one unambiguous latest stable version.
+Exactly one branch (the repository default branch, typically `main`) MUST be authorized to publish stable releases. Feature branches MAY publish only prerelease versions. This ensures consumers have one unambiguous latest stable version.
 
 ### NFR4 — Rapid feedback on failure { #nfr4 }
 

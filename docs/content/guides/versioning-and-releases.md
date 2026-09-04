@@ -37,58 +37,20 @@ The label names are configurable through `Publish.Module.MajorLabels`, `MinorLab
 
 ## Branch types
 
-- **Main (stable)** — publishes stable releases. A prerelease label publishes a prerelease from `main`.
-- **Development** — optional prerelease branch (for example `dev`). Each push publishes a prerelease.
-- **Feature branch** — optional feature branch. A prerelease label publishes a prerelease for testing.
+- **Main (stable)** — the default branch and the only branch that publishes stable releases.
+- **Feature branch** — a short-lived topic branch with a pull request targeting `main`.
 
-Exactly one branch is authorized to publish stable releases, so consumers always have one unambiguous latest version.
-
-## Release branch pattern
-
-For a larger release made up of several independent features, use a release branch to
-collect the changes before promoting them to `main`. This is different from a
-[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests),
-where each layer depends on the preceding layer.
-
-Before creating the release branch, make sure the module repository's caller workflow
-triggers on it as well as `main`. The standard example filters pull requests to `main`:
-
-```yaml
-on:
-  pull_request:
-    branches:
-      - main
-      - 'release/**'
-```
-
-Then:
-
-1. Cut a release branch such as `release/v1` from `main`.
-2. Open a draft release pull request from the release branch to `main`.
-3. Cut each independent feature branch from the release branch and open its pull request
-   against the release branch.
-4. Merge feature pull requests into the release branch as they become ready. Use a
-   [stack](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
-   only when two features genuinely depend on each other.
-5. When the release branch is complete and all checks pass, mark the release pull request
-   ready and merge it into `main`.
-
-Pull requests targeting the release branch can publish preview versions when they carry
-the `Prerelease` label. Only the final merge into the repository's default branch can
-produce the stable release, because the workflow authorizes stable publication only when
-the merged pull request targets that branch.
-
-Each feature pull request follows the
-[MSX PR Format](https://msx.no/docs/Ways-of-Working/PR-Format/) and closes its own
-scoped issue. The release pull request should summarize the combined user-facing
-release and link the included feature pull requests; it must not replace their
-issue-closing references with a second aggregate closure.
+Exactly one branch is authorized to publish stable releases, so consumers always have one
+unambiguous latest version. Use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+when changes genuinely depend on each other; independent changes remain separate
+short-lived pull requests targeting `main`.
 
 ## Prereleases
 
 A pull request labelled `Prerelease` publishes a prerelease version (for example `v1.2.3-pr.1.5`) that is installable
 but not promoted as latest. When that pull request is merged with a version label, the stable version is computed from
-the label and the current version on the release branch.
+the label and the current version on `main`.
 
 When a pull request is closed without merging, the prerelease versions and tags created for it are removed, so
 abandoned work leaves no orphaned prereleases. This is controlled by `Publish.Module.AutoCleanup`.
@@ -108,8 +70,7 @@ Release names and notes can be generated from the pull request — see
 
 Only a single linear ancestry of versions is maintained. Old versions are not patched: if a security issue is found on
 `2.1.3`, the fix ships on the latest version, not as a new `1.x` release. See
-[Principles and practices](../specification/principles-and-practices.md) for the reasoning and for the release-branch
-pattern used for larger efforts.
+[Principles and practices](../specification/principles-and-practices.md) for the reasoning.
 
 ## Related
 

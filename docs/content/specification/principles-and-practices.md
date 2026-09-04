@@ -12,13 +12,13 @@ back to patch and update old versions of the modules. This means that if we are 
 patch the latest version with a fix, not releasing new versions based on older versions of the module, i.e. not updating the latest 1.x with the
 patch.
 
-## Release and feature branches
+## Trunk-based development
 
-If you need to work toward a bigger release, follow the [release branch pattern](../guides/versioning-and-releases.md#release-branch-pattern):
-create a branch representing the release and open a PR toward `main` for this branch.
-For each topic or feature to add to the release, open a new branch representing the feature (a feature branch) and open a PR towards the release
-branch. Optionally add the `Prerelease` label on the PR for the release branch, to release preview versions before merging and releasing a published
-version of the PowerShell module.
+Keep feature branches short-lived and open pull requests directly toward `main`.
+Independent changes use separate branches; use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+only when changes genuinely depend on each other. Add the `Prerelease` label to a
+feature pull request when a preview version is needed before merging to `main`.
 
 ## Colocation of concerns
 

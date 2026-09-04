@@ -60,6 +60,6 @@ A module bootstrapped this way:
 ## When to use this
 
 - The module has no usable release yet, and the load-bearing core hasn't landed.
-- Use this only for the initial bootstrap. Once `main` has a first release, ongoing feature work targets `main` directly with ordinary topic branches, uses the [release branch pattern](../guides/versioning-and-releases.md#release-branch-pattern) to batch independent features, or uses a [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests) when changes genuinely depend on each other.
+- Use this only for the initial bootstrap. Once `main` has a first release, ongoing feature work targets `main` directly with ordinary topic branches, or uses a [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests) when changes genuinely depend on each other.
 
 For the general branching and merge model, see [MSX Branching and Merging](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/).
