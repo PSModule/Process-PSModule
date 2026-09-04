@@ -35,10 +35,9 @@ credentials that are exposed. `secrets: inherit` is intentionally not required.
 
 See [passing test data](../guides/calling-the-workflow.md#passing-test-data) for how to build the `TestData` value.
 
-## Workflow `github.token` permissions
+## Caller-job `github.token` permissions
 
-The following permissions are needed by the caller workflow's default `github.token` for checkout and GitHub Pages
-deployment:
+Each caller job needs the following permissions for checkout and GitHub Pages deployment:
 
 ```yaml
 permissions:

@@ -27,7 +27,7 @@ The goal is a stable repository anatomy so both humans and automation know exact
 
 ```plaintext
 <ModuleName>/
-├── .github/                                   # Workflow config, doc/site templates, automation policy
+├── .github/                                   # Workflow config, site template, and automation policy
 │   ├── linters/                               # Rule sets applied by shared lint steps
 │   │   ├── .markdown-lint.yml                 # Markdown rules enforced via super-linter
 │   │   ├── .powershell-psscriptanalyzer.psd1  # Analyzer profile for test jobs
@@ -36,13 +36,21 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   │   └── Process-PSModule.yml               # Consumer hook into this workflow bundle
 │   ├── CODEOWNERS                             # Default reviewers enforced by Process-PSModule checks
 │   ├── dependabot.yml                         # Dependency update cadence handled by GitHub
-│   ├── zensical.toml                          # Site config consumed during site builds
 │   ├── PSModule.yml                           # Settings parsed to drive matrices
-│   └── release.yml                            # Release automation template invoked on publish
+│   ├── pull_request_template.md               # PR description structure
+│   ├── release.yml                            # Release automation template invoked on publish
+│   └── zensical.toml                          # Site config consumed during site builds
+├── AGENTS.md                                  # Agent entry point
+├── CLAUDE.md                                  # Claude Code route to AGENTS.md
+├── CODE_OF_CONDUCT.md                          # Community conduct expectations
+├── CONTRIBUTING.md                             # Repository contribution guidance
 ├── examples/                                  # Samples referenced in generated documentation
 │   └── General.ps1                            # Example script processed by Process-PSModule
 ├── icon/                                      # Icon assets linked from manifest and documentation
 │   └── icon.png                               # Default module icon (PNG format)
+├── LICENSE                                    # Reuse terms
+├── README.md                                  # Module landing page rendered on GitHub and docs
+├── SECURITY.md                                 # Security reporting policy
 ├── src/                                       # Module source, see "Module source code structure" below
 ├── tests/                                     # Pester suites; the Simple layout is shown
 │   ├── AfterAll.ps1 (optional)                # Cleanup script for ModuleLocal runs
@@ -50,8 +58,7 @@ The goal is a stable repository anatomy so both humans and automation know exact
 │   └── <ModuleName>.Tests.ps1                 # Simple: one root-level module suite
 ├── .gitattributes                             # Normalizes line endings across platforms
 ├── .gitignore                                 # Excludes build artifacts from source control
-├── LICENSE                                    # License text surfaced in manifest metadata
-└── README.md                                  # Repository overview rendered on GitHub and docs landing
+└── SUPPORT.md                                  # Support expectations
 ```
 
 The tree shows the [Simple PowerShell test profile](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#simple), not an exclusive test-file shape. Standard keeps one root-level `tests/<Group>.Tests.ps1` file per public function group. Advanced uses recursively discovered subdirectories, and layouts may mix across directories. Process-PSModule defines the exact [per-directory precedence and sibling suppression](writing-module-tests.md#test-discovery).

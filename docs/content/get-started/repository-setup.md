@@ -6,9 +6,23 @@ description: Configure GitHub Pages, `PSGALLERY_API_KEY`, permissions, and the c
 # Repository setup
 
 Do this once per module repository, after creating it from
-[Template-PSModule](https://github.com/PSModule/Template-PSModule).
+[Template-PSModule](https://github.com/PSModule/Template-PSModule). The template supplies the initial repository
+files and framework wiring; this guide verifies the standard baseline and configures its external services.
 
-## 1. Enable GitHub Pages
+## 1. Complete the module repository baseline
+
+Before configuring the pipeline:
+
+1. Replace every template token, including the README and `.github/zensical.toml`.
+2. Remove scaffold functions, tests, and examples that do not belong to the module.
+3. Set the repository description and its `Type` custom property to `Module`; retain `main` as the default branch.
+4. Confirm the required community, governance, agent, dependency-update, and workflow files are present.
+5. Confirm the README follows the module start-page requirements, including `Install-PSResource` installation guidance.
+6. Keep `.github/PSModule.yml` limited to settings that override the framework defaults.
+
+[Repository standard](../reference/repository-standard.md) defines the required files, metadata, and README shape.
+
+## 2. Enable GitHub Pages
 
 Enable GitHub Pages in the repository settings and set it to deploy from **GitHub Actions**.
 
@@ -18,18 +32,23 @@ This creates an environment called `github-pages` that GitHub deploys the docume
   <img src="../media/pagesEnvironment.png" alt="Remove the branch protection on main">
 </details>
 
-## 2. Create `PSGALLERY_API_KEY`
+## 3. Configure workflow secrets
 
-1. [Create an API key on the PowerShell Gallery](https://www.powershellgallery.com/account/apikeys). Give it permission
-   to manage the module you are working on.
-2. Create a repository or organization secret called `PSGALLERY_API_KEY` and set the API key as its value.
+Create these repository or organization Actions secrets:
 
-If you plan to create many modules, use a glob pattern for the API key permissions in the PowerShell Gallery and store
-`PSGALLERY_API_KEY` on the organization instead of on each repository.
+| Secret | Purpose |
+| --- | --- |
+| `PSGALLERY_API_KEY` | An [API key](https://www.powershellgallery.com/account/apikeys) authorized to manage the module on the PowerShell Gallery. |
+| `SHELLY_CLIENT_ID` | The GitHub App client ID that the caller maps to `GitHubAppClientId`. |
+| `SHELLY_PRIVATE_KEY` | The GitHub App private key that the caller maps to `GitHubAppPrivateKey`. |
 
-## 3. Add the caller workflow
+Use a glob pattern for PowerShell Gallery API-key permissions and store `PSGALLERY_API_KEY` at the organization level
+when several modules share it. For Dependabot pull requests, add all three secrets to the Dependabot secret store.
+[GitHub App authentication](../guides/github-app-authentication.md) defines the App permissions and token boundaries.
 
-Create `.github/workflows/Process-PSModule.yml` in the module repository:
+## 4. Verify the caller workflow
+
+The template supplies `.github/workflows/Process-PSModule.yml`. Replace the caller with this standard form:
 
 ```yaml
 name: Process-PSModule
@@ -96,9 +115,10 @@ cancels obsolete activity and uses the pull-request number for every action, inc
 literal queue value and does not permit cancellation with `queue: max`, so the two jobs use separate compatible
 policies. Keep both groups distinct from the reusable workflow's prefixed group.
 
-## 4. Add the settings file
+## 5. Configure the settings file
 
-Create `.github/PSModule.yml`. An empty file is valid — every setting has a default:
+The template supplies `.github/PSModule.yml`. Keep only the overrides the module needs; an empty file is valid when a
+hand-built repository needs no overrides:
 
 ```yaml
 Name: null
@@ -107,10 +127,10 @@ Name: null
 See [Settings](../reference/settings.md) for the full contract and
 [Configuring the pipeline](../guides/configuring-the-pipeline.md) for worked examples.
 
-## 5. Configure the documentation site
+## 6. Configure the documentation site
 
-Process-PSModule builds documentation with [Zensical](https://zensical.org/) from `.github/zensical.toml`. The template
-ships a working file; update the site name and repository links to match the module.
+The template builds documentation with [Zensical](https://zensical.org/) from `.github/zensical.toml`. Replace each
+template token with the module's name, owner, and repository URL.
 
 ## Next
 

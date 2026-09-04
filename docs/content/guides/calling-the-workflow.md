@@ -5,8 +5,9 @@ description: How to call the Process-PSModule reusable workflow — the caller w
 
 # Calling the workflow
 
-To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
-For documentation site generation, use `zensical.toml` as the active site contract.
+Template-PSModule supplies a starter `.github/workflows/Process-PSModule.yml`. Replace it with this standard
+template; repositories created without the template create the file with this content. The template's documentation
+contract uses `.github/zensical.toml`.
 
 For the exact inputs, secrets, and permissions the reusable workflow declares, see
 [Workflow inputs](../reference/workflow-inputs.md).
@@ -34,8 +35,6 @@ on:
       - synchronize
       - labeled
       - unlabeled
-
-permissions: {}
 
 jobs:
   Process-PSModule-Production:
@@ -230,28 +229,8 @@ settings file:
 ImportantFilePatterns: []
 ```
 
-You can also pass patterns via the workflow input:
-
-```yaml
-jobs:
-  Process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    with:
-      ImportantFilePatterns: |
-        ^src/
-        ^README\.md$
-        ^examples/
-```
-
-To disable triggering via the workflow input, pass an explicit empty string:
-
-```yaml
-jobs:
-  process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    with:
-      ImportantFilePatterns: ''
-```
+The standard caller does not add `with:` overrides. Configure
+`ImportantFilePatterns` in `.github/PSModule.yml`.
 
 Note that omitting the `ImportantFilePatterns` key entirely causes the workflow's default patterns (`^src/` and
 `^README\.md$`) to be used. The settings file takes priority over the workflow input, so set

@@ -10,10 +10,11 @@ installation tokens. These workflows do not use `github.token` as a fallback for
 
 ## Caller secret contract
 
-The reusable workflow declares two required secrets at its `workflow_call` boundary:
+The reusable workflow declares three required secrets at its `workflow_call` boundary:
 
 | Name | Purpose |
 | --- | --- |
+| `PSGALLERY_API_KEY` | The API key that publishes the module to the PowerShell Gallery. |
 | `GitHubAppClientId` | The GitHub App client ID passed to the token action. |
 | `GitHubAppPrivateKey` | The GitHub App private key passed to the token action. |
 
@@ -37,13 +38,13 @@ jobs:
       GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
 ```
 
-The root reusable workflow forwards these two values to the Plan, Build-Module, and Publish-Module reusable jobs.
-Do not use `secrets: inherit` as a substitute for this mapping.
+The root reusable workflow forwards the GitHub App credentials to the Plan, Build-Module, and Publish-Module reusable
+jobs, and passes the Gallery API key to publication. Do not use `secrets: inherit` as a substitute for this mapping.
 
 Dependabot-triggered workflows cannot read regular Actions secrets. To run Process-PSModule on Dependabot pull
-requests, create `SHELLY_CLIENT_ID` and `SHELLY_PRIVATE_KEY` as Dependabot secrets in addition to Actions secrets.
-This is a deliberate trust boundary: review the App's installation scope and every dependency update carefully,
-because the workflow can mint a Shelly token before human review.
+requests, create `PSGALLERY_API_KEY`, `SHELLY_CLIENT_ID`, and `SHELLY_PRIVATE_KEY` as Dependabot secrets in addition
+to Actions secrets. This is a deliberate trust boundary: review the App's installation scope and every dependency
+update carefully, because the workflow can mint a Shelly token before human review.
 
 ## GitHub App installation permissions
 

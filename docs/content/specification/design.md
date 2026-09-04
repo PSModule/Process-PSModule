@@ -14,7 +14,7 @@ The behaviour in the [spec](spec.md) is delivered by a **single reusable GitHub 
 The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job for
 CI and prereleases plus a default-branch `push` trigger for stable publication. The caller calls `workflow.yml` and
 passes the required secrets. The full caller template is in
-[Repository setup](../get-started/repository-setup.md#3-add-the-caller-workflow), and the interface it targets is
+[Repository setup](../get-started/repository-setup.md#4-verify-the-caller-workflow), and the interface it targets is
 documented in [Workflow inputs](../reference/workflow-inputs.md).
 
 ### Trigger admission
