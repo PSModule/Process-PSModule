@@ -115,10 +115,12 @@ The release process treats each important default-branch push as a release on a 
 request supplies release metadata when its merge commit exactly matches that push. There is no patching of older
 versions — security fixes go on the current tip of `main` only.
 
-### Release and feature branches
+### Feature branches
 
-For large work, open a release branch and target it from feature branches. Apply the `Prerelease` label on the release
-branch PR to publish preview versions before its final merge creates the stable default-branch push.
+Keep feature branches short-lived and target `main` directly. Use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+only when changes genuinely depend on each other. Apply the `Prerelease` label to a
+feature pull request to publish a preview before merging it to `main`.
 
 ## CI/CD pipeline
 
@@ -291,7 +293,7 @@ The publish step only runs when:
 
 - All tests and code coverage pass (or are skipped)
 - An important push reaches the default branch (stable release), or
-- The PR carries the `Prerelease` label (prerelease from the feature/release branch)
+- The PR carries the `Prerelease` label (prerelease from the feature branch)
 
 On any closed PR, the pipeline cleans up any prerelease tags created for that branch. A closed pull request cannot
 create a stable release.
