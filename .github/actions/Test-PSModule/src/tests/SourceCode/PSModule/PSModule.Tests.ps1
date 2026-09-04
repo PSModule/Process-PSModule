@@ -59,7 +59,7 @@ BeforeDiscovery {
 
                 @{
                     DocumentationPath = $documentationPath
-                    FilePath           = $_.FullName
+                    FilePath          = $_.FullName
                 }
             }
     } else {
