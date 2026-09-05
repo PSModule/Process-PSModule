@@ -1,7 +1,9 @@
 <!--
-This title and description become the GitHub Release notes by default. Write for the people who use the released
-artifact. See docs/content/guides/writing-release-note-prs.md and the psmodule-release-note-authoring skill.
-Delete headings that do not apply. Remove every placeholder and comment before marking the pull request ready.
+This is the final content-control plan for the pull request author. The automated release process reuses this title
+and description as the GitHub Release notes by default; it does not create a separate release-note document. Format
+the title, description, and selected version label for the people who use the released artifact. See
+docs/content/guides/formatting-release-note-prs.md and the psmodule-release-note-authoring skill. Delete headings
+that do not apply. Remove every placeholder and comment before marking the pull request ready.
 -->
 
 <One concise paragraph: what users receive and why it matters.>

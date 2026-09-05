@@ -1,17 +1,21 @@
 ---
-title: Writing release-note pull requests
-description: Turn a pull request into clear release notes that explain outcomes, adoption steps, and version impact.
+title: Formatting release-note pull requests
+description: Control the title, description, and label that automated releases reuse as user-facing release notes.
 ---
 
-# Writing release-note pull requests
+# Formatting release-note pull requests
 
-For the default Process-PSModule configuration, a pull request title becomes the GitHub Release notes heading and its
-description becomes the release notes body. The release name is the resolved version unless
-`Publish.Module.UsePRTitleAsReleaseName` changes that setting. Treat the title, description, and selected version label
-as the final decision about what users receive.
+This guide is the final content-control plan for an author formatting a pull request. It is not release notes for a
+specific change. It defines how the pull request title, description, and version label communicate what users receive
+when the automated release process reuses them.
 
-This guide extends the [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/) with the release transition and
-adoption information required by Process-PSModule consumers. It applies to any releasable artifact: a PowerShell
+With the default Process-PSModule settings, automation reuses the pull request title as the release notes heading and
+the description as the release notes body. The release name is the resolved version unless
+`Publish.Module.UsePRTitleAsReleaseName` changes that setting. The author, rather than the automation, makes the final
+message decision by formatting those three pull request fields before review.
+
+This guide extends the [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/) with the release transition
+and adoption information required by Process-PSModule consumers. It applies to any releasable artifact: a PowerShell
 module, reusable workflow, GitHub Action, library, service, or infrastructure module.
 
 ## Before starting
@@ -25,7 +29,7 @@ module, reusable workflow, GitHub Action, library, service, or infrastructure mo
 
 ## Steps
 
-1. Write the title in the [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/#title). Describe the
+1. Format the title in the [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/#title). Describe the
    user-facing outcome, not the implementation activity.
 2. Open with one concise paragraph that says what users receive and why it matters. Use present tense and active voice.
 3. Group the changes by experience using `## New:`, `## Changed:`, `## Fixed:`, and, for an incompatible release,
@@ -40,10 +44,11 @@ module, reusable workflow, GitHub Action, library, service, or infrastructure mo
    [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/#description-structure). Technical details explain
    how the outcome was delivered; they do not replace the user-facing narrative or adoption steps.
 
-## Release-note structure
+## Pull-request description structure
 
 Use only the user-facing change headings that apply, but always include an adoption answer and release impact for a
-published change.
+published change. This is the format of the pull-request description that the release process later reuses; it is not
+a separate release-note document to maintain.
 
 ````markdown
 <One paragraph explaining what users receive and why it matters.>
@@ -119,11 +124,12 @@ Do not label this section `Migration` unless the release performs a genuine data
 version update, reference change, configuration adjustment, or command replacement belongs under
 `Adopting this release`.
 
-## Release impact
+## Formatting release impact
 
 The configured version label determines the next version by applying its SemVer bump to the current published
 version. The exact label can differ between repositories; describe its effect rather than relying on a conventional
-name. The title and body explain the user value, while the version becomes the default GitHub Release name.
+name. The pull-request title and description explain the user value, while the version becomes the default GitHub
+Release name.
 
 Before marking a pull request ready, refresh the current version and planned version if another release landed while
 the branch was open. Do not publish a stale numeric transition. A prerelease label selects a release channel alongside
@@ -131,7 +137,8 @@ the version bump; it is not the bump itself.
 
 ## Verify
 
-- The title and opening paragraph are understandable without internal file, function, or class names.
+- The title, description, and selected label are understandable as one user-facing message without internal file,
+  function, or class names.
 - Every user-visible change says what the user gets, and the technical details remain in the final details block.
 - `Adopting this release` gives complete, ordered instructions for affected users or explicitly says no action is
   needed.

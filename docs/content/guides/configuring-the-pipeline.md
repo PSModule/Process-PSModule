@@ -161,7 +161,7 @@ Commands can now authenticate in environments where a browser callback is unavai
 - **Version transition:** `v1.4.2` -> `v1.5.0`
 ```
 
-Use [Writing release-note pull requests](writing-release-note-prs.md) for the complete user-facing structure,
+Use [Formatting release-note pull requests](formatting-release-note-prs.md) for the complete user-facing structure,
 including technical details and relevant issue links.
 
 ### Version-only release names

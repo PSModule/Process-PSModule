@@ -1,20 +1,21 @@
 ---
 name: psmodule-release-note-authoring
-description: Write or review release-bound pull requests as user-facing release notes with adoption steps and a verified version transition.
+description: Format pull request titles, descriptions, and labels as user-facing release notes with adoption steps and a verified version transition.
 ---
 
-# Author release-note pull requests
+# Format release-note pull requests
 
-Use this skill when authoring, rewriting, or reviewing a pull request whose title and description will be published as
-release notes. Read the [release-note pull request guide](../../../../../docs/content/guides/writing-release-note-prs.md)
+Use this skill when formatting, rewriting, or reviewing a pull request whose title and description will be published
+as release notes. This skill controls the author-facing pull request message; it does not create separate release
+notes. Read the [pull-request formatting guide](../../../../../docs/content/guides/formatting-release-note-prs.md)
 before editing the pull request. That guide owns the release-note structure and the user-facing writing rules.
 
 ## Operating contract
 
 1. Identify the artifact users consume, its current published version or reference, its configured version-label
    mapping, and the users affected by the change.
-2. Write the title and leading paragraph around the user outcome. Group changes by what users experience, not by files
-   or implementation activity.
+2. Format the title, description, and selected label around one user outcome. Group description changes by what users
+   experience, not by files or implementation activity.
 3. Include an ordered `Adopting this release` section for every affected user. State that normal updating is sufficient
    when no configuration, code, or invocation change is required.
 4. Verify the configured label, SemVer effect, current published version, and planned release version together. Refresh
@@ -32,6 +33,6 @@ migration, or claim that no user action is needed without inspecting the deliver
 
 ## References
 
-- [Writing release-note pull requests](../../../../../docs/content/guides/writing-release-note-prs.md)
+- [Formatting release-note pull requests](../../../../../docs/content/guides/formatting-release-note-prs.md)
 - [Versioning and releases](../../../../../docs/content/guides/versioning-and-releases.md)
 - [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/)
