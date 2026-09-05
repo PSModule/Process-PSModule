@@ -1,11 +1,11 @@
 ---
 title: Workflow triggers - Spec
-description: Retain production work while superseding obsolete pull-request activity with separate caller policies.
+description: Retain production work while superseding obsolete pull-request activity with one caller concurrency group.
 ---
 
 # Workflow triggers - Spec
 
-The caller workflow admits Process-PSModule work with separate native GitHub Actions policies. Default-branch
+The caller workflow admits Process-PSModule work with one native GitHub Actions concurrency group. Default-branch
 production and manual releases are retained; activity for each pull request converges on its latest event; a close
 event supersedes that pull request's activity before the reusable workflow evaluates optional prerelease cleanup.
 
@@ -41,22 +41,21 @@ ownership or deletion implementation.
 
 ## Functional requirements
 
-### FR1 - Admit work through caller policies {#fr1}
+### FR1 - Admit work through one caller policy {#fr1}
 
-The caller workflow MUST apply a retained policy to non-pull-request work and a superseding policy to pull-request
-work. The retained policy MUST group work by Git ref without canceling it; the superseding policy MUST group work by
-pull-request number and cancel obsolete activity. Each policy MUST cover its complete reusable-workflow call. The
-reusable workflow selects processing or close behavior from the original event.
+The caller workflow MUST define one workflow-level concurrency group for the complete reusable-workflow call. The
+group MUST use the pull-request number when available and the Git ref otherwise. It MUST retain non-pull-request work
+and replace pull-request work. The reusable workflow selects processing or close behavior from the original event.
 
 #### Caller admission scenario
 
 ```gherkin
 Scenario: Call the workflow
   Given a caller subscribes to default-branch and pull-request events
-  And it declares the documented concurrency policies
+  And it declares the documented concurrency group
   When it calls Process-PSModule
-  Then each complete reusable-workflow call has its required admission policy
-  And no dispatcher is required
+  Then its complete reusable-workflow call has one admission policy
+  And no dispatcher or per-track caller jobs are required
 ```
 
 ### FR2 - Retain and serialize production work {#fr2}

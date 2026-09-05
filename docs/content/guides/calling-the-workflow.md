@@ -36,28 +36,13 @@ on:
       - labeled
       - unlabeled
 
-jobs:
-  Process-PSModule-Production:
-    if: ${{ github.event_name != 'pull_request' }}
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      queue: max
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-  Process-PSModule-PullRequest:
-    if: ${{ github.event_name == 'pull_request' }}
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-      queue: single
-      cancel-in-progress: true
+jobs:
+  Process-PSModule:
     permissions:
       contents: read
       pages: write
@@ -75,11 +60,10 @@ Stable releases are evaluated from a push to the default branch. A merged pull r
 release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
 Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
 
-The production job serializes default-branch pushes, manual releases, and scheduled work in the maximum native queue.
-The pull-request job uses a separate group for each pull request, so a close event interrupts only its own activity and
-does not block the resulting stable release. Its `single` queue and cancellation replace obsolete activity. GitHub
-requires a literal queue value and rejects cancellation with `queue: max`, so these policies must remain separate.
-The reusable workflow uses a distinct prefixed concurrency group. Do not give either caller job that group name.
+The concurrency group uses the pull-request number when available and the Git ref otherwise, so a close event
+interrupts only its own pull-request activity and does not block the resulting stable release. Pull-request events use
+the `single` queue and cancel obsolete activity; other events use the maximum native queue without cancellation. The
+reusable workflow uses a distinct prefixed concurrency group. Do not give the caller that group name.
 
 ## Passing test data
 
@@ -101,9 +85,9 @@ The reusable workflow accepts test data through `TestData` and no longer declare
 - `TEST_USER_USER_FG_PAT`
 - `TEST_USER_PAT`
 
-If a caller passed any of these secrets directly, place them in the `secrets` map inside `TestData`. Add the same
-`TestData` mapping to the `secrets` block of both caller jobs. The environment variable names used by the tests can
-stay the same; only the workflow-call interface changes:
+If a caller passed any of these secrets directly, place them in the `secrets` map inside `TestData`. Add the
+`TestData` mapping to the calling job's `secrets` block. The environment variable names used by the tests can stay the
+same; only the workflow-call interface changes:
 
 ```yaml
 TestData: >-
@@ -122,8 +106,8 @@ workflow. It is one JSON object with two maps, so everything the tests need is v
 ```
 
 Values under `secrets` are masked in the logs; values under `variables` are not. Build it in the calling workflow and
-pass it through the `secrets:` blocks of both caller jobs so the whole blob is masked. Reference each secret directly
-as `"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A folded `>-` scalar keeps the source
+pass it through the calling job's `secrets:` block so the whole blob is masked. Reference each secret directly as
+`"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A folded `>-` scalar keeps the source
 readable while producing a single-line value, as long as the JSON content lines stay at the same indentation level:
 
 ```yaml

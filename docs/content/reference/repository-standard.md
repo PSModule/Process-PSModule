@@ -124,18 +124,15 @@ repository. Name it `Process-PSModule.yml`, matching
 `workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the
 `uses:` reference.
 
-The caller uses these mutually exclusive jobs:
+The caller uses one `Process-PSModule` job. Its workflow-level concurrency group uses the pull-request number when
+available and the Git ref otherwise. Pull-request events use `queue: single` and cancel obsolete activity; other
+events use `queue: max` without cancellation.
 
-| Job | Events | Concurrency policy |
-| --- | --- | --- |
-| `Process-PSModule-Production` | Non-pull-request events | Group by Git ref with `queue: max`; do not cancel runs. |
-| `Process-PSModule-PullRequest` | Pull-request events | Group by pull-request number with `queue: single`; cancel obsolete runs. |
-
-Both jobs use the same reusable-workflow reference, required job-level permissions, and explicit `PSGALLERY_API_KEY`,
+The job uses the reusable-workflow reference, required job-level permissions, and explicit `PSGALLERY_API_KEY`,
 `GitHubAppClientId`, and `GitHubAppPrivateKey` mapping. The exact
 [caller template](../guides/calling-the-workflow.md) is part of this standard. Use the controlled
 `PSModule/Process-PSModule` `@v8` major reference; pin external Actions dependencies to a commit SHA with the version
-tag in a trailing comment so Dependabot can update them. Permissions are declared only on the caller jobs, not at the
+tag in a trailing comment so Dependabot can update them. Permissions are declared only on the calling job, not at the
 workflow root.
 
 ## Required common files
