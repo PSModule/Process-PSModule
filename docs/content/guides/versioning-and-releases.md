@@ -9,6 +9,11 @@ Process-PSModule orchestrates the module lifecycle through GitHub Actions. Versi
 requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs only from a push to
 the configured default branch.
 
+With the default release-note settings, the pull request title becomes the release notes heading and its description
+becomes the release notes body. The release name remains the resolved version by default. Treat the selected label and
+the pull request content as the final decision about the release users receive; see
+[Writing release-note pull requests](writing-release-note-prs.md) for the required user-facing format.
+
 ## Flow
 
 1. Resolve settings and release intent.

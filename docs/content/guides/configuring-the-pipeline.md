@@ -145,12 +145,24 @@ Publish:
 This produces release notes like:
 
 ```markdown
-# 🚀 Add new authentication feature (#42)
+# 🚀 [Feature]: Commands can authenticate without browser callbacks (#42)
 
-This PR adds OAuth2 support with the following changes:
-- Added `Connect-OAuth2` function
-- Updated documentation
+Commands can now authenticate in environments where a browser callback is unavailable.
+
+## Adopting this release
+
+1. Update the module to the released version.
+2. Replace interactive sign-in with the device-code command where browser callbacks are unavailable.
+
+## Release impact
+
+- **Configured label:** `minor`
+- **SemVer change:** Minor.
+- **Version transition:** `v1.4.2` -> `v1.5.0`
 ```
+
+Use [Writing release-note pull requests](writing-release-note-prs.md) for the complete user-facing structure,
+including technical details and relevant issue links.
 
 ### Version-only release names
 
