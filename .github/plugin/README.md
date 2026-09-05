@@ -38,6 +38,10 @@ The
 [`psmodule-skill-authoring`](./psmodule/skills/psmodule-skill-authoring/SKILL.md)
 skill keeps plugin skills thin and points shared authoring guidance to the
 documentation site.
+The
+[`psmodule-release-note-authoring`](./psmodule/skills/psmodule-release-note-authoring/SKILL.md)
+skill formats pull request titles, descriptions, and labels as user-facing
+release notes with adoption steps and verified version transitions.
 Verify the installation with:
 
 ```console
