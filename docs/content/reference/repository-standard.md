@@ -87,6 +87,7 @@ Module repositories use the PSModule framework layout:
 | `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/docs/`. |
 | `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
+| `.github/zensical.toml` | Documentation site configuration consumed by the Process-PSModule site build. |
 | `.github/workflows/Process-PSModule.yml` | Caller workflow that runs the module's CI/CD by calling the shared Process-PSModule workflow. |
 | `.github/release.yml` | Release-note and changelog categorization for GitHub releases. |
 | `.github/linters/` | Linter configuration used by the framework's linting stage, including `.markdown-lint.yml` and `.powershell-psscriptanalyzer.psd1`. |
@@ -117,19 +118,22 @@ The module repository owns a caller workflow; the framework owns the reusable wo
 | Caller workflow | The module repository | `.github/workflows/Process-PSModule.yml` |
 | Reusable workflow | [`PSModule/Process-PSModule`](https://github.com/PSModule/Process-PSModule) | `.github/workflows/workflow.yml` |
 
-The caller workflow declares the triggers, concurrency, and permissions for the module repository, and delegates the work:
+The caller workflow declares the triggers, concurrency, permissions, and explicit secret mapping for the module
+repository. Name it `Process-PSModule.yml`, matching
+[`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) and existing module repositories.
+`workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the
+`uses:` reference.
 
-```yaml
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@<commit-sha> # <version tag>
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-```
+The caller uses one `Process-PSModule` job. Its workflow-level concurrency group uses the pull-request number when
+available and the Git ref otherwise. Pull-request events use `queue: single` and cancel obsolete activity; other
+events use `queue: max` without cancellation.
 
-Name the caller file `Process-PSModule.yml`, matching [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) and every existing module repository. `workflow.yml` is the reusable workflow's own filename inside `PSModule/Process-PSModule` and belongs only in the `uses:` reference. Pin the reference to a commit SHA with the version tag in a trailing comment so Dependabot can update it.
+The job uses the reusable-workflow reference, required job-level permissions, and explicit `PSGALLERY_API_KEY`,
+`GitHubAppClientId`, and `GitHubAppPrivateKey` mapping. The exact
+[caller template](../guides/calling-the-workflow.md) is part of this standard. Use the controlled
+`PSModule/Process-PSModule` `@v8` major reference; pin external Actions dependencies to a commit SHA with the version
+tag in a trailing comment so Dependabot can update them. Permissions are declared only on the calling job, not at the
+workflow root.
 
 ## Required common files
 
@@ -157,6 +161,7 @@ Required baseline files for module repositories:
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
 | `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
 | `.github/PSModule.yml` | Module workflow defaults and overrides. |
+| `.github/zensical.toml` | Documentation site configuration consumed by the Process-PSModule site build. |
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
 
@@ -193,7 +198,11 @@ For PSModule module repositories, the requirements are:
 
 Every module repository must include `.github/dependabot.yml`. Dependabot is part of the repository supply-chain control, not an optional convenience.
 
-Configure the `github-actions` ecosystem. It keeps the pinned actions current, including the pinned `PSModule/Process-PSModule` reference in the [caller workflow](#caller-workflow-and-reusable-workflow). This is what [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) ships, and it is the default for new repositories:
+Configure the `github-actions` ecosystem. It keeps external action SHA pins current. The
+`PSModule/Process-PSModule` `@v8` reference in the [caller workflow](#caller-workflow-and-reusable-workflow) is a
+controlled floating major that advances through Process-PSModule release automation. This is what
+[`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) ships, and it is the default for new
+repositories:
 
 ```yaml
 version: 2

@@ -5,8 +5,9 @@ description: How to call the Process-PSModule reusable workflow — the caller w
 
 # Calling the workflow
 
-To use the workflow, create a new file in the `.github/workflows` directory of the module repository and add the following content.
-For documentation site generation, use `zensical.toml` as the active site contract.
+Template-PSModule supplies a starter `.github/workflows/Process-PSModule.yml`. Replace it with this standard
+template; repositories created without the template create the file with this content. The template's documentation
+contract uses `.github/zensical.toml`.
 
 For the exact inputs, secrets, and permissions the reusable workflow declares, see
 [Workflow inputs](../reference/workflow-inputs.md).
@@ -37,15 +38,15 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+  queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   Process-PSModule:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
     secrets:
       PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
@@ -59,11 +60,10 @@ Stable releases are evaluated from a push to the default branch. A merged pull r
 release notes; a direct default-branch push or a manual dispatch uses the default `Patch` bump and commit-based notes.
 Keep the `pull_request` trigger for CI, prereleases, and prerelease cleanup.
 
-The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
-resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
-the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.
-The reusable workflow uses its own prefixed concurrency group, so it cannot queue behind the caller while the caller
-waits for it to finish.
+The concurrency group uses the pull-request number when available and the Git ref otherwise, so a close event
+interrupts only its own pull-request activity and does not block the resulting stable release. Pull-request events use
+the `single` queue and cancel obsolete activity; other events use the maximum native queue without cancellation. The
+reusable workflow uses a distinct prefixed concurrency group. Do not give the caller that group name.
 
 ## Passing test data
 
@@ -85,21 +85,14 @@ The reusable workflow accepts test data through `TestData` and no longer declare
 - `TEST_USER_USER_FG_PAT`
 - `TEST_USER_PAT`
 
-If a caller passed any of these secrets directly, place them in the `secrets` map inside `TestData`.
-The environment variable names used by the tests can stay the same; only the workflow-call interface
-changes:
+If a caller passed any of these secrets directly, place them in the `secrets` map inside `TestData`. Add the
+`TestData` mapping to the calling job's `secrets` block. The environment variable names used by the tests can stay the
+same; only the workflow-call interface changes:
 
 ```yaml
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-      TestData: >-
-        { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
-        "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
+TestData: >-
+  { "secrets": { "TEST_USER_PAT": "${{ secrets.TEST_USER_PAT }}",
+  "TEST_APP_ORG_CLIENT_ID": "${{ secrets.TEST_APP_ORG_CLIENT_ID }}" } }
 ```
 
 ### Passing test phase data (secrets and variables)
@@ -112,25 +105,17 @@ workflow. It is one JSON object with two maps, so everything the tests need is v
 { "secrets": { "NAME": "value" }, "variables": { "NAME": "value" } }
 ```
 
-Values under `secrets` are masked in the logs; values under `variables` are not. Build it in the
-calling workflow and pass it through the `secrets:` block (so the whole blob is masked). Reference each
-secret directly as `"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A
-folded `>-` scalar keeps the source readable while producing a single-line value, as long as the JSON
-content lines stay at the same indentation level:
+Values under `secrets` are masked in the logs; values under `variables` are not. Build it in the calling workflow and
+pass it through the calling job's `secrets:` block so the whole blob is masked. Reference each secret directly as
+`"${{ secrets.<name> }}"` and each variable as `${{ toJSON(vars.<name>) }}`. A folded `>-` scalar keeps the source
+readable while producing a single-line value, as long as the JSON content lines stay at the same indentation level:
 
 ```yaml
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-      TestData: >-
-        { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
-        "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},
-        "CONFLUENCE_USERNAME": ${{ toJSON(vars.CONFLUENCE_USERNAME) }},
-        "CONFLUENCE_SPACE_KEY": ${{ toJSON(vars.CONFLUENCE_SPACE_KEY) }} } }
+TestData: >-
+  { "secrets": { "CONFLUENCE_API_TOKEN": "${{ secrets.CONFLUENCE_API_TOKEN }}" },
+  "variables": { "CONFLUENCE_SITE": ${{ toJSON(vars.CONFLUENCE_SITE) }},
+  "CONFLUENCE_USERNAME": ${{ toJSON(vars.CONFLUENCE_USERNAME) }},
+  "CONFLUENCE_SPACE_KEY": ${{ toJSON(vars.CONFLUENCE_SPACE_KEY) }} } }
 ```
 
 Each entry becomes an environment variable in the test jobs, so the module's Pester tests read the
@@ -228,28 +213,8 @@ settings file:
 ImportantFilePatterns: []
 ```
 
-You can also pass patterns via the workflow input:
-
-```yaml
-jobs:
-  Process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    with:
-      ImportantFilePatterns: |
-        ^src/
-        ^README\.md$
-        ^examples/
-```
-
-To disable triggering via the workflow input, pass an explicit empty string:
-
-```yaml
-jobs:
-  process:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    with:
-      ImportantFilePatterns: ''
-```
+The standard caller does not add `with:` overrides. Configure
+`ImportantFilePatterns` in `.github/PSModule.yml`.
 
 Note that omitting the `ImportantFilePatterns` key entirely causes the workflow's default patterns (`^src/` and
 `^README\.md$`) to be used. The settings file takes priority over the workflow input, so set
