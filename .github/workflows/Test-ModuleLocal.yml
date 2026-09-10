@@ -89,3 +89,31 @@ jobs:
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
             Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion '${{ fromJson(inputs.Settings).Publish.Module.Resolution.Version }}'
+
+      - name: Verify Pester framework artifact paths
+        shell: pwsh
+        working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+        run: |
+          $artifactPaths = @(
+              '.PSModule/.temp'
+              '.PSModule/TestResult'
+              '.PSModule/CodeCoverage'
+          )
+
+          foreach ($artifactPath in $artifactPaths) {
+              if (-not (Test-Path -Path $artifactPath -PathType Container)) {
+                  throw "Expected Pester artifact directory at [$artifactPath]."
+              }
+          }
+
+          $legacyPaths = @(
+              '.temp'
+              'TestResult'
+              'CodeCoverage'
+          )
+
+          foreach ($legacyPath in $legacyPaths) {
+              if (Test-Path -Path $legacyPath) {
+                  throw "Legacy Pester artifact directory exists: [$legacyPath]."
+              }
+          }
