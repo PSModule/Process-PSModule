@@ -91,17 +91,6 @@ jobs:
                   'tests/srcTestRepo/.PSModule/docs/index.md.'
           }
 
-          $legacyPaths = @(
-              'tests/srcTestRepo/outputs'
-              'tests/srcTestRepo/_site'
-          )
-
-          foreach ($legacyPath in $legacyPaths) {
-              if (Test-Path -Path $legacyPath) {
-                  throw "Legacy framework artifact path exists: $legacyPath"
-              }
-          }
-
           $content = Get-Content -Path $path -Raw
           $expectedSnippets = @(
               '# Functions'

@@ -60,3 +60,16 @@ jobs:
           Prerelease: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.Prerelease }}
           ArtifactName: ${{ inputs.ArtifactName }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+
+      - name: Verify framework artifact root
+        if: ${{ github.repository == 'PSModule/Process-PSModule' }}
+        shell: pwsh
+        working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
+        run: |
+          if (-not (Test-Path -Path '.PSModule/module')) {
+              throw 'Expected built module at .PSModule/module.'
+          }
+
+          if (Test-Path -Path 'outputs') {
+              throw 'Legacy framework artifact path exists: outputs'
+          }
