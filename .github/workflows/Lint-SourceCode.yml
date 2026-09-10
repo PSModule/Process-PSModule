@@ -35,7 +35,7 @@ jobs:
           Path: src
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           TestResult_Enabled: true
-          TestResult_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/TestResult/PSModuleLint-SourceCode-${{ runner.os }}-TestResult-Report.xml
+          TestResult_OutputPath: .PSModule/TestResult/PSModuleLint-SourceCode-${{ runner.os }}-TestResult-Report.xml
           TestResult_TestSuiteName: PSModuleLint-SourceCode-${{ runner.os }}
 
       - name: Verify analyzer report location

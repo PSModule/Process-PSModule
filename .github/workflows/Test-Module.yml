@@ -79,7 +79,7 @@ jobs:
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
           TestResult_Enabled: true
-          TestResult_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/TestResult/PSModuleLint-Module-${{ runner.os }}-TestResult-Report.xml
+          TestResult_OutputPath: .PSModule/TestResult/PSModuleLint-Module-${{ runner.os }}-TestResult-Report.xml
           TestResult_TestSuiteName: PSModuleLint-Module-${{ runner.os }}
 
       - name: Verify analyzer report location
