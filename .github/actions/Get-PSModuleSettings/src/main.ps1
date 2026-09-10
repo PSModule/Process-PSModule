@@ -242,22 +242,28 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isManualDispatchToDefaultBranch = $isManualDispatch -and $workflowRef -eq $defaultBranch
     $pullRequest = $eventData.PullRequest
 
-    if ($isPush -and $commitSha) {
-        LogGroup "Resolve pull request for commit [$commitSha]" {
+    # A manual dispatch on the default branch is the documented recovery route for a failed or
+    # cancelled release run. It targets the same merge commit as the push it replaces, so it must
+    # resolve the same pull request and honour the same version label. Gating this lookup on
+    # $isPush alone left $pullRequest null for a dispatch, which silently downgraded a labelled
+    # Major or Minor release to a Patch bump through the AutoPatching fallback.
+    $resolveParams = @{
+        EventName                       = $eventName
+        CommitSha                       = $commitSha
+        DefaultBranch                   = $defaultBranch
+        IsPushToDefaultBranch           = $isPushToDefaultBranch
+        IsManualDispatchToDefaultBranch = $isManualDispatchToDefaultBranch
+        GetAssociatedPullRequest        = {
+            param($Sha)
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
-            $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$commitSha/pulls" -Method GET
-            $associatedPullRequests = @($response.Response)
-            $pullRequest = Select-PullRequestForPush -PullRequest $associatedPullRequests `
-                -DefaultBranch $defaultBranch `
-                -CommitSha $commitSha
-
-            if ($pullRequest) {
-                Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$commitSha]."
-            } else {
-                Write-Host "::notice::No pull request is associated with commit [$commitSha]."
-            }
+            $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$Sha/pulls" -Method GET
+            $response.Response
         }
+    }
+    $resolution = Resolve-ReleasePullRequest @resolveParams
+    if ($resolution.Resolved) {
+        $pullRequest = $resolution.PullRequest
     }
 
     $pullRequestIsMerged = if ($null -eq $pullRequest) {
