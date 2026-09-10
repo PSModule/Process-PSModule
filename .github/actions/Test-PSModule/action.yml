@@ -279,7 +279,7 @@ runs:
       run: ${{ github.action_path }}/src/main.ps1
 
     - name: Invoke-Pester
-      uses: PSModule/Invoke-Pester@4ff33199141fdf22568990b6107fe3148ae93a1c # v5.1.0
+      uses: PSModule/Invoke-Pester@f5e3a9fe9a9cac1069d61c7bca0a99f6fceb5fb2 # PR 78
       id: test
       env:
         LocalTestPath: ${{ steps.paths.outputs.LocalTestPath }}
@@ -292,6 +292,7 @@ runs:
         GitHubVersion: ${{ inputs.Version }}
         GitHubPrerelease: ${{ inputs.Prerelease }}
         WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        OutputDirectory: ${{ inputs.WorkingDirectory }}/.PSModule
         Path: ${{ steps.paths.outputs.TestPath }}
         StepSummary_Mode: ${{ inputs.StepSummary_Mode }}
         StepSummary_ShowTestOverview: ${{ inputs.StepSummary_ShowTestOverview }}
