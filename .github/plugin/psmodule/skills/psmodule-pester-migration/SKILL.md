@@ -157,7 +157,7 @@ For every consumer repository, trace and record these surfaces before editing:
 | Surface | Framework contract to verify | Migration check |
 | --- | --- | --- |
 | `PSModule/Invoke-Pester` | Installs/runs Pester and emits per-suite JSON results and coverage artifacts | Pin/verify Pester 6.1.0, map all inputs to v6 configuration, preserve suite names |
-| `Test-PSModule` action | Selects `tests/Module` or `tests/SourceCode`, resolves `outputs/module` or `src`, and passes paths to `Invoke-Pester` | Confirm path selection, exclusions, module state, and test extension |
+| `Test-PSModule` action | Selects `tests/Module` or `tests/SourceCode`, resolves `.PSModule/module` or `src`, and passes paths to `Invoke-Pester` | Confirm path selection, exclusions, module state, and test extension |
 | Module-local workflow | Downloads the built module, exposes `TestData`, imports the module, then runs module tests | Tests consume the prepared module; no hidden fallback import |
 | Source-code workflow | Runs source tests against the checked-out `src` path | Record how source functions/classes are loaded and which fixtures are explicit |
 | `BeforeAll-ModuleLocal` | Runs exact root `tests/BeforeAll.ps1` once before module-local jobs | Put shared services/data here only when every matrix job needs them |

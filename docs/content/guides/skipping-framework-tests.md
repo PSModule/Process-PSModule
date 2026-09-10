@@ -26,7 +26,7 @@ Every source-code test ID, its meaning, and an example skip comment are listed i
 [Framework test IDs](../reference/framework-test-ids.md#source-code-tests).
 
 [Module tests](../reference/framework-test-ids.md#module-tests) run against the compiled module in the
-`outputs/module` directory and typically don't need to be skipped, as they validate the final built module.
+`.PSModule/module` directory and typically don't need to be skipped, as they validate the final built module.
 
 ## Example Usage
 

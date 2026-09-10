@@ -7,7 +7,7 @@ Publishes a pre-versioned PowerShell module artifact to the PowerShell Gallery. 
 | Name | Description | Required | Default |
 | --- | --- | --- | --- |
 | `Name` | Name of the module to publish. | No | Repository name |
-| `ModulePath` | Path containing the built `<Name>/` module directory. | No | `outputs/module` |
+| `ModulePath` | Path containing the built `<Name>/` module directory. | No | `.PSModule/module` |
 | `ArtifactName` | Name of the module artifact to download. | No | `module` |
 | `PSGALLERY_API_KEY` | PowerShell Gallery API key. | Yes | N/A |
 | `WhatIf` | Logs publishing operations without publishing the module. | No | `false` |
@@ -24,7 +24,7 @@ This action does not provide outputs.
   uses: ./.github/actions/Publish-PSModule
   with:
     Name: ExampleModule
-    ModulePath: outputs/module
+    ModulePath: .PSModule/module
     ArtifactName: module
     PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
 ```

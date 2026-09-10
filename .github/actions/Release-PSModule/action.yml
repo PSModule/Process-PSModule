@@ -9,7 +9,7 @@ inputs:
   ModulePath:
     description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
     required: false
-    default: outputs/module
+    default: .PSModule/module
   ArtifactName:
     description: Name of the uploaded artifact to download. Must match the name used in the upstream upload-artifact step.
     required: false
