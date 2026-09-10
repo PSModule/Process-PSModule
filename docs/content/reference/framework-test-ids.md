@@ -31,7 +31,7 @@ Run by the [Test source code](pipeline-stages.md#test-source-code) job against f
 ## Module tests
 
 Run by the [Framework test](pipeline-stages.md#framework-test) job against the compiled module in
-`outputs/module`. Implemented in
+`.PSModule/module`. Implemented in
 [PSModule - Module tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/Module/PSModule/PSModule.Tests.ps1).
 
 | Name | Description |

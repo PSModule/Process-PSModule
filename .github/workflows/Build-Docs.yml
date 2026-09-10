@@ -33,7 +33,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: module
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
+          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
 
       - name: Document module
         uses: ./_wf/.github/actions/Document-PSModule
@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: docs
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs
+          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/docs
           if-no-files-found: error
           retention-days: 1
 
@@ -82,7 +82,7 @@ jobs:
         env:
           RUN_LOCAL: true
           DEFAULT_WORKSPACE: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-          FILTER_REGEX_INCLUDE: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/docs/.*\.(md|markdown)$
+          FILTER_REGEX_INCLUDE: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/docs/.*\.(md|markdown)$
           ENABLE_GITHUB_ACTIONS_GROUP_TITLE: true
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_ALL_CODEBASE: true

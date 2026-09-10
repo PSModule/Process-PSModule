@@ -60,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
-          ModulePath: outputs/module
+          ModulePath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
           PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
@@ -77,7 +77,7 @@ jobs:
           GH_TOKEN: ${{ steps.App-Token.outputs.token }}
         with:
           Name: ${{ fromJson(inputs.Settings).Name }}
-          ModulePath: outputs/module
+          ModulePath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
           ArtifactName: module
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           UsePRTitleAsReleaseName: ${{ fromJson(inputs.Settings).Publish.Module.UsePRTitleAsReleaseName }}
