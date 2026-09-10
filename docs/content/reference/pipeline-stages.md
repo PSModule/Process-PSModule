@@ -11,6 +11,25 @@ implements it.
 
 For which of these jobs run in a given trigger scenario, see the [scenario matrix](scenario-matrix.md).
 
+## Consumer artifact root
+
+The framework stores consumer build, documentation, test, and coverage artifacts
+under `<WorkingDirectory>/.PSModule/`. This keeps generated output separate from
+the module source. Consumer repositories SHOULD ignore `.PSModule/`.
+
+| Path | Contents |
+| --- | --- |
+| `.PSModule/module/` | The compiled, versioned module artifact. |
+| `.PSModule/docs/` | Generated command documentation passed to the site build. |
+| `.PSModule/site/` | Assembled site input and generated static site output at `_site/`. |
+| `.PSModule/TestResult/` | Per-suite Pester and analyzer test-result reports. |
+| `.PSModule/CodeCoverage/` | Per-suite code-coverage reports. |
+
+Pester stores its temporary execution state outside the consumer checkout.
+Runner-only output, including `TestResults/`, `CodeCoverage/`,
+`CodeCoverage-MissedPaths/`, and `super-linter-output/`, is not a consumer
+repository artifact.
+
 ## Plan
 
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Plan.yml)
