@@ -79,9 +79,10 @@ jobs:
       - name: Verify generated artifacts remain isolated
         shell: pwsh
         run: |
+          $runnerOsExpression = '$' + '{{ runner.os }}'
           $expectedAnalyzerReportPaths = @{
-              '.github/workflows/Test-Module.yml' = 'TestResult_OutputPath: .PSModule/TestResult/PSModuleLint-Module-${{ runner.os }}-TestResult-Report.xml'
-              '.github/workflows/Lint-SourceCode.yml' = 'TestResult_OutputPath: .PSModule/TestResult/PSModuleLint-SourceCode-${{ runner.os }}-TestResult-Report.xml'
+              '.github/workflows/Test-Module.yml' = "TestResult_OutputPath: .PSModule/TestResult/PSModuleLint-Module-$runnerOsExpression-TestResult-Report.xml"
+              '.github/workflows/Lint-SourceCode.yml' = "TestResult_OutputPath: .PSModule/TestResult/PSModuleLint-SourceCode-$runnerOsExpression-TestResult-Report.xml"
           }
 
           foreach ($workflowPath in $expectedAnalyzerReportPaths.Keys) {
