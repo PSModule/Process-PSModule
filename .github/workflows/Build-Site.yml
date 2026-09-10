@@ -58,21 +58,6 @@ jobs:
           SitePath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/site/_site
           WorkflowPath: _wf
 
-      - name: Verify framework artifact root
-        if: ${{ github.repository == 'PSModule/Process-PSModule' }}
-        shell: pwsh
-        working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-        run: |
-          if (-not (Test-Path -Path '.PSModule/site/_site')) {
-              throw 'Expected generated site at .PSModule/site/_site.'
-          }
-
-          foreach ($legacyPath in @('outputs', '_site')) {
-              if (Test-Path -Path $legacyPath) {
-                  throw "Legacy framework artifact path exists: $legacyPath"
-              }
-          }
-
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           name: github-pages

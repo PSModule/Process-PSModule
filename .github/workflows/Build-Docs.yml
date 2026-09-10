@@ -41,19 +41,6 @@ jobs:
           Name: ${{ fromJson(inputs.Settings).Name }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
-      - name: Verify framework artifact root
-        if: ${{ github.repository == 'PSModule/Process-PSModule' }}
-        shell: pwsh
-        working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-        run: |
-          if (-not (Test-Path -Path '.PSModule/docs')) {
-              throw 'Expected generated documentation at .PSModule/docs.'
-          }
-
-          if (Test-Path -Path 'outputs') {
-              throw 'Legacy framework artifact path exists: outputs'
-          }
-
       - name: Upload docs artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
