@@ -76,6 +76,48 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Verify generated artifacts remain isolated
+        shell: pwsh
+        run: |
+          $expectedAnalyzerReportPaths = @{
+              '.github/workflows/Test-Module.yml' = 'TestResult_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/TestResult/PSModuleLint-Module-${{ runner.os }}-TestResult-Report.xml'
+              '.github/workflows/Lint-SourceCode.yml' = 'TestResult_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/TestResult/PSModuleLint-SourceCode-${{ runner.os }}-TestResult-Report.xml'
+          }
+
+          foreach ($workflowPath in $expectedAnalyzerReportPaths.Keys) {
+              $content = Get-Content -Path $workflowPath -Raw
+              $expectedPath = $expectedAnalyzerReportPaths[$workflowPath]
+
+              if (-not $content.Contains($expectedPath)) {
+                  throw "Expected isolated analyzer report path was not found in $workflowPath."
+              }
+          }
+
+          $buildDocsWorkflow = Get-Content -Path '.github/workflows/Build-Docs.yml' -Raw
+          $forbiddenStagingPatterns = @(
+              'Rename-Item\s+-Path\s+[''"]\.gitignore[''"]'
+              'git add \.'
+              'PSModule/GitHub-Script'
+          )
+
+          foreach ($pattern in $forbiddenStagingPatterns) {
+              if ($buildDocsWorkflow -match $pattern) {
+                  throw "Build-Docs.yml must not use generated-artifact staging: $pattern"
+              }
+          }
+
+          $legacyArtifactPaths = @(
+              'tests/srcTestRepo/TestResult'
+              'tests/srcTestRepo/CodeCoverage'
+              'tests/srcTestRepo/.temp'
+          )
+
+          foreach ($path in $legacyArtifactPaths) {
+              if (Test-Path -Path $path) {
+                  throw "Legacy root artifact path was created: $path"
+              }
+          }
+
       - name: Download docs artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
