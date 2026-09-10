@@ -279,7 +279,7 @@ runs:
       run: ${{ github.action_path }}/src/main.ps1
 
     - name: Invoke-Pester
-      uses: PSModule/Invoke-Pester@4ff33199141fdf22568990b6107fe3148ae93a1c # v5.1.0
+      uses: PSModule/Invoke-Pester@c5494aba3c07d7bfd81bdbbc9f301e8fa4a729fb # v5.1.1
       id: test
       env:
         LocalTestPath: ${{ steps.paths.outputs.LocalTestPath }}
@@ -312,7 +312,7 @@ runs:
         Filter_FullName: ${{ inputs.Filter_FullName }}
         CodeCoverage_Enabled: ${{ inputs.CodeCoverage_Enabled }}
         CodeCoverage_OutputFormat: ${{ inputs.CodeCoverage_OutputFormat }}
-        CodeCoverage_OutputPath: ${{ inputs.CodeCoverage_OutputPath }}
+        CodeCoverage_OutputPath: ${{ inputs.CodeCoverage_OutputPath || format('.PSModule/CodeCoverage/PSModuleTest-{0}-{1}-CodeCoverage-Report.xml', inputs.Settings, runner.os) }}
         CodeCoverage_OutputEncoding: ${{ inputs.CodeCoverage_OutputEncoding }}
         CodeCoverage_Path: ${{ inputs.CodeCoverage_Path }}
         CodeCoverage_ExcludeTests: ${{ inputs.CodeCoverage_ExcludeTests }}
@@ -322,7 +322,7 @@ runs:
         CodeCoverage_SingleHitBreakpoints: ${{ inputs.CodeCoverage_SingleHitBreakpoints }}
         TestResult_Enabled: ${{ inputs.TestResult_Enabled }}
         TestResult_OutputFormat: ${{ inputs.TestResult_OutputFormat }}
-        TestResult_OutputPath: ${{ inputs.TestResult_OutputPath }}
+        TestResult_OutputPath: ${{ inputs.TestResult_OutputPath || format('.PSModule/TestResult/PSModuleTest-{0}-{1}-TestResult-Report.xml', inputs.Settings, runner.os) }}
         TestResult_OutputEncoding: ${{ inputs.TestResult_OutputEncoding }}
         TestResult_TestSuiteName: PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}
         Should_ErrorAction: ${{ inputs.Should_ErrorAction }}

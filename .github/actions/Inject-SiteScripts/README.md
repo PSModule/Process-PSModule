@@ -13,6 +13,6 @@ Injects JavaScript snippets from `.github/scripts/site-injectors/*.js` into gene
 - name: Inject shared site scripts
   uses: ./_wf/.github/actions/Inject-SiteScripts
   with:
-    SitePath: ./_site
+    SitePath: ./.PSModule/site/_site
     WorkflowPath: _wf
 ```

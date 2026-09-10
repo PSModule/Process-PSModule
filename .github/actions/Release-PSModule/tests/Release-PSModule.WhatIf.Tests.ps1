@@ -47,7 +47,7 @@ Describe 'Release-PSModule WhatIf' {
     BeforeEach {
         $script:moduleName = 'TestModule'
         $script:workspacePath = Join-Path -Path $TestDrive -ChildPath 'workspace'
-        $script:modulePath = Join-Path -Path $script:workspacePath -ChildPath "outputs/module/$script:moduleName"
+        $script:modulePath = Join-Path -Path $script:workspacePath -ChildPath ".PSModule/module/$script:moduleName"
         $manifestPath = Join-Path -Path $script:modulePath -ChildPath "$script:moduleName.psd1"
         $eventPath = Join-Path -Path $TestDrive -ChildPath 'event.json'
         $script:githubOutputPath = Join-Path -Path $TestDrive -ChildPath 'github-output'
@@ -89,7 +89,7 @@ Describe 'Release-PSModule WhatIf' {
         $env:GITHUB_WORKSPACE = $script:workspacePath
         $env:RELEASE_ACTION_GH_CALL_LOG = $script:ghCallLogPath
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_Name = $script:moduleName
-        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath = 'outputs/module'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath = '.PSModule/module'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'true'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'true'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName = 'false'
