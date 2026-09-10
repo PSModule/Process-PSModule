@@ -15,11 +15,11 @@ If you find a problem or improvement, fix if small; otherwise open an issue.
 Regarding repo structure, module source code, and how the Process-PSModule workflow
 works. For PSModule-specific build, layout, and process guidance:
 
-- [Process-PSModule docs](https://psmodule.io/docs/) —
+- [Process-PSModule docs](https://psmodule.io/Process-PSModule/) —
   repository structure, module anatomy, and the build/test/pack/publish pipeline.
-- [Repository defaults](https://psmodule.github.io/docs/Modules/Repository-Defaults/) —
+- [Repository defaults](https://psmodule.io/Process-PSModule/) —
   the expected repository layout and required files.
-- [Standards](https://psmodule.github.io/docs/Modules/Standards/) — PowerShell module
+- [Standards](https://psmodule.io/Process-PSModule/) — PowerShell module
   coding standards.
 - [PSModule/memory](https://github.com/PSModule/memory) — durable cross-session agent
   working memory for the PSModule organization.
