@@ -82,7 +82,7 @@ jobs:
           name: docs
           path: tests/srcTestRepo/.PSModule/docs
 
-      - name: Verify framework artifacts are isolated
+      - name: Verify generated Functions index
         shell: pwsh
         run: |
           $path = 'tests/srcTestRepo/.PSModule/docs/index.md'
