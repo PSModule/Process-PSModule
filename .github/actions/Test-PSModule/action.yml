@@ -279,7 +279,7 @@ runs:
       run: ${{ github.action_path }}/src/main.ps1
 
     - name: Invoke-Pester
-      uses: PSModule/Invoke-Pester@b62062021d6f1182663f92f97de2cbcd75c08cfd # PR 78
+      uses: PSModule/Invoke-Pester@282916d4de0c6d9b4714ccd6d0297230aa616ae6 # PR 78
       id: test
       env:
         LocalTestPath: ${{ steps.paths.outputs.LocalTestPath }}
@@ -292,7 +292,6 @@ runs:
         GitHubVersion: ${{ inputs.Version }}
         GitHubPrerelease: ${{ inputs.Prerelease }}
         WorkingDirectory: ${{ inputs.WorkingDirectory }}
-        OutputDirectory: ${{ inputs.WorkingDirectory }}/.PSModule
         Path: ${{ steps.paths.outputs.TestPath }}
         StepSummary_Mode: ${{ inputs.StepSummary_Mode }}
         StepSummary_ShowTestOverview: ${{ inputs.StepSummary_ShowTestOverview }}
@@ -313,7 +312,7 @@ runs:
         Filter_FullName: ${{ inputs.Filter_FullName }}
         CodeCoverage_Enabled: ${{ inputs.CodeCoverage_Enabled }}
         CodeCoverage_OutputFormat: ${{ inputs.CodeCoverage_OutputFormat }}
-        CodeCoverage_OutputPath: ${{ inputs.CodeCoverage_OutputPath }}
+        CodeCoverage_OutputPath: ${{ inputs.WorkingDirectory }}/.PSModule/CodeCoverage/PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}-CodeCoverage-Report.xml
         CodeCoverage_OutputEncoding: ${{ inputs.CodeCoverage_OutputEncoding }}
         CodeCoverage_Path: ${{ inputs.CodeCoverage_Path }}
         CodeCoverage_ExcludeTests: ${{ inputs.CodeCoverage_ExcludeTests }}
@@ -323,7 +322,7 @@ runs:
         CodeCoverage_SingleHitBreakpoints: ${{ inputs.CodeCoverage_SingleHitBreakpoints }}
         TestResult_Enabled: ${{ inputs.TestResult_Enabled }}
         TestResult_OutputFormat: ${{ inputs.TestResult_OutputFormat }}
-        TestResult_OutputPath: ${{ inputs.TestResult_OutputPath }}
+        TestResult_OutputPath: ${{ inputs.WorkingDirectory }}/.PSModule/TestResult/PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}-TestResult-Report.xml
         TestResult_OutputEncoding: ${{ inputs.TestResult_OutputEncoding }}
         TestResult_TestSuiteName: PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}
         Should_ErrorAction: ${{ inputs.Should_ErrorAction }}

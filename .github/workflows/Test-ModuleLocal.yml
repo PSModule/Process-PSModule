@@ -69,7 +69,7 @@ jobs:
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@b62062021d6f1182663f92f97de2cbcd75c08cfd # PR 78
+        uses: PSModule/Invoke-Pester@282916d4de0c6d9b4714ccd6d0297230aa616ae6 # PR 78
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
@@ -78,15 +78,16 @@ jobs:
           GitHubPrerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           TestResult_TestSuiteName: ${{ matrix.TestName }}-${{ matrix.OSName }}
           TestResult_Enabled: true
+          TestResult_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/TestResult/${{ matrix.TestName }}-${{ matrix.OSName }}-TestResult-Report.xml
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
+          CodeCoverage_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/CodeCoverage/${{ matrix.TestName }}-${{ matrix.OSName }}-CodeCoverage-Report.xml
           CodeCoverage_CoveragePercentTarget: 0
           Filter_ExcludeTag: Flaky
           Path: ${{ matrix.TestPath }}
           Run_Path: ${{ steps.import-module.outputs.path }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-          OutputDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule
           Prescript: | # This is to speed up module loading in Pester.
             Install-PSResource -Repository PSGallery -TrustRepository -Name PSCustomObject
             Import-Module -Name '${{ steps.import-module.outputs.name }}' -RequiredVersion '${{ fromJson(inputs.Settings).Publish.Module.Resolution.Version }}'
@@ -96,14 +97,13 @@ jobs:
         working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
         run: |
           $artifactPaths = @(
-              '.PSModule/.temp'
-              '.PSModule/TestResult'
-              '.PSModule/CodeCoverage'
+              '.PSModule/TestResult/${{ matrix.TestName }}-${{ matrix.OSName }}-TestResult-Report.xml'
+              '.PSModule/CodeCoverage/${{ matrix.TestName }}-${{ matrix.OSName }}-CodeCoverage-Report.xml'
           )
 
           foreach ($artifactPath in $artifactPaths) {
-              if (-not (Test-Path -Path $artifactPath -PathType Container)) {
-                  throw "Expected Pester artifact directory at [$artifactPath]."
+              if (-not (Test-Path -Path $artifactPath -PathType Leaf)) {
+                  throw "Expected Pester report at [$artifactPath]."
               }
           }
 
