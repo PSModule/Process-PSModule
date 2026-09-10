@@ -91,6 +91,11 @@ jobs:
               if (-not $content.Contains($expectedPath)) {
                   throw "Expected isolated analyzer report path was not found in $workflowPath."
               }
+
+              $expectedAction = 'uses: PSModule/Invoke-ScriptAnalyzer@9acddbd55ff4634b738be3a219c76e3676aaf1cd # v5.0.1'
+              if (-not $content.Contains($expectedAction)) {
+                  throw "Expected released analyzer action pin was not found in $workflowPath."
+              }
           }
 
           $buildDocsWorkflow = Get-Content -Path '.github/workflows/Build-Docs.yml' -Raw
