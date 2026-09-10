@@ -312,7 +312,7 @@ runs:
         Filter_FullName: ${{ inputs.Filter_FullName }}
         CodeCoverage_Enabled: ${{ inputs.CodeCoverage_Enabled }}
         CodeCoverage_OutputFormat: ${{ inputs.CodeCoverage_OutputFormat }}
-        CodeCoverage_OutputPath: ${{ inputs.WorkingDirectory }}/.PSModule/CodeCoverage/PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}-CodeCoverage-Report.xml
+        CodeCoverage_OutputPath: .PSModule/CodeCoverage/PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}-CodeCoverage-Report.xml
         CodeCoverage_OutputEncoding: ${{ inputs.CodeCoverage_OutputEncoding }}
         CodeCoverage_Path: ${{ inputs.CodeCoverage_Path }}
         CodeCoverage_ExcludeTests: ${{ inputs.CodeCoverage_ExcludeTests }}
@@ -322,7 +322,7 @@ runs:
         CodeCoverage_SingleHitBreakpoints: ${{ inputs.CodeCoverage_SingleHitBreakpoints }}
         TestResult_Enabled: ${{ inputs.TestResult_Enabled }}
         TestResult_OutputFormat: ${{ inputs.TestResult_OutputFormat }}
-        TestResult_OutputPath: ${{ inputs.WorkingDirectory }}/.PSModule/TestResult/PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}-TestResult-Report.xml
+        TestResult_OutputPath: .PSModule/TestResult/PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}-TestResult-Report.xml
         TestResult_OutputEncoding: ${{ inputs.TestResult_OutputEncoding }}
         TestResult_TestSuiteName: PSModuleTest-${{ inputs.Settings }}-${{ runner.os }}
         Should_ErrorAction: ${{ inputs.Should_ErrorAction }}

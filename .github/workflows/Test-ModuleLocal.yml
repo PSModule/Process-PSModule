@@ -78,11 +78,11 @@ jobs:
           GitHubPrerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           TestResult_TestSuiteName: ${{ matrix.TestName }}-${{ matrix.OSName }}
           TestResult_Enabled: true
-          TestResult_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/TestResult/${{ matrix.TestName }}-${{ matrix.OSName }}-TestResult-Report.xml
+          TestResult_OutputPath: .PSModule/TestResult/${{ matrix.TestName }}-${{ matrix.OSName }}-TestResult-Report.xml
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
-          CodeCoverage_OutputPath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/CodeCoverage/${{ matrix.TestName }}-${{ matrix.OSName }}-CodeCoverage-Report.xml
+          CodeCoverage_OutputPath: .PSModule/CodeCoverage/${{ matrix.TestName }}-${{ matrix.OSName }}-CodeCoverage-Report.xml
           CodeCoverage_CoveragePercentTarget: 0
           Filter_ExcludeTag: Flaky
           Path: ${{ matrix.TestPath }}
