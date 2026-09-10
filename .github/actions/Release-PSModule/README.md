@@ -7,7 +7,7 @@ Creates or resumes a GitHub release for a pre-versioned PowerShell module artifa
 | Name | Description | Required | Default |
 | --- | --- | --- | --- |
 | `Name` | Name of the module to release. | No | Repository name |
-| `ModulePath` | Path containing the built `<Name>/` module directory. | No | `outputs/module` |
+| `ModulePath` | Path containing the built `<Name>/` module directory. | No | `.PSModule/module` |
 | `ArtifactName` | Name of the module artifact to download. | No | `module` |
 | `ReleaseTag` | Full GitHub release tag resolved by `Resolve-PSModuleVersion`. | Yes | N/A |
 | `WhatIf` | Logs release operations without creating or uploading anything. | No | `false` |
@@ -33,7 +33,7 @@ Pass the Plan job's resolved `FullVersion` as `ReleaseTag` so the configured tag
   uses: ./.github/actions/Release-PSModule
   with:
     Name: ExampleModule
-    ModulePath: outputs/module
+    ModulePath: .PSModule/module
     ArtifactName: module
     ReleaseTag: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.FullVersion }}
 ```

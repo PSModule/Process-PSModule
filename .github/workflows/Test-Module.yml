@@ -37,7 +37,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: module
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
+          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
 
       - name: Test-Module
         uses: ./_wf/.github/actions/Test-PSModule
@@ -67,12 +67,12 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: module
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
+          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
 
       - name: Lint-Module
         uses: PSModule/Invoke-ScriptAnalyzer@4d633e4df1f1fa575949a328839d33c3a0838765 # v5.0.0
         with:
-          Path: outputs/module
+          Path: .PSModule/module
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           GitHubPrerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           GitHubVersion: ${{ fromJson(inputs.Settings).Version }}

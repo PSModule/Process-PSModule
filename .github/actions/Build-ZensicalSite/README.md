@@ -1,6 +1,6 @@
 # Build-ZensicalSite
 
-Builds Zensical documentation site output and normalizes it to `<working-directory>/_site`.
+Builds Zensical documentation site output at `<working-directory>/.PSModule/site/_site`.
 
 ## Inputs
 

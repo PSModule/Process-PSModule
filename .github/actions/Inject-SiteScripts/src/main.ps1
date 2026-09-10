@@ -9,7 +9,7 @@
     repository and injects each script into every HTML file under SitePath, once per file.
 
     .EXAMPLE
-    ./main.ps1 -SitePath './_site' -WorkflowPath '_wf'
+    ./main.ps1 -SitePath './.PSModule/site/_site' -WorkflowPath '_wf'
 
     .INPUTS
     None.
