@@ -14,8 +14,15 @@ The behaviour in the [spec](spec.md) is delivered by a **single reusable GitHub 
 The reusable workflow accepts a caller workflow and minimal caller configuration: a `pull_request`-triggered job for
 CI and prereleases plus a default-branch `push` trigger for stable publication. The caller calls `workflow.yml` and
 passes the required secrets. The full caller template is in
-[Repository setup](../get-started/repository-setup.md#3-add-the-caller-workflow), and the interface it targets is
+[Repository setup](../get-started/repository-setup.md#4-verify-the-caller-workflow), and the interface it targets is
 documented in [Workflow inputs](../reference/workflow-inputs.md).
+
+### Trigger admission
+
+The [workflow trigger design](workflow-triggers/design.md) owns caller admission before processing: a retained
+production queue and replaceable pull-request activity. The caller-level concurrency group covers each complete
+reusable-workflow call through its final enabled stage; the reusable workflow identifies closure and performs optional
+prerelease cleanup.
 
 ### Composed reusable workflows
 
@@ -110,6 +117,7 @@ independently; the main workflow pins versions explicitly. The full list is in
 ## Where this connects
 
 - [Spec](spec.md) — the requirements this design delivers.
+- [Workflow triggers](workflow-triggers/index.md) — scheduling requirements and the event-routing design.
 - [Pipeline stages](../reference/pipeline-stages.md) — detailed breakdown of each job.
 - [Calling the workflow](../guides/calling-the-workflow.md) — how to invoke it.
 - [Settings](../reference/settings.md) — the settings file reference.

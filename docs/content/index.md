@@ -26,7 +26,7 @@ New to Process-PSModule? Work through these in order.
 | Page | Description |
 | --- | --- |
 | [Get started](get-started/index.md) | Create a module repository from the template and get the pipeline running. |
-| [Repository setup](get-started/repository-setup.md) | Configure GitHub Pages, `PSGALLERY_API_KEY`, permissions, and the caller workflow. |
+| [Repository setup](get-started/repository-setup.md) | Repository baseline, GitHub Pages, workflow secrets, and the caller workflow. |
 | [Your first release](get-started/your-first-release.md) | The pull request flow, version labels, and the resulting default-branch release. |
 
 ## Guides
