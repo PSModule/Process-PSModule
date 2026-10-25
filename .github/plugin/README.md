@@ -41,7 +41,8 @@ documentation site.
 The
 [`psmodule-release-note-authoring`](./psmodule/skills/psmodule-release-note-authoring/SKILL.md)
 skill formats pull request titles, descriptions, and labels as user-facing
-release notes with adoption steps and verified version transitions.
+release records with complete upgrade instructions, verified semantic impact,
+and publisher-resolved versions.
 Verify the installation with:
 
 ```console
