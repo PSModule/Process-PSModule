@@ -142,27 +142,28 @@ Publish:
     UsePRTitleAsNotesHeading: true
 ```
 
-This produces release notes like:
+This produces release notes like this illustrative excerpt:
 
 ```markdown
-# 🚀 [Feature]: Commands can authenticate without browser callbacks (#42)
+# Commands identify missing required settings (#42)
 
-Commands can now authenticate in environments where a browser callback is unavailable.
+Commands identify a missing required setting in the error message so users can correct the configuration directly.
+Accepted configuration and invocation stay unchanged.
 
-## Adopting this release
+<!-- ANNOUNCEMENT STOP -->
 
-1. Update the module to the released version.
-2. Replace interactive sign-in with the device-code command where browser callbacks are unavailable.
+## Fixed: Missing settings are easier to identify
 
-## Release impact
-
-- **Configured label:** `minor`
-- **SemVer change:** Minor.
-- **Version transition:** `v1.4.2` -> `v1.5.0`
+A missing required setting is named in the error instead of producing an unspecified configuration error. This affects
+users diagnosing invalid configuration. No configuration, code, or invocation change is required beyond selecting
+this release. Run the existing configuration check to verify that valid configuration still succeeds and an omitted
+required setting is named in the error.
 ```
 
-Use [Formatting release-note pull requests](formatting-release-note-prs.md) for the complete user-facing structure,
-including technical details and relevant issue links.
+Use [Formatting release-note pull requests](formatting-release-note-prs.md) for the complete structure, including
+result-scoped upgrade instructions and evidence. The author describes verified semantic impact and the applicable
+baseline; the publisher resolves the version. Keep complete transition instructions in the published body so PR and
+diff links remain optional depth.
 
 ### Version-only release names
 

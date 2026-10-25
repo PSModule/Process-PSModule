@@ -10,9 +10,21 @@ requests and resolved once, in the Plan stage, before anything is built. Stable 
 the configured default branch.
 
 With the default release-note settings, the pull request title becomes the release notes heading and its description
-becomes the release notes body. The release name remains the resolved version by default. Treat the selected label and
-the pull request content as the final decision about the release users receive; see
-[Formatting release-note pull requests](formatting-release-note-prs.md) for the required user-facing format.
+becomes the release notes body. The release name remains the resolved version by default. Authors state verified
+semantic impact and applicable source baselines; the publisher resolves final numeric coordinates. See
+[Formatting release-note pull requests](formatting-release-note-prs.md) for the complete authoring contract.
+
+## Using release notes for an upgrade
+
+Identify the consumer's current release/source baseline and selected target, then read every applicable published
+release record after that baseline through the target in order. Compose the stated prerequisites, adoption or
+migration actions, and verification for the consumer's starting state. Reading the intervening records does not
+require installing or running every intermediate version; do so only when a record explicitly requires it.
+
+The notes provide the complete change, rationale, impact, and action or explicit no-action result. Pull requests and
+commit diffs provide optional depth. Missing required instructions are an evidence gap to resolve with the producer.
+Product and resource documentation describes supported current-state behavior and usage; release records own
+historical transitions. See the [illustrative replay](formatting-release-note-prs.md#replay-an-illustrative-release-range).
 
 ## Flow
 

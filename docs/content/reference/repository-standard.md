@@ -92,7 +92,7 @@ Module repositories use the PSModule framework layout:
 | `.github/linters/` | Linter configuration used by the framework's linting stage, including `.markdown-lint.yml` and `.powershell-psscriptanalyzer.psd1`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Ownership routing for reviews and protected areas. |
-| `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
+| `.github/pull_request_template.md` | Scaffolds audience-first titles and classified results with scoped upgrade instructions and evidence; see [Formatting release-note pull requests](../guides/formatting-release-note-prs.md). |
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
 | `src/` | Module source compiled into the shipped artifact. |
@@ -155,7 +155,7 @@ Required baseline files for module repositories:
 | `CLAUDE.md` | Claude Code entry point that imports `AGENTS.md`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
-| `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
+| `.github/pull_request_template.md` | Scaffolds audience-first titles and classified results with scoped upgrade instructions and evidence; see [Formatting release-note pull requests](../guides/formatting-release-note-prs.md). |
 | `.github/PSModule.yml` | Module workflow defaults and overrides. |
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
