@@ -20,6 +20,7 @@ Identify the consumer's current release/source baseline and selected target, the
 release record after that baseline through the target in order. Compose the stated prerequisites, adoption or
 migration actions, and verification for the consumer's starting state. Reading the intervening records does not
 require installing or running every intermediate version; do so only when a record explicitly requires it.
+Apply later supersession instructions while preserving any required intermediate operations.
 
 The notes provide the complete change, rationale, impact, and action or explicit no-action result. Pull requests and
 commit diffs provide optional depth. Missing required instructions are an evidence gap to resolve with the producer.

@@ -24,6 +24,8 @@ services, infrastructure modules, and published guidance.
 Each release records its incremental change from a declared release/source baseline. Consumers compose the applicable
 records after their current baseline through their selected target. The newest note does not replace intervening
 instructions, and an individual note does not need a migration manual from every historical version.
+When later instructions supersede earlier edits, explain which actions remain for the target and preserve any
+explicitly required intermediate installation or run.
 
 | Surface | Content it owns |
 | --- | --- |
