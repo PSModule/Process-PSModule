@@ -121,6 +121,8 @@ function Set-PSModuleFixtureClaim {
         message = "<!-- PSModule.Publication:v1:$encoded -->"
         object  = @{ type = 'commit'; sha = $Claim.CommitSha }
     }
+    $State.VersionTag = $State.Tag
+    $State.VersionTagObject = $State.TagObject
 }
 
 function New-PSModulePublicationFixture {
@@ -168,7 +170,11 @@ function New-PSModulePublicationFixture {
 
         # The immutable build source used by the anonymous fixture.
         [Parameter()]
-        [string] $CommitSha = '1111111111111111111111111111111111111111'
+        [string] $CommitSha = '1111111111111111111111111111111111111111',
+
+        # The existing resolver prefix used by this fixture.
+        [Parameter()]
+        [string] $VersionPrefix = 'v'
     )
 
     if (-not $PSCmdlet.ShouldProcess($Path, 'Install local publication command replacements')) {
@@ -191,6 +197,8 @@ function New-PSModulePublicationFixture {
         GitHubCreationUpload = 0
         Tag                  = $null
         TagObject            = $null
+        VersionTag           = $null
+        VersionTagObject     = $null
         NewTagObject         = $null
         Release              = $null
         Package              = $null
@@ -199,6 +207,7 @@ function New-PSModulePublicationFixture {
         TagReads             = 0
         OnTagRead            = $null
         OnTagCreate          = $null
+        OnVersionTagCreate   = $null
         OnGeneratedNotes     = $null
         FailReleaseCreate    = $false
         ExpectedClaim        = [pscustomobject]@{
@@ -207,6 +216,7 @@ function New-PSModulePublicationFixture {
             CommitSha      = $CommitSha
             ModuleName     = $name
             GalleryVersion = $Version
+            VersionPrefix  = $VersionPrefix
             ReleaseTag     = $Tag
             ReleaseType    = if ($Version.Contains('-')) { 'Prerelease' } else { 'Release' }
             ArtifactSha256 = Get-PSModuleArtifactDigest -Path $Path
@@ -298,18 +308,33 @@ function New-PSModulePublicationFixture {
                     $state.NewTagObject = $value
                     $status = 201
                 } elseif ($endpoint -ceq "repos/$($claim.Repository)/git/refs") {
-                    $state.Calls.Add('tag-ref-create')
-                    if ($null -ne $state.OnTagCreate) {
-                        & $state.OnTagCreate $state
+                    $versionTagName = Get-PSModulePublicationVersionTag -ModuleName $claim.ModuleName -GalleryVersion $claim.GalleryVersion
+                    $isVersionTag = $fields.ref -ceq "refs/tags/$versionTagName"
+                    if ($isVersionTag) {
+                        $state.Calls.Add('module-version-ref-create')
+                        if ($null -ne $state.OnVersionTagCreate) { & $state.OnVersionTagCreate $state }
+                        $existing = $state.VersionTag
+                    } else {
+                        $state.Calls.Add('tag-ref-create')
+                        if ($null -ne $state.OnTagCreate) { & $state.OnTagCreate $state }
+                        $existing = $state.Tag
                     }
-                    if ($null -ne $state.Tag) {
+                    if ($null -ne $existing) {
                         $status = 422
                         $global:LASTEXITCODE = 1
                         $value = @{ message = 'Reference already exists' }
                     } else {
-                        $state.Tag = @{ type = 'tag'; sha = $fields.sha }
-                        $state.TagObject = $state.NewTagObject
-                        $value = @{ ref = $fields.ref; object = $state.Tag }
+                        $referenceObject = @{ type = 'tag'; sha = $fields.sha }
+                        if ($isVersionTag) {
+                            $state.VersionTag = $referenceObject
+                            $state.VersionTagObject = if ($null -ne $state.NewTagObject) {
+                                $state.NewTagObject
+                            } else { $state.TagObject }
+                        } else {
+                            $state.Tag = $referenceObject
+                            $state.TagObject = $state.VersionTagObject
+                        }
+                        $value = @{ ref = $fields.ref; object = $referenceObject }
                         $status = 201
                     }
                 } elseif ($endpoint -ceq "repos/$($claim.Repository)/releases/generate-notes") {
@@ -325,15 +350,26 @@ function New-PSModulePublicationFixture {
             } elseif ($endpoint -ceq "repos/$($claim.Repository)/git/commits/$($claim.CommitSha)") {
                 $value = @{ sha = $claim.CommitSha }
             } elseif ($endpoint -like '*/git/ref/tags/*') {
-                $state.TagReads++
-                if ($null -ne $state.OnTagRead) {
-                    & $state.OnTagRead $state
-                }
-                if ($null -ne $state.Tag) {
-                    $value = @{ ref = "refs/tags/$($claim.ReleaseTag)"; object = $state.Tag }
+                $tagName = [Uri]::UnescapeDataString(($endpoint -split '/git/ref/tags/', 2)[1])
+                $versionTagName = Get-PSModulePublicationVersionTag -ModuleName $claim.ModuleName -GalleryVersion $claim.GalleryVersion
+                if ($tagName -ceq $versionTagName) {
+                    if ($null -ne $state.VersionTag) {
+                        $value = @{ ref = "refs/tags/$versionTagName"; object = $state.VersionTag }
+                    }
+                } else {
+                    $state.TagReads++
+                    if ($null -ne $state.OnTagRead) { & $state.OnTagRead $state }
+                    if ($null -ne $state.Tag) {
+                        $value = @{ ref = "refs/tags/$($claim.ReleaseTag)"; object = $state.Tag }
+                    }
                 }
             } elseif ($endpoint -like '*/git/tags/*') {
-                $value = $state.TagObject
+                $sha = ($endpoint -split '/git/tags/', 2)[1]
+                if ($null -ne $state.VersionTag -and $sha -ceq $state.VersionTag.sha) {
+                    $value = $state.VersionTagObject
+                } else {
+                    $value = $state.TagObject
+                }
             } elseif ($endpoint -like '*/releases/tags/*') {
                 $value = $state.Release
             } else {

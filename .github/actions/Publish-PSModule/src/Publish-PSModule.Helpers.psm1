@@ -330,6 +330,19 @@ function Get-PSModulePublicationReader {
             }
             $response.Value.object
         }.GetNewClosure()
+        GetVersionReference      = {
+            param($Name, $Version)
+            $tag = Get-PSModulePublicationVersionTag -ModuleName $Name -GalleryVersion $Version
+            $encodedTag = [Uri]::EscapeDataString($tag)
+            $response = Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/ref/tags/$encodedTag" -AllowMissing
+            if ($null -eq $response) {
+                return
+            }
+            if ($response.Value.ref -cne "refs/tags/$tag" -or $null -eq $response.Value.object) {
+                throw "Cannot verify the shared module/version ownership coordinate [$tag]."
+            }
+            $response.Value.object
+        }.GetNewClosure()
         GetTagObject             = {
             param($Sha)
             $response = (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/tags/$Sha").Value
@@ -391,7 +404,11 @@ function Get-PSModulePublicationState {
         [hashtable] $Reader
     )
 
-    foreach ($name in @('GetSource', 'GetTagReference', 'GetTagObject', 'GetRelease', 'GetPackage', 'GetPackageArtifactDigest')) {
+    $readerNames = @(
+        'GetSource', 'GetTagReference', 'GetVersionReference', 'GetTagObject',
+        'GetRelease', 'GetPackage', 'GetPackageArtifactDigest'
+    )
+    foreach ($name in $readerNames) {
         if ($Reader[$name] -isnot [scriptblock]) {
             throw "The publication reader [$name] is missing."
         }
@@ -425,25 +442,59 @@ function Get-PSModulePublicationState {
         throw "Release tag [$($expected.ReleaseTag)] belongs to [$tagCommit], not source [$($expected.CommitSha)]."
     }
     $claim = Get-PSModulePublicationClaim -Message $tagEvidence.Annotation.message
+    $versionTag = Get-PSModulePublicationVersionTag -ModuleName $expected.ModuleName -GalleryVersion $expected.GalleryVersion
+    $versionEvidence = @{ Reference = $null; Annotation = $null }
+    $versionParameters = @{
+        Tag             = $versionTag
+        AllowMissing    = $true
+        GetTagReference = {
+            param($Tag)
+            if ($Tag -cne $versionTag) { throw 'Unexpected package ownership coordinate.' }
+            $versionEvidence.Reference = & $Reader.GetVersionReference $expected.ModuleName $expected.GalleryVersion
+            $versionEvidence.Reference
+        }.GetNewClosure()
+        GetTagObject    = {
+            param($Sha)
+            $annotation = & $Reader.GetTagObject $Sha
+            if ($null -eq $versionEvidence.Annotation) { $versionEvidence.Annotation = $annotation }
+            $annotation.object
+        }.GetNewClosure()
+    }
+    $versionCommit = Resolve-PSModuleReleaseTagCommit @versionParameters
+    if ($null -ne $versionCommit -and $versionCommit -cne $expected.CommitSha) {
+        throw "Module/version coordinate [$versionTag] belongs to another source [$versionCommit]."
+    }
+    $versionClaim = Get-PSModulePublicationClaim -Message $versionEvidence.Annotation.message
     $release = & $Reader.GetRelease $expected.ReleaseTag
     $package = & $Reader.GetPackage $expected.ModuleName $expected.GalleryVersion
     if ($null -eq $tagCommit) {
         if ($null -ne $release -or $null -ne $package) {
             throw "Existing release or Gallery version [$($expected.GalleryVersion)] has no verifiable source/artifact ownership proof."
         }
-    } else {
-        if ($null -eq $claim -or $tagEvidence.Annotation.tag -cne $expected.ReleaseTag) {
-            throw "The existing tag [$($expected.ReleaseTag)] has no verifiable publication ownership proof."
-        }
-        if ($claim.Repository -ine $expected.Repository -or $claim.PullRequest -ne $expected.PullRequest) {
+    } elseif ($null -eq $claim -or $tagEvidence.Annotation.tag -cne $expected.ReleaseTag) {
+        throw "The existing tag [$($expected.ReleaseTag)] has no verifiable publication ownership proof."
+    }
+    if ($null -ne $versionCommit -and
+        ($null -eq $versionClaim -or $versionEvidence.Annotation.tag -cne $expected.ReleaseTag)) {
+        throw "The module/version coordinate [$versionTag] has no verifiable publication proof."
+    }
+    if ($null -ne $package -and $null -eq $versionCommit) {
+        throw "The existing Gallery package [$($expected.GalleryVersion)] has no shared module/version ownership proof."
+    }
+    if ($null -ne $tagCommit -and $null -ne $versionCommit -and
+        $tagEvidence.Reference.sha -cne $versionEvidence.Reference.sha) {
+        throw 'The release tag and module/version coordinate reference different immutable claims.'
+    }
+    foreach ($proof in @($claim, $versionClaim) | Where-Object { $null -ne $_ }) {
+        if ($proof.Repository -ine $expected.Repository -or $proof.PullRequest -ne $expected.PullRequest) {
             throw 'The publication claim belongs to a different repository or producing pull request.'
         }
-        foreach ($name in @('CommitSha', 'ModuleName', 'GalleryVersion', 'ReleaseTag', 'ReleaseType', 'AssetName')) {
-            if ($claim.$name -cne $expected.$name) {
+        foreach ($name in @('CommitSha', 'ModuleName', 'GalleryVersion', 'VersionPrefix', 'ReleaseTag', 'ReleaseType', 'AssetName')) {
+            if ($proof.$name -cne $expected.$name) {
                 throw "The publication claim has conflicting [$name] ownership."
             }
         }
-        if ($claim.ArtifactSha256 -cne $expected.ArtifactSha256 -or $claim.AssetSha256 -cne $expected.AssetSha256) {
+        if ($proof.ArtifactSha256 -cne $expected.ArtifactSha256 -or $proof.AssetSha256 -cne $expected.AssetSha256) {
             throw 'The claimed version belongs to different tested artifact or release asset contents.'
         }
     }
@@ -487,10 +538,11 @@ function Get-PSModulePublicationState {
         }
     }
     [pscustomobject]@{
-        TagSha  = $tagEvidence.Reference.sha
-        Claim   = $claim
-        Release = $release
-        Package = $package
+        TagSha        = $tagEvidence.Reference.sha
+        VersionTagSha = $versionEvidence.Reference.sha
+        Claim         = if ($null -ne $versionClaim) { $versionClaim } else { $claim }
+        Release       = $release
+        Package       = $package
     }
 }
 
@@ -538,35 +590,61 @@ function New-PSModulePublicationTag {
     if ($null -ne $State.TagSha -and $current.TagSha -cne $State.TagSha) {
         throw 'The existing publication tag changed or disappeared after preflight. Refusing Gallery publication.'
     }
-    if ($null -ne $current.TagSha) {
+    if ($null -ne $State.VersionTagSha -and $current.VersionTagSha -cne $State.VersionTagSha) {
+        throw 'The shared module/version claim changed or disappeared after preflight. Refusing publication.'
+    }
+    if ($null -ne $current.TagSha -and $null -ne $current.VersionTagSha) {
         return $current
     }
-    if (-not $PSCmdlet.ShouldProcess("$($Claim.Repository):$($Claim.ReleaseTag)", 'Create source-bound annotated version tag')) {
+    if (-not $PSCmdlet.ShouldProcess("$($Claim.Repository):$($Claim.ModuleName):$($Claim.GalleryVersion)",
+            'Create shared module/version ownership and immutable release tag')) {
         return
     }
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($Claim | ConvertTo-Json -Compress)))
-    $message = "<!-- PSModule.Publication:v1:$encoded -->"
-    $tagFields = @{
-        tag     = $Claim.ReleaseTag
-        message = $message
-        object  = $Claim.CommitSha
-        type    = 'commit'
+    $claimSha = $current.VersionTagSha
+    if ($null -eq $claimSha) {
+        $claimSha = $current.TagSha
     }
-    $tag = (Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/tags" `
-            -Method POST -Field $tagFields).Value
-    if ($tag.sha -notmatch '^[0-9a-f]{40}$' -or $tag.tag -cne $Claim.ReleaseTag -or
-        $tag.object.type -cne 'commit' -or $tag.object.sha -cne $Claim.CommitSha -or $tag.message -cne $message) {
-        throw 'The create-only annotated tag response did not preserve the exact publication claim.'
+    if ($null -eq $claimSha) {
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($Claim | ConvertTo-Json -Compress)))
+        $message = "<!-- PSModule.Publication:v1:$encoded -->"
+        $tagFields = @{
+            tag     = $Claim.ReleaseTag
+            message = $message
+            object  = $Claim.CommitSha
+            type    = 'commit'
+        }
+        $tag = (Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/tags" `
+                -Method POST -Field $tagFields).Value
+        if ($tag.sha -notmatch '^[0-9a-f]{40}$' -or $tag.tag -cne $Claim.ReleaseTag -or
+            $tag.object.type -cne 'commit' -or $tag.object.sha -cne $Claim.CommitSha -or $tag.message -cne $message) {
+            throw 'The annotated object did not preserve the exact source/context/artifact claim.'
+        }
+        $claimSha = $tag.sha
     }
-    $reference = Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/refs" `
-        -Method POST -Field @{ ref = "refs/tags/$($Claim.ReleaseTag)"; sha = $tag.sha } -AllowConflict
-    if ($reference.StatusCode -ne 201 -and $reference.Value.message -cne 'Reference already exists') {
-        throw "Cannot atomically claim release tag [$($Claim.ReleaseTag)] (HTTP $($reference.StatusCode))."
+    if ($null -eq $current.VersionTagSha) {
+        $versionTag = Get-PSModulePublicationVersionTag -ModuleName $Claim.ModuleName -GalleryVersion $Claim.GalleryVersion
+        $reference = Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/refs" `
+            -Method POST -Field @{ ref = "refs/tags/$versionTag"; sha = $claimSha } -AllowConflict
+        if ($reference.StatusCode -ne 201 -and $reference.Value.message -cne 'Reference already exists') {
+            throw "Cannot atomically reserve module/version [$versionTag] (HTTP $($reference.StatusCode))."
+        }
+        $current = Get-PSModulePublicationState -ExpectedClaim $Claim -Reader $Reader
+        if ($null -eq $current.VersionTagSha -or
+            ($reference.StatusCode -eq 201 -and $current.VersionTagSha -cne $claimSha)) {
+            throw 'The module/version coordinate changed during its create-only claim. Refusing publication.'
+        }
+        $claimSha = $current.VersionTagSha
     }
-    $current = Get-PSModulePublicationState -ExpectedClaim $Claim -Reader $Reader
-    if ($null -eq $current.TagSha -or
-        ($reference.StatusCode -eq 201 -and $current.TagSha -cne $tag.sha)) {
-        throw 'The publication tag changed during the create-only claim. Refusing Gallery publication.'
+    if ($null -eq $current.TagSha) {
+        $reference = Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/refs" `
+            -Method POST -Field @{ ref = "refs/tags/$($Claim.ReleaseTag)"; sha = $claimSha } -AllowConflict
+        if ($reference.StatusCode -ne 201 -and $reference.Value.message -cne 'Reference already exists') {
+            throw "Cannot atomically create release tag [$($Claim.ReleaseTag)] (HTTP $($reference.StatusCode))."
+        }
     }
-    $current
+    $verified = Get-PSModulePublicationState -ExpectedClaim $Claim -Reader $Reader
+    if ($verified.TagSha -cne $claimSha -or $verified.VersionTagSha -cne $claimSha) {
+        throw 'The release tag or shared module/version coordinate changed before publication.'
+    }
+    $verified
 }
