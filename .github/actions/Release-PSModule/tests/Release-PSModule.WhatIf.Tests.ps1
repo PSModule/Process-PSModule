@@ -256,9 +256,14 @@ Describe 'Release-PSModule WhatIf' {
         @($script:state.Release.assets).Count | Should -Be 0
     }
 
-    It 'rejects supplied PR context without a positive identity before release writes' {
+    It 'rejects supplied PR context without a positive identity before release writes' -ForEach @(
+        @{ Json = '{}' }
+        @{ Json = '[]' }
+        @{ Json = '[null]' }
+        @{ Json = '[{"Number":42}]' }
+    ) {
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
-        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = '{}'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = $Json
 
         { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*pull request*'
 

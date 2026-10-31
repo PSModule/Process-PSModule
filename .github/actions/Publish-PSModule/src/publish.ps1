@@ -65,13 +65,14 @@ LogGroup 'Load inputs' {
 #region Load release context
 LogGroup 'Load release context' {
     $pullRequestJson = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest
-    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
-        $pullRequestJson | ConvertFrom-Json
+    $pullRequest = $null
+    if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequest = ConvertFrom-Json -InputObject $pullRequestJson -NoEnumerate -ErrorAction Stop
     } else {
         $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
         $githubEvent = $githubEventJson | ConvertFrom-Json
         if ($githubEvent.pull_request) {
-            [pscustomobject]@{
+            $pullRequest = [pscustomobject]@{
                 Number = $githubEvent.pull_request.number
             }
         }
