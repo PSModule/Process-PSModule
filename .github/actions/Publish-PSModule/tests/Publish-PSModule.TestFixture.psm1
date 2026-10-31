@@ -205,6 +205,7 @@ function New-PSModulePublicationFixture {
         RawPackage           = ''
         ModulePath           = $Path
         ApiError             = ''
+        ApiResponses         = @{}
         TagReads             = 0
         OnTagRead            = $null
         OnTagCreate          = $null
@@ -300,7 +301,9 @@ function New-PSModulePublicationFixture {
             $endpoint = $Arguments[1]
             $status = 200
             $value = $null
-            if ($Arguments -contains 'POST') {
+            if ($state.ApiResponses.ContainsKey($endpoint)) {
+                $value = $state.ApiResponses[$endpoint]
+            } elseif ($Arguments -contains 'POST') {
                 $state.GitHubWrites++
                 $fields = @{}
                 for ($index = 0; $index -lt $Arguments.Count - 1; $index++) {
