@@ -208,4 +208,19 @@ Describe 'Get-PSModuleSettings release-bearing push detection' {
 
         $script:state.Outputs.Count | Should -Be 0
     }
+
+    It 'honors repository-wide module publication skip for an important default-branch push' {
+        $script:state.Files = @('src/Module.psm1')
+        $script:state.Associated[0].merge_commit_sha = 'pushed-sha'
+        @{
+            Name = 'SettingsFixture'; Test = @{ Skip = $true }; Publish = @{ Module = @{ Skip = $true } }
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
+
+        & $script:settingsScriptPath
+        $settings = $script:state.Outputs.Settings | ConvertFrom-Json
+
+        $settings.HasImportantChanges | Should -BeTrue
+        $settings.Publish.Module.Skip | Should -BeTrue
+        $settings.Publish.Module.Enabled | Should -BeFalse
+    }
 }

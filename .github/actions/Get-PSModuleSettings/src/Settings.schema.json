@@ -129,6 +129,7 @@
         "Module": {
           "type": "object",
           "description": "Module publish configuration",
+          "additionalProperties": false,
           "not": {
             "required": [
               "AutoPatching"
@@ -210,6 +211,49 @@
                 "None"
               ],
               "description": "The type of release to create: Release (stable), Prerelease, or None."
+            },
+            "DefaultBumpSource": {
+              "type": "string",
+              "enum": [
+                "SharedDefault",
+                "Publish.Module.DefaultBump"
+              ],
+              "description": "Derived runtime provenance; not an authorable setting."
+            },
+            "Desired": {
+              "type": "boolean",
+              "description": "Derived runtime publication intent."
+            },
+            "Enabled": {
+              "type": "boolean",
+              "description": "Derived runtime publication execution state."
+            },
+            "Resolution": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Derived version-resolution output, not authorable settings.",
+              "properties": {
+                "Version": {
+                  "type": "string"
+                },
+                "Prerelease": {
+                  "type": "string"
+                },
+                "FullVersion": {
+                  "type": "string"
+                },
+                "ReleaseType": {
+                  "type": "string",
+                  "enum": [
+                    "Release",
+                    "Prerelease",
+                    "None"
+                  ]
+                },
+                "CreateRelease": {
+                  "type": "boolean"
+                }
+              }
             }
           }
         },

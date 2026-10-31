@@ -715,8 +715,9 @@ Set-GitHubLogGroup 'Calculate Job Run Conditions:' {
         )
     ) -Force
 
-    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
-    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
+    $modulePublicationEnabled = -not $settings.Publish.Module.Skip -and (($releaseType -ne 'None') -or $shouldAutoCleanup)
+    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value $modulePublicationEnabled -Force
+    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value $modulePublicationEnabled -Force
     $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Desired -Value ($releaseType -eq 'Release') -Force
     $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value (
         $releaseType -eq 'Release' -and -not $settings.Publish.Site.Skip

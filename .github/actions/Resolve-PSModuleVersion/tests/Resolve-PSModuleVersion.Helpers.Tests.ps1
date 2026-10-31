@@ -1,4 +1,4 @@
-﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', '',
     Justification = 'Variables are assigned in BeforeAll and used inside It blocks.'
 )]
@@ -42,6 +42,10 @@ BeforeAll {
             [Parameter()]
             [switch] $CleanupOnly,
 
+            # Whether module publication is disabled by repository settings.
+            [Parameter()]
+            [switch] $Skip,
+
             # Labels indicating no release.
             [Parameter()]
             [string[]] $IgnoreLabels = @('release:skip'),
@@ -70,6 +74,7 @@ BeforeAll {
             VersionPrefix         = $VersionPrefix
             ReleaseType           = $ReleaseType
             IsCleanupOnly         = $CleanupOnly.IsPresent
+            Skip                  = $Skip.IsPresent
             IgnoreLabels          = $IgnoreLabels
             MajorLabels           = $MajorLabels
             MinorLabels           = $MinorLabels
@@ -900,6 +905,17 @@ Describe 'Resolve-PSModuleVersion' {
 
             { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
                 Should -Throw '*ignore*prerelease*'
+        }
+
+        It 'keeps a configured preview bump without publishing when module Skip is enabled' {
+            $configuration = Get-TestConfiguration -DefaultBump minor -Skip
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @() }
+
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $decision.MinorRelease | Should -BeTrue
+            $decision.ShouldPublish | Should -BeFalse
+            $decision.CreateRelease | Should -BeFalse
         }
     }
 }

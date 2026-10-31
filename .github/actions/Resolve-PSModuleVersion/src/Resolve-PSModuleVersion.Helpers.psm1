@@ -1,4 +1,4 @@
-﻿function Split-CommaSeparatedList {
+function Split-CommaSeparatedList {
     <#
         .SYNOPSIS
         Splits a comma-separated string into a trimmed, non-empty array.
@@ -143,6 +143,7 @@ function Get-PublishConfiguration {
         )
 
         $config = [PSCustomObject]@{
+            Skip                  = [bool]$publishModule.Skip
             DefaultBump           = $defaultBump
             DefaultBumpSource     = [string]($publishModule.DefaultBumpSource ?? 'Publish.Module.DefaultBump')
             IncrementalPrerelease = [bool]$publishModule.IncrementalPrerelease
@@ -159,6 +160,7 @@ function Get-PublishConfiguration {
 
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
+                Skip                  = $config.Skip
                 DefaultBump           = $config.DefaultBump
                 DefaultBumpSource     = $config.DefaultBumpSource
                 IncrementalPrerelease = $config.IncrementalPrerelease
@@ -309,7 +311,10 @@ function Resolve-ReleaseDecision {
 
         $createRelease = $releaseType -eq 'Release'
         $createPrerelease = $releaseType -eq 'Prerelease'
-        $shouldPublish = $createRelease -or $createPrerelease
+        $shouldPublish = ($createRelease -or $createPrerelease) -and $Configuration.Skip -ne $true
+        if ($Configuration.Skip -eq $true) {
+            $createRelease = $false
+        }
         $isCleanupOnly = $Configuration.IsCleanupOnly -eq $true
 
         if ($isCleanupOnly) {

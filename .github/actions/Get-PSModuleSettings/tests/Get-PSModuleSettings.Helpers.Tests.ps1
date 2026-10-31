@@ -196,6 +196,14 @@ Describe 'Resolve-PSModulePublishSetting' {
 
         Test-Json -Json $json -SchemaFile $schemaPath -ErrorAction Stop | Should -BeFalse
     }
+
+    It 'rejects unknown publication keys in schema validation as well as normalization' {
+        $schemaPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/Settings.schema.json'
+        $json = @{ Publish = @{ Module = @{ DefaultBump = 'patch'; DefautBump = 'minor' } } } |
+            ConvertTo-Json -Depth 5
+
+        Test-Json -Json $json -SchemaFile $schemaPath -ErrorAction Stop | Should -BeFalse
+    }
 }
 
 Describe 'Select-PullRequestForPush' {
