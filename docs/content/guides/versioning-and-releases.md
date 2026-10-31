@@ -98,10 +98,15 @@ publications without proof require reviewed forward-only recovery, not a guessed
 replacement, or metadata edits. See the [publisher](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Publish-PSModule)
 and [release action](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Release-PSModule) contracts.
 
-Stable recovery resolves the original version in Plan, before Build, by finding the actual tag claim for that
-immutable source and producing context. Its raw Gallery package must match the recorded tested file tree.
+Stable recovery resolves the original version in Plan, before Build, by finding the release-tag and shared
+module/version claims for that immutable source and producing context. Refs for the same immutable claim are
+deduplicated. An unpublished shared-only claim stops for original-job retry rather than selecting a new version
+after other releases advance. Its raw Gallery package must match the recorded tested file tree.
 Latest-version hints and numeric equality do not establish ownership. A changed source, foreign PR/context,
 ambiguous claim, unavailable legacy proof, or API failure stops resolution without inventing a fallback version.
+
+For a new source, baseline completeness uses its actual historical tag/release, even when the configured prefix
+changes. Recovery and new claims still bind the current prefix exactly; ambiguous completed baseline tags fail.
 
 If Gallery publication succeeded and GitHub creation or upload failed, the retry retains that proven version,
 skips only the identical Gallery upload, and completes the missing GitHub work without replacing bytes.

@@ -45,7 +45,7 @@ Describe 'Gallery-only version selection requires original ownership proof' {
         }
         $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($claim | ConvertTo-Json -Compress)))
         $record = [pscustomobject]@{
-            Reference   = [pscustomobject]@{
+            Reference        = [pscustomobject]@{
                 ref    = 'refs/tags/v1.2.4'
                 object = [pscustomobject]@{ type = 'tag'; sha = '3333333333333333333333333333333333333333' }
             }
@@ -53,15 +53,15 @@ Describe 'Gallery-only version selection requires original ownership proof' {
                 ref    = 'refs/tags/PSModule-Publication/testmodule/1.2.4'
                 object = [pscustomobject]@{ type = 'tag'; sha = '3333333333333333333333333333333333333333' }
             }
-            Annotation  = [pscustomobject]@{
+            Annotation       = [pscustomobject]@{
                 sha     = '3333333333333333333333333333333333333333'
                 tag     = 'v1.2.4'
                 object  = [pscustomobject]@{ type = 'commit'; sha = $claim.CommitSha }
                 message = "<!-- PSModule.Publication:v1:$encoded -->"
             }
-            Package     = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
-            PackagePath = $packagePath
-            Release     = $null
+            Package          = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
+            PackagePath      = $packagePath
+            Release          = $null
         }
         $state = @{
             Record     = $record
@@ -188,19 +188,19 @@ Describe 'Gallery-only version selection requires original ownership proof' {
         $original.Reference = $null
         $original.Package = $null
         $later = [pscustomobject]@{
-            Reference = [pscustomobject]@{
-                ref = 'refs/tags/v1.2.5'
+            Reference        = [pscustomobject]@{
+                ref    = 'refs/tags/v1.2.5'
                 object = [pscustomobject]@{ type = 'tag'; sha = '4444444444444444444444444444444444444444' }
             }
             VersionReference = [pscustomobject]@{
-                ref = 'refs/tags/PSModule-Publication/testmodule/1.2.5'
+                ref    = 'refs/tags/PSModule-Publication/testmodule/1.2.5'
                 object = [pscustomobject]@{ type = 'tag'; sha = '4444444444444444444444444444444444444444' }
             }
-            Annotation = [pscustomobject]@{
+            Annotation       = [pscustomobject]@{
                 sha = '4444444444444444444444444444444444444444'; tag = 'v1.2.5'; message = 'Completed later legacy baseline.'
                 object = [pscustomobject]@{ type = 'commit'; sha = '2222222222222222222222222222222222222222' }
             }
-            Release = [pscustomobject]@{
+            Release          = [pscustomobject]@{
                 tag_name = 'v1.2.5'; prerelease = $false; draft = $false
                 assets = @([pscustomobject]@{ name = 'TestModule-1.2.5.zip'; state = 'uploaded' })
             }
@@ -280,15 +280,15 @@ Describe 'Gallery-only version selection requires original ownership proof' {
             assets = @([pscustomobject]@{ name = 'TestModule-1.2.4.zip'; state = 'uploaded' })
         }
         $other = [pscustomobject]@{
-            Reference = [pscustomobject]@{
-                ref = 'refs/tags/release-1.2.4'
+            Reference  = [pscustomobject]@{
+                ref    = 'refs/tags/release-1.2.4'
                 object = [pscustomobject]@{ type = 'tag'; sha = '4444444444444444444444444444444444444444' }
             }
             Annotation = [pscustomobject]@{
                 sha = '4444444444444444444444444444444444444444'; tag = 'release-1.2.4'; message = 'Another completed legacy baseline.'
                 object = [pscustomobject]@{ type = 'commit'; sha = '2222222222222222222222222222222222222222' }
             }
-            Release = [pscustomobject]@{
+            Release    = [pscustomobject]@{
                 tag_name = 'release-1.2.4'; prerelease = $false; draft = $false
                 assets = @([pscustomobject]@{ name = 'TestModule-1.2.4.zip'; state = 'uploaded' })
             }

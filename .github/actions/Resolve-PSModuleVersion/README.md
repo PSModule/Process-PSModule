@@ -2,7 +2,7 @@
 
 Resolves the module version once in Plan, before Build. Existing configured bump labels, preview behavior, version prefixes, and prerelease settings remain the decision authority.
 
-For a stable retry, the resolver searches actual version-tag claims for the original immutable consumer source and producing repository/PR or direct-release context. It uses the shared [publication preflight](../Publish-PSModule/README.md) to verify the exact raw Gallery package and any GitHub release/asset evidence before choosing the original version. Numeric equality, release names, mutable targets, and latest-version hints are not ownership proof.
+For a stable retry, the resolver searches both release-tag and shared module/version claims for the original immutable consumer source and producing repository/PR or direct-release context. Refs pointing to the same immutable claim are deduplicated. It uses the shared [publication preflight](../Publish-PSModule/README.md) to verify the exact raw Gallery package and any GitHub release/asset evidence before choosing the original version. Numeric equality, release names, mutable targets, and latest-version hints are not ownership proof.
 
 ## Inputs
 
@@ -21,6 +21,8 @@ The existing `Version`, `Prerelease`, `FullVersion`, `ReleaseType`, and `CreateR
 ## Recovery safety
 
 Only one exact source/context claim with matching raw package bytes can select a recovery version. An already-created GitHub release with a missing upload can resume through [Release-PSModule](../Release-PSModule/README.md). The publisher retains the proven Gallery package and verifies the rebuilt/tested artifact again before any write.
+
+An unpublished shared-only claim still stops Plan for original-job retry, even after a later source completes another version. A new source checks baseline completeness using the actual historical tag and release, not a tag reconstructed with the current configured prefix. Recovery and new claims still require exact configured-prefix binding; ambiguous historical baselines stop explicitly.
 
 | Failure | Safe behavior |
 | --- | --- |
