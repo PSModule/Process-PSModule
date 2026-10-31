@@ -40,10 +40,9 @@ what is present before deciding what to migrate:
   workflow extensions. Keep them in separate files and validate them in place.
 
 When documentation is absent, do not invent a site as part of the caller
-upgrade unless the requested scope explicitly includes documentation migration.
-When a legacy MkDocs configuration exists and documentation migration is in
-scope, migrate its content and design deliberately to Zensical, then remove
-the obsolete configuration only after the generated site validates.
+upgrade. When a legacy MkDocs configuration exists, preserve it during the
+caller upgrade. A documentation migration that needs consumer-authored content
+or theme assets requires framework staging support before it can be delivered.
 
 ## Template-PSModule baseline
 
@@ -125,20 +124,10 @@ Treat files and directories as follows:
   Preserve the consumer's local onboarding contract while updating stale links.
 
 If the template revision and the consumer's existing layout disagree, record
-the difference and migrate only the requested integration surface. In
-particular, the current template uses `.github/zensical.toml`, while this v8
-upgrade request uses `docs/zensical.toml`, `docs/content/`, and
-`docs/overrides/` (including `docs/overrides/assets/`) as its documentation
-contract; a separate `docs/assets/` directory is optional. When that requested
-documentation migration is in scope, move the template's Zensical settings
-and custom assets into the `docs/` contract rather than maintaining both
-configurations. When it is not in scope, preserve the consumer's existing
-working configuration and report the difference.
-
-For a documentation-only MkDocs migration, use the dedicated
-[`psmodule-zensical-migration`](../psmodule-zensical-migration/SKILL.md) skill
-so content, theme, assets, and link validation are handled independently from
-the caller workflow upgrade.
+the difference and migrate only the requested integration surface. The
+template's `.github/zensical.toml` is the supported Process-PSModule consumer
+configuration. Do not move its site configuration, content, or theme assets
+into `docs/` as part of a v8 upgrade.
 
 ## Caller workflow contract
 
@@ -167,9 +156,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-permissions: {}
 
 jobs:
   Process-PSModule:
@@ -226,24 +214,12 @@ uses.
 
 ## Documentation integration
 
-Treat `docs/zensical.toml` as authoritative. Do not create or maintain
-`mkdocs.yml`, introduce MkDocs configuration, or replace the consumer's
-documentation design with a parallel theme.
-
-Compare the consumer's configuration with the Process-PSModule template and
-preserve or migrate these surfaces deliberately:
-
-- `docs/zensical.toml`, including `docs_dir` and navigation.
-- `docs/content/` as the documentation source directory.
-- `docs/overrides/` and custom templates.
-- `docs/overrides/assets/stylesheets/navigation.css`.
-- `docs/overrides/assets/`, any optional `docs/assets/`, logo, favicon, palette,
-  fonts, and custom JavaScript/CSS.
-- Existing navigation labels, page paths, and custom theme behavior.
-
-Do not delete existing custom CSS/assets merely because the default theme also
-provides an equivalent feature. Resolve duplicate configuration in favor of
-the existing consumer source of truth, then validate the generated site.
+The v8 upgrade does not migrate documentation. Preserve the consumer's
+existing documentation source, custom assets, and active site configuration.
+For the Process-PSModule site build, keep the template's
+`.github/zensical.toml` configuration. Do not create `docs/zensical.toml` or
+move documentation content or theme assets into `docs/`; the module site build
+does not stage that contract.
 
 ## Pester v6 migration
 
@@ -295,15 +271,7 @@ when a targeted check reveals a broader dependency:
    equivalent when available.
 3. Run the Pester v6 test suites with the repository's declared configuration.
 4. Run the repository's existing lint and test commands.
-5. When documentation exists, run:
-
-   ```powershell
-   Push-Location docs
-   zensical build --clean
-   Pop-Location
-   ```
-
-6. Review the diff for accidental workflow permissions, trigger changes,
+5. Review the diff for accidental workflow permissions, trigger changes,
    secret exposure, fixture removal, generated files, or unrelated refactoring.
 
 Report commands and outcomes, including blocked checks and why they were
