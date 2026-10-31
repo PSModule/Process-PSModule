@@ -290,6 +290,82 @@ Describe 'Publish-PSModule source-bound preflight' {
         $failure | Should -Not -BeNullOrEmpty
     }
 
+    It 'rejects a <Shape> publication claim before all writes' -ForEach @(
+        @{ Shape = 'top-level array' }
+        @{ Shape = 'array-valued field' }
+    ) {
+        $claim = $script:state.ExpectedClaim | ConvertTo-Json -Compress | ConvertFrom-Json
+        if ($Shape -ceq 'array-valued field') {
+            $claim.PullRequest = @(0)
+        }
+        $json = $claim | ConvertTo-Json -Compress
+        if ($Shape -ceq 'top-level array') { $json = "[$json]" }
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+        $script:state.TagObject.message = "<!-- PSModule.Publication:v1:$encoded -->"
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*publication*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a <Shape> release footer before all writes' -ForEach @(
+        @{ Shape = 'top-level array' }
+        @{ Shape = 'array-valued field' }
+    ) {
+        $script:state.ExpectedClaim.PullRequest = 42
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = '{"Number":42}'
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $owner = [pscustomobject]@{
+            Repository = 'PSModule/TestModule'; PullRequest = 42; CommitSha = $env:GITHUB_SHA
+        }
+        if ($Shape -ceq 'array-valued field') { $owner.PullRequest = @(42) }
+        $json = $owner | ConvertTo-Json -Compress
+        if ($Shape -ceq 'top-level array') { $json = "[$json]" }
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+        $script:state.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; draft = $false; body = "<!-- PSModule.PrereleaseOwner:v1:$encoded -->"; assets = @()
+        }
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*footer*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a ZIP payload inconsistent with the tested file-tree claim before all writes' {
+        Mock -CommandName Get-FileHash -ParameterFilter { $LiteralPath -like '*.zip' } -MockWith {
+            $archive = [IO.Compression.ZipFile]::Open($LiteralPath, [IO.Compression.ZipArchiveMode]::Update)
+            try {
+                $archive.GetEntry('TestModule/TestModule.psm1').Delete()
+                $writer = [IO.StreamWriter]::new($archive.CreateEntry('TestModule/TestModule.psm1').Open())
+                try { $writer.Write('# Different ZIP payload bytes.') } finally { $writer.Dispose() }
+            } finally {
+                $archive.Dispose()
+            }
+            $stream = [IO.File]::OpenRead($LiteralPath)
+            $sha256 = [Security.Cryptography.SHA256]::Create()
+            try {
+                [pscustomobject]@{
+                    Hash = [BitConverter]::ToString($sha256.ComputeHash($stream)).Replace('-', '')
+                }
+            } finally {
+                $sha256.Dispose()
+                $stream.Dispose()
+            }
+        }
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        Should -Invoke -CommandName Get-FileHash -Times 1 -Exactly -ParameterFilter { $LiteralPath -like '*.zip' }
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+        $failure.Exception.Message | Should -Match 'archive'
+    }
+
     It 'rejects changed Gallery package bytes despite matching numeric version and source claim' {
         Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
         $script:state.Package = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
@@ -450,6 +526,7 @@ Describe 'Publish-PSModule source-bound preflight' {
         @{ Json = '{}' }
         @{ Json = '{"Number":0}' }
         @{ Json = '{"Number":"unknown"}' }
+        @{ Json = '{"Number":[42]}' }
         @{ Json = '42' }
         @{ Json = '[]' }
         @{ Json = '[null]' }
