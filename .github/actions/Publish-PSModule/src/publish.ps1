@@ -2,13 +2,21 @@
     'PSUseDeclaredVarsMoreThanAssignments', 'psGalleryApiKey',
     Justification = 'Variable is used in script blocks.'
 )]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments', 'publicationState',
+    Justification = 'The verified state is shared across logging script blocks.'
+)]
 [CmdletBinding()]
 param()
 
 $PSStyle.OutputRendering = 'Ansi'
+$ErrorActionPreference = 'Stop'
 
 Import-Module -Name 'PSModule' -Force
 Import-Module -Name "$PSScriptRoot/Publish-PSModule.Helpers.psm1" -Force
+Import-Module -Name ([IO.Path]::Combine(
+        $PSScriptRoot, '..', '..', 'Release-PSModule', 'src', 'Release-PSModule.Helpers.psm1'
+    )) -Force
 
 #region Load inputs
 LogGroup 'Load inputs' {
@@ -36,6 +44,17 @@ LogGroup 'Load inputs' {
     $modulePath = Resolve-Path -Path $modulePathCandidate | Select-Object -ExpandProperty Path
     $psGalleryApiKey = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY
     $whatIf = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf -eq 'true'
+    $releaseTag = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag
+    $sourceCommit = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha
+    if ([string]::IsNullOrWhiteSpace($sourceCommit)) {
+        $sourceCommit = $env:GITHUB_SHA
+    }
+    if ([string]::IsNullOrWhiteSpace($releaseTag)) {
+        throw 'ReleaseTag is required. Pass the already-resolved Publish.Module.Resolution.FullVersion.'
+    }
+    if ([string]::IsNullOrWhiteSpace($sourceCommit)) {
+        throw 'CommitSha or the original GITHUB_SHA is required to establish the tested artifact source.'
+    }
 
     Write-Host "Module name: [$name]"
     Write-Host "Module path: [$modulePath]"
@@ -130,58 +149,80 @@ LogGroup 'Resolve version from manifest' {
 }
 #endregion Resolve version from manifest
 
-#region Install module dependencies
-LogGroup 'Install module dependencies' {
-    Resolve-PSModuleDependency -ManifestFilePath $manifestFilePath
-}
-#endregion Install module dependencies
-
-#region Publish to PSGallery
-LogGroup 'Publish to PSGallery' {
-    $releaseType = if ($createPrerelease) { 'New prerelease' } else { 'New release' }
-    $psGalleryReleaseLink = "https://www.powershellgallery.com/packages/$name/$publishPSVersion"
-
-    Write-Host 'Publish module to PowerShell Gallery using API key from environment.'
-    if ($whatIf) {
-        Write-Host "Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey ***"
-    } else {
-        # A version that is not on the Gallery is the expected state for a new release, but PSResourceGet
-        # reports it as a PackageNotFound error, which -ErrorAction Stop turns into a throw. Only that error
-        # may be treated as 'not published'; any other failure (for example a Gallery outage) must stay fatal,
-        # otherwise a version that already exists would be re-published and fail the upload with a conflict.
-        $publishedPackage = $null
-        try {
-            $publishedPackage = Find-PSResource -Name $name -Version $publishPSVersion -Repository PSGallery -ErrorAction Stop
-        } catch {
-            if ($_.FullyQualifiedErrorId -notlike 'PackageNotFound,*') { throw }
-            Write-Host "$name $publishPSVersion is not on the PowerShell Gallery yet."
-        }
-
-        if ($publishedPackage) {
-            Write-Host (
-                "::notice title=♻️ Resuming Gallery-only publication::$name $publishPSVersion is already " +
-                'published to the PowerShell Gallery.'
-            )
+$zipDirectory = $null
+$zipPath = $null
+try {
+    LogGroup 'Source-bound publication preflight' {
+        if ($whatIf) {
+            Write-Host "WhatIf: Verify source [$sourceCommit], tag [$releaseTag], and the tested module before publication."
         } else {
-            Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey $psGalleryApiKey
+            $zipDirectory = Join-Path -Path ([IO.Path]::GetTempPath()) -ChildPath "PSModulePreflight-$([guid]::NewGuid())"
+            $null = New-Item -Path $zipDirectory -ItemType Directory
+            $zipFileName = "$name-$publishPSVersion.zip"
+            $zipPath = Join-Path -Path $zipDirectory -ChildPath $zipFileName
+            $artifactDigest = Get-PSModuleArtifactDigest -Path $modulePath
+            $null = New-PSModuleReleaseArchive -Path $modulePath -DestinationPath $zipPath
+            $claim = [pscustomobject]@{
+                Repository     = $env:GITHUB_REPOSITORY
+                PullRequest    = if ($null -eq $prNumber) { 0 } else { $prNumber }
+                CommitSha      = $sourceCommit
+                ModuleName     = $name
+                GalleryVersion = $publishPSVersion
+                ReleaseTag     = $releaseTag
+                ReleaseType    = if ($createPrerelease) { 'Prerelease' } else { 'Release' }
+                ArtifactSha256 = $artifactDigest
+                AssetName      = $zipFileName
+                AssetSha256    = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            $publicationReader = Get-PSModulePublicationReader -Repository $env:GITHUB_REPOSITORY
+            $publicationState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
         }
     }
 
-    if ($whatIf -and $prNumber) {
-        Write-Host (
-            "gh pr comment $prNumber -b " +
-            "'✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)'"
-        )
-    } elseif (-not $whatIf -and $prNumber) {
-        Write-Host "::notice title=✅ $releaseType`: PowerShell Gallery - $name $publishPSVersion::$psGalleryReleaseLink"
-        gh pr comment $prNumber -b "✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error 'Failed to comment on the pull request.'
-            exit $LASTEXITCODE
+    LogGroup 'Install module dependencies' {
+        Resolve-PSModuleDependency -ManifestFilePath $manifestFilePath
+    }
+
+    LogGroup 'Publish to PSGallery' {
+        $releaseType = if ($createPrerelease) { 'New prerelease' } else { 'New release' }
+        $psGalleryReleaseLink = "https://www.powershellgallery.com/packages/$name/$publishPSVersion"
+
+        if ($whatIf) {
+            Write-Host "WhatIf: Create-only annotated claim for [$releaseTag]; retain any existing published bytes."
+            Write-Host "Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey ***"
+        } else {
+            $publicationState = New-PSModulePublicationTag -Claim $claim -State $publicationState -Reader $publicationReader
+            $currentState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+            if ($currentState.TagSha -cne $publicationState.TagSha -or
+                (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                throw 'The publication claim or tested artifact changed before the Gallery write. Refusing publication.'
+            }
+            if ($null -ne $currentState.Package) {
+                Write-Host "Retaining the proven identical Gallery package [$name] [$publishPSVersion]."
+            } else {
+                Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey $psGalleryApiKey -ErrorAction Stop
+            }
         }
-    } else {
+
+        if ($whatIf -and $prNumber) {
+            Write-Host (
+                "gh pr comment $prNumber -b " +
+                "'✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)'"
+            )
+        } elseif (-not $whatIf -and $prNumber) {
+            gh pr comment $prNumber -b "✅ $releaseType`: PowerShell Gallery - [$name $publishPSVersion]($psGalleryReleaseLink)"
+            if ($LASTEXITCODE -ne 0) {
+                throw 'Failed to comment on the pull request.'
+            }
+        }
         Write-Host "::notice title=✅ $releaseType`: PowerShell Gallery - $name $publishPSVersion::$psGalleryReleaseLink"
     }
+} finally {
+    if ($zipPath -and (Test-Path -LiteralPath $zipPath)) {
+        Remove-Item -LiteralPath $zipPath -Force
+    }
+    if ($zipDirectory -and (Test-Path -LiteralPath $zipDirectory)) {
+        Remove-Item -LiteralPath $zipDirectory -Force
+    }
 }
-#endregion Publish to PSGallery
 Write-Host "Gallery publishing complete. Version: [$publishPSVersion]"

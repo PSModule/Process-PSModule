@@ -6,17 +6,25 @@
 param()
 
 BeforeAll {
+    $script:environmentMutex = [Threading.Mutex]::new($false, "PSModule-ActionTests-Environment-$PID")
+    if (-not $script:environmentMutex.WaitOne([TimeSpan]::FromMinutes(5))) {
+        throw 'Cannot acquire the process environment lock for action tests.'
+    }
     Import-Module -Name 'PSModule' -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Publish-PSModule.TestFixture.psm1') -Force
 
     $script:publishScriptPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/publish.ps1'
     $script:environmentVariableNames = @(
         'GITHUB_EVENT_PATH'
         'GITHUB_REPOSITORY'
+        'GITHUB_SHA'
         'GITHUB_WORKSPACE'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_Name'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest'
+        'PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf'
     )
     $script:originalEnvironment = @{}
@@ -26,16 +34,17 @@ BeforeAll {
 }
 
 AfterAll {
-    foreach ($name in $script:environmentVariableNames) {
-        [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+    try {
+        foreach ($name in $script:environmentVariableNames) {
+            [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+        }
+        foreach ($name in @('Find-PSResource', 'Publish-PSResource', 'Resolve-PSModuleDependency', 'gh', 'Save-PSResource', 'Invoke-WebRequest')) {
+            Remove-Item -LiteralPath "Function:\$name" -ErrorAction SilentlyContinue
+        }
+    } finally {
+        $script:environmentMutex.ReleaseMutex()
+        $script:environmentMutex.Dispose()
     }
-    # Set-Item accepts 'function:global:X' and creates a function named 'X' in the global scope, but
-    # Remove-Item and Get-Item do not resolve that same path back to it, and fail silently rather than
-    # erroring. Removing by name is what actually deletes the shims; leaving them behind would shadow the
-    # real cmdlets for every test file that runs later in the session.
-    Remove-Item -Path 'Function:\Find-PSResource' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Publish-PSResource' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Resolve-PSModuleDependency' -ErrorAction SilentlyContinue
 }
 
 Describe 'Publish-PSModule recovery' {
@@ -66,31 +75,25 @@ Describe 'Publish-PSModule recovery' {
 
         $env:GITHUB_EVENT_PATH = $eventPath
         $env:GITHUB_REPOSITORY = "PSModule/$script:moduleName"
+        $env:GITHUB_SHA = '1111111111111111111111111111111111111111'
         $env:GITHUB_WORKSPACE = $script:workspacePath
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_Name = $script:moduleName
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath = '.PSModule/module'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY = 'test-key'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = ''
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag = 'v1.2.4'
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'
-        # The publish script runs in its own scope, so a $script: flag set inside a shim never reaches the
-        # test. A hashtable captured by GetNewClosure() is shared by reference and records the call reliably.
-        # The closure captures local variables only, so $calls must be local here, not $script:-qualified.
-        $calls = @{ PublishInvoked = $false }
-        $script:calls = $calls
-
-        Set-Item -Path function:global:Resolve-PSModuleDependency -Value {}
-        Set-Item -Path function:global:Find-PSResource -Value {
-            [PSCustomObject]@{ Name = 'TestModule'; Version = '1.2.4' }
-        }
-        Set-Item -Path function:global:Publish-PSResource -Value {
-            $calls.PublishInvoked = $true
-        }.GetNewClosure()
+        $script:state = New-PSModulePublicationFixture -Path $script:modulePath -Version '1.2.4' -Tag 'v1.2.4'
     }
 
-    It 'skips Gallery publication when the resolved version already exists' {
-        { & $script:publishScriptPath } | Should -Not -Throw
+    It 'rejects a Gallery-only version whose source and artifact proof is missing' {
+        $script:state.Package = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
 
-        $script:calls.PublishInvoked | Should -BeFalse
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*proof*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
     }
 
     It 'publishes when the resolved version is not in the Gallery' {
@@ -108,9 +111,9 @@ Describe 'Publish-PSModule recovery' {
                 -ErrorId 'PackageNotFound' -Category ObjectNotFound -TargetObject $Name
         }
 
-        { & $script:publishScriptPath } | Should -Not -Throw
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
 
-        $script:calls.PublishInvoked | Should -BeTrue
+        $script:state.GalleryWrites | Should -Be 1
     }
 
     It 'fails without publishing when the Gallery lookup errors for another reason' {
@@ -128,8 +131,9 @@ Describe 'Publish-PSModule recovery' {
                 -ErrorId 'HttpRequestCallFailure' -Category ResourceUnavailable -TargetObject $Name
         }
 
-        { & $script:publishScriptPath } | Should -Throw
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw
 
-        $script:calls.PublishInvoked | Should -BeFalse
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
     }
 }

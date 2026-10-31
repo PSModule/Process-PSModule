@@ -17,6 +17,13 @@ inputs:
     description: Normalized pull request context JSON from Get-PSModuleSettings.
     required: false
     default: ''
+  ReleaseTag:
+    description: Exact GitHub tag already resolved for the tested module artifact.
+    required: true
+  CommitSha:
+    description: Immutable commit that produced the tested module artifact; defaults to the original workflow SHA.
+    required: false
+    default: ''
   WhatIf:
     description: If specified, the action will only log the changes it would make, but will not publish the module.
     required: false
@@ -55,5 +62,7 @@ runs:
         PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath: ${{ inputs.ModulePath }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY: ${{ inputs.PSGALLERY_API_KEY }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest: ${{ inputs.PullRequest }}
+        PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag: ${{ inputs.ReleaseTag }}
+        PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha: ${{ inputs.CommitSha || github.sha }}
         PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf: ${{ inputs.WhatIf }}
       run: ${{ github.action_path }}/src/publish.ps1

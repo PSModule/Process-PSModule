@@ -63,6 +63,8 @@ jobs:
           ModulePath: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
           PullRequest: ${{ toJson(fromJson(inputs.Settings).Context.PullRequest) }}
+          ReleaseTag: ${{ fromJson(inputs.Settings).Publish.Module.Resolution.FullVersion }}
+          CommitSha: ${{ fromJson(inputs.Settings).Context.CommitSha }}
           WhatIf: ${{ github.repository == 'PSModule/Process-PSModule' }}
           WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
 
