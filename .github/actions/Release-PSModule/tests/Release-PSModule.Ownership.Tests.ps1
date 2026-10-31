@@ -50,6 +50,19 @@ Describe 'Source-bound publication proof' {
         Get-PSModulePublicationClaim -Message 'Legacy tag message.' | Should -BeNullOrEmpty
     }
 
+    It 'reserves a valid Git coordinate for module <Name>' -ForEach @(
+        @{ Name = 'TestModule.lock' }
+        @{ Name = 'Test..Module' }
+        @{ Name = 'Microsoft.PowerShell.Management' }
+    ) {
+        $coordinate = Get-PSModulePublicationVersionTag -ModuleName $Name -GalleryVersion '1.2.4'
+        $gitPath = (Get-Command -Name git -CommandType Application | Select-Object -First 1).Source
+
+        & $gitPath check-ref-format "refs/tags/$coordinate"
+
+        $LASTEXITCODE | Should -Be 0
+    }
+
     It 'ignores a completed authored ownership marker followed by ordinary notes' {
         $owner = @{ Repository = 'PSModule/TestModule'; PullRequest = 42; CommitSha = 'original-source' } |
             ConvertTo-Json -Compress

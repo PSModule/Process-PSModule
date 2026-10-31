@@ -204,6 +204,7 @@ function New-PSModulePublicationFixture {
         Package              = $null
         RawPackage           = ''
         ApiError             = ''
+        ApiResponses         = @{}
         TagReads             = 0
         OnTagRead            = $null
         OnTagCreate          = $null
@@ -288,7 +289,9 @@ function New-PSModulePublicationFixture {
             $endpoint = $Arguments[1]
             $status = 200
             $value = $null
-            if ($Arguments -contains 'POST') {
+            if ($state.ApiResponses.ContainsKey($endpoint)) {
+                $value = $state.ApiResponses[$endpoint]
+            } elseif ($Arguments -contains 'POST') {
                 $state.GitHubWrites++
                 $fields = @{}
                 for ($index = 0; $index -lt $Arguments.Count - 1; $index++) {
@@ -380,7 +383,7 @@ function New-PSModulePublicationFixture {
                 $global:LASTEXITCODE = 1
                 $value = @{ message = 'Not Found' }
             }
-            $json = $value | ConvertTo-Json -Depth 20 -Compress
+            $json = ConvertTo-Json -InputObject $value -Depth 20 -Compress
             if ($Arguments -contains '--include') {
                 return "HTTP/2.0 $status Fixture`n`n$json"
             }
