@@ -94,6 +94,17 @@ publications without proof require reviewed forward-only recovery, not a guessed
 replacement, or metadata edits. See the [publisher](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Publish-PSModule)
 and [release action](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Release-PSModule) contracts.
 
+Stable recovery resolves the original version in Plan, before Build, by finding the actual tag claim for that
+immutable source and producing context. Its raw Gallery package must match the recorded tested file tree.
+Latest-version hints and numeric equality do not establish ownership. A changed source, foreign PR/context,
+ambiguous claim, unavailable legacy proof, or API failure stops resolution without inventing a fallback version.
+
+If Gallery publication succeeded and GitHub creation or upload failed, the retry retains that proven version,
+skips only the identical Gallery upload, and completes the missing GitHub work without replacing bytes.
+Build and tests still run, and the publisher rechecks the resulting artifact against the original claim.
+See the [resolver contract](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Resolve-PSModuleVersion)
+for safe recovery failures and the original-job retry path.
+
 ## Linear versioning
 
 Only a single linear ancestry of versions is maintained. Old versions are not patched: if a security issue is found on
