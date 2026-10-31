@@ -245,7 +245,7 @@ Describe 'Publish-PSModule source-bound preflight' {
 
     It 'rejects a scalar tag enumeration instead of projecting a discovery collection' {
         $script:state.ApiResponses['repos/PSModule/TestModule/git/matching-refs/tags/'] = [pscustomobject]@{
-            ref = 'refs/tags/v1.2.4'
+            ref    = 'refs/tags/v1.2.4'
             object = [pscustomobject]@{ type = 'commit'; sha = $env:GITHUB_SHA }
         }
         $reader = Get-PSModulePublicationReader -Repository 'PSModule/TestModule' -ReadOnly

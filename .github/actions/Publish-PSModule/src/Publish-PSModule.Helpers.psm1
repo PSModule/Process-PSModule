@@ -338,7 +338,11 @@ function Get-PSModulePublicationReader {
         }.GetNewClosure()
         GetTagReference          = $readTagReference
         GetTagList               = {
-            (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/matching-refs/tags/").Value
+            $value = (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/matching-refs/tags/").Value
+            if ($value -isnot [array]) {
+                throw 'The publication tag enumeration returned unverifiable collection metadata.'
+            }
+            $value
         }.GetNewClosure()
         GetVersionReference      = {
             param($Name, $Version)
