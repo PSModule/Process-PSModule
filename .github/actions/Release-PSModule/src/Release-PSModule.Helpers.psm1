@@ -105,9 +105,11 @@ function Get-PSModulePrereleaseOwnership {
         return
     }
     $bytes = [Convert]::FromBase64String($match.Groups[1].Value)
-    $ownership = [Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json -ErrorAction Stop
+    $ownership = ConvertFrom-Json -InputObject ([Text.Encoding]::UTF8.GetString($bytes)) -NoEnumerate -ErrorAction Stop
     $number = 0L
-    if ([string]::IsNullOrWhiteSpace($ownership.Repository) -or
+    if ($ownership -is [array] -or $ownership -isnot [PSCustomObject] -or
+        $ownership.Repository -isnot [string] -or $ownership.CommitSha -isnot [string] -or
+        $ownership.PullRequest -is [array] -or [string]::IsNullOrWhiteSpace($ownership.Repository) -or
         $ownership.Repository -notmatch '^[^/\s]+/[^/\s]+$' -or
         -not [long]::TryParse([string]$ownership.PullRequest, [ref]$number) -or
         $number -lt 1 -or [string]::IsNullOrWhiteSpace($ownership.CommitSha)) {
@@ -155,6 +157,7 @@ function Get-PSModuleProducingPullRequestNumber {
     $number = 0L
     if ($PullRequest -is [array] -or
         ($PullRequest -isnot [PSCustomObject] -and $PullRequest -isnot [Collections.IDictionary]) -or
+        $PullRequest.Number -is [array] -or
         -not [long]::TryParse([string]$PullRequest.Number, [ref]$number) -or $number -lt 1) {
         throw 'Supplied pull request context requires a positive producing pull request number.'
     }
@@ -265,9 +268,21 @@ function Get-PSModulePublicationClaim {
         return
     }
     $bytes = [Convert]::FromBase64String($match.Groups[1].Value)
-    $claim = [Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json -ErrorAction Stop
+    $claim = ConvertFrom-Json -InputObject ([Text.Encoding]::UTF8.GetString($bytes)) -NoEnumerate -ErrorAction Stop
+    if ($claim -is [array] -or $claim -isnot [PSCustomObject]) {
+        throw 'The publication claim requires one proof object, not a projected JSON value.'
+    }
+    foreach ($field in @(
+            'Repository', 'CommitSha', 'ModuleName', 'GalleryVersion', 'VersionPrefix',
+            'ReleaseTag', 'ReleaseType', 'ArtifactSha256', 'AssetName', 'AssetSha256'
+        )) {
+        if ($claim.$field -isnot [string]) {
+            throw "The publication claim requires a scalar string [$field]."
+        }
+    }
     $number = 0L
     if ($claim.Repository -notmatch '^[^/\s]+/[^/\s]+$' -or
+        $claim.PullRequest -is [array] -or
         -not [long]::TryParse([string]$claim.PullRequest, [ref]$number) -or $number -lt 0 -or
         $claim.CommitSha -notmatch '^[0-9a-f]{40}$' -or
         $claim.ModuleName -notmatch '^[A-Za-z0-9][A-Za-z0-9_.-]*$' -or
@@ -621,6 +636,89 @@ function New-PSModuleReleaseArchive {
         $stream.Dispose()
     }
     [IO.FileInfo]::new($DestinationPath)
+}
+
+function Get-PSModuleReleaseArchiveProof {
+    <#
+        .SYNOPSIS
+        Read the release ZIP and its module payload as one byte-proof snapshot.
+
+        .DESCRIPTION
+        Hashes the archive and exact payload records through the same open stream.
+        The payload uses the canonical file-tree digest without extracting or importing files.
+
+        .EXAMPLE
+        Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName TestModule
+
+        Return the archive and payload digests to verify against the tested claim.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Get-PSModuleReleaseArchiveProof.
+
+        .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        The paired archive SHA-256 and canonical payload SHA-256.
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        # The exact local release ZIP.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path,
+
+        # The expected single module root inside the ZIP.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $ModuleName
+    )
+
+    $stream = [IO.File]::OpenRead($Path)
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    $archive = $null
+    try {
+        $assetDigest = [BitConverter]::ToString($sha256.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+        $stream.Position = 0
+        $archive = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Read, $true)
+        $prefix = "$ModuleName/"
+        $records = [Collections.Generic.List[object]]::new()
+        foreach ($entry in $archive.Entries) {
+            if (-not $entry.FullName.StartsWith($prefix, [StringComparison]::Ordinal)) {
+                throw 'The release archive contains a foreign or unverifiable module root.'
+            }
+            $relativePath = $entry.FullName.Substring($prefix.Length)
+            if ($entry.FullName.EndsWith('/')) {
+                continue
+            }
+            if (Test-PSModulePackageMetadataPath -Path $relativePath) {
+                throw 'The release archive contains a NuGet-reserved payload path.'
+            }
+            $entryStream = $entry.Open()
+            try {
+                $records.Add([pscustomobject]@{
+                        RelativePath = $relativePath
+                        Length       = $entry.Length
+                        Hash         = $sha256.ComputeHash($entryStream)
+                    })
+            } finally {
+                $entryStream.Dispose()
+            }
+        }
+        if ($records.Count -eq 0) {
+            throw 'The release archive contains no verifiable tested payload.'
+        }
+        [pscustomobject]@{
+            ArtifactSha256 = Get-PSModuleContentDigest -File $records.ToArray()
+            AssetSha256    = $assetDigest
+        }
+    } finally {
+        if ($null -ne $archive) { $archive.Dispose() }
+        $sha256.Dispose()
+        $stream.Dispose()
+    }
 }
 
 function Get-PSModulePackageArtifactDigest {

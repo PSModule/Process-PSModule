@@ -18,8 +18,12 @@ BeforeAll {
     $script:publishScriptPath = [IO.Path]::GetFullPath(
         [IO.Path]::Combine($PSScriptRoot, '..', 'src', 'publish.ps1')
     )
+    $script:releaseScriptPath = [IO.Path]::GetFullPath(
+        [IO.Path]::Combine($PSScriptRoot, '..', '..', 'Release-PSModule', 'src', 'release.ps1')
+    )
     $script:environmentVariableNames = @(
         'GITHUB_EVENT_PATH'
+        'GITHUB_OUTPUT'
         'GITHUB_REPOSITORY'
         'GITHUB_REPOSITORY_NAME'
         'GITHUB_SHA'
@@ -32,6 +36,16 @@ BeforeAll {
         'PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_Name'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading'
     )
     $script:originalEnvironment = @{}
     foreach ($name in $script:environmentVariableNames) {
@@ -97,6 +111,18 @@ Describe 'Publish-PSModule source-bound preflight' {
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix = 'v'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_Name = 'TestModule'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath = '.PSModule/module'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.4'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix = 'v'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = ''
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading = 'false'
+        $env:GITHUB_OUTPUT = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath 'outputs'
+        $null = New-Item -Path $env:GITHUB_OUTPUT -ItemType File
 
         $script:state = New-PSModulePublicationFixture -Path $script:modulePath -Version '1.2.4' -Tag 'v1.2.4'
     }
@@ -335,7 +361,10 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GitHubWrites | Should -Be 0
     }
 
-    It 'rejects a ZIP payload inconsistent with the tested file-tree claim before all writes' {
+    It 'rejects a <Controller> ZIP payload inconsistent with the tested file-tree claim before all writes' -ForEach @(
+        @{ Controller = 'publisher' }
+        @{ Controller = 'release' }
+    ) {
         Mock -CommandName Get-FileHash -ParameterFilter { $LiteralPath -like '*.zip' } -MockWith {
             $archive = [IO.Compression.ZipFile]::Open($LiteralPath, [IO.Compression.ZipArchiveMode]::Update)
             try {
@@ -357,13 +386,35 @@ Describe 'Publish-PSModule source-bound preflight' {
             }
         }
 
+        $controllerPath = $script:publishScriptPath
+        if ($Controller -ceq 'release') { $controllerPath = $script:releaseScriptPath }
         $failure = $null
-        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+        try { & $controllerPath 1>$null 6>$null } catch { $failure = $_ }
 
         Should -Invoke -CommandName Get-FileHash -Times 1 -Exactly -ParameterFilter { $LiteralPath -like '*.zip' }
         $script:state.GalleryWrites | Should -Be 0
         $script:state.GitHubWrites | Should -Be 0
         $failure.Exception.Message | Should -Match 'archive'
+    }
+
+    It 'rejects a changed <Controller> artifact before reserving any immutable claim' -ForEach @(
+        @{ Controller = 'publisher' }
+        @{ Controller = 'release' }
+    ) {
+        $script:state.PayloadPath = Join-Path -Path $script:modulePath -ChildPath 'TestModule.psm1'
+        $script:state.OnTagRead = {
+            param($State)
+            if ($State.TagReads -eq 1) {
+                [IO.File]::WriteAllText($State.PayloadPath, '# Changed candidate after the byte snapshot.')
+            }
+        }
+        $controllerPath = $script:publishScriptPath
+        if ($Controller -ceq 'release') { $controllerPath = $script:releaseScriptPath }
+
+        { & $controllerPath 1>$null 6>$null } | Should -Throw '*artifact*immutable claim*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
     }
 
     It 'rejects changed Gallery package bytes despite matching numeric version and source claim' {
@@ -564,6 +615,20 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GalleryWrites | Should -Be 1
         $claim = Get-PSModulePublicationClaim -Message $script:state.TagObject.message
         $claim.PullRequest | Should -Be 42
+    }
+
+    It 'rejects original release event PR context before projection' -ForEach @(
+        @{ EventJson = '{"pull_request":[{"number":42}]}' }
+        @{ EventJson = '{"pull_request":{"number":[42]}}' }
+        @{ EventJson = '[{"pull_request":{"number":42}}]' }
+        @{ EventJson = '{"pull_request":{}}' }
+    ) {
+        [IO.File]::WriteAllText($env:GITHUB_EVENT_PATH, $EventJson)
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*context*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
     }
 
     It 'rejects a draft release before Gallery publication rather than reporting completed publication' {

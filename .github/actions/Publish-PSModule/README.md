@@ -8,6 +8,8 @@ An observed release tag must remain unchanged through shared coordinate creation
 
 An existing Gallery package is retained only when its raw nupkg payload matches that proof and the tested artifact. Package code is never imported to establish ownership. Unknown legacy proof, foreign tags/releases/assets, changed claims, authentication errors, and API failures stop publication explicitly.
 
+Provenance must contain one original JSON object with scalar proof fields; arrays are not projected into valid identities. The ZIP's exact bytes and canonical payload digest are verified together against the tested file tree before a claim or Gallery write. Original event PR context is validated before normalized fields are selected.
+
 ## Inputs
 
 | Name | Description | Required | Default |
