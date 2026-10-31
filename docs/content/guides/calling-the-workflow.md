@@ -57,7 +57,7 @@ jobs:
 
 Stable releases are evaluated from a push or recovery dispatch on the default branch. When the commit exactly matches
 a merged PR, that PR supplies its configured bump or ignore label and release notes. A direct release with no
-associated merged PR uses the default `Patch` bump and commit-based notes. Dispatch uses the current branch tip; rerun
+associated merged PR uses the effective `Publish.Module.DefaultBump` and commit-based notes. Dispatch uses the current branch tip; rerun
 the original failed workflow for an older merge instead of selecting a tag. See
 [Recovering a failed release](versioning-and-releases.md#recovering-a-failed-release). Keep the `pull_request` trigger
 for CI, prereleases, and prerelease cleanup.

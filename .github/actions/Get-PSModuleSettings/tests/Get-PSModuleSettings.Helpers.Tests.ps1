@@ -80,6 +80,29 @@ Describe 'Resolve-WorkflowEventRouting' {
         $result.ShouldCleanupEvent | Should -BeFalse
         $result.ShouldRunCleanup | Should -BeFalse
     }
+
+    It 'retains prerelease mode when an explicit bump label is removed' {
+        $parameters = @{
+            EventName             = 'pull_request'
+            EventAction           = 'unlabeled'
+            IsTargetDefaultBranch = $true
+            HasImportantChanges   = $true
+            HasPrereleaseLabel    = $true
+        }
+
+        $result = Resolve-WorkflowEventRouting @parameters
+
+        $result.ReleaseType | Should -Be 'Prerelease'
+        $result.ShouldRunBuildTest | Should -BeTrue
+    }
+
+    It 'stops prerelease publication when its mode label is removed' {
+        $result = Resolve-WorkflowEventRouting -EventName pull_request -EventAction unlabeled `
+            -HasImportantChanges $true -HasPrereleaseLabel $false
+
+        $result.ReleaseType | Should -Be 'None'
+        $result.ShouldRunBuildTest | Should -BeTrue
+    }
 }
 
 Describe 'Resolve-PSModulePublishSetting' {
@@ -146,6 +169,32 @@ Describe 'Resolve-PSModulePublishSetting' {
 
         { Resolve-PSModulePublishSetting -PublishModule $publishModule } |
             Should -Throw '*AutoPatching was removed*Replace it with Publish.Module.DefaultBump*'
+    }
+
+    It 'rejects unknown publication settings rather than masking them with a valid default' {
+        $publishModule = [pscustomobject]@{ DefaultBump = 'major'; DefautBump = 'minor' }
+
+        { Resolve-PSModulePublishSetting -PublishModule $publishModule } |
+            Should -Throw '*unsupported*DefautBump*'
+    }
+
+    It 'records whether the shared default or settings supplied the bump' {
+        $shared = Resolve-PSModulePublishSetting -PublishModule $null
+        $configured = Resolve-PSModulePublishSetting -PublishModule ([pscustomobject]@{ DefaultBump = 'minor' })
+
+        $shared.DefaultBumpSource | Should -BeExactly 'SharedDefault'
+        $configured.DefaultBumpSource | Should -BeExactly 'Publish.Module.DefaultBump'
+    }
+
+    It 'rejects removed AutoPatching in the actual schema with <AutoPatching>' -ForEach @(
+        @{ AutoPatching = $true }
+        @{ AutoPatching = $false }
+    ) {
+        $schemaPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/Settings.schema.json'
+        $json = @{ Publish = @{ Module = @{ DefaultBump = 'patch'; AutoPatching = $AutoPatching } } } |
+            ConvertTo-Json -Depth 5
+
+        Test-Json -Json $json -SchemaFile $schemaPath -ErrorAction Stop | Should -BeFalse
     }
 }
 

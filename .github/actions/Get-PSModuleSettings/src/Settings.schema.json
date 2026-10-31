@@ -129,6 +129,11 @@
         "Module": {
           "type": "object",
           "description": "Module publish configuration",
+          "not": {
+            "required": [
+              "AutoPatching"
+            ]
+          },
           "properties": {
             "Skip": {
               "type": "boolean",

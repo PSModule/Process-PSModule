@@ -43,7 +43,7 @@ function Resolve-WorkflowEventRouting {
     $isClosedPR = $isPR -and $EventAction -eq 'closed'
     $isAbandonedPR = $isClosedPR -and -not $PullRequestIsMerged
     $isMergedPR = $isClosedPR -and $PullRequestIsMerged
-    $shouldPrerelease = $isOpenOrLabeledPR -and $HasPrereleaseLabel -and $HasImportantChanges
+    $shouldPrerelease = $isOpenOrUpdatedPR -and $HasPrereleaseLabel -and $HasImportantChanges
     $shouldRelease = (
         ($IsPushToDefaultBranch -or $IsManualDispatchToDefaultBranch) -and
         $HasImportantChanges
@@ -86,8 +86,9 @@ function Resolve-PSModulePublishSetting {
 
         .DESCRIPTION
         Applies Process-PSModule defaults while preserving every consumer-provided
-        publication and release-label mapping. Rejects the removed AutoPatching
-        setting and invalid DefaultBump values with migration guidance.
+        publication and release-label mapping. Rejects the removed AutoPatching,
+        unknown settings, and invalid DefaultBump values. Records the default's
+        source for the downstream release decision.
 
         .OUTPUTS
         System.Management.Automation.PSCustomObject
@@ -132,7 +133,7 @@ function Resolve-PSModulePublishSetting {
         )
     }
 
-    [pscustomobject]@{
+    $resolved = [pscustomobject]@{
         Skip                     = $PublishModule.Skip ?? $false
         AutoCleanup              = $PublishModule.AutoCleanup ?? $true
         DefaultBump              = $defaultBump
@@ -148,6 +149,15 @@ function Resolve-PSModulePublishSetting {
         UsePRBodyAsReleaseNotes  = $PublishModule.UsePRBodyAsReleaseNotes ?? $true
         UsePRTitleAsNotesHeading = $PublishModule.UsePRTitleAsNotesHeading ?? $true
     }
+
+    $allowedProperties = @($resolved.PSObject.Properties.Name) + 'ReleaseType'
+    $unknownProperties = @($propertyNames | Where-Object { $_ -notin $allowedProperties })
+    if ($unknownProperties.Count -gt 0) {
+        throw "Publish.Module contains unsupported settings: [$($unknownProperties -join ', ')]."
+    }
+    $source = if ($hasDefaultBump) { 'Publish.Module.DefaultBump' } else { 'SharedDefault' }
+    $resolved | Add-Member -NotePropertyName DefaultBumpSource -NotePropertyValue $source
+    $resolved
 }
 
 function Select-PullRequestForPush {
@@ -189,11 +199,11 @@ function Get-DiscardedReleasePullRequest {
         Select-PullRequestForPush returns nothing both when a commit has no associated pull request
         and when every associated pull request fails its criteria. Only the first case is safe: a
         commit pushed directly to the default branch has no label to honour, so the direct-release
-        path applies the default patch bump.
+        path applies the effective DefaultBump.
 
         The unsafe case is a pull request that was merged into the default branch, and therefore
         carries the version label that was meant to drive the release, but was not selected because
-        its merge commit does not match the commit being released. Falling back to a patch bump
+        its merge commit does not match the commit being released. Falling back to DefaultBump
         there publishes a version nobody asked for, and a PowerShell Gallery version cannot be
         reclaimed, so the caller must fail instead.
 
@@ -249,9 +259,9 @@ function Resolve-ReleasePullRequest {
         that merge is still the tip. Rerun the original workflow's failed jobs for an older commit.
 
         When no pull request is selected, the outcome depends on why. A commit pushed directly to
-        the default branch has no label to honour, so the release proceeds with the default patch
-        bump. A commit associated with a merged default-branch pull request that does not match it
-        does carry a label, and applying a patch bump would publish a version nobody asked for.
+        the default branch has no label to honor, so the release proceeds with the effective
+        DefaultBump. A commit associated with a merged default-branch pull request that does not
+        match it carries a label, and applying a default would discard that release intent.
         That case throws for an important default-branch push or a recovery dispatch, but not for a
         documentation-only push that cannot publish.
 
@@ -336,7 +346,7 @@ function Resolve-ReleasePullRequest {
                 "Commit [$CommitSha] cannot be released because its version label cannot be determined. " +
                 'The following merged pull request(s) are associated with it but none matches the commit ' +
                 "being released: $($discarded -join '; '). " +
-                'Refusing to fall back to a patch bump, because a wrong version published to the ' +
+                'Refusing to discard the release intent and apply DefaultBump, because a wrong version published to the ' +
                 'PowerShell Gallery cannot be reclaimed. Rerun the original workflow for the intended merge commit. ' +
                 'A default-branch dispatch can recover that commit only while it is still the branch tip.'
             )

@@ -38,6 +38,10 @@ BeforeAll {
             [Parameter()]
             [string] $ReleaseType = 'Release',
 
+            # Whether the normalized event is closed-PR cleanup.
+            [Parameter()]
+            [switch] $CleanupOnly,
+
             # Labels indicating no release.
             [Parameter()]
             [string[]] $IgnoreLabels = @('release:skip'),
@@ -52,7 +56,11 @@ BeforeAll {
 
             # Labels indicating a patch release.
             [Parameter()]
-            [string[]] $PatchLabels = @('release:patch')
+            [string[]] $PatchLabels = @('release:patch'),
+
+            # Labels indicating prerelease mode.
+            [Parameter()]
+            [string[]] $PrereleaseLabels = @('release:prerelease')
         )
 
         [PSCustomObject]@{
@@ -61,10 +69,12 @@ BeforeAll {
             DatePrereleaseFormat  = $DatePrereleaseFormat
             VersionPrefix         = $VersionPrefix
             ReleaseType           = $ReleaseType
+            IsCleanupOnly         = $CleanupOnly.IsPresent
             IgnoreLabels          = $IgnoreLabels
             MajorLabels           = $MajorLabels
             MinorLabels           = $MinorLabels
             PatchLabels           = $PatchLabels
+            PrereleaseLabels      = $PrereleaseLabels
         }
     }
 
@@ -109,6 +119,34 @@ BeforeAll {
 
 Describe 'Resolve-PSModuleVersion' {
     Describe 'Get-PublishConfiguration' {
+        It 'distinguishes cleanup from an open preview or recovered stable release' -ForEach @(
+            @{ EventName = 'pull_request'; EventAction = 'labeled'; Closed = $false; Cleanup = $false }
+            @{ EventName = 'pull_request'; EventAction = 'closed'; Closed = $true; Cleanup = $true }
+            @{ EventName = 'workflow_dispatch'; EventAction = ''; Closed = $true; Cleanup = $false }
+        ) {
+            $publishModule = Resolve-PSModulePublishSetting -PublishModule $null
+            $publishModule | Add-Member -NotePropertyName ReleaseType -NotePropertyValue 'None'
+            $json = @{
+                Publish = @{ Module = $publishModule }
+                Context = @{
+                    EventName = $EventName; EventAction = $EventAction; PullRequest = @{ Closed = $Closed }
+                }
+            } | ConvertTo-Json -Depth 6
+
+            $configuration = Get-PublishConfiguration -SettingsJson $json
+
+            $configuration.IsCleanupOnly | Should -Be $Cleanup
+            $configuration.PrereleaseLabels | Should -Be @('release:prerelease')
+        }
+
+        It 'rejects legacy AutoPatching even when a valid DefaultBump is also present' {
+            $json = @{
+                Publish = @{ Module = @{ DefaultBump = 'patch'; AutoPatching = $true; ReleaseType = 'Release' } }
+            } | ConvertTo-Json -Depth 5
+
+            { Get-PublishConfiguration -SettingsJson $json } | Should -Throw '*AutoPatching*DefaultBump*'
+        }
+
         It 'maps DefaultBump and configured labels from settings JSON' {
             $settings = @{
                 Publish = @{
@@ -715,7 +753,7 @@ Describe 'Resolve-PSModuleVersion' {
         }
 
         It 'does not validate cleanup-only pull request labels' {
-            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -ReleaseType None) `
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -ReleaseType None -CleanupOnly) `
                 -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip', 'release:patch') })
 
             $result.ShouldPublish | Should -BeFalse
@@ -805,6 +843,63 @@ Describe 'Resolve-PSModuleVersion' {
 
             { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
                 Should -Throw '*Valid values are: patch, minor, major*'
+        }
+
+        It 'resolves the <DefaultBump> default for an open non-publishing preview' -ForEach @(
+            @{ DefaultBump = 'patch'; Flag = 'PatchRelease' }
+            @{ DefaultBump = 'minor'; Flag = 'MinorRelease' }
+            @{ DefaultBump = 'major'; Flag = 'MajorRelease' }
+        ) {
+            $configuration = Get-TestConfiguration -DefaultBump $DefaultBump -ReleaseType None
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @() }
+
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $decision.$Flag | Should -BeTrue
+            $decision.HasVersionBump | Should -BeTrue
+            $decision.ShouldPublish | Should -BeFalse
+            $decision.BumpSource | Should -BeExactly 'Publish.Module.DefaultBump'
+        }
+
+        It 'validates conflicting bump labels even when an open PR does not publish' {
+            $configuration = Get-TestConfiguration -ReleaseType None
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:major', 'release:minor') }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*Conflicting version labels*'
+        }
+
+        It 'stops bump resolution for a valid skip rather than producing a preview version' {
+            $configuration = Get-TestConfiguration -DefaultBump major
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip') }
+
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $decision.ShouldPublish | Should -BeFalse
+            $decision.HasVersionBump | Should -BeFalse
+            $decision.CreateRelease | Should -BeFalse
+            $decision.CreatePrerelease | Should -BeFalse
+            $decision.BumpSource | Should -BeExactly 'Label:release:skip'
+        }
+
+        It 'rejects skip combined with prerelease intent in <ReleaseType> mode' -ForEach @(
+            @{ ReleaseType = 'Release' }
+            @{ ReleaseType = 'Prerelease' }
+            @{ ReleaseType = 'None' }
+        ) {
+            $configuration = Get-TestConfiguration -ReleaseType $ReleaseType
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip', 'release:prerelease') }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*ignore*prerelease*'
+        }
+
+        It 'uses custom prerelease and skip mappings for the same conflict validation' {
+            $configuration = Get-TestConfiguration -IgnoreLabels @('custom:skip') -PrereleaseLabels @('custom:preview')
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('custom:skip', 'custom:preview') }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*ignore*prerelease*'
         }
     }
 }

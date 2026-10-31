@@ -27,6 +27,15 @@ while retaining every default they still need.
 
 For worked examples, see [Configuring the pipeline](../guides/configuring-the-pipeline.md).
 
+`Publish.Module.DefaultBump` accepts exactly `patch`, `minor`, or `major`; one configured bump label overrides it.
+The file selected by the supported `SettingsPath` input supplies repository publication settings. An omitted bump
+inherits the shared patch default. Unknown publication keys and null, empty, or invalid bump values are rejected.
+No scalar `DefaultBump` workflow input is declared.
+
+The internal runtime `Publish.Module.DefaultBumpSource` records `SharedDefault` or `Publish.Module.DefaultBump`.
+It is derived provenance, not an authorable setting. A configured skip label stops new-version resolution and
+publication; skip cannot be combined with configured bump or prerelease intent.
+
 ## Available settings
 
 | Name                                      | Type      | Description                                                                                                                                                          | Default             |

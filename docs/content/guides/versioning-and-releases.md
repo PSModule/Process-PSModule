@@ -36,9 +36,9 @@ An explicit configured bump label overrides `Publish.Module.DefaultBump`. Withou
 | `release:prerelease` | Publish the resolved bump as a prerelease; not promoted to latest. |
 | `release:skip` | Run the pipeline, skip publication. |
 
-Multiple or conflicting version labels (for example `release:major` together with `release:skip`) are rejected whenever
-a release is resolved. A prerelease conflict fails the pull-request check; a stable conflict fails the resulting
-default-branch release run.
+Multiple configured bump labels, or skip combined with bump or prerelease intent, fail Plan even for an open PR that
+does not publish. A valid skip stops new-version resolution and publication. Closed-PR cleanup ignores release-label
+conflicts because it cannot publish. Invalid publication settings fail independently of labels.
 Direct releases without an associated merged pull request also use `Publish.Module.DefaultBump`. A default-branch
 manual dispatch at a merge commit resolves the same pull request and label as the equivalent push; an ambiguous
 merged association fails rather than discarding release intent.
@@ -76,6 +76,10 @@ A pull request labeled with the configured prerelease label (`release:prerelease
 prerelease using its explicit bump or `Publish.Module.DefaultBump`. Prerelease mode does not select a level by itself
 and does not promote the version as latest. When the pull request merges, the stable version uses the resolved bump
 and the current version on `main`.
+
+The caller's `pull_request` trigger includes `unlabeled` so removing a bump label recomputes a prerelease from the
+effective default. Removing the prerelease label stops publication but retains normal validation. A non-publishing
+open PR still validates its bump/default and builds a preview; it is not treated as closed-PR cleanup.
 
 When a pull request closes, the prerelease versions and tags created for it are removed, so abandoned or promoted work
 leaves no orphaned prereleases. This is controlled by `Publish.Module.AutoCleanup`.
