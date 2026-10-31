@@ -140,8 +140,9 @@ Scenario: Production and pull-request lifecycle
 
 - **Constraint:** GitHub queues by when an execution starts waiting, not strict push or commit chronology.
 - **Constraint:** Cancellation is asynchronous and does not roll back an already accepted external operation.
-- **Constraint:** A later event for a reopened pull request can supersede a still-running close path; cleanup checks
-  the live lifecycle before mutation.
+- **Constraint:** A later event for a reopened pull request can supersede a still-running close path. Cleanup uses
+  captured pull-request context and does not recheck the live lifecycle before deletion, so reopening does not guarantee
+  that in-progress prerelease deletion stops.
 - **Assumption:** Each repository uses one named caller workflow for Process-PSModule.
 
 ## Dependencies
