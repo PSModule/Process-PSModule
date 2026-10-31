@@ -77,12 +77,16 @@ Release names and notes can be generated from the pull request — see
 
 Before taking a Gallery version, the publisher verifies the immutable consumer source, the Plan job's exact
 resolved version/tag, the producing repository/PR or direct-release context, and the tested module bytes.
-An absent version tag is reserved with a create-only annotated claim containing the tested file-tree and
-release-ZIP SHA-256 digests. Existing tags are not updated or deleted.
+The Gallery module/version is reserved at a prefix-independent `PSModule-Publication/<module>/<version>`
+coordinate, and the configured release tag references that same immutable annotated claim. It records the
+source/context, tested file-tree and release-ZIP SHA-256 digests. The resolver's existing prefix must bind
+the tag to the tested artifact version. Existing tags are not updated or deleted.
 
 Standalone tags, annotated tags, releases, provenance footers, module assets, and exact Gallery packages must
 agree with that claim. Raw nupkg files are read without importing package code. Verified absence is different
 from an authentication/API failure or unknown ownership proof; errors and unavailable proof stop publication.
+NuGet-reserved container paths are rejected in the tested candidate before claiming or uploading, rather
+than being discarded only when verifying a published package.
 
 The publisher rechecks the claim and tested files immediately before Gallery upload. GitHub release creation
 and upload repeat the ownership checks. Missing uploads may resume, identical published ZIP bytes are retained,
