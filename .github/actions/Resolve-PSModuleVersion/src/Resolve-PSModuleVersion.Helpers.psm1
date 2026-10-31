@@ -847,7 +847,7 @@ function Get-PSModuleGalleryRecoveryVersion {
         }
         $tag = $reference.ref.Substring('refs/tags/'.Length)
         if ($null -ne $galleryVersion -and -not $tag.StartsWith('PSModule-Publication/', [StringComparison]::Ordinal) -and
-            $tag -cmatch "^\D*$([regex]::Escape($galleryVersion))$") {
+            $tag.EndsWith($galleryVersion, [StringComparison]::Ordinal)) {
             $null = $baselineTags.Add($tag)
         }
         $isCoordinate = $tag.StartsWith($coordinatePrefix, [StringComparison]::Ordinal)
