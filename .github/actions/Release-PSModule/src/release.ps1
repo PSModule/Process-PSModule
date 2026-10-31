@@ -99,10 +99,11 @@ LogGroup 'Load release context' {
     $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
     $githubEvent = $githubEventJson | ConvertFrom-Json
     $pullRequestJson = $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest
-    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
-        $pullRequestJson | ConvertFrom-Json
+    $pullRequest = $null
+    if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequest = ConvertFrom-Json -InputObject $pullRequestJson -NoEnumerate -ErrorAction Stop
     } elseif ($githubEvent.pull_request) {
-        [pscustomobject]@{
+        $pullRequest = [pscustomobject]@{
             Number  = $githubEvent.pull_request.number
             Title   = $githubEvent.pull_request.title
             Body    = $githubEvent.pull_request.body

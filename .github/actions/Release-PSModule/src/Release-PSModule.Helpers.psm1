@@ -153,7 +153,8 @@ function Get-PSModuleProducingPullRequestNumber {
         return 0L
     }
     $number = 0L
-    if (($PullRequest -isnot [PSCustomObject] -and $PullRequest -isnot [Collections.IDictionary]) -or
+    if ($PullRequest -is [array] -or
+        ($PullRequest -isnot [PSCustomObject] -and $PullRequest -isnot [Collections.IDictionary]) -or
         -not [long]::TryParse([string]$PullRequest.Number, [ref]$number) -or $number -lt 1) {
         throw 'Supplied pull request context requires a positive producing pull request number.'
     }
@@ -341,8 +342,13 @@ function Get-PSModuleArtifactFile {
         throw 'The tested module artifact contains no files.'
     }
     foreach ($file in $files) {
+        $relativePath = [IO.Path]::GetRelativePath($root, $file.FullName)
+        $relativePath = $relativePath.Replace([IO.Path]::DirectorySeparatorChar, [char]'/')
+        if ($relativePath.Contains('\')) {
+            throw 'The tested artifact contains a literal filename backslash. Refusing to rename its published file tree.'
+        }
         [pscustomobject]@{
-            RelativePath = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\', '/')
+            RelativePath = $relativePath
             FullName     = $file.FullName
         }
     }

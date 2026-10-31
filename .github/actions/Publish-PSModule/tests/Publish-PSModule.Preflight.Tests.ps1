@@ -365,6 +365,10 @@ Describe 'Publish-PSModule source-bound preflight' {
         @{ Json = '{"Number":0}' }
         @{ Json = '{"Number":"unknown"}' }
         @{ Json = '42' }
+        @{ Json = '[]' }
+        @{ Json = '[null]' }
+        @{ Json = '[{"Number":42}]' }
+        @{ Json = '[{"Number":0}]' }
     ) {
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = $Json
 
