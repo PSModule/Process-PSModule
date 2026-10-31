@@ -159,14 +159,18 @@ function Get-GitHubPullRequest {
     )
 
     LogGroup 'Event information' {
-        $settings = $SettingsJson | ConvertFrom-Json
+        $settings = ConvertFrom-Json -InputObject $SettingsJson -NoEnumerate -ErrorAction Stop
+        if ($settings -is [array] -or $settings -isnot [PSCustomObject]) {
+            throw 'Settings must contain one normalized release-context object.'
+        }
         $context = $settings.Context
         if ($context) {
             $contextPullRequest = $context.PullRequest
-            if ($contextPullRequest) {
-                Write-Host "Using normalized pull request context for #$($contextPullRequest.Number)."
+            if ($null -ne $contextPullRequest) {
+                $number = Get-PSModuleProducingPullRequestNumber -PullRequest $contextPullRequest
+                Write-Host "Using normalized pull request context for #$number."
                 return [PSCustomObject]@{
-                    Number  = $contextPullRequest.Number
+                    Number  = $number
                     HeadRef = $contextPullRequest.HeadRef
                     Labels  = @($contextPullRequest.Labels)
                 }
@@ -184,17 +188,22 @@ function Get-GitHubPullRequest {
         }
 
         $eventJsonInput = $env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson
-        $githubEvent = if (-not [string]::IsNullOrWhiteSpace($eventJsonInput)) {
-            $eventJsonInput | ConvertFrom-Json
+        if (-not [string]::IsNullOrWhiteSpace($eventJsonInput)) {
+            $githubEvent = ConvertFrom-Json -InputObject $eventJsonInput -NoEnumerate -ErrorAction Stop
         } else {
-            Get-Content $env:GITHUB_EVENT_PATH | ConvertFrom-Json
+            $githubEvent = Get-Content -Raw -LiteralPath $env:GITHUB_EVENT_PATH |
+                ConvertFrom-Json -NoEnumerate -ErrorAction Stop
+        }
+        if ($githubEvent -is [array] -or $githubEvent -isnot [PSCustomObject]) {
+            throw 'The event must contain one producing-context object.'
         }
 
         $pr = $githubEvent.pull_request
-        if (-not $pr) {
+        if ($null -eq $pr) {
             Write-Host 'GitHub event does not contain pull_request data and no release context was normalized.'
             return $null
         }
+        $number = Get-PSModuleProducingPullRequestNumber -PullRequest $pr
 
         $labels = @()
         $labels += $pr.labels.name
@@ -207,6 +216,7 @@ function Get-GitHubPullRequest {
         Write-Host '-------------------------------------------------'
 
         [PSCustomObject]@{
+            Number  = $number
             HeadRef = $pr.head.ref
             Labels  = $labels
         }
@@ -801,7 +811,11 @@ function Get-PSModuleGalleryRecoveryVersion {
         -not [long]::TryParse([string]$Context.PullRequest, [ref]$number) -or $number -lt 0) {
         throw 'Immutable repository/PR/source context is required for Gallery recovery proof.'
     }
-    foreach ($name in @('GetSource', 'GetTagList', 'GetTagReference', 'GetTagObject', 'GetRelease', 'GetPackage', 'GetPackageArtifactDigest')) {
+    $readerNames = @(
+        'GetSource', 'GetTagList', 'GetTagReference', 'GetVersionReference',
+        'GetTagObject', 'GetRelease', 'GetPackage', 'GetPackageArtifactDigest'
+    )
+    foreach ($name in $readerNames) {
         if ($Reader[$name] -isnot [scriptblock]) {
             throw "The immutable publication reader [$name] is required for Gallery recovery proof."
         }
@@ -848,6 +862,7 @@ function Get-PSModuleGalleryRecoveryVersion {
         }
         if ($claim.Repository -ine $Context.Repository -or $claim.PullRequest -ne $number -or
             $claim.CommitSha -cne $Context.CommitSha -or $claim.ModuleName -cne $ModuleName -or
+            $claim.VersionPrefix -cne $prefix -or
             $claim.ReleaseType -cne 'Release' -or $claim.ReleaseTag -cne $tag -or
             "$prefix$($claim.GalleryVersion)" -cne $tag) {
             throw "The source-bound tag [$tag] belongs to a different module or release context."

@@ -36,6 +36,7 @@ Describe 'Gallery-only version selection requires original ownership proof' {
             CommitSha      = '1111111111111111111111111111111111111111'
             ModuleName     = 'TestModule'
             GalleryVersion = '1.2.4'
+            VersionPrefix  = 'v'
             ReleaseTag     = 'v1.2.4'
             ReleaseType    = 'Release'
             ArtifactSha256 = Get-PSModuleArtifactDigest -Path $modulePath
@@ -80,6 +81,14 @@ Describe 'Gallery-only version selection requires original ownership proof' {
                 param($Tag)
                 $state.Calls.Add("tag-read:$Tag")
                 if ($Tag -ceq $state.Record.Annotation.tag) { $state.Record.Reference.object }
+            }.GetNewClosure()
+            GetVersionReference      = {
+                param($Name, $Version)
+                if ($Name -cne 'TestModule' -or $Version -cne '1.2.4') {
+                    throw 'Unexpected module/version coordinate lookup.'
+                }
+                $state.Calls.Add('module-version-coordinate-read')
+                $state.Record.Reference.object
             }.GetNewClosure()
             GetTagObject             = {
                 param($Sha)
