@@ -38,6 +38,7 @@ BeforeAll {
         'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName'
         'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading'
         'PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix'
         'PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest'
         'PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha'
     )
@@ -111,6 +112,7 @@ Describe 'Publish-PSModule recovery' {
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName = 'false'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading = 'false'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.4'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix = 'v'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
         $script:recoveryParameters = @{
