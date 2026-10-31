@@ -12,6 +12,8 @@ Provenance must contain one original JSON object with scalar proof fields; array
 
 GitHub resource responses must have valid object/scalar shapes, while verified empty tag collections remain valid absence. An existing PR-produced stable or prerelease release requires its producing-context footer; unreadable terminal markers are errors even when indented or inline. Unknown legacy PR release context is not inferred from a matching tag.
 
+Existing releases must explicitly return scalar boolean `draft: false`. Missing, null, string, or array status is unknown published-release proof and stops before Gallery publication or a resumed asset upload.
+
 ## Inputs
 
 | Name | Description | Required | Default |
