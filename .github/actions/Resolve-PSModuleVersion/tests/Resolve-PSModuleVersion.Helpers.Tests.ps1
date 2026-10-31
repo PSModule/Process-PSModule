@@ -7,6 +7,7 @@ param()
 
 BeforeAll {
     Import-Module -Name 'PSModule' -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../../Get-PSModuleSettings/src/Get-PSModuleSettings.Helpers.psm1') -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../src/Resolve-PSModuleVersion.Helpers.psm1') -Force
 
     function Get-TestConfiguration {
@@ -92,7 +93,7 @@ BeforeAll {
 
 Describe 'Resolve-PSModuleVersion' {
     Describe 'ConvertFrom-GitHubReleaseJson' {
-        Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
+        Pester\Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
             It 'ConvertFrom-GitHubReleaseJson - returns an empty array for an empty JSON array' {
                 $result = ConvertFrom-GitHubReleaseJson -Json '[]'
                 @($result).Count | Should -Be 0
@@ -109,7 +110,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'ConvertFrom-GitHubReleaseJson - releases present' {
+        Pester\Context 'ConvertFrom-GitHubReleaseJson - releases present' {
             It 'ConvertFrom-GitHubReleaseJson - returns a flat array of release objects' {
                 $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
                 $result = @(ConvertFrom-GitHubReleaseJson -Json $json)
@@ -132,14 +133,14 @@ Describe 'Resolve-PSModuleVersion' {
 
             It 'ConvertFrom-GitHubReleaseJson - survives the log group wrapper without nesting' {
                 $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
-                $releases = @(LogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
+                $releases = @(Set-GitHubLogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
                 $releases.Count | Should -Be 2
                 $releases[0].tagName | Should -Be 'v1.2.3'
             }
         }
 
         Describe 'Get-ResolvedModuleVersion' {
-            Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
+            Pester\Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
                 It 'Get-ResolvedModuleVersion - reuses the Gallery version that is the next GitHub patch release' {
                     $params = @{
                         GitHubVersion    = New-PSSemVer -Version '1.2.3'
@@ -174,7 +175,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-LatestGitHubVersion' {
-        Context 'Get-LatestGitHubVersion - repository without releases' {
+        Pester\Context 'Get-LatestGitHubVersion - repository without releases' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when the releases list is null' {
                 $result = Get-LatestGitHubVersion -Releases $null
                 $result.ToString() | Should -Be '0.0.0'
@@ -195,7 +196,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestGitHubVersion - releases present but none marked as latest' {
+        Pester\Context 'Get-LatestGitHubVersion - releases present but none marked as latest' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when no release is marked as latest' {
                 $releases = @(
                     [PSCustomObject]@{ tagName = 'v1.2.3'; isLatest = $false; isPrerelease = $false }
@@ -214,7 +215,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestGitHubVersion - releases present' {
+        Pester\Context 'Get-LatestGitHubVersion - releases present' {
             It 'Get-LatestGitHubVersion - returns the version of the release marked as latest' {
                 $releases = @(
                     [PSCustomObject]@{ tagName = 'v1.2.2'; isLatest = $false; isPrerelease = $false }
@@ -238,7 +239,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-LatestPublishedVersion' {
-        Context 'Get-LatestPublishedVersion - brand-new module' {
+        Pester\Context 'Get-LatestPublishedVersion - brand-new module' {
             It 'Get-LatestPublishedVersion - returns 0.0.0 when neither source has a version' {
                 $result = Get-LatestPublishedVersion -GitHubVersion $null -PSGalleryVersion $null
                 $result.ToString() | Should -Be '0.0.0'
@@ -259,7 +260,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestPublishedVersion - one source has a version' {
+        Pester\Context 'Get-LatestPublishedVersion - one source has a version' {
             It 'Get-LatestPublishedVersion - returns the GitHub version when the gallery has none' {
                 $result = Get-LatestPublishedVersion -GitHubVersion (New-PSSemVer -Version '1.2.3') -PSGalleryVersion $null
                 $result.ToString() | Should -Be '1.2.3'
@@ -271,7 +272,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestPublishedVersion - both sources have a version' {
+        Pester\Context 'Get-LatestPublishedVersion - both sources have a version' {
             It 'Get-LatestPublishedVersion - returns the highest of the two versions' {
                 $params = @{
                     GitHubVersion    = New-PSSemVer -Version '1.4.2'
@@ -284,7 +285,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-NextPrereleaseNumber' {
-        Context 'Get-NextPrereleaseNumber - repository without releases' {
+        Pester\Context 'Get-NextPrereleaseNumber - repository without releases' {
             It 'Get-NextPrereleaseNumber - returns 001 when the releases list is null' {
                 $params = @{
                     ModuleName     = 'PSModuleNonExistentModuleForTesting'
@@ -315,7 +316,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-NextPrereleaseNumber - matching prereleases exist on GitHub' {
+        Pester\Context 'Get-NextPrereleaseNumber - matching prereleases exist on GitHub' {
             It 'Get-NextPrereleaseNumber - returns the number after the highest matching GitHub prerelease' {
                 $params = @{
                     ModuleName     = 'PSModuleNonExistentModuleForTesting'
@@ -332,7 +333,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-NextModuleVersion' {
-        Context 'Get-NextModuleVersion - brand-new module without releases' {
+        Pester\Context 'Get-NextModuleVersion - brand-new module without releases' {
             It 'Get-NextModuleVersion - resolves the first patch release to 0.0.1' {
                 $params = @{
                     LatestVersion = New-PSSemVer -Version '0.0.0'
@@ -417,7 +418,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-NextModuleVersion - existing module with releases' {
+        Pester\Context 'Get-NextModuleVersion - existing module with releases' {
             It 'Get-NextModuleVersion - bumps the patch version of the latest release' {
                 $params = @{
                     LatestVersion = New-PSSemVer -Version '1.2.3'
@@ -435,7 +436,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Resolve-PSModuleVersion' {
-        Context 'Resolve-PSModuleVersion - brand-new module with no GitHub release and no gallery version' {
+        Pester\Context 'Resolve-PSModuleVersion - brand-new module with no GitHub release and no gallery version' {
             It 'Resolve-PSModuleVersion - resolves the full chain to the first patch version' {
                 $githubVersion = Get-LatestGitHubVersion -Releases @()
                 $latestVersion = Get-LatestPublishedVersion -GitHubVersion $githubVersion -PSGalleryVersion $null
@@ -523,6 +524,46 @@ Describe 'Resolve-PSModuleVersion' {
             $result.Labels | Should -BeNullOrEmpty
             $result.IsDirectRelease | Should -BeTrue
         }
+
+        It 'honours the version label from a pull request resolved by a default-branch dispatch' {
+            # Regression guard for issue #530. Before the fix, a manual dispatch resolved no pull
+            # request, so Context.PullRequest was null and the direct-release branch applied a patch
+            # bump. With the pull request resolved, the minor label must be carried through.
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = @{
+                        Number  = 64
+                        HeadRef = 'feature/recovered-release'
+                        Labels  = @('minor')
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -Be 64
+            $result.Labels | Should -Be @('minor')
+            $result.IsDirectRelease | Should -BeNullOrEmpty
+        }
+
+        It 'creates default patch context for a direct default-branch dispatch' {
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $null
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -BeNullOrEmpty
+            $result.IsDirectRelease | Should -BeTrue
+        }
     }
 
     Describe 'Resolve-ReleaseDecision' {
@@ -532,6 +573,85 @@ Describe 'Resolve-PSModuleVersion' {
 
             $result.ShouldPublish | Should -BeTrue
             $result.PatchRelease | Should -BeTrue
+        }
+
+        It 'resolves <ExpectedVersion> for a <EventName> with <Label> release intent' -ForEach @(
+            @{ EventName = 'workflow_dispatch'; Label = 'major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = 'NoRelease'; ExpectedVersion = 'no publication' }
+            @{ EventName = 'push'; Label = 'major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'push'; Label = 'minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'push'; Label = 'patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = 'NoRelease'; ExpectedVersion = 'no publication' }
+        ) {
+            $associatedPullRequests = if ($Label) {
+                @([pscustomobject]@{
+                        Number           = 64
+                        Base             = [pscustomobject]@{ Ref = 'main' }
+                        Head             = [pscustomobject]@{ Ref = 'feature/recovered-release' }
+                        merged_at        = '2026-09-02T09:02:24Z'
+                        merge_commit_sha = 'released-sha'
+                        Labels           = @([pscustomobject]@{ Name = $Label })
+                    })
+            } else {
+                @()
+            }
+            $parameters = @{
+                EventName                       = $EventName
+                CommitSha                       = 'released-sha'
+                DefaultBranch                   = 'main'
+                IsPushToDefaultBranch           = $EventName -eq 'push'
+                IsManualDispatchToDefaultBranch = $EventName -eq 'workflow_dispatch'
+                GetAssociatedPullRequest        = { $associatedPullRequests }.GetNewClosure()
+            }
+            $resolution = Resolve-ReleasePullRequest @parameters
+            $resolvedPullRequest = $resolution.PullRequest
+            $normalizedPullRequest = if ($resolvedPullRequest) {
+                @{
+                    Number  = $resolvedPullRequest.Number
+                    HeadRef = $resolvedPullRequest.Head.Ref
+                    Labels  = @($resolvedPullRequest.Labels.Name)
+                }
+            } else {
+                $null
+            }
+            $settingsJson = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $parameters.IsPushToDefaultBranch
+                    IsManualDispatchToDefaultBranch = $parameters.IsManualDispatchToDefaultBranch
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $normalizedPullRequest
+                }
+            } | ConvertTo-Json -Depth 5
+            $configuration = Get-TestConfiguration
+            $pullRequest = Get-GitHubPullRequest -SettingsJson $settingsJson
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+            $resolution.Resolved | Should -BeTrue
+            if ($Label -eq 'NoRelease') {
+                $pullRequest.Number | Should -Be 64
+                $decision.ShouldPublish | Should -BeFalse
+                $decision.CreateRelease | Should -BeFalse
+                return
+            }
+            $versionParameters = @{
+                GitHubVersion    = New-PSSemVer -Version '0.4.13'
+                PSGalleryVersion = New-PSSemVer -Version '0.4.13'
+                Decision         = $decision
+                Configuration    = $configuration
+                ModuleName       = 'DispatchTestModule'
+            }
+            $resolvedVersion = Get-ResolvedModuleVersion @versionParameters
+
+            $decision.ShouldPublish | Should -BeTrue
+            $resolvedVersion.ToString() | Should -Be $ExpectedVersion
+            if ($Label) {
+                $pullRequest.Number | Should -Be 64
+            } else {
+                $pullRequest.IsDirectRelease | Should -BeTrue
+            }
         }
 
         It 'does not publish an unlabeled prerelease when AutoPatching is disabled' {

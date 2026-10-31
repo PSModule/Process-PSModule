@@ -1,36 +1,38 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param()
 
+$ErrorActionPreference = 'Stop'
 $PSStyle.OutputRendering = 'Ansi'
 
 Import-Module -Name 'PSModule' -Force
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Cleanup-PSModulePrereleases.Helpers.psm1') -Force
 
 #region Load inputs
-LogGroup 'Load inputs' {
+Set-GitHubLogGroup 'Load inputs' {
     $whatIf = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf -eq 'true'
 
     $pullRequestJson = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest
-    $prHeadRef = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
-        ($pullRequestJson | ConvertFrom-Json).HeadRef
+    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequestJson | ConvertFrom-Json
     } else {
         $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
         $githubEvent = $githubEventJson | ConvertFrom-Json
-        $githubEvent.pull_request.head.ref
+        [pscustomobject]@{
+            Number         = $githubEvent.pull_request.number
+            HeadRef        = $githubEvent.pull_request.head.ref
+            HeadRepository = $githubEvent.pull_request.head.repo.full_name
+        }
     }
+    $prHeadRef = $pullRequest.HeadRef
 
     if ([string]::IsNullOrWhiteSpace($prHeadRef)) {
         Write-Host '::notice::No pull request head ref is available. Nothing to cleanup.'
         exit 0
     }
-    $prereleaseName = $prHeadRef -replace '[^a-zA-Z0-9]'
-
-    if ([string]::IsNullOrWhiteSpace($prereleaseName)) {
-        Write-Host "No prerelease tag derivable from PR head ref [$prHeadRef]. Nothing to cleanup."
-        exit 0
+    if ([long]$pullRequest.Number -lt 1) {
+        throw 'A positive source PR number is required for verified prerelease cleanup.'
     }
-
     Write-Host "PR head ref:      [$prHeadRef]"
-    Write-Host "Prerelease name:  [$prereleaseName]"
     Write-Host "WhatIf:           [$whatIf]"
 
     $publishedReleaseTag = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag
@@ -41,21 +43,48 @@ LogGroup 'Load inputs' {
 #endregion Load inputs
 
 #region Find prereleases to cleanup
-LogGroup "Find prereleases to cleanup for [$prereleaseName]" {
-    $releaseListOutput = gh release list --json 'createdAt,isDraft,isLatest,isPrerelease,name,publishedAt,tagName'
+Set-GitHubLogGroup "Find prereleases to cleanup for [$prHeadRef]" {
+    $releaseListOutput = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" --paginate `
+        --jq '.[] | {tagName: .tag_name, isPrerelease: .prerelease, targetCommitish: .target_commitish, body: .body}'
     if ($LASTEXITCODE -ne 0) {
-        Write-Error 'Failed to list releases for the repository.'
-        exit $LASTEXITCODE
+        throw "Failed to list releases for the repository (gh exited $LASTEXITCODE)."
     }
-    $releases = $releaseListOutput | ConvertFrom-Json
-
-    $prereleasesToCleanup = $releases | Where-Object {
-        $_.isPrerelease -eq $true -and $_.tagName -like "*$prereleaseName*" -and $_.tagName -ne $publishedReleaseTag
+    $releases = @($releaseListOutput | ForEach-Object { $_ | ConvertFrom-Json })
+    $parameters = @{
+        Repository        = $env:GITHUB_REPOSITORY
+        PullRequestNumber = [long]$pullRequest.Number
+        Release           = $releases
+        ReleaseTag        = $publishedReleaseTag
+        GetTagCommit      = {
+            param($Tag)
+            $tagParameters = @{
+                Tag             = $Tag
+                GetTagReference = {
+                    param($TagName)
+                    $encodedTag = [Uri]::EscapeDataString($TagName)
+                    $response = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$encodedTag"
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Cannot verify cleanup tag [$TagName] (gh exited $LASTEXITCODE)."
+                    }
+                    ($response | ConvertFrom-Json -ErrorAction Stop).object
+                }
+                GetTagObject    = {
+                    param($TagSha)
+                    $response = gh api "repos/$env:GITHUB_REPOSITORY/git/tags/$TagSha"
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Cannot verify cleanup tag object [$TagSha] (gh exited $LASTEXITCODE)."
+                    }
+                    ($response | ConvertFrom-Json -ErrorAction Stop).object
+                }
+            }
+            Resolve-PSModuleReleaseTagCommit @tagParameters
+        }
     }
+    $prereleasesToCleanup = Get-PSModulePrereleaseForCleanup @parameters
     $tagsToDelete = @($prereleasesToCleanup | ForEach-Object { $_.tagName } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
     if ($tagsToDelete.Count -eq 0) {
-        Write-Host "No prereleases found to cleanup for [$prereleaseName]."
+        Write-Host "No prereleases have verified ownership for [$env:GITHUB_REPOSITORY#$($pullRequest.Number)]."
         return
     }
 
@@ -65,21 +94,20 @@ LogGroup "Find prereleases to cleanup for [$prereleaseName]" {
 #endregion Find prereleases to cleanup
 
 #region Delete prereleases
-LogGroup "Delete prereleases for [$prereleaseName]" {
+Set-GitHubLogGroup "Delete prereleases for [$prHeadRef]" {
     foreach ($tag in $tagsToDelete) {
         Write-Host "Deleting prerelease: [$tag]"
         if ($whatIf) {
-            Write-Host "WhatIf: gh release delete $tag --cleanup-tag --yes"
+            Write-Host "WhatIf: gh release delete --cleanup-tag --yes -- $tag"
         } else {
-            gh release delete $tag --cleanup-tag --yes
+            gh release delete --cleanup-tag --yes -- $tag
             if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to delete release [$tag]."
-                exit $LASTEXITCODE
+                throw "Failed to delete release [$tag] (gh exited $LASTEXITCODE)."
             }
             Write-Host "Successfully deleted release [$tag]."
         }
     }
 
-    Write-Host "::notice::Cleaned up $($tagsToDelete.Count) prerelease(s) for [$prereleaseName]."
+    Write-Host "::notice::Cleaned up $($tagsToDelete.Count) prerelease(s) for [$prHeadRef]."
 }
 #endregion Delete prereleases
