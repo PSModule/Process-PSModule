@@ -244,6 +244,13 @@ Set-GitHubLogGroup 'Create GitHub release' {
         if ($releaseExists -and $null -eq $tagCommit) {
             throw "Existing release [$releaseTag] has no verifiable tag. Refusing to resume."
         }
+        if ($releaseExists) {
+            $owner = Get-PSModulePrereleaseOwnership -Body $existingRelease.body
+            if ($null -ne $owner -and ($owner.Repository -ine $env:GITHUB_REPOSITORY -or
+                    $owner.PullRequest -ne $prNumber -or $owner.CommitSha -cne $sourceCommit)) {
+                throw 'The existing release ownership footer conflicts with the producing repository, pull request, or source.'
+            }
+        }
     }
 
     if (-not $releaseExists) {
