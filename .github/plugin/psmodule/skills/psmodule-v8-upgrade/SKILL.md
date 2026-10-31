@@ -33,6 +33,19 @@ consumer repositories while developing or validating this skill.
 Use the repository's applicable MSX workflow and PR format guidance. Do not
 silently broaden the scope when the consumer has unrelated failures.
 
+## Pull request authoring
+
+Follow the [canonical MSX PR Format](https://msx.no/docs/Ways-of-Working/PR-Format/)
+rather than a PR-template file. For release-bound changes, use its
+release-range-first method and keep the complete authored release record in
+the pull request body.
+
+Do not add, recreate, copy, or generate repository-local or centrally provided
+PR-template files during an upgrade. Their absence is intentional, not missing
+template drift. Do not restore them from an older template snapshot or rely on
+a central fallback. Use the audit's stale-drift report for a separate removal
+task.
+
 ## Consumer layout variance
 
 Do not assume that a consumer already resembles Process-PSModule. Inventory

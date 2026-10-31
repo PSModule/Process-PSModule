@@ -112,7 +112,6 @@ Module repositories use the PSModule framework layout:
 | `.github/linters/` | Linter configuration used by the framework's linting stage, including `.markdown-lint.yml` and `.powershell-psscriptanalyzer.psd1`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Ownership routing for reviews and protected areas. |
-| `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
 | `src/` | Module source compiled into the shipped artifact. |
@@ -170,7 +169,6 @@ Required baseline files for module repositories:
 | `.github/copilot-instructions.md` | Route to `AGENTS.md` for Copilot surfaces that need their own filename. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
-| `.github/pull_request_template.md` | Scaffolds pull requests in the MSX PR Format (PR Manager) style — an icon + change-type + user-facing-outcome title, user-facing description sections, an optional technical-details block, and a related-issues block. |
 | `.github/PSModule.yml` | Module workflow defaults and overrides. |
 | `.gitattributes` | Normalizes line endings and declares text/binary handling so the module can be developed and built consistently on Linux, macOS, and Windows. |
 | `.gitignore` | Ignores files that must never be committed, tailored to the PowerShell-module ecosystem: operating-system files, editor and developer-tooling files, PowerShell and Pester test-harness artifacts, and all local build outputs and files created during build and test. |
@@ -189,6 +187,23 @@ module baseline, and root-level duplicates of community files are not part of
 the PSModule layout. `README.md`, `LICENSE`, and `AGENTS.md` remain at the
 repository root because they are repository entry points rather than community
 health files.
+
+## Pull request authoring
+
+Use the [canonical MSX PR Format](https://msx.no/docs/Ways-of-Working/PR-Format/)
+to author pull requests. For release-bound changes, follow its release-range-first
+method and keep the complete authored release record in the pull request body.
+
+PR-template files are not part of the repository or generated-module baseline.
+Do not create, copy, generate, or distribute them in any PSModule repository,
+`Template-PSModule`, or organization `.github` repositories. Do not rely on a
+central PR-template fallback.
+
+This includes root, `docs/`, or `.github/` files such as
+`pull_request_template.md` and entries under `PULL_REQUEST_TEMPLATE/`. Their
+absence is intentional, not missing baseline drift. Report existing files as
+stale drift for a separate removal task; do not restore them from an older
+template snapshot.
 
 ## Agent onboarding files
 

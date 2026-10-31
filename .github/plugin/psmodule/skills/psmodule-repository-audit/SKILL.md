@@ -99,6 +99,20 @@ Configuration is not automatically consumer-owned. For example,
 schema and unaffected defaults still come from the template. Compare fields,
 not only whole-file hashes, when the standard permits overrides.
 
+## Pull request authoring
+
+Follow the [canonical MSX PR Format](https://msx.no/docs/Ways-of-Working/PR-Format/)
+for authoring guidance, not a repository or organization PR-template file.
+
+Do not classify PR-template files as template-owned standards or creation
+scaffolds. Their absence is intentional, not missing baseline drift. Report
+existing files as stale drift for a separate removal task. Do not recommend
+adding, recreating, copying, or generating them, and do not rely on a central
+fallback.
+
+If the recorded template contains a PR-template file, report the upstream
+policy gap and block consumer alignment rather than propagating it.
+
 ## Zensical contract
 
 For module repositories, `.github/zensical.toml` comes from the matching path
