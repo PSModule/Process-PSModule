@@ -49,6 +49,10 @@ Describe 'Gallery-only version selection requires original ownership proof' {
                 ref    = 'refs/tags/v1.2.4'
                 object = [pscustomobject]@{ type = 'tag'; sha = '3333333333333333333333333333333333333333' }
             }
+            VersionReference = [pscustomobject]@{
+                ref    = 'refs/tags/PSModule-Publication/testmodule/1.2.4'
+                object = [pscustomobject]@{ type = 'tag'; sha = '3333333333333333333333333333333333333333' }
+            }
             Annotation  = [pscustomobject]@{
                 sha     = '3333333333333333333333333333333333333333'
                 tag     = 'v1.2.4'
@@ -61,11 +65,13 @@ Describe 'Gallery-only version selection requires original ownership proof' {
         }
         $state = @{
             Record     = $record
+            Records    = [Collections.Generic.List[object]]::new()
             Claims     = @($record.Reference)
             Calls      = [Collections.Generic.List[string]]::new()
             ModulePath = $modulePath
             Claim      = $claim
         }
+        $state.Records.Add($record)
         $script:state = $state
         $reader = @{
             GetSource                = {
@@ -80,36 +86,53 @@ Describe 'Gallery-only version selection requires original ownership proof' {
             GetTagReference          = {
                 param($Tag)
                 $state.Calls.Add("tag-read:$Tag")
-                if ($Tag -ceq $state.Record.Annotation.tag) { $state.Record.Reference.object }
+                foreach ($item in $state.Records) {
+                    if ($Tag -ceq $item.Annotation.tag) { return $item.Reference.object }
+                }
             }.GetNewClosure()
             GetVersionReference      = {
                 param($Name, $Version)
-                if ($Name -cne 'TestModule' -or $Version -cne '1.2.4') {
-                    throw 'Unexpected module/version coordinate lookup.'
-                }
+                if ($Name -cne 'TestModule') { throw 'Unexpected module/version coordinate lookup.' }
                 $state.Calls.Add('module-version-coordinate-read')
-                $state.Record.Reference.object
+                foreach ($item in $state.Records) {
+                    if ($item.VersionReference.ref -ceq "refs/tags/PSModule-Publication/testmodule/$Version") {
+                        return $item.VersionReference.object
+                    }
+                }
             }.GetNewClosure()
             GetTagObject             = {
                 param($Sha)
-                if ($Sha -cne $state.Record.Annotation.sha) { throw 'Unexpected annotated tag lookup.' }
-                $state.Record.Annotation
+                foreach ($item in $state.Records) {
+                    if ($Sha -ceq $item.Annotation.sha) { return $item.Annotation }
+                }
+                throw 'Unexpected annotated tag lookup.'
             }.GetNewClosure()
             GetRelease               = {
                 param($Tag)
                 $state.Calls.Add("release-read:$Tag")
-                if ($Tag -ceq $state.Record.Annotation.tag) { $state.Record.Release }
+                foreach ($item in $state.Records) {
+                    if ($Tag -ceq $item.Annotation.tag) { return $item.Release }
+                }
             }.GetNewClosure()
             GetPackage               = {
                 param($Name, $Version)
                 $state.Calls.Add("package-read:$Version")
                 if ($Name -cne 'TestModule') { throw 'Unexpected module lookup.' }
-                if ($Version -ceq '1.2.4') { $state.Record.Package }
+                foreach ($item in $state.Records) {
+                    if ($item.VersionReference.ref -ceq "refs/tags/PSModule-Publication/testmodule/$Version") {
+                        return $item.Package
+                    }
+                }
             }.GetNewClosure()
             GetPackageArtifactDigest = {
                 param($Name, $Version)
                 $state.Calls.Add("raw-package-read:$Version")
-                Get-PSModulePackageArtifactDigest -Path $state.Record.PackagePath -ModuleName $Name -GalleryVersion $Version
+                foreach ($item in $state.Records) {
+                    if ($item.VersionReference.ref -ceq "refs/tags/PSModule-Publication/testmodule/$Version") {
+                        return Get-PSModulePackageArtifactDigest -Path $item.PackagePath -ModuleName $Name -GalleryVersion $Version
+                    }
+                }
+                throw 'Unexpected raw package lookup.'
             }.GetNewClosure()
         }
         $script:parameters = @{
@@ -154,6 +177,54 @@ Describe 'Gallery-only version selection requires original ownership proof' {
         (Get-ResolvedModuleVersion @script:parameters).ToString() | Should -BeExactly 'v1.2.4'
     }
 
+    It 'deduplicates shared and release refs for one exact original publication' {
+        $script:state.Claims = @($script:state.Record.Reference, $script:state.Record.VersionReference)
+
+        (Get-ResolvedModuleVersion @script:parameters).ToString() | Should -BeExactly 'v1.2.4'
+    }
+
+    It 'rejects an unpublished shared-only claim before a later completed baseline can select a new version' {
+        $original = $script:state.Record
+        $original.Reference = $null
+        $original.Package = $null
+        $later = [pscustomobject]@{
+            Reference = [pscustomobject]@{
+                ref = 'refs/tags/v1.2.5'
+                object = [pscustomobject]@{ type = 'tag'; sha = '4444444444444444444444444444444444444444' }
+            }
+            VersionReference = [pscustomobject]@{
+                ref = 'refs/tags/PSModule-Publication/testmodule/1.2.5'
+                object = [pscustomobject]@{ type = 'tag'; sha = '4444444444444444444444444444444444444444' }
+            }
+            Annotation = [pscustomobject]@{
+                sha = '4444444444444444444444444444444444444444'; tag = 'v1.2.5'; message = 'Completed later legacy baseline.'
+                object = [pscustomobject]@{ type = 'commit'; sha = '2222222222222222222222222222222222222222' }
+            }
+            Release = [pscustomobject]@{
+                tag_name = 'v1.2.5'; prerelease = $false; draft = $false
+                assets = @([pscustomobject]@{ name = 'TestModule-1.2.5.zip'; state = 'uploaded' })
+            }
+        }
+        $script:state.Records.Add($later)
+        $script:state.Claims = @($original.VersionReference, $later.Reference)
+        $script:parameters.GitHubVersion = New-PSSemVer -Version '1.2.5'
+        $script:parameters.PSGalleryVersion = New-PSSemVer -Version '1.2.5'
+        Mock -CommandName Get-NextModuleVersion -ModuleName Resolve-PSModuleVersion.Helpers -MockWith {
+            New-PSSemVer -Version 'v1.2.6'
+        }
+
+        { Get-ResolvedModuleVersion @script:parameters } | Should -Throw '*original source claim*no published raw package proof*'
+
+        Should -Invoke -CommandName Get-NextModuleVersion -ModuleName Resolve-PSModuleVersion.Helpers -Times 0 -Exactly
+    }
+
+    It 'rejects a shared-only published package whose observed release tag is missing' {
+        $script:state.Record.Reference = $null
+        $script:state.Claims = @($script:state.Record.VersionReference)
+
+        { Get-ResolvedModuleVersion @script:parameters } | Should -Throw '*no verifiable source/artifact ownership proof*'
+    }
+
     It 'rejects a Gallery-only version with unavailable legacy proof instead of inventing a fallback' {
         $script:state.Record.Annotation.message = 'Legacy tag without artifact proof.'
 
@@ -184,6 +255,48 @@ Describe 'Gallery-only version selection requires original ownership proof' {
         }
 
         (Get-ResolvedModuleVersion @script:parameters).ToString() | Should -BeExactly 'v1.2.5'
+    }
+
+    It 'uses the actual completed historical tag when the new source changes its prefix' {
+        $script:state.Record.Annotation.object.sha = '2222222222222222222222222222222222222222'
+        $script:state.Record.Annotation.message = 'Completed legacy tag.'
+        $script:state.Record.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; prerelease = $false; draft = $false
+            assets = @([pscustomobject]@{ name = 'TestModule-1.2.4.zip'; state = 'uploaded' })
+        }
+        $script:parameters.Configuration.VersionPrefix = 'release-'
+
+        (Get-ResolvedModuleVersion @script:parameters).ToString() | Should -BeExactly 'release-1.2.5'
+
+        $script:state.Calls | Should -Contain 'release-read:v1.2.4'
+        $script:state.Calls | Should -Not -Contain 'release-read:release-1.2.4'
+    }
+
+    It 'rejects ambiguous completed historical baseline tags instead of choosing a prefix' {
+        $script:state.Record.Annotation.object.sha = '2222222222222222222222222222222222222222'
+        $script:state.Record.Annotation.message = 'Completed legacy tag.'
+        $script:state.Record.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; prerelease = $false; draft = $false
+            assets = @([pscustomobject]@{ name = 'TestModule-1.2.4.zip'; state = 'uploaded' })
+        }
+        $other = [pscustomobject]@{
+            Reference = [pscustomobject]@{
+                ref = 'refs/tags/release-1.2.4'
+                object = [pscustomobject]@{ type = 'tag'; sha = '4444444444444444444444444444444444444444' }
+            }
+            Annotation = [pscustomobject]@{
+                sha = '4444444444444444444444444444444444444444'; tag = 'release-1.2.4'; message = 'Another completed legacy baseline.'
+                object = [pscustomobject]@{ type = 'commit'; sha = '2222222222222222222222222222222222222222' }
+            }
+            Release = [pscustomobject]@{
+                tag_name = 'release-1.2.4'; prerelease = $false; draft = $false
+                assets = @([pscustomobject]@{ name = 'TestModule-1.2.4.zip'; state = 'uploaded' })
+            }
+        }
+        $script:state.Records.Add($other)
+        $script:state.Claims = @($script:state.Record.Reference, $other.Reference)
+
+        { Get-ResolvedModuleVersion @script:parameters } | Should -Throw '*ambiguous*baseline*'
     }
 
     It 'rejects changed package bytes despite matching source, version, and PR' {
