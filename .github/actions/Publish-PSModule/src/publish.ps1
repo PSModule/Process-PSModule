@@ -45,6 +45,7 @@ LogGroup 'Load inputs' {
     $psGalleryApiKey = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY
     $whatIf = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf -eq 'true'
     $releaseTag = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag
+    $versionPrefix = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix
     $sourceCommit = $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha
     if ([string]::IsNullOrWhiteSpace($sourceCommit)) {
         $sourceCommit = $env:GITHUB_SHA
@@ -57,6 +58,7 @@ LogGroup 'Load inputs' {
     }
 
     Write-Host "Module name: [$name]"
+    Write-Host "Version prefix: [$versionPrefix]"
     Write-Host "Module path: [$modulePath]"
     Write-Host "WhatIf:      [$whatIf]"
 }
@@ -169,6 +171,7 @@ try {
                 CommitSha      = $sourceCommit
                 ModuleName     = $name
                 GalleryVersion = $publishPSVersion
+                VersionPrefix  = $versionPrefix
                 ReleaseTag     = $releaseTag
                 ReleaseType    = if ($createPrerelease) { 'Prerelease' } else { 'Release' }
                 ArtifactSha256 = $artifactDigest
@@ -195,6 +198,7 @@ try {
             $publicationState = New-PSModulePublicationTag -Claim $claim -State $publicationState -Reader $publicationReader
             $currentState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
             if ($currentState.TagSha -cne $publicationState.TagSha -or
+                $currentState.VersionTagSha -cne $publicationState.VersionTagSha -or
                 (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
                 throw 'The publication claim or tested artifact changed before the Gallery write. Refusing publication.'
             }

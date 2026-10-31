@@ -28,6 +28,7 @@ BeforeAll {
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf'
         'PSMODULE_RELEASE_PSMODULE_INPUT_Name'
@@ -95,6 +96,7 @@ Describe 'Publish-PSModule recovery' {
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY = 'test-key'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag = 'v1.2.4'
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix = 'v'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'
         $script:state = New-PSModulePublicationFixture -Path $script:modulePath -Version '1.2.4' -Tag 'v1.2.4'

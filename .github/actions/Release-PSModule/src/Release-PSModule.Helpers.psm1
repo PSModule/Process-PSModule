@@ -99,7 +99,7 @@ function Get-PSModulePrereleaseOwnership {
 
     $match = [regex]::Match($Body, '(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:v1:([A-Za-z0-9+/=]+) -->\s*\z')
     if (-not $match.Success) {
-        if ($Body -match '(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:[^\r\n]*\s*\z') {
+        if ($Body -match '(?s)(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:(?:(?!-->).)*(?:-->)?\s*\z') {
             throw 'The published ownership footer is malformed or uses an unsupported provenance version.'
         }
         return
@@ -271,7 +271,8 @@ function Get-PSModulePublicationClaim {
         -not [long]::TryParse([string]$claim.PullRequest, [ref]$number) -or $number -lt 0 -or
         $claim.CommitSha -notmatch '^[0-9a-f]{40}$' -or
         $claim.ModuleName -notmatch '^[A-Za-z0-9][A-Za-z0-9_.-]*$' -or
-        $claim.GalleryVersion -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$' -or
+        $claim.GalleryVersion -notmatch '^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$' -or
+        $claim.VersionPrefix -isnot [string] -or
         [string]::IsNullOrWhiteSpace($claim.ReleaseTag) -or
         $claim.ReleaseTag -match '[\s\x00-\x1f\x7f]' -or
         $claim.ReleaseTag -match '(^|/)\.|[~^:?*\[\\]|\.\.|@\{|//|/$|\.lock(?:/|$)|\.$' -or
@@ -280,6 +281,9 @@ function Get-PSModulePublicationClaim {
         $claim.AssetSha256 -notmatch '^[0-9A-Fa-f]{64}$' -or
         $claim.AssetName -cne "$($claim.ModuleName)-$($claim.GalleryVersion).zip") {
         throw 'The publication claim has invalid source, release context, coordinates, or artifact proof.'
+    }
+    if ($claim.ReleaseTag -cne "$($claim.VersionPrefix)$($claim.GalleryVersion)") {
+        throw 'The publication claim release tag does not bind the configured prefix and tested module version.'
     }
     $isPrerelease = $claim.GalleryVersion.Contains('-')
     if (($claim.ReleaseType -ceq 'Prerelease') -ne $isPrerelease) {
@@ -291,6 +295,7 @@ function Get-PSModulePublicationClaim {
         CommitSha      = [string]$claim.CommitSha
         ModuleName     = [string]$claim.ModuleName
         GalleryVersion = [string]$claim.GalleryVersion
+        VersionPrefix  = [string]$claim.VersionPrefix
         ReleaseTag     = [string]$claim.ReleaseTag
         ReleaseType    = [string]$claim.ReleaseType
         ArtifactSha256 = ([string]$claim.ArtifactSha256).ToLowerInvariant()
@@ -347,11 +352,85 @@ function Get-PSModuleArtifactFile {
         if ($relativePath.Contains('\')) {
             throw 'The tested artifact contains a literal filename backslash. Refusing to rename its published file tree.'
         }
+        if (Test-PSModulePackageMetadataPath -Path $relativePath) {
+            throw "The tested artifact contains NuGet-reserved metadata path [$relativePath]. Refusing publication."
+        }
         [pscustomobject]@{
             RelativePath = $relativePath
             FullName     = $file.FullName
         }
     }
+}
+
+function Test-PSModulePackageMetadataPath {
+    <#
+        .SYNOPSIS
+        Identify generated NuGet container paths excluded from module payload proof.
+
+        .EXAMPLE
+        Test-PSModulePackageMetadataPath -Path 'package/services/metadata/core-properties/abc.psmdcp'
+
+        Return true for a reserved package-metadata path.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Test-PSModulePackageMetadataPath.
+
+        .OUTPUTS
+        System.Boolean
+
+        Whether the path is generated NuGet container metadata.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        # The exact portable package-relative path.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path
+    )
+
+    $pattern = '^(?:[^/\\]+\.nuspec|\[Content_Types\]\.xml|_rels/\.rels|\.signature\.p7s|' +
+    'package/services/metadata/core-properties/[0-9a-f]+\.psmdcp)$'
+    $Path -match $pattern
+}
+
+function Get-PSModulePublicationVersionTag {
+    <#
+        .SYNOPSIS
+        Get the shared module/version claim coordinate independently of release-tag prefix.
+
+        .EXAMPLE
+        Get-PSModulePublicationVersionTag -ModuleName TestModule -GalleryVersion 1.2.4
+
+        Return the immutable package-coordinate tag name.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Get-PSModulePublicationVersionTag.
+
+        .OUTPUTS
+        System.String
+
+        The shared module/version ownership tag name.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        # The exact Gallery module name.
+        [Parameter(Mandatory)]
+        [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_.-]*$')]
+        [string] $ModuleName,
+
+        # The resolved canonical Gallery version.
+        [Parameter(Mandatory)]
+        [ValidatePattern('^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')]
+        [string] $GalleryVersion
+    )
+
+    "PSModule-Publication/$($ModuleName.ToLowerInvariant())/$($GalleryVersion.ToLowerInvariant())"
 }
 
 function Get-PSModuleContentDigest {
@@ -627,9 +706,7 @@ function Get-PSModulePackageArtifactDigest {
             if ($relativePath.EndsWith('/')) {
                 continue
             }
-            if ($relativePath -ceq $nuspecs[0].FullName -or $relativePath -ceq '[Content_Types].xml' -or
-                $relativePath -ceq '_rels/.rels' -or $relativePath -ceq '.signature.p7s' -or
-                $relativePath -cmatch '^package/services/metadata/core-properties/[0-9a-f]+\.psmdcp$') {
+            if (Test-PSModulePackageMetadataPath -Path $relativePath) {
                 continue
             }
             $stream = $entry.Open()
