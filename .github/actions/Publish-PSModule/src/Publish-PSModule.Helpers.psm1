@@ -128,7 +128,7 @@ function Invoke-PSModulePublicationApi {
         throw "The GitHub API response for [$Endpoint] has no verifiable JSON body."
     }
     $body = $parts[1] -replace '(?m)^gh:.*(?:\r?\n|\z)', ''
-    $value = $body | ConvertFrom-Json -ErrorAction Stop
+    $value = $body | ConvertFrom-Json -NoEnumerate -ErrorAction Stop
     if ($null -eq $value) {
         throw "The GitHub API response for [$Endpoint] returned no resource metadata."
     }
@@ -329,6 +329,9 @@ function Get-PSModulePublicationReader {
                 throw "The tag lookup for [$Tag] did not return the exact tag reference."
             }
             $response.Value.object
+        }.GetNewClosure()
+        GetTagList               = {
+            (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/matching-refs/tags/").Value
         }.GetNewClosure()
         GetTagObject             = {
             param($Sha)

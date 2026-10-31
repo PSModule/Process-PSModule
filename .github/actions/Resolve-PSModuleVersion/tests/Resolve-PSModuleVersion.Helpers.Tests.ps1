@@ -140,7 +140,7 @@ Describe 'Resolve-PSModuleVersion' {
 
         Describe 'Get-ResolvedModuleVersion' {
             Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
-                It 'Get-ResolvedModuleVersion - reuses the Gallery version that is the next GitHub patch release' {
+                It 'Get-ResolvedModuleVersion - rejects numeric equality without source/artifact proof' {
                     $params = @{
                         GitHubVersion    = New-PSSemVer -Version '1.2.3'
                         PSGalleryVersion = New-PSSemVer -Version '1.2.4'
@@ -150,12 +150,10 @@ Describe 'Resolve-PSModuleVersion' {
                         Releases         = @()
                     }
 
-                    $result = Get-ResolvedModuleVersion @params
-
-                    $result.ToString() | Should -Be 'v1.2.4'
+                    { Get-ResolvedModuleVersion @params } | Should -Throw '*proof*'
                 }
 
-                It 'Get-ResolvedModuleVersion - preserves the normal Gallery baseline when versions do not identify a retry' {
+                It 'Get-ResolvedModuleVersion - rejects an unproven Gallery-only gap without inventing a version' {
                     $params = @{
                         GitHubVersion    = New-PSSemVer -Version '1.2.3'
                         PSGalleryVersion = New-PSSemVer -Version '1.2.5'
@@ -165,9 +163,7 @@ Describe 'Resolve-PSModuleVersion' {
                         Releases         = @()
                     }
 
-                    $result = Get-ResolvedModuleVersion @params
-
-                    $result.ToString() | Should -Be 'v1.2.6'
+                    { Get-ResolvedModuleVersion @params } | Should -Throw '*proof*'
                 }
             }
         }
