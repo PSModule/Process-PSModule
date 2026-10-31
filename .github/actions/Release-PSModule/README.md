@@ -45,6 +45,14 @@ The action consumes a built module artifact and normalized PR or direct-release 
 to its actual commit, including annotated tags; `target_commitish` is not treated as immutable proof. A retry proceeds
 only when that commit matches the original source.
 
+Tag ownership is checked even when no GitHub release exists: a missing release is not evidence that the tag is
+unclaimed. The source is checked again immediately before asset upload to reject concurrent tag changes.
+
+Prerelease creation and retry both use the original build commit, not a mutable PR head branch. The complete authored
+notes or generated notes are preserved, followed by a versioned controller-owned footer recording the base repository,
+source PR number, and immutable commit. This publication provenance lets cleanup retain unambiguous PR ownership
+without deriving it from a tag substring.
+
 ## Retrying publication
 
 Use the original run's resolved tag, source, and artifact. A missing ZIP can be uploaded to the same-source release.

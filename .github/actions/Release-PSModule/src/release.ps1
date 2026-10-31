@@ -186,6 +186,7 @@ Set-GitHubLogGroup 'Create GitHub release' {
     $notesFilePath = $null
     $releaseExists = $false
     $existingRelease = $null
+    $sourceCommit = if (-not [string]::IsNullOrWhiteSpace($commitSha)) { $commitSha } else { $env:GITHUB_SHA }
 
     if (-not $whatIf) {
         $encodedReleaseTag = [System.Uri]::EscapeDataString($releaseTag)
@@ -201,37 +202,47 @@ Set-GitHubLogGroup 'Create GitHub release' {
             }
             $releaseURL = $existingRelease.html_url
             $releaseExists = $true
-            $sourceCommit = if (-not [string]::IsNullOrWhiteSpace($commitSha)) { $commitSha } else { $env:GITHUB_SHA }
-            if ([string]::IsNullOrWhiteSpace($sourceCommit)) {
-                throw 'CommitSha or the original GITHUB_SHA is required to establish immutable ownership before resuming a release.'
-            }
-            $tagParameters = @{
-                Tag             = $releaseTag
-                GetTagReference = {
-                    param($Tag)
-                    $encodedTag = [Uri]::EscapeDataString($Tag)
-                    $response = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$encodedTag"
-                    if ($LASTEXITCODE -ne 0) {
-                        throw "Cannot read release tag [$Tag] (gh exited $LASTEXITCODE)."
-                    }
-                    ($response | ConvertFrom-Json).object
-                }
-                GetTagObject    = {
-                    param($TagSha)
-                    $response = gh api "repos/$env:GITHUB_REPOSITORY/git/tags/$TagSha"
-                    if ($LASTEXITCODE -ne 0) {
-                        throw "Cannot resolve annotated tag [$TagSha] (gh exited $LASTEXITCODE)."
-                    }
-                    ($response | ConvertFrom-Json).object
-                }
-            }
-            $tagCommit = Resolve-PSModuleReleaseTagCommit @tagParameters
-            if ($tagCommit -cne $sourceCommit) {
-                throw "Release tag [$releaseTag] belongs to [$tagCommit], not the original source [$sourceCommit]. Refusing to resume."
-            }
-            Write-Host "GitHub release [$releaseTag] belongs to [$sourceCommit]. Checking its artifact before resuming."
         } elseif (($releaseLookupResult | Out-String) -notmatch 'HTTP 404') {
             throw "Unable to determine whether release [$releaseTag] exists: $($releaseLookupResult | Out-String)"
+        }
+        if ([string]::IsNullOrWhiteSpace($sourceCommit)) {
+            throw 'CommitSha or the original GITHUB_SHA is required to establish immutable publication ownership.'
+        }
+        $tagParameters = @{
+            Tag             = $releaseTag
+            AllowMissing    = $true
+            GetTagReference = {
+                param($Tag)
+                $encodedTag = [Uri]::EscapeDataString($Tag)
+                $response = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$encodedTag" 2>&1
+                $lookupExit = $LASTEXITCODE
+                if ($lookupExit -ne 0) {
+                    if (($response | Out-String) -match 'HTTP 404') {
+                        return
+                    }
+                    throw "Cannot read release tag [$Tag] (gh exited $lookupExit): $($response | Out-String)"
+                }
+                $metadata = ($response | Out-String) | ConvertFrom-Json -ErrorAction Stop
+                if ($null -eq $metadata.object) {
+                    throw "Tag lookup for [$Tag] did not return an object."
+                }
+                $metadata.object
+            }
+            GetTagObject    = {
+                param($TagSha)
+                $response = gh api "repos/$env:GITHUB_REPOSITORY/git/tags/$TagSha"
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Cannot resolve annotated tag [$TagSha] (gh exited $LASTEXITCODE)."
+                }
+                ($response | ConvertFrom-Json -ErrorAction Stop).object
+            }
+        }
+        $tagCommit = Resolve-PSModuleReleaseTagCommit @tagParameters
+        if ($null -ne $tagCommit -and $tagCommit -cne $sourceCommit) {
+            throw "Release tag [$releaseTag] belongs to [$tagCommit], not the original source [$sourceCommit]. Refusing to publish."
+        }
+        if ($releaseExists -and $null -eq $tagCommit) {
+            throw "Existing release [$releaseTag] has no verifiable tag. Refusing to resume."
         }
     }
 
@@ -265,9 +276,47 @@ Set-GitHubLogGroup 'Create GitHub release' {
         }
 
         if ($createPrerelease) {
-            $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
-        } elseif (-not [string]::IsNullOrWhiteSpace($commitSha)) {
-            $releaseCreateCommand += @('--target', $commitSha)
+            $artifactCommit = if (-not [string]::IsNullOrWhiteSpace($commitSha)) { $commitSha } else { $env:GITHUB_SHA }
+            if ([string]::IsNullOrWhiteSpace($artifactCommit)) {
+                throw 'The original build commit is required to create an immutable prerelease tag.'
+            }
+            $releaseCreateCommand += @('--target', $artifactCommit, '--prerelease')
+            if ($prNumber) {
+                $ownership = [pscustomobject]@{
+                    Repository  = $env:GITHUB_REPOSITORY
+                    PullRequest = [long]$prNumber
+                    CommitSha   = $artifactCommit
+                } | ConvertTo-Json -Compress
+                $encodedOwnership = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ownership))
+                $ownershipFooter = "<!-- PSModule.PrereleaseOwner:v1:$encodedOwnership -->"
+                if ($null -eq $notesFilePath) {
+                    if ($whatIf) {
+                        Write-Host (
+                            "WhatIf: gh api repos/$env:GITHUB_REPOSITORY/releases/generate-notes --method POST " +
+                            "--field tag_name=$releaseTag --field target_commitish=$artifactCommit"
+                        )
+                        $generatedBody = ''
+                    } else {
+                        $generatedNotes = gh api "repos/$env:GITHUB_REPOSITORY/releases/generate-notes" --method POST `
+                            --field "tag_name=$releaseTag" --field "target_commitish=$artifactCommit"
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Cannot generate prerelease notes (gh exited $LASTEXITCODE)."
+                        }
+                        $generated = $generatedNotes | ConvertFrom-Json -ErrorAction Stop
+                        if ($generated.PSObject.Properties.Name -notcontains 'body') {
+                            throw 'Generated release notes have no body. Refusing to publish incomplete notes.'
+                        }
+                        $generatedBody = [string]$generated.body
+                    }
+                    $notesFilePath = [IO.Path]::GetTempFileName()
+                    Set-Content -LiteralPath $notesFilePath -Value $generatedBody -Encoding utf8
+                    $releaseCreateCommand = @($releaseCreateCommand | Where-Object { $_ -ne '--generate-notes' })
+                    $releaseCreateCommand += @('--notes-file', $notesFilePath)
+                }
+                Add-Content -LiteralPath $notesFilePath -Value "`n$ownershipFooter" -Encoding utf8
+            }
+        } elseif (-not [string]::IsNullOrWhiteSpace($sourceCommit)) {
+            $releaseCreateCommand += @('--target', $sourceCommit)
         }
 
         try {
@@ -299,6 +348,11 @@ Set-GitHubLogGroup 'Create GitHub release' {
         try {
             Write-Host "Compressing module to [$zipPath]"
             Compress-Archive -Path $modulePath -DestinationPath $zipPath
+            $tagParameters.AllowMissing = $false
+            $currentTagCommit = Resolve-PSModuleReleaseTagCommit @tagParameters
+            if ($currentTagCommit -cne $sourceCommit) {
+                throw "Release tag [$releaseTag] moved to [$currentTagCommit], not the original source [$sourceCommit]. Refusing upload."
+            }
             $matchingAssets = @($existingRelease.assets | Where-Object { $_.name -ceq $zipFileName })
             if ($matchingAssets.Count -gt 1) {
                 throw "Release [$releaseTag] contains ambiguous assets named [$zipFileName]."

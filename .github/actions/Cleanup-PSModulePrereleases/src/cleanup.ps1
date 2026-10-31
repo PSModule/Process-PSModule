@@ -29,23 +29,8 @@ Set-GitHubLogGroup 'Load inputs' {
         Write-Host '::notice::No pull request head ref is available. Nothing to cleanup.'
         exit 0
     }
-    $headRepository = $pullRequest.HeadRepository
-    if ([string]::IsNullOrWhiteSpace($headRepository) -and $pullRequest.Number) {
-        $number = [int]$pullRequest.Number
-        if ($number -lt 1) {
-            throw 'A positive pull request number is required to establish cleanup ownership.'
-        }
-        $headRepository = gh api "repos/$env:GITHUB_REPOSITORY/pulls/$number" --jq '.head.repo.full_name'
-        if ($LASTEXITCODE -ne 0) {
-            throw "Cannot establish cleanup head repository (gh exited $LASTEXITCODE)."
-        }
-    }
-    if ([string]::IsNullOrWhiteSpace($headRepository)) {
-        throw 'Cannot establish the head repository for prerelease cleanup. Supply normalized PR context.'
-    }
-    if ($headRepository -ne $env:GITHUB_REPOSITORY) {
-        Write-Host "::notice::Fork-owned branch [$headRepository/$prHeadRef] is not eligible for base-repository cleanup."
-        return
+    if ([long]$pullRequest.Number -lt 1) {
+        throw 'A positive source PR number is required for verified prerelease cleanup.'
     }
     Write-Host "PR head ref:      [$prHeadRef]"
     Write-Host "WhatIf:           [$whatIf]"
@@ -60,23 +45,46 @@ Set-GitHubLogGroup 'Load inputs' {
 #region Find prereleases to cleanup
 Set-GitHubLogGroup "Find prereleases to cleanup for [$prHeadRef]" {
     $releaseListOutput = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" --paginate `
-        --jq '.[] | {tagName: .tag_name, isPrerelease: .prerelease, targetCommitish: .target_commitish}'
+        --jq '.[] | {tagName: .tag_name, isPrerelease: .prerelease, targetCommitish: .target_commitish, body: .body}'
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to list releases for the repository (gh exited $LASTEXITCODE)."
     }
     $releases = @($releaseListOutput | ForEach-Object { $_ | ConvertFrom-Json })
     $parameters = @{
-        HeadRef        = $prHeadRef
-        Repository     = $env:GITHUB_REPOSITORY
-        HeadRepository = $headRepository
-        Release        = $releases
-        ReleaseTag     = $publishedReleaseTag
+        Repository        = $env:GITHUB_REPOSITORY
+        PullRequestNumber = [long]$pullRequest.Number
+        Release           = $releases
+        ReleaseTag        = $publishedReleaseTag
+        GetTagCommit      = {
+            param($Tag)
+            $tagParameters = @{
+                Tag             = $Tag
+                GetTagReference = {
+                    param($TagName)
+                    $encodedTag = [Uri]::EscapeDataString($TagName)
+                    $response = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$encodedTag"
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Cannot verify cleanup tag [$TagName] (gh exited $LASTEXITCODE)."
+                    }
+                    ($response | ConvertFrom-Json -ErrorAction Stop).object
+                }
+                GetTagObject    = {
+                    param($TagSha)
+                    $response = gh api "repos/$env:GITHUB_REPOSITORY/git/tags/$TagSha"
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Cannot verify cleanup tag object [$TagSha] (gh exited $LASTEXITCODE)."
+                    }
+                    ($response | ConvertFrom-Json -ErrorAction Stop).object
+                }
+            }
+            Resolve-PSModuleReleaseTagCommit @tagParameters
+        }
     }
     $prereleasesToCleanup = Get-PSModulePrereleaseForCleanup @parameters
     $tagsToDelete = @($prereleasesToCleanup | ForEach-Object { $_.tagName } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
     if ($tagsToDelete.Count -eq 0) {
-        Write-Host "No prereleases have an exact cleanup target of [$prHeadRef]."
+        Write-Host "No prereleases have verified ownership for [$env:GITHUB_REPOSITORY#$($pullRequest.Number)]."
         return
     }
 

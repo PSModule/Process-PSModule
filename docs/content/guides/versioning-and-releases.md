@@ -75,9 +75,10 @@ already-resolved version instead. The publisher verifies tag/source ownership, r
 identical existing asset, and rejects different or unverifiable contents without `--clobber`.
 
 An ambiguous merged-PR association stops a release-capable run instead of falling back to patch. Prerelease cleanup
-uses the exact GitHub release target branch, not a sanitized-name substring, so recovery cannot clean another branch's
-prereleases. Fork-owned refs are excluded even when their branch names match. Stable releases and the current
-published tag are retained.
+uses exact PR and source provenance for source-bound prereleases. The producer appends a controller-owned footer
+after the complete notes and tags the original build commit, so a prerelease retry verifies the same source used at
+creation. Legacy branch-targeted records are retained because short refs do not identify their producing PR or
+repository. Stable releases, another PR's records, and the current published tag are retained.
 
 ## Prereleases
 

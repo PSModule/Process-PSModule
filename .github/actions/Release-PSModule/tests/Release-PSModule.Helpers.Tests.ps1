@@ -2,6 +2,36 @@ BeforeAll {
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../src/Release-PSModule.Helpers.psm1') -Force
 }
 
+Describe 'Get-PSModulePrereleaseOwnership' {
+    It 'returns no ownership evidence for legacy authored notes' {
+        Get-PSModulePrereleaseOwnership -Body 'Release notes without producer provenance.' | Should -BeNullOrEmpty
+    }
+
+    It 'reads only the final controller footer rather than an earlier authored marker' {
+        $foreign = @{ Repository = 'Another/Repo'; PullRequest = 99; CommitSha = 'foreign-sha' } |
+            ConvertTo-Json -Compress
+        $owner = @{ Repository = 'PSModule/TestModule'; PullRequest = 42; CommitSha = 'original-sha' } |
+            ConvertTo-Json -Compress
+        $foreignEncoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($foreign))
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+        $body = "<!-- PSModule.PrereleaseOwner:v1:$foreignEncoded -->`nAuthored notes`n`n<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
+
+        $result = Get-PSModulePrereleaseOwnership -Body $body
+
+        $result.Repository | Should -BeExactly 'PSModule/TestModule'
+        $result.PullRequest | Should -Be 42
+        $result.CommitSha | Should -BeExactly 'original-sha'
+    }
+
+    It 'refuses an invalid producer ownership footer' {
+        $owner = @{ Repository = ''; PullRequest = 0; CommitSha = '' } | ConvertTo-Json -Compress
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+
+        { Get-PSModulePrereleaseOwnership -Body "<!-- PSModule.PrereleaseOwner:v1:$encoded -->" } |
+            Should -Throw '*ownership footer is invalid*'
+    }
+}
+
 Describe 'Resolve-PSModuleReleaseTagCommit' {
     It 'returns the commit from a lightweight release tag' {
         $parameters = @{
