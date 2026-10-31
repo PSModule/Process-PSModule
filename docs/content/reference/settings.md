@@ -40,7 +40,7 @@ publication; skip cannot be combined with configured bump or prerelease intent.
 
 | Name                                      | Type      | Description                                                                                                                                                          | Default             |
 | ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| `Name`                                    | `String`  | Name of the module to publish. Defaults to the repository name.                                                                                                      | `null`              |
+| `Name`                                    | `String`  | Name of the module to publish. Omit the key to use the repository name.                                                                                              | Repository name     |
 | `ImportantFilePatterns`                   | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
 | `Test.Skip`                               | `Boolean` | Skip all tests                                                                                                                                                       | `false`             |
 | `Test.Linux.Skip`                         | `Boolean` | Skip tests on Linux                                                                                                                                                  | `false`             |
@@ -92,7 +92,7 @@ publication; skip cannot be combined with configured bump or prerelease intent.
 <summary>`PSModule.yml` with all defaults</summary>
 
 ```yaml
-Name: null
+# Omit Name to use the repository name.
 
 ImportantFilePatterns:
   - '^src/'

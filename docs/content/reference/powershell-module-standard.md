@@ -225,7 +225,7 @@ exactly matches a merged pull request uses that PR's configured version label in
 All settings have sensible defaults. An empty or missing file uses the defaults below:
 
 ```yaml
-Name: null                      # Defaults to the repository name
+# Omit Name to use the repository name.
 
 ImportantFilePatterns:
   - '^src/'
