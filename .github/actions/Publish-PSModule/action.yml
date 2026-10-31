@@ -9,7 +9,7 @@ inputs:
   ModulePath:
     description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
     required: false
-    default: outputs/module
+    default: .PSModule/module
   PSGALLERY_API_KEY:
     description: PowerShell Gallery API Key.
     required: true

@@ -33,6 +33,14 @@ for migrating legacy MkDocs sites to the standard Zensical design, and
 [`psmodule-repository-audit`](./psmodule/skills/psmodule-repository-audit/SKILL.md)
 for auditing module repositories against the current Template-PSModule
 baseline.
+The
+[`psmodule-module-development-orchestration`](./psmodule/skills/psmodule-module-development-orchestration/SKILL.md)
+skill coordinates substantial module work across parent and child sessions
+using the repository's trunk-based development and bootstrap guidance.
+The
+[`psmodule-skill-authoring`](./psmodule/skills/psmodule-skill-authoring/SKILL.md)
+skill keeps plugin skills thin and points shared authoring guidance to the
+documentation site.
 Verify the installation with:
 
 ```console

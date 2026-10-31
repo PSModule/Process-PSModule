@@ -13,7 +13,7 @@ $testPath = Resolve-Path -Path "$PSScriptRoot/tests/$settings" | Select-Object -
 $localTestPath = Resolve-Path -Path 'tests' | Select-Object -ExpandProperty Path
 switch ($settings) {
     'Module' {
-        $modulePath = Resolve-Path -Path "outputs/module/$moduleName" | Select-Object -ExpandProperty Path
+        $modulePath = Resolve-Path -Path ".PSModule/module/$moduleName" | Select-Object -ExpandProperty Path
         $codePath = Install-PSModule -Path $modulePath -PassThru
     }
     'SourceCode' {

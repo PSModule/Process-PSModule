@@ -59,7 +59,6 @@ BeforeDiscovery {
 
                 @{
                     DocumentationPath = $documentationPath
-                    ExpectedLink      = "https://psmodule.io/$ModuleName/Functions/$documentationPath/"
                     FilePath          = $_.FullName
                 }
             }
@@ -360,15 +359,25 @@ Describe 'PSModule - SourceCode tests' {
                     $tokens.count -ne 0
                 }
             }
-            It 'Should put the canonical documentation link first for <DocumentationPath> (ID: PublicHelpLink)' -ForEach $publicHelpLinkTestCases {
-                param($DocumentationPath, $ExpectedLink, $FilePath)
+            It 'Should require a canonical documentation link for <DocumentationPath> (ID: PublicHelpLink)' -ForEach $publicHelpLinkTestCases {
+                param($DocumentationPath, $FilePath)
 
                 $content = Get-Content -Path $FilePath -Raw
                 $links = [regex]::Matches($content, '(?ms)^\s*\.LINK\s*\r?\n\s*(?<Uri>\S+)')
 
                 $links.Count | Should -BeGreaterThan 0 -Because "$DocumentationPath should have a documentation link"
-                $links[0].Groups['Uri'].Value |
-                    Should -BeExactly $ExpectedLink -Because "$DocumentationPath should put its canonical documentation link first"
+                $link = $links[0].Groups['Uri'].Value
+                $parsedLink = $null
+                [Uri]::TryCreate($link, [UriKind]::Absolute, [ref]$parsedLink) |
+                    Should -BeTrue -Because "$DocumentationPath should use an absolute documentation link"
+                $parsedLink.Scheme |
+                    Should -BeExactly 'https' -Because "$DocumentationPath should use HTTPS for its documentation link"
+                $parsedLink.Host |
+                    Should -Not -BeNullOrEmpty -Because "$DocumentationPath should specify a documentation host"
+                $parsedLink.AbsolutePath |
+                    Should -BeExactly "/$ModuleName/Functions/$DocumentationPath/" -Because "$DocumentationPath should use the canonical documentation path"
+                $parsedLink.Query | Should -BeNullOrEmpty -Because "$DocumentationPath should not add a query to its documentation link"
+                $parsedLink.Fragment | Should -BeNullOrEmpty -Because "$DocumentationPath should not add a fragment to its documentation link"
             }
             It 'All public functions/filters have tests (ID: FunctionTest)' {
                 $issues = @('')

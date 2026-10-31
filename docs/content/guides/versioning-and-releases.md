@@ -44,19 +44,20 @@ The label names are configurable through `Publish.Module.MajorLabels`, `MinorLab
 
 ## Branch types
 
-- **Main (stable)** — pushes publish stable releases. A prerelease label on an open pull request publishes a prerelease.
-- **Development** — optional prerelease branch (for example `dev`). Its open, prerelease-labelled pull request to the
-  stable branch publishes previews when it is updated.
-- **Feature branch** — optional feature branch. Its open, prerelease-labelled pull request publishes a preview for
-  testing.
+- **Main (stable)** — the default branch and the only branch that publishes stable releases.
+- **Feature branch** — a short-lived topic branch with a pull request targeting `main`.
 
-Exactly one branch is authorized to publish stable releases, so consumers always have one unambiguous latest version.
+Exactly one branch is authorized to publish stable releases, so consumers always have one
+unambiguous latest version. Use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+when changes genuinely depend on each other; independent changes remain separate
+short-lived pull requests targeting `main`.
 
 ## Prereleases
 
 A pull request labelled `Prerelease` publishes a prerelease version (for example `v1.2.3-pr.1.5`) that is installable
 but not promoted as latest. When that pull request is merged with a version label, the stable version is computed from
-the label and the current version on the release branch.
+the label and the current version on `main`.
 
 When a pull request closes, the prerelease versions and tags created for it are removed, so abandoned or promoted work
 leaves no orphaned prereleases. This is controlled by `Publish.Module.AutoCleanup`.
@@ -76,8 +77,7 @@ Release names and notes can be generated from the pull request — see
 
 Only a single linear ancestry of versions is maintained. Old versions are not patched: if a security issue is found on
 `2.1.3`, the fix ships on the latest version, not as a new `1.x` release. See
-[Principles and practices](../specification/principles-and-practices.md) for the reasoning and for the release-branch
-pattern used for larger efforts.
+[Principles and practices](../specification/principles-and-practices.md) for the reasoning.
 
 ## Related
 
