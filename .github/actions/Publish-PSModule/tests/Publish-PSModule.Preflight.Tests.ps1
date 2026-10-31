@@ -13,6 +13,7 @@ BeforeAll {
         throw 'Cannot acquire the process environment lock for action tests.'
     }
     Import-Module -Name 'PSModule' -Force
+    Import-Module -Name ([IO.Path]::Combine($PSScriptRoot, '..', 'src', 'Publish-PSModule.Helpers.psm1')) -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Publish-PSModule.TestFixture.psm1') -Force
 
     $script:publishScriptPath = [IO.Path]::GetFullPath(
@@ -176,6 +177,43 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GitHubWrites | Should -Be 0
         $failure | Should -Not -BeNullOrEmpty
         $failure.Exception.Message | Should -Match '503|API|read|lookup'
+    }
+
+    It 'rejects a malformed <Resource> response before publication' -ForEach @(
+        @{ Resource = 'repository array' }
+        @{ Resource = 'commit array' }
+        @{ Resource = 'string write permission' }
+    ) {
+        if ($Resource -ceq 'commit array') {
+            $endpoint = "repos/PSModule/TestModule/git/commits/$env:GITHUB_SHA"
+            $script:state.ApiResponses[$endpoint] = @([pscustomobject]@{ sha = $env:GITHUB_SHA })
+        } else {
+            $metadata = [pscustomobject]@{
+                full_name = 'PSModule/TestModule'; permissions = [pscustomobject]@{ push = $true }
+            }
+            if ($Resource -ceq 'string write permission') {
+                $metadata.permissions.push = 'true'
+                $script:state.ApiResponses['repos/PSModule/TestModule'] = $metadata
+            } else {
+                $script:state.ApiResponses['repos/PSModule/TestModule'] = @($metadata)
+            }
+        }
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+        $failure.Exception.Message | Should -Match 'metadata|access|source'
+    }
+
+    It 'retains a verified empty tag enumeration instead of treating it as an unknown JSON response' {
+        $script:state.ApiResponses['repos/PSModule/TestModule/git/matching-refs/tags/'] = @()
+
+        $response = Invoke-PSModulePublicationApi -Endpoint 'repos/PSModule/TestModule/git/matching-refs/tags/'
+
+        $response.Value -is [array] | Should -BeTrue
+        $response.Value.Count | Should -Be 0
     }
 
     It 'rejects a Gallery-only package with no source and artifact proof' {
@@ -473,6 +511,75 @@ Describe 'Publish-PSModule source-bound preflight' {
 
         $script:state.GalleryWrites | Should -Be 0
         $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a terminal ownership marker with <Shape> before publication' -ForEach @(
+        @{ Shape = 'indentation' }
+        @{ Shape = 'inline placement' }
+        @{ Shape = 'missing delimiter spacing' }
+    ) {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $owner = [pscustomobject]@{
+            Repository = 'Other/TestModule'; PullRequest = 99; CommitSha = $env:GITHUB_SHA
+        } | ConvertTo-Json -Compress
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+        $footer = "<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
+        if ($Shape -ceq 'indentation') {
+            $body = "Notes.`n    $footer"
+        } elseif ($Shape -ceq 'inline placement') {
+            $body = "Notes. $footer"
+        } else {
+            $body = $footer.Replace('<!-- ', '<!--')
+        }
+        $script:state.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; draft = $false; body = $body; assets = @()
+        }
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+        $failure.Exception.Message | Should -Match 'footer'
+    }
+
+    It 'rejects a stable PR release with no producing-context footer rather than inferring ownership from its tag' {
+        $script:state.ExpectedClaim.PullRequest = 42
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = '{"Number":42}'
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; draft = $false; body = 'Unknown stable publication context.'; assets = @()
+        }
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+        $failure.Exception.Message | Should -Match 'footer'
+    }
+
+    It 'retains complete stable PR notes and footer across an exact missing-upload retry' {
+        $script:state.ExpectedClaim.PullRequest = 42
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = '{"Number":42,"Title":"Stable release","Body":"Complete authored stable notes."}'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'true'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading = 'true'
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.Release.body | Should -Match 'Complete authored stable notes\.'
+        (Get-PSModulePrereleaseOwnership -Body $script:state.Release.body).PullRequest | Should -Be 42
+        $originalNotes = $script:state.Release.body
+        $script:state.Release.assets = @()
+        $script:state.GitHubWrites = 0
+        $script:state.GitHubCreationUpload = 0
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GitHubCreationUpload | Should -Be 1
+        $script:state.Release.body | Should -BeExactly $originalNotes
     }
 
     It 'rejects a disappeared previously claimed tag rather than recreating it' {
