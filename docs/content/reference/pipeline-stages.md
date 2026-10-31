@@ -156,7 +156,10 @@ How to write these tests, including the Pester version requirement and shared-in
 
 - Generates a static site using:
   - [Zensical](https://zensical.org/).
-- Uses `zensical.toml` as the site configuration contract.
+- Resolves the module's canonical `.github/zensical.toml` into the staged
+  site's `zensical.toml`.
+- Uses Zensical's native folder-derived, alphabetical navigation when `nav` is
+  omitted.
 
 ## Publish Docs
 
