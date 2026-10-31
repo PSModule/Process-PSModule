@@ -255,4 +255,29 @@ Describe 'Release-PSModule WhatIf' {
         $script:state.GitHubWrites | Should -Be 0
         @($script:state.Release.assets).Count | Should -Be 0
     }
+
+    It 'rejects supplied PR context without a positive identity before release writes' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = '{}'
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*pull request*'
+
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'revalidates a changed claim immediately before release creation after generated notes' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'false'
+        $script:state.OnGeneratedNotes = {
+            param($State)
+            $foreign = $State.ExpectedClaim | ConvertTo-Json -Compress | ConvertFrom-Json
+            $foreign.CommitSha = '2222222222222222222222222222222222222222'
+            Set-PSModuleFixtureClaim -State $State -Claim $foreign -TagSha '4444444444444444444444444444444444444444'
+        }
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*source*'
+
+        $script:state.GitHubCreationUpload | Should -Be 0
+        $script:state.Release | Should -BeNullOrEmpty
+    }
 }

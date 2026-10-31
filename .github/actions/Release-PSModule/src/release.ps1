@@ -109,7 +109,7 @@ LogGroup 'Load release context' {
             HeadRef = $githubEvent.pull_request.head.ref
         }
     }
-    $prNumber = $pullRequest.Number
+    $prNumber = Get-PSModuleProducingPullRequestNumber -PullRequest $pullRequest
     $prHeadRef = $pullRequest.HeadRef
     $commitMessage = $githubEvent.head_commit.message
     if ([string]::IsNullOrWhiteSpace($commitMessage) -and -not [string]::IsNullOrWhiteSpace($commitSha)) {
@@ -294,9 +294,19 @@ LogGroup 'Create GitHub release' {
                     Write-Host "WhatIf: gh $($releaseCreateCommand -join ' ')"
                     $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
                 } else {
-                    $releaseURL = gh @releaseCreateCommand
-                    if ($LASTEXITCODE -ne 0) {
-                        throw "Failed to create the release [$releaseTag]."
+                    $beforeCreate = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+                    if ($beforeCreate.TagSha -cne $publicationState.TagSha -or
+                        (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                        throw 'The source claim or tested artifact changed before release creation. Refusing publication.'
+                    }
+                    if ($null -ne $beforeCreate.Release) {
+                        $releaseURL = $beforeCreate.Release.html_url
+                        Write-Host 'An identical owned release appeared during notes preparation; retaining it.'
+                    } else {
+                        $releaseURL = gh @releaseCreateCommand
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Failed to create the release [$releaseTag]."
+                        }
                     }
                 }
             } finally {

@@ -99,6 +99,9 @@ function Get-PSModulePrereleaseOwnership {
 
     $match = [regex]::Match($Body, '(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:v1:([A-Za-z0-9+/=]+) -->\s*\z')
     if (-not $match.Success) {
+        if ($Body -match '(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:[^\r\n]*\s*\z') {
+            throw 'The published ownership footer is malformed or uses an unsupported provenance version.'
+        }
         return
     }
     $bytes = [Convert]::FromBase64String($match.Groups[1].Value)
@@ -115,6 +118,46 @@ function Get-PSModulePrereleaseOwnership {
         PullRequest = $number
         CommitSha   = [string]$ownership.CommitSha
     }
+}
+
+function Get-PSModuleProducingPullRequestNumber {
+    <#
+        .SYNOPSIS
+        Validate the producing PR identity or a genuinely absent direct-release context.
+
+        .EXAMPLE
+        Get-PSModuleProducingPullRequestNumber -PullRequest $pullRequest
+
+        Return a positive PR number, or zero only when no PR context was supplied.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Get-PSModuleProducingPullRequestNumber.
+
+        .OUTPUTS
+        System.Int64
+
+        The validated producing PR number, or zero for absent context.
+    #>
+    [CmdletBinding()]
+    [OutputType([long])]
+    param(
+        # The normalized producing context, or null for a direct release.
+        [Parameter()]
+        [AllowNull()]
+        [object] $PullRequest
+    )
+
+    if ($null -eq $PullRequest) {
+        return 0L
+    }
+    $number = 0L
+    if (($PullRequest -isnot [PSCustomObject] -and $PullRequest -isnot [Collections.IDictionary]) -or
+        -not [long]::TryParse([string]$PullRequest.Number, [ref]$number) -or $number -lt 1) {
+        throw 'Supplied pull request context requires a positive producing pull request number.'
+    }
+    $number
 }
 
 function Get-PSModuleReleaseOwnership {

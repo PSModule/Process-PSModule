@@ -77,7 +77,7 @@ LogGroup 'Load release context' {
         }
     }
 
-    $prNumber = $pullRequest.Number
+    $prNumber = Get-PSModuleProducingPullRequestNumber -PullRequest $pullRequest
     if ($prNumber) {
         Write-Host "Pull request: [#$prNumber]"
     } else {

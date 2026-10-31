@@ -327,4 +327,63 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GitHubWrites | Should -Be 0
         $failure.Exception.Message | Should -Match 'pull request'
     }
+
+    It 'rejects an unreadable final ownership footer on a stable release' -ForEach @(
+        @{ Footer = '<!-- PSModule.PrereleaseOwner:v2:e30= -->' }
+        @{ Footer = '<!-- PSModule.PrereleaseOwner:v1:not-base64 -->' }
+    ) {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; draft = $false; body = "Notes.`n$Footer"; assets = @()
+        }
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*footer*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a disappeared previously claimed tag rather than recreating it' {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.OnTagRead = {
+            param($State)
+            if ($State.TagReads -eq 2) {
+                $State.Tag = $null
+                $State.TagObject = $null
+            }
+        }
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*changed*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects supplied PR context without a positive identity before all writes' -ForEach @(
+        @{ Json = '{}' }
+        @{ Json = '{"Number":0}' }
+        @{ Json = '{"Number":"unknown"}' }
+        @{ Json = '42' }
+    ) {
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = $Json
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*pull request*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a draft release before Gallery publication rather than reporting completed publication' {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.Release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; draft = $true; body = 'Unpublished draft notes.'; assets = @()
+        }
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*draft*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
 }
