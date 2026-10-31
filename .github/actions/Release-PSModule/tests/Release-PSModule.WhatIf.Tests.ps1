@@ -105,8 +105,14 @@ Describe 'Release-PSModule WhatIf' {
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = ''
         $script:releaseFixture = @{
-            SourceSha = 'original-source-sha'
-            Assets    = @()
+            SourceSha             = 'original-source-sha'
+            Assets                = @()
+            Exists                = $true
+            FailUpload            = $false
+            Body                  = ''
+            TagExists             = $true
+            TagReads              = 0
+            MoveTagAfterFirstRead = $false
         }
         $fixture = $script:releaseFixture
         Set-Item -Path 'Function:global:gh' -Value {
@@ -118,6 +124,11 @@ Describe 'Release-PSModule WhatIf' {
             Add-Content -Path $env:RELEASE_ACTION_GH_CALL_LOG -Value ($Arguments -join ' ')
             $global:LASTEXITCODE = 0
             if ($Arguments[0] -eq 'api' -and $Arguments[1] -match '/releases/tags/') {
+                if (-not $fixture.Exists) {
+                    $global:LASTEXITCODE = 1
+                    'HTTP 404'
+                    return
+                }
                 if ($Arguments -contains '--jq') {
                     'https://github.com/PSModule/TestModule/releases/tag/v1.2.3-preview.1'
                 } else {
@@ -125,10 +136,37 @@ Describe 'Release-PSModule WhatIf' {
                         tag_name = 'v1.2.3-preview.1'
                         html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.3-preview.1'
                         assets   = $fixture.Assets
+                        body     = $fixture.Body
                     } | ConvertTo-Json -Depth 5 -Compress
                 }
             } elseif ($Arguments[0] -eq 'api' -and $Arguments[1] -match '/git/ref/tags/') {
+                $fixture.TagReads++
+                if (-not $fixture.TagExists) {
+                    $global:LASTEXITCODE = 1
+                    'HTTP 404'
+                    return
+                }
+                if ($fixture.MoveTagAfterFirstRead -and $fixture.TagReads -gt 1) {
+                    $fixture.SourceSha = 'moved-source-sha'
+                }
                 @{ object = @{ type = 'commit'; sha = $fixture.SourceSha } } | ConvertTo-Json -Compress
+            } elseif ($Arguments[0] -eq 'api' -and $Arguments[1] -match '/releases/generate-notes$') {
+                @{ body = 'Generated release notes' } | ConvertTo-Json -Compress
+            } elseif ($Arguments[0] -eq 'release' -and $Arguments[1] -eq 'create') {
+                $fixture.Exists = $true
+                $targetIndex = [Array]::IndexOf($Arguments, '--target')
+                $target = $Arguments[$targetIndex + 1]
+                if (-not $fixture.TagExists) {
+                    $fixture.SourceSha = if ($target -eq 'feature/release') { 'head-branch-sha' } else { $target }
+                }
+                $fixture.TagExists = $true
+                $notesIndex = [Array]::IndexOf($Arguments, '--notes-file')
+                if ($notesIndex -ge 0) {
+                    $fixture.Body = Get-Content -LiteralPath $Arguments[$notesIndex + 1] -Raw
+                }
+                'https://github.com/PSModule/TestModule/releases/tag/v1.2.3-preview.1'
+            } elseif ($Arguments[0] -eq 'release' -and $Arguments[1] -eq 'upload' -and $fixture.FailUpload) {
+                $global:LASTEXITCODE = 1
             }
         }.GetNewClosure()
         Set-Item -Path 'Function:global:git' -Value {
@@ -220,6 +258,43 @@ Describe 'Release-PSModule WhatIf' {
         Get-Content -Path $script:ghCallLogPath -Raw | Should -Not -Match 'clobber'
     }
 
+    It 'resumes a partially uploaded prerelease using the same immutable build source as creation' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
+        $script:releaseFixture.Exists = $false
+        $script:releaseFixture.TagExists = $false
+        $script:releaseFixture.FailUpload = $true
+
+        { & $script:releaseScriptPath } | Should -Throw '*Failed to upload*'
+
+        $script:releaseFixture.FailUpload = $false
+        { & $script:releaseScriptPath } | Should -Not -Throw
+
+        $calls = Get-Content -LiteralPath $script:ghCallLogPath -Raw
+        $calls | Should -Match 'release create.*--target original-source-sha --prerelease'
+        $calls | Should -Not -Match '--target feature/release'
+        $script:releaseFixture.Body | Should -Match 'PSModule\.PrereleaseOwner:v1:'
+        $script:releaseFixture.Body | Should -Match '^# Create test release \(#42\)\s+Release notes'
+    }
+
+    It 'retains generated notes when appending immutable prerelease ownership' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'false'
+        $script:releaseFixture.Exists = $false
+        $script:releaseFixture.TagExists = $false
+        Set-Item -Path 'Function:global:git' -Value {
+            $global:LASTEXITCODE = 0
+            ''
+        }
+
+        { & $script:releaseScriptPath } | Should -Not -Throw
+
+        $script:releaseFixture.Body | Should -Match '^Generated release notes'
+        $script:releaseFixture.Body | Should -Match 'PSModule\.PrereleaseOwner:v1:'
+        Get-Content -Path $script:ghCallLogPath -Raw | Should -Match 'api.*releases/generate-notes.*--method POST'
+    }
+
     It 'creates a stable release from a direct push without pull request context' {
         $manifest = Get-Content -Path $manifestPath -Raw
         $manifest -replace "Prerelease = 'preview.1'", "Prerelease = ''" | Set-Content -Path $manifestPath
@@ -248,5 +323,26 @@ Describe 'Release-PSModule WhatIf' {
         $releaseOutput = & $script:releaseScriptPath 6>&1 | Out-String
 
         $releaseOutput | Should -Match 'Using the pushed commit message as release notes'
+    }
+
+    It 'refuses a claimed foreign tag even when its GitHub release is absent' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
+        $script:releaseFixture.Exists = $false
+        $script:releaseFixture.SourceSha = 'foreign-source-sha'
+
+        { & $script:releaseScriptPath } | Should -Throw '*foreign-source-sha*original-source-sha*'
+
+        Get-Content -Path $script:ghCallLogPath -Raw | Should -Not -Match 'release create|release upload'
+    }
+
+    It 'rechecks tag ownership before uploading a missing asset' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
+        $script:releaseFixture.MoveTagAfterFirstRead = $true
+
+        { & $script:releaseScriptPath } | Should -Throw '*moved-source-sha*original-source-sha*'
+
+        Get-Content -Path $script:ghCallLogPath -Raw | Should -Not -Match 'release upload'
     }
 }

@@ -40,8 +40,9 @@ AfterAll {
 Describe 'Cleanup-PSModulePrereleases ownership' {
     BeforeEach {
         $script:state = @{
-            Calls    = [System.Collections.Generic.List[string]]::new()
-            Releases = @(
+            Calls     = [System.Collections.Generic.List[string]]::new()
+            TagSource = 'original-source-sha'
+            Releases  = @(
                 [pscustomobject]@{
                     tagName = 'v1.2.4-featurea001'; isPrerelease = $true; targetCommitish = 'feature/a'
                 }
@@ -59,6 +60,14 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
                 }
             )
         }
+        foreach ($release in $script:state.Releases) {
+            $number = if ($release.tagName -in @('v1.2.4-featureab001', 'v1.2.4-featurea002')) { 43 } else { 42 }
+            $owner = @{ Repository = 'PSModule/CleanupFixture'; PullRequest = $number; CommitSha = 'original-source-sha' } |
+                ConvertTo-Json -Compress
+            $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+            $release.targetCommitish = 'original-source-sha'
+            $release | Add-Member -NotePropertyName body -NotePropertyValue "<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
+        }
         $state = $script:state
         Set-Item -Path 'Function:global:gh' -Value {
             [CmdletBinding()]
@@ -71,6 +80,8 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
             $global:LASTEXITCODE = 0
             if ($Arguments[0] -eq 'api' -and $Arguments[1] -match '/pulls/') {
                 'PSModule/CleanupFixture'
+            } elseif ($Arguments[0] -eq 'api' -and $Arguments[1] -match '/git/ref/tags/') {
+                @{ object = @{ type = 'commit'; sha = $state.TagSource } } | ConvertTo-Json -Compress
             } elseif ($Arguments[0] -eq 'api' -or ($Arguments[0] -eq 'release' -and $Arguments[1] -eq 'list')) {
                 $state.Releases | ConvertTo-Json -Compress
             }
@@ -117,6 +128,14 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
                 tagName = 'v1.2.4-feature10001'; isPrerelease = $true; targetCommitish = 'feature/10'
             }
         )
+        foreach ($release in $script:state.Releases) {
+            $number = if ($release.tagName -eq 'v1.2.4-feature1001') { 42 } else { 43 }
+            $owner = @{ Repository = 'PSModule/CleanupFixture'; PullRequest = $number; CommitSha = 'original-source-sha' } |
+                ConvertTo-Json -Compress
+            $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+            $release.targetCommitish = 'original-source-sha'
+            $release | Add-Member -NotePropertyName body -NotePropertyValue "<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
+        }
         $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
             Number = 42; HeadRef = 'feature/1'
             HeadRepository = 'PSModule/CleanupFixture'
@@ -142,15 +161,63 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
         @($script:state.Calls | Where-Object { $_ -like 'release delete*' }).Count | Should -Be 0
     }
 
-    It 'resolves repository ownership for an older normalized PR payload' {
+    It 'retains legacy releases whose producing PR cannot be established' {
+        $script:state.Releases = @([pscustomobject]@{
+                tagName = 'v1.2.4-featurea001'; isPrerelease = $true; targetCommitish = 'feature/a'
+            })
         $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
             Number = 42; HeadRef = 'feature/a'
         } | ConvertTo-Json
 
         $output = & $script:cleanupScriptPath 6>&1 | Out-String
 
-        $output | Should -Match 'release delete.*v1\.2\.4-featurea001'
-        @($script:state.Calls | Where-Object { $_ -match '/pulls/42' }).Count | Should -Be 1
+        $output | Should -Not -Match 'release delete.*v1\.2\.4-featurea001'
+        @($script:state.Calls | Where-Object { $_ -like 'release delete*' }).Count | Should -Be 0
         $output | Should -Not -Match 'release delete.*v1\.2\.4-featureab001'
+    }
+
+    It 'selects a SHA-targeted prerelease only from exact PR and source provenance for <HeadRepository>' -ForEach @(
+        @{ HeadRepository = 'PSModule/CleanupFixture' }
+        @{ HeadRepository = 'AnotherOwner/Fork' }
+    ) {
+        $owner = @{ Repository = 'PSModule/CleanupFixture'; PullRequest = 42; CommitSha = 'original-source-sha' } |
+            ConvertTo-Json -Compress
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+        $foreign = @{ Repository = 'PSModule/CleanupFixture'; PullRequest = 43; CommitSha = 'original-source-sha' } |
+            ConvertTo-Json -Compress
+        $foreignEncoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($foreign))
+        $script:state.Releases = @(
+            [pscustomobject]@{
+                tagName = 'v1.2.4-featurea001'; isPrerelease = $true; targetCommitish = 'original-source-sha'
+                body = "Authored notes`n`n<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
+            }
+            [pscustomobject]@{
+                tagName = 'v1.2.4-featurea002'; isPrerelease = $true; targetCommitish = 'original-source-sha'
+                body = "Authored notes`n`n<!-- PSModule.PrereleaseOwner:v1:$foreignEncoded -->"
+            }
+        )
+        $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
+            Number = 42; HeadRef = 'feature/a'; HeadRepository = $HeadRepository
+        } | ConvertTo-Json
+
+        $output = & $script:cleanupScriptPath 6>&1 | Out-String
+
+        $output | Should -Match 'release delete.*v1\.2\.4-featurea001'
+        $output | Should -Not -Match 'release delete.*v1\.2\.4-featurea002'
+    }
+
+    It 'refuses cleanup when the tag has moved away from its recorded immutable source' {
+        $owner = @{ Repository = 'PSModule/CleanupFixture'; PullRequest = 42; CommitSha = 'original-source-sha' } |
+            ConvertTo-Json -Compress
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+        $script:state.Releases = @([pscustomobject]@{
+                tagName = 'v1.2.4-featurea001'; isPrerelease = $true; targetCommitish = 'original-source-sha'
+                body = "Notes`n`n<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
+            })
+        $script:state.TagSource = 'another-source-sha'
+
+        { & $script:cleanupScriptPath } | Should -Throw '*no longer matches*recorded source*'
+
+        @($script:state.Calls | Where-Object { $_ -like 'release delete*' }).Count | Should -Be 0
     }
 }

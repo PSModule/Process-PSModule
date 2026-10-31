@@ -186,7 +186,7 @@ function Select-PullRequestForPush {
 
     $PullRequest |
         Where-Object {
-            $_.Base.Ref -eq $DefaultBranch -and
+            $_.Base.Ref -ceq $DefaultBranch -and
             -not [string]::IsNullOrWhiteSpace($_.merged_at) -and
             $_.merge_commit_sha -eq $CommitSha
         } |
@@ -242,7 +242,7 @@ function Get-DiscardedReleasePullRequest {
 
     foreach ($candidate in ($PullRequest | Where-Object { $null -ne $_ })) {
         $isMergedToDefaultBranch = (
-            $candidate.Base.Ref -eq $DefaultBranch -and
+            $candidate.Base.Ref -ceq $DefaultBranch -and
             -not [string]::IsNullOrWhiteSpace($candidate.merged_at)
         )
         if (-not $isMergedToDefaultBranch) { continue }

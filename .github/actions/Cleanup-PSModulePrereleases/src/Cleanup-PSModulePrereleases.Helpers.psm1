@@ -1,20 +1,23 @@
 $ErrorActionPreference = 'Stop'
+Import-Module -Name (
+    Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'Release-PSModule', 'src', 'Release-PSModule.Helpers.psm1'
+) -Force
 
 function Get-PSModulePrereleaseForCleanup {
     <#
         .SYNOPSIS
-        Select prereleases published from the exact pull request branch.
+        Select prereleases with verified producing PR and source ownership.
 
         .DESCRIPTION
-        Uses the GitHub release target retained by Release-PSModule instead of a
-        lossy branch-name substring in the version tag. Stable releases, another
-        branch's releases, and the supplied published tag are never selected.
+        Uses controller-owned repository, PR, and commit provenance rather than
+        branch or tag substrings. Stable and unverified legacy releases, another
+        PR's releases, and the supplied published tag are never selected.
 
         .EXAMPLE
-        Get-PSModulePrereleaseForCleanup -Release $releases -HeadRef 'feature/a' `
-            -Repository 'PSModule/MyModule' -HeadRepository 'PSModule/MyModule'
+        Get-PSModulePrereleaseForCleanup -Release $releases -Repository 'PSModule/MyModule' `
+            -PullRequestNumber 42 -GetTagCommit $readTagCommit
 
-        Returns only same-repository prereleases whose targetCommitish is exactly feature/a.
+        Returns only verified prereleases produced for MyModule PR 42.
 
         .INPUTS
         None
@@ -29,20 +32,18 @@ function Get-PSModulePrereleaseForCleanup {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(
-        # The unsanitized branch used as the prerelease publication target.
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $HeadRef,
-
         # The base repository in owner/name form.
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string] $Repository,
 
-        # The repository that owns the unsanitized head reference.
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $HeadRepository,
+        # The source PR number within the base repository.
+        [Parameter()]
+        [long] $PullRequestNumber,
+
+        # Returns the exact immutable commit referenced by a release tag.
+        [Parameter()]
+        [scriptblock] $GetTagCommit,
 
         # Release objects with tagName, isPrerelease, and targetCommitish.
         [Parameter()]
@@ -53,11 +54,6 @@ function Get-PSModulePrereleaseForCleanup {
         [string] $ReleaseTag
     )
 
-    if ($HeadRepository -ne $Repository) {
-        Write-Verbose "Fork-owned ref [${HeadRepository}:$HeadRef] cannot establish base-repository cleanup ownership."
-        return
-    }
-
     foreach ($candidate in $Release) {
         if ($null -eq $candidate -or -not $candidate.isPrerelease -or $candidate.tagName -ceq $ReleaseTag) {
             continue
@@ -66,8 +62,25 @@ function Get-PSModulePrereleaseForCleanup {
             [string]::IsNullOrWhiteSpace($candidate.targetCommitish)) {
             throw 'Cannot determine prerelease cleanup ownership: a release is missing its tag or targetCommitish.'
         }
-        if ($candidate.targetCommitish -ceq $HeadRef) {
+        $ownership = Get-PSModulePrereleaseOwnership -Body ([string]$candidate.body)
+        if ($null -ne $ownership) {
+            if ($ownership.Repository -ne $Repository -or $ownership.PullRequest -ne $PullRequestNumber) {
+                continue
+            }
+            if ($candidate.targetCommitish -cne $ownership.CommitSha) {
+                Write-Verbose "Retaining [$($candidate.tagName)] because its creation target does not bind the ownership source."
+                continue
+            }
+            if ($null -eq $GetTagCommit) {
+                throw 'Immutable tag lookup is required to verify published prerelease ownership.'
+            }
+            $tagCommit = & $GetTagCommit $candidate.tagName
+            if ($tagCommit -cne $ownership.CommitSha) {
+                throw "Prerelease tag [$($candidate.tagName)] no longer matches its recorded source. Refusing cleanup."
+            }
             $candidate
+        } else {
+            Write-Verbose "Retaining legacy release [$($candidate.tagName)] without producing PR/source ownership evidence."
         }
     }
 }

@@ -207,6 +207,15 @@ Describe 'Resolve-PSModulePublishSetting' {
 }
 
 Describe 'Select-PullRequestForPush' {
+    It 'does not select a merged PR targeting a differently cased branch' {
+        $request = [pscustomobject]@{
+            Base = [pscustomobject]@{ Ref = 'Main' }; merged_at = '2026-09-01T00:00:00Z'; merge_commit_sha = 'pushed-sha'
+        }
+
+        Select-PullRequestForPush -PullRequest @($request) -DefaultBranch main -CommitSha pushed-sha |
+            Should -BeNullOrEmpty
+    }
+
     It 'selects the merged PR whose merge commit matches the pushed commit' {
         $pullRequests = @(
             [pscustomobject]@{
@@ -481,6 +490,14 @@ Describe 'Resolve-ReleasePullRequest' {
 }
 
 Describe 'Get-DiscardedReleasePullRequest' {
+    It 'does not reject a release based on another differently cased branch' {
+        $request = [pscustomobject]@{
+            Base = [pscustomobject]@{ Ref = 'Main' }; merged_at = '2026-09-01T00:00:00Z'; merge_commit_sha = 'other-sha'
+        }
+
+        @(Get-DiscardedReleasePullRequest -PullRequest @($request) -DefaultBranch main -CommitSha pushed-sha).Count |
+            Should -Be 0
+    }
     It 'reports a merged default-branch pull request that does not match the released commit' {
         $pullRequests = @(
             [pscustomobject]@{
