@@ -272,6 +272,40 @@ Describe 'Gallery-only version selection requires original ownership proof' {
         $script:state.Calls | Should -Not -Contain 'release-read:release-1.2.4'
     }
 
+    It 'uses a completed historical prefix <HistoricalPrefix> under current prefix <CurrentPrefix>' -ForEach @(
+        @{ HistoricalPrefix = 'release2-'; CurrentPrefix = 'release2-' }
+        @{ HistoricalPrefix = 'release2-'; CurrentPrefix = 'release-' }
+        @{ HistoricalPrefix = 'release2'; CurrentPrefix = 'release2' }
+    ) {
+        $tag = "${HistoricalPrefix}1.2.4"
+        $script:state.Record.Reference.ref = "refs/tags/$tag"
+        $script:state.Record.Annotation.tag = $tag
+        $script:state.Record.Annotation.object.sha = '2222222222222222222222222222222222222222'
+        $script:state.Record.Annotation.message = 'Completed legacy publication.'
+        $script:state.Record.Release = [pscustomobject]@{
+            tag_name = $tag; prerelease = $false; draft = $false
+            assets = @([pscustomobject]@{ name = 'TestModule-1.2.4.zip'; state = 'uploaded' })
+        }
+        $script:parameters.Configuration.VersionPrefix = $CurrentPrefix
+
+        (Get-ResolvedModuleVersion @script:parameters).ToString() | Should -BeExactly "${CurrentPrefix}1.2.5"
+
+        $script:state.Calls | Should -Contain "release-read:$tag"
+    }
+
+    It 'does not infer a complete baseline from a numeric tag suffix without matching module-version assets' {
+        $script:state.Record.Reference.ref = 'refs/tags/v11.2.4'
+        $script:state.Record.Annotation.tag = 'v11.2.4'
+        $script:state.Record.Annotation.object.sha = '2222222222222222222222222222222222222222'
+        $script:state.Record.Annotation.message = 'A different completed version.'
+        $script:state.Record.Release = [pscustomobject]@{
+            tag_name = 'v11.2.4'; prerelease = $false; draft = $false
+            assets = @([pscustomobject]@{ name = 'TestModule-11.2.4.zip'; state = 'uploaded' })
+        }
+
+        { Get-ResolvedModuleVersion @script:parameters } | Should -Throw '*source/artifact recovery context*'
+    }
+
     It 'rejects ambiguous completed historical baseline tags instead of choosing a prefix' {
         $script:state.Record.Annotation.object.sha = '2222222222222222222222222222222222222222'
         $script:state.Record.Annotation.message = 'Completed legacy tag.'
