@@ -513,8 +513,8 @@ function Get-PSModulePublicationState {
         }
     }
     if ($null -ne $release) {
-        if ($release.draft -eq $true) {
-            throw 'The existing release is a draft. Refusing Gallery publication or a success-shaped incomplete release.'
+        if ($release.draft -isnot [bool] -or $release.draft -ne $false) {
+            throw 'The existing release has no verified boolean draft:false status. Refusing publication or an incomplete release.'
         }
         if ($release.tag_name -cne $expected.ReleaseTag -or
             [string]::IsNullOrWhiteSpace($release.html_url) -or

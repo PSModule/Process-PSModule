@@ -132,6 +132,7 @@ Describe 'Release-PSModule WhatIf' {
             tag_name   = 'v1.2.3-preview.1'
             html_url   = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.3-preview.1'
             prerelease = $true
+            draft      = $false
             body       = "Original notes.`n<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
             assets     = @()
         }
@@ -213,6 +214,7 @@ Describe 'Release-PSModule WhatIf' {
             tag_name   = 'v1.2.3-preview.1'
             html_url   = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.3-preview.1'
             prerelease = $true
+            draft      = $false
             body       = "Foreign PR notes.`n<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
             assets     = @()
         }

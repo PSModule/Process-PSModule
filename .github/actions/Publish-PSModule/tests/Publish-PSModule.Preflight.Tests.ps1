@@ -155,6 +155,7 @@ Describe 'Publish-PSModule source-bound preflight' {
             tag_name   = 'v1.2.4'
             html_url   = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
             prerelease = $false
+            draft      = $false
             assets     = @($asset)
         }
 
@@ -528,6 +529,7 @@ Describe 'Publish-PSModule source-bound preflight' {
             tag_name   = 'v1.2.4'
             html_url   = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
             prerelease = $false
+            draft      = $false
             body       = "Notes.`n<!-- PSModule.PrereleaseOwner:v1:$encoded -->"
             assets     = @()
         }
