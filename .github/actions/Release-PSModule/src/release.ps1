@@ -84,12 +84,14 @@ LogGroup 'Load inputs' {
     $usePRTitleAsReleaseName = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
     $releaseTag = $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag
+    $versionPrefix = $env:PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix
     $commitSha = $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha
     if ([string]::IsNullOrWhiteSpace($releaseTag)) {
         throw 'ReleaseTag is required. Ensure Publish.Module.Resolution.FullVersion is passed from the Plan job.'
     }
 
     Write-Host "Module name: [$name]"
+    Write-Host "Version prefix: [$versionPrefix]"
     Write-Host "Module path: [$modulePath]"
     Write-Host "Release tag: [$releaseTag]"
     Write-Host "WhatIf:      [$whatIf]"
@@ -203,6 +205,7 @@ LogGroup 'Create GitHub release' {
                 CommitSha      = $sourceCommit
                 ModuleName     = $name
                 GalleryVersion = $publishPSVersion
+                VersionPrefix  = $versionPrefix
                 ReleaseTag     = $releaseTag
                 ReleaseType    = if ($createPrerelease) { 'Prerelease' } else { 'Release' }
                 ArtifactSha256 = Get-PSModuleArtifactDigest -Path $modulePath
@@ -297,6 +300,7 @@ LogGroup 'Create GitHub release' {
                 } else {
                     $beforeCreate = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
                     if ($beforeCreate.TagSha -cne $publicationState.TagSha -or
+                        $beforeCreate.VersionTagSha -cne $publicationState.VersionTagSha -or
                         (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
                         throw 'The source claim or tested artifact changed before release creation. Refusing publication.'
                     }
@@ -323,6 +327,7 @@ LogGroup 'Create GitHub release' {
         } else {
             $currentState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
             if ($currentState.TagSha -cne $publicationState.TagSha -or $null -eq $currentState.Release -or
+                $currentState.VersionTagSha -cne $publicationState.VersionTagSha -or
                 (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
                 throw 'The release tag, release context, or tested artifact changed before upload. Refusing publication.'
             }

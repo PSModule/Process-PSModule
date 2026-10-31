@@ -29,6 +29,7 @@ BeforeAll {
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf'
     )
@@ -63,7 +64,8 @@ AfterAll {
 
 Describe 'Publish-PSModule source-bound preflight' {
     BeforeEach {
-        $script:modulePath = Join-Path -Path $TestDrive -ChildPath 'workspace' -AdditionalChildPath '.PSModule', 'module', 'TestModule'
+        $workspaceName = "workspace-$([guid]::NewGuid())"
+        $script:modulePath = Join-Path -Path $TestDrive -ChildPath $workspaceName -AdditionalChildPath '.PSModule', 'module', 'TestModule'
         $null = New-Item -Path $script:modulePath -ItemType Directory -Force
         Set-Content -LiteralPath (Join-Path -Path $script:modulePath -ChildPath 'TestModule.psm1') -Value '# Tested bytes.'
         Set-Content -LiteralPath (Join-Path -Path $script:modulePath -ChildPath 'TestModule.psd1') -Value @'
@@ -86,12 +88,13 @@ Describe 'Publish-PSModule source-bound preflight' {
         $env:GITHUB_EVENT_PATH = $eventPath
         $env:GITHUB_REPOSITORY = 'PSModule/TestModule'
         $env:GITHUB_SHA = '1111111111111111111111111111111111111111'
-        $env:GITHUB_WORKSPACE = Join-Path -Path $TestDrive -ChildPath 'workspace'
+        $env:GITHUB_WORKSPACE = Join-Path -Path $TestDrive -ChildPath $workspaceName
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_Name = 'TestModule'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath = '.PSModule/module'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY = 'anonymous-fixture'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag = 'v1.2.4'
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix = 'v'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'
 
@@ -331,6 +334,7 @@ Describe 'Publish-PSModule source-bound preflight' {
     It 'rejects an unreadable final ownership footer on a stable release' -ForEach @(
         @{ Footer = '<!-- PSModule.PrereleaseOwner:v2:e30= -->' }
         @{ Footer = '<!-- PSModule.PrereleaseOwner:v1:not-base64 -->' }
+        @{ Footer = "<!-- PSModule.PrereleaseOwner:v1:`ne30= -->" }
     ) {
         Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
         $script:state.Release = [pscustomobject]@{
@@ -386,6 +390,92 @@ Describe 'Publish-PSModule source-bound preflight' {
         }
 
         { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*draft*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a competing module/version claim under another prefix with identical bytes' {
+        $foreign = $script:state.ExpectedClaim | ConvertTo-Json -Compress | ConvertFrom-Json
+        $foreign.CommitSha = '2222222222222222222222222222222222222222'
+        $foreign.PullRequest = 99
+        $foreign.VersionPrefix = ''
+        $foreign.ReleaseTag = '1.2.4'
+        Set-PSModuleFixtureClaim -State $script:state -Claim $foreign -TagSha '4444444444444444444444444444444444444444'
+        $script:state.Tag = $null
+        $script:state.TagObject = $null
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*module/version*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects another prefix claiming the package coordinate concurrently before Gallery' {
+        $script:state.OnVersionTagCreate = {
+            param($State)
+            $foreign = $State.ExpectedClaim | ConvertTo-Json -Compress | ConvertFrom-Json
+            $foreign.CommitSha = '2222222222222222222222222222222222222222'
+            $foreign.VersionPrefix = ''
+            $foreign.ReleaseTag = '1.2.4'
+            Set-PSModuleFixtureClaim -State $State -Claim $foreign -TagSha '4444444444444444444444444444444444444444'
+            $State.Tag = $null
+            $State.TagObject = $null
+        }
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*module/version*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubCreationUpload | Should -Be 0
+    }
+
+    It 'does not fabricate a shared coordinate for an already-published package' {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.VersionTag = $null
+        $script:state.VersionTagObject = $null
+        $script:state.Package = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*module/version ownership proof*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects a tag bound to another artifact version before any claim mutation' {
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag = 'v1.2.5'
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*tag*version*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'preserves an existing custom prefix while reserving the shared package coordinate' {
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_VersionPrefix = 'release-'
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag = 'release-1.2.4'
+        $script:state.ExpectedClaim.VersionPrefix = 'release-'
+        $script:state.ExpectedClaim.ReleaseTag = 'release-1.2.4'
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GalleryWrites | Should -Be 1
+        $script:state.VersionTag.sha | Should -BeExactly $script:state.Tag.sha
+        $script:state.Calls.IndexOf('module-version-ref-create') |
+            Should -BeLessThan $script:state.Calls.IndexOf('tag-ref-create')
+    }
+
+    It 'rejects NuGet-reserved tested paths before a claim or upload' -ForEach @(
+        @{ Components = @('extra.nuspec') }
+        @{ Components = @('[Content_Types].xml') }
+        @{ Components = @('_rels', '.rels') }
+        @{ Components = @('package', 'services', 'metadata', 'core-properties', 'abc.psmdcp') }
+    ) {
+        $path = $script:modulePath
+        foreach ($component in $Components) { $path = [IO.Path]::Combine($path, $component) }
+        $null = New-Item -Path (Split-Path -Path $path -Parent) -ItemType Directory -Force
+        [IO.File]::WriteAllText($path, 'Reserved anonymous artifact bytes.')
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*NuGet-reserved*'
 
         $script:state.GalleryWrites | Should -Be 0
         $script:state.GitHubWrites | Should -Be 0

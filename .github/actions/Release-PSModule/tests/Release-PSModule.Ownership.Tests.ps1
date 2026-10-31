@@ -21,6 +21,7 @@ Describe 'Source-bound publication proof' {
             CommitSha      = '1111111111111111111111111111111111111111'
             ModuleName     = 'TestModule'
             GalleryVersion = '1.2.4'
+            VersionPrefix  = 'release-'
             ReleaseTag     = 'release-1.2.4'
             ReleaseType    = 'Release'
             ArtifactSha256 = 'a' * 64
@@ -47,6 +48,15 @@ Describe 'Source-bound publication proof' {
 
     It 'does not fabricate ownership for a legacy annotated tag' {
         Get-PSModulePublicationClaim -Message 'Legacy tag message.' | Should -BeNullOrEmpty
+    }
+
+    It 'ignores a completed authored ownership marker followed by ordinary notes' {
+        $owner = @{ Repository = 'PSModule/TestModule'; PullRequest = 42; CommitSha = 'original-source' } |
+            ConvertTo-Json -Compress
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($owner))
+        $body = "<!-- PSModule.PrereleaseOwner:v1:$encoded -->`nOrdinary authored notes follow."
+
+        Get-PSModulePrereleaseOwnership -Body $body | Should -BeNullOrEmpty
     }
 
     It 'rejects malformed claim provenance explicitly' -ForEach @(
