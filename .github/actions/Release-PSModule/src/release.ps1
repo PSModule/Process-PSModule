@@ -99,17 +99,24 @@ LogGroup 'Load inputs' {
 
 LogGroup 'Load release context' {
     $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
-    $githubEvent = $githubEventJson | ConvertFrom-Json
+    $githubEvent = ConvertFrom-Json -InputObject $githubEventJson -NoEnumerate -ErrorAction Stop
+    if ($githubEvent -is [array] -or $githubEvent -isnot [PSCustomObject]) {
+        throw 'The original GitHub event context requires one event object.'
+    }
     $pullRequestJson = $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest
     $pullRequest = $null
     if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
         $pullRequest = ConvertFrom-Json -InputObject $pullRequestJson -NoEnumerate -ErrorAction Stop
-    } elseif ($githubEvent.pull_request) {
-        $pullRequest = [pscustomobject]@{
-            Number  = $githubEvent.pull_request.number
-            Title   = $githubEvent.pull_request.title
-            Body    = $githubEvent.pull_request.body
-            HeadRef = $githubEvent.pull_request.head.ref
+    } else {
+        $eventPullRequest = $githubEvent.pull_request
+        $null = Get-PSModuleProducingPullRequestNumber -PullRequest $eventPullRequest
+        if ($null -ne $eventPullRequest) {
+            $pullRequest = [pscustomobject]@{
+                Number  = $eventPullRequest.number
+                Title   = $eventPullRequest.title
+                Body    = $eventPullRequest.body
+                HeadRef = $eventPullRequest.head.ref
+            }
         }
     }
     $prNumber = Get-PSModuleProducingPullRequestNumber -PullRequest $pullRequest
@@ -212,8 +219,19 @@ LogGroup 'Create GitHub release' {
                 AssetName      = $zipFileName
                 AssetSha256    = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
             }
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256) {
+                throw 'The release archive does not match the tested file-tree and asset claim. Refusing publication.'
+            }
             $publicationReader = Get-PSModulePublicationReader -Repository $env:GITHUB_REPOSITORY
             $publicationState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
+                (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                throw 'The tested artifact or release archive changed before the immutable claim. Refusing publication.'
+            }
             $publicationState = New-PSModulePublicationTag -Claim $claim -State $publicationState -Reader $publicationReader
             $releaseExists = $null -ne $publicationState.Release
             if ($releaseExists) {
@@ -299,8 +317,11 @@ LogGroup 'Create GitHub release' {
                     $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
                 } else {
                     $beforeCreate = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+                    $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
                     if ($beforeCreate.TagSha -cne $publicationState.TagSha -or
                         $beforeCreate.VersionTagSha -cne $publicationState.VersionTagSha -or
+                        $archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                        $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
                         (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
                         throw 'The source claim or tested artifact changed before release creation. Refusing publication.'
                     }
@@ -326,8 +347,11 @@ LogGroup 'Create GitHub release' {
             Write-Host "WhatIf: gh release upload $releaseTag $zipPath --repo $env:GITHUB_REPOSITORY"
         } else {
             $currentState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
             if ($currentState.TagSha -cne $publicationState.TagSha -or $null -eq $currentState.Release -or
                 $currentState.VersionTagSha -cne $publicationState.VersionTagSha -or
+                $archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
                 (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
                 throw 'The release tag, release context, or tested artifact changed before upload. Refusing publication.'
             }
