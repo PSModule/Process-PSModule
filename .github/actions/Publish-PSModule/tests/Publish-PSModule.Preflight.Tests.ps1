@@ -243,6 +243,23 @@ Describe 'Publish-PSModule source-bound preflight' {
         $response.Value.Count | Should -Be 0
     }
 
+    It 'rejects a scalar tag enumeration instead of projecting a discovery collection' {
+        $script:state.ApiResponses['repos/PSModule/TestModule/git/matching-refs/tags/'] = [pscustomobject]@{
+            ref = 'refs/tags/v1.2.4'
+            object = [pscustomobject]@{ type = 'commit'; sha = $env:GITHUB_SHA }
+        }
+        $reader = Get-PSModulePublicationReader -Repository 'PSModule/TestModule' -ReadOnly
+
+        { & $reader.GetTagList } | Should -Throw '*collection metadata*'
+    }
+
+    It 'retains a verified empty discovery collection for a new module' {
+        $script:state.ApiResponses['repos/PSModule/TestModule/git/matching-refs/tags/'] = @()
+        $reader = Get-PSModulePublicationReader -Repository 'PSModule/TestModule' -ReadOnly
+
+        @(& $reader.GetTagList).Count | Should -Be 0
+    }
+
     It 'rejects a Gallery-only package with no source and artifact proof' {
         $script:state.Package = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
 
