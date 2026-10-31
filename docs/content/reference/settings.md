@@ -61,7 +61,7 @@ For worked examples, see [Configuring the pipeline](../guides/configuring-the-pi
 | `Publish.Site.Skip`                       | `Boolean` | Skip deployment of the generated documentation site while retaining the site build and artifact                                                                      | `false`             |
 | `Publish.Module.Skip`                     | `Boolean` | Skip module publishing                                                                                                                                               | `false`             |
 | `Publish.Module.AutoCleanup`              | `Boolean` | Automatically clean up old prerelease tags after a stable default-branch release or when a PR is abandoned                                                           | `true`              |
-| `Publish.Module.AutoPatching`             | `Boolean` | Default an unlabeled pull-request release to `Patch`; direct default-branch releases are always `Patch`                                                            | `true`              |
+| `Publish.Module.DefaultBump`              | `String`  | Bump used when no configured bump label is present; accepts exactly `patch`, `minor`, or `major`                                                                      | `'patch'`           |
 | `Publish.Module.IncrementalPrerelease`    | `Boolean` | Use incremental prerelease versioning                                                                                                                                | `true`              |
 | `Publish.Module.DatePrereleaseFormat`     | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
 | `Publish.Module.VersionPrefix`            | `String`  | Prefix for version tags                                                                                                                                              | `'v'`               |
@@ -69,7 +69,7 @@ For worked examples, see [Configuring the pipeline](../guides/configuring-the-pi
 | `Publish.Module.MinorLabels`              | `String`  | Labels indicating a minor version bump                                                                                                                               | `'release:minor'`   |
 | `Publish.Module.PatchLabels`              | `String`  | Labels indicating a patch version bump                                                                                                                               | `'release:patch'`   |
 | `Publish.Module.IgnoreLabels`             | `String`  | Labels indicating no release                                                                                                                                         | `'release:skip'`    |
-| `Publish.Module.PrereleaseLabels`         | `String`  | Labels indicating a prerelease                                                                                                                                       | `'release:pre-release'` |
+| `Publish.Module.PrereleaseLabels`         | `String`  | Labels indicating prerelease mode using the explicit or default bump                                                                                                | `'release:prerelease'` |
 | `Publish.Module.UsePRTitleAsReleaseName`  | `Boolean` | Use the PR title as the GitHub release name instead of version string                                                                                                | `false`             |
 | `Publish.Module.UsePRBodyAsReleaseNotes`  | `Boolean` | Use the PR body as the release notes content                                                                                                                         | `true`              |
 | `Publish.Module.UsePRTitleAsNotesHeading` | `Boolean` | Prepend PR title as H1 heading with PR number link before the body                                                                                                   | `true`              |
@@ -144,7 +144,7 @@ Publish:
   Module:
     Skip: false
     AutoCleanup: true
-    AutoPatching: true
+    DefaultBump: patch
     IncrementalPrerelease: true
     DatePrereleaseFormat: ''
     VersionPrefix: 'v'
@@ -152,7 +152,7 @@ Publish:
     MinorLabels: 'release:minor'
     PatchLabels: 'release:patch'
     IgnoreLabels: 'release:skip'
-    PrereleaseLabels: 'release:pre-release'
+    PrereleaseLabels: 'release:prerelease'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true

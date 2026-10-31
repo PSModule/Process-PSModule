@@ -115,10 +115,12 @@ The release process treats each important default-branch push as a release on a 
 request supplies release metadata when its merge commit exactly matches that push. There is no patching of older
 versions — security fixes go on the current tip of `main` only.
 
-### Release and feature branches
+### Feature branches
 
-For large work, open a release branch and target it from feature branches. Apply the default `release:pre-release` label
-on the release branch PR to publish preview versions before its final merge creates the stable default-branch push.
+Keep feature branches short-lived and target `main` directly. Use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+only when changes genuinely depend on each other. Apply the configured prerelease label (`release:prerelease` by
+default) to a feature pull request to publish a preview before merging it to `main`.
 
 ## CI/CD pipeline
 
@@ -204,17 +206,17 @@ The **Plan** job resolves the next version before any build occurs. This means t
 | Minor | Minor (`x.Y.0`) | `release:minor` |
 | Patch | Patch (`x.y.Z`) | `release:patch` |
 | Ignore | No release | `release:skip` |
-| None of the above | Patch (when `AutoPatching: true`) | — |
+| None of the above | Effective `DefaultBump` (`patch`, `minor`, or `major`; default `patch`) | — |
 
-**Prerelease versions:** With `AutoPatching: true`, adding the default `release:pre-release` label to the PR produces a
-patch prerelease tag (e.g., `1.2.3-preview0001`). When AutoPatching is disabled, also apply one configured bump label.
+**Prerelease versions:** Adding the configured prerelease label (`release:prerelease` by default) produces a
+prerelease tag (e.g., `1.2.3-preview0001`) using one explicit bump label or the effective `DefaultBump`.
 The format is controlled by `IncrementalPrerelease` (sequential numbering) or `DatePrereleaseFormat` (.NET DateTime
 format string).
 
 All five label mappings remain configurable in `.github/PSModule.yml`.
 
-An important direct default-branch push and a default-branch manual dispatch always resolve to `Patch`, regardless of
-`AutoPatching`. A push that exactly matches a merged pull request uses that PR's version label instead.
+An important direct default-branch push or dispatch uses the effective `DefaultBump`. A push or recovery dispatch that
+exactly matches a merged pull request uses that PR's configured version label instead.
 
 **Tag format:** Releases are tagged with a configurable prefix (default `v`) — e.g., `v1.2.3`.
 
@@ -264,7 +266,7 @@ Publish:
   Module:
     Skip: false
     AutoCleanup: true           # Delete prerelease tags after stable release or PR closure
-    AutoPatching: true           # Unlabeled PRs default to patch bump
+    DefaultBump: patch           # Used when no configured bump label is present
     IncrementalPrerelease: true  # Sequential prerelease numbering
     DatePrereleaseFormat: ''     # Alternative: .NET DateTime format for prerelease
     VersionPrefix: 'v'          # Git tag prefix
@@ -272,7 +274,7 @@ Publish:
     MinorLabels: 'release:minor'
     PatchLabels: 'release:patch'
     IgnoreLabels: 'release:skip'
-    PrereleaseLabels: 'release:pre-release'
+    PrereleaseLabels: 'release:prerelease'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true
@@ -364,6 +366,7 @@ The CI pipeline automatically tests every source file against the following rule
 | `CmdletBinding` | Every function must have `[CmdletBinding()]` |
 | `ParamBlock` | Every function must have a `param()` block |
 | `FunctionTest` | Every public function must be referenced by the tests; its behavior must be covered whether the suite is per-command or grouped |
+| `PublicHelpLink` | Every public function must have a first `.LINK` entry with an absolute HTTPS URL whose path is `/Module/Functions/<relative-command>/` |
 
 To skip a specific rule for one file only, add a comment at the very top of that file:
 

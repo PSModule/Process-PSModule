@@ -15,15 +15,16 @@ hand.
 2. Push the branch and open a pull request against `main`.
 3. The workflow builds the module, runs tests on Windows, Linux, and macOS, lints the repository, and reports back on
    the pull request.
-4. Apply a version label to declare release intent (see below). An unlabeled pull request defaults to a **patch** when
-   `Publish.Module.AutoPatching` is enabled, which is the default.
+4. Apply one configured bump label when it must override `Publish.Module.DefaultBump` (see below). Without one, the
+   effective default supplies `patch`, `minor`, or `major`; an omitted setting uses `patch`.
 5. Merge the pull request. Its resulting important push to `main` runs the stable release: after the pipeline passes,
    it publishes the module to the PowerShell Gallery, creates a GitHub Release and tag for the tested commit, and
    deploys the documentation site unless site publication is configured to skip. The closed-pull-request event only
    cleans up prereleases.
 
-An important direct push to the default branch, or a manual dispatch on that branch, also creates a stable **patch**
-release with commit-based notes. It has no pull-request labels or body to use as metadata.
+An important direct push to the default branch also uses the effective default, with commit-based notes when no
+release PR is associated. A recovery dispatch at a merged PR's merge commit retains that PR's labels and metadata.
+Ambiguous merged associations stop the run rather than assuming a different bump.
 
 ## Version labels
 
@@ -31,8 +32,8 @@ release with commit-based notes. It has no pull-request labels or body to use as
 | --- | --- |
 | `release:major` | Bump `MAJOR`. |
 | `release:minor` | Bump `MINOR`. |
-| `release:patch` | Bump `PATCH`. This is the default for an unlabeled PR when `AutoPatching` is enabled. |
-| `release:pre-release` | Publish a prerelease version from the pull request, before it is merged. |
+| `release:patch` | Override the default and bump `PATCH`. |
+| `release:prerelease` | Publish the resolved bump as a prerelease before the pull request merges. |
 | `release:skip` | Run the pipeline but skip publication. |
 
 Conflicting labels (for example `release:major` together with `release:skip`) are rejected whenever that run resolves a
@@ -44,8 +45,8 @@ For the full model, including prerelease promotion and what a release produces, 
 
 ## Testing before you merge
 
-With the default `AutoPatching: true`, add `release:pre-release` to publish a patch prerelease from the open pull
-request. When AutoPatching is disabled, also apply one configured bump label. The prerelease is installable from the
+Add the configured prerelease label (`release:prerelease` by default) to publish a prerelease from the open pull
+request. It uses one explicit bump label or the effective `DefaultBump`. The prerelease is installable from the
 PowerShell Gallery but is not promoted as the latest stable version, so it can be validated before the pull request is
 merged. When the pull request is closed without merging, the prerelease versions and tags created for it are cleaned up
 automatically.

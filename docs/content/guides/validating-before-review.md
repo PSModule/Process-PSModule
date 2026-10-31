@@ -5,7 +5,7 @@ description: PSModule-specific validation checks that extend the shared MSXOrg B
 
 # Validating before review
 
-Use this page after scaffolding a module change or implementing a function and before you finish self-review or mark a draft pull request ready. It extends the shared MSXOrg [Workflow Build step](https://msx.no/docs/Ways-of-Working/Workflow/#build) and [Implement guidance](https://msx.no/docs/Agents/implement/) with the PSModule-specific validation checks that module repositories must pass.
+Use this page after scaffolding a module change or implementing a function and before you finish self-review or mark a draft pull request ready. It extends the shared MSXOrg [Workflow Build step](https://msx.no/docs/Ways-of-Working/Workflow/#build) and [Implement guidance](https://msx.no/docs/Ways-of-Working/Workflow-Stages/Implement/) with the PSModule-specific validation checks that module repositories must pass.
 
 Do not repeat the shared workflow here. Follow the shared branch → draft PR → implement → test → self-review loop first, then run this PSModule pass to confirm the change still fits the module's design, documentation, and PowerShell standards.
 
@@ -55,6 +55,7 @@ Do not repeat the shared workflow here. Follow the shared branch → draft PR �
 
    - comment-based help is present for every changed function, including private helpers
    - help sections, examples, `.INPUTS`, `.OUTPUTS`, and parameter documentation match the function contract from [MSX PowerShell Functions](https://msx.no/docs/Coding-Standards/PowerShell/Functions/)
+   - every public function has a first `.LINK` entry using an absolute HTTPS URL whose path matches the generated command documentation path
    - public-function links and usage examples are current enough that generated documentation will stay accurate
 
    Do not treat help as optional cleanup. In PSModule repositories, the function help is part of the delivered behavior.
@@ -78,7 +79,7 @@ Do not repeat the shared workflow here. Follow the shared branch → draft PR �
    Check:
 
    - naming, documentation, error handling, testing expectations, and security posture align with the relevant pages under [MSX Coding Standards](https://msx.no/docs/Coding-Standards/)
-   - the change follows the shared "written once, referenced everywhere" rule by linking canonical guidance instead of copying it into local docs or code comments, as described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/)
+   - the change follows the shared "written once, referenced everywhere" rule by linking canonical guidance instead of copying it into local docs or code comments, as described in [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
    - the draft PR description, issue progress, and any follow-up issues reflect what actually shipped and what still belongs out of scope
 
    This is the last author-side gate before a PSModule draft PR is ready for independent review.
@@ -86,7 +87,7 @@ Do not repeat the shared workflow here. Follow the shared branch → draft PR �
 ## Where this connects
 
 - [MSX Workflow Build step](https://msx.no/docs/Ways-of-Working/Workflow/#build)
-- [MSX Implement guidance](https://msx.no/docs/Agents/implement/)
+- [MSX Implement guidance](https://msx.no/docs/Ways-of-Working/Workflow-Stages/Implement/)
 - [PowerShell module standard](../reference/powershell-module-standard.md)
 - [Module types](../reference/module-types.md)
 - [Structuring your module](structuring-your-module.md)

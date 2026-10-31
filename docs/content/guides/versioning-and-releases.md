@@ -1,6 +1,6 @@
 ---
 title: Versioning and releases
-description: How Process-PSModule resolves a version from pull-request labels, publishes stable releases from default-branch pushes, and cleans up prereleases.
+description: How Process-PSModule resolves a version from configured defaults and labels, publishes default-branch releases, and cleans up prereleases.
 ---
 
 # Versioning and releases
@@ -19,47 +19,50 @@ manual dispatch on the configured default branch.
 
 Test and lint stages run before the publish gates, and publish is blocked when required checks fail.
 
-An open labelled pull request can publish a prerelease. A closed pull request only cleans up its prereleases. When a
+An open labeled pull request can publish a prerelease. A closed pull request only cleans up its prereleases. When a
 pull request merges, the resulting push to the default branch resolves that pull request's labels and creates the
 stable release from the exact pushed commit.
 
 ## Version labels
 
-The bump comes from the pull-request label; the next version is computed as `current version + bump`.
+An explicit configured bump label overrides `Publish.Module.DefaultBump`. Without a bump label, that setting supplies
+`patch`, `minor`, or `major`, with `patch` as the default. The next version is computed as `current version + bump`.
 
 | Label | Effect |
 | --- | --- |
 | `release:major` | Breaking change; bump `MAJOR`. |
 | `release:minor` | New feature; bump `MINOR`. |
 | `release:patch` | Bugfix; bump `PATCH`. |
-| `release:pre-release` | Publish as a prerelease; not promoted to latest. |
+| `release:prerelease` | Publish the resolved bump as a prerelease; not promoted to latest. |
 | `release:skip` | Run the pipeline, skip publication. |
 
 Multiple or conflicting version labels (for example `release:major` together with `release:skip`) are rejected whenever
 a release is resolved. A prerelease conflict fails the pull-request check; a stable conflict fails the resulting
 default-branch release run.
-With `AutoPatching: true`, an unlabeled pull request defaults to `Patch`; otherwise it needs an explicit version label.
-Direct pushes and manual dispatches on the default branch always use `Patch`, regardless of `AutoPatching`.
+Direct releases without an associated merged pull request also use `Publish.Module.DefaultBump`. A default-branch
+manual dispatch at a merge commit resolves the same pull request and label as the equivalent push; an ambiguous
+merged association fails rather than discarding release intent.
 
 These are default names. They remain configurable through `Publish.Module.MajorLabels`, `MinorLabels`, `PatchLabels`,
 `PrereleaseLabels`, and `IgnoreLabels` — see [Settings](../reference/settings.md).
 
 ## Branch types
 
-- **Main (stable)** — pushes publish stable releases. A prerelease label on an open pull request publishes a prerelease.
-- **Development** — optional prerelease branch (for example `dev`). Its open, prerelease-labelled pull request to the
-  stable branch publishes previews when it is updated.
-- **Feature branch** — optional feature branch. Its open, prerelease-labelled pull request publishes a preview for
-  testing.
+- **Main (stable)** — the default branch and the only branch that publishes stable releases.
+- **Feature branch** — a short-lived topic branch with a pull request targeting `main`.
 
-Exactly one branch is authorized to publish stable releases, so consumers always have one unambiguous latest version.
+Exactly one branch is authorized to publish stable releases, so consumers always have one
+unambiguous latest version. Use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+when changes genuinely depend on each other; independent changes remain separate
+short-lived pull requests targeting `main`.
 
 ## Prereleases
 
-With `AutoPatching: true`, a pull request labeled with the default `release:pre-release` name publishes a patch
-prerelease version (for example `v1.2.3-pr.1.5`) that is installable but not promoted as latest. When AutoPatching is
-disabled, the pull request also needs one configured bump label. When that pull request is merged with a version label,
-the stable version is computed from the label and the current version on the release branch.
+A pull request labeled with the configured prerelease label (`release:prerelease` by default) publishes an installable
+prerelease using its explicit bump or `Publish.Module.DefaultBump`. Prerelease mode does not select a level by itself
+and does not promote the version as latest. When the pull request merges, the stable version uses the resolved bump
+and the current version on `main`.
 
 When a pull request closes, the prerelease versions and tags created for it are removed, so abandoned or promoted work
 leaves no orphaned prereleases. This is controlled by `Publish.Module.AutoCleanup`.
@@ -79,8 +82,7 @@ Release names and notes can be generated from the pull request — see
 
 Only a single linear ancestry of versions is maintained. Old versions are not patched: if a security issue is found on
 `2.1.3`, the fix ships on the latest version, not as a new `1.x` release. See
-[Principles and practices](../specification/principles-and-practices.md) for the reasoning and for the release-branch
-pattern used for larger efforts.
+[Principles and practices](../specification/principles-and-practices.md) for the reasoning.
 
 ## Related
 

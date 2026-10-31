@@ -4,13 +4,14 @@
 )]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSAvoidUsingCmdletAliases', 'Context',
-    Justification = 'Context is part of the Pester DSL, not the Get-Context alias.'
+    Justification = 'Context is a Pester test block, not an implicit call to Get-Context.'
 )]
 [CmdletBinding()]
 param()
 
 BeforeAll {
     Import-Module -Name 'PSModule' -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../../Get-PSModuleSettings/src/Get-PSModuleSettings.Helpers.psm1') -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../src/Resolve-PSModuleVersion.Helpers.psm1') -Force
 
     function Get-TestConfiguration {
@@ -559,7 +560,7 @@ Describe 'Resolve-PSModuleVersion' {
             $result.Labels | Should -Be @('release:minor')
         }
 
-        It 'creates default patch context for a direct default-branch push' {
+        It 'creates direct-release context for a default-branch push' {
             $settings = @{
                 Context = @{
                     IsPushToDefaultBranch = $true
@@ -575,6 +576,46 @@ Describe 'Resolve-PSModuleVersion' {
             $result.Labels | Should -BeNullOrEmpty
             $result.IsDirectRelease | Should -BeTrue
         }
+
+        It 'honors the version label from a pull request resolved by a default-branch dispatch' {
+            # Regression guard for issue #530. Before the fix, a manual dispatch resolved no pull
+            # request, so Context.PullRequest was null and the direct-release branch applied a patch
+            # bump. With the pull request resolved, the minor label must be carried through.
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = @{
+                        Number  = 64
+                        HeadRef = 'feature/recovered-release'
+                        Labels  = @('release:minor')
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -Be 64
+            $result.Labels | Should -Be @('release:minor')
+            $result.IsDirectRelease | Should -BeNullOrEmpty
+        }
+
+        It 'creates direct-release context for a default-branch dispatch' {
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $null
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -BeNullOrEmpty
+            $result.IsDirectRelease | Should -BeTrue
+        }
     }
 
     Describe 'Resolve-ReleaseDecision' {
@@ -588,6 +629,77 @@ Describe 'Resolve-PSModuleVersion' {
 
             $result.ShouldPublish | Should -BeTrue
             $result.$Flag | Should -BeTrue
+        }
+
+        It 'resolves <ExpectedVersion> for a <EventName> with <Label> release intent' -ForEach @(
+            @{ EventName = 'workflow_dispatch'; Label = 'release:major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'release:minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'release:patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = 'release:major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'push'; Label = 'release:minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'push'; Label = 'release:patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = ''; ExpectedVersion = 'v0.4.14' }
+        ) {
+            $associatedPullRequests = if ($Label) {
+                @([pscustomobject]@{
+                        Number           = 64
+                        Base             = [pscustomobject]@{ Ref = 'main' }
+                        Head             = [pscustomobject]@{ Ref = 'feature/recovered-release' }
+                        merged_at        = '2026-09-02T09:02:24Z'
+                        merge_commit_sha = 'released-sha'
+                        Labels           = @([pscustomobject]@{ Name = $Label })
+                    })
+            } else {
+                @()
+            }
+            $parameters = @{
+                EventName                       = $EventName
+                CommitSha                       = 'released-sha'
+                DefaultBranch                   = 'main'
+                IsPushToDefaultBranch           = $EventName -eq 'push'
+                IsManualDispatchToDefaultBranch = $EventName -eq 'workflow_dispatch'
+                GetAssociatedPullRequest        = { $associatedPullRequests }.GetNewClosure()
+            }
+            $resolution = Resolve-ReleasePullRequest @parameters
+            $resolvedPullRequest = $resolution.PullRequest
+            $normalizedPullRequest = if ($resolvedPullRequest) {
+                @{
+                    Number  = $resolvedPullRequest.Number
+                    HeadRef = $resolvedPullRequest.Head.Ref
+                    Labels  = @($resolvedPullRequest.Labels.Name)
+                }
+            } else {
+                $null
+            }
+            $settingsJson = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $parameters.IsPushToDefaultBranch
+                    IsManualDispatchToDefaultBranch = $parameters.IsManualDispatchToDefaultBranch
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $normalizedPullRequest
+                }
+            } | ConvertTo-Json -Depth 5
+            $configuration = Get-TestConfiguration
+            $pullRequest = Get-GitHubPullRequest -SettingsJson $settingsJson
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+            $versionParameters = @{
+                GitHubVersion    = New-PSSemVer -Version '0.4.13'
+                PSGalleryVersion = New-PSSemVer -Version '0.4.13'
+                Decision         = $decision
+                Configuration    = $configuration
+                ModuleName       = 'DispatchTestModule'
+            }
+            $resolvedVersion = Get-ResolvedModuleVersion @versionParameters
+
+            $resolution.Resolved | Should -BeTrue
+            $decision.ShouldPublish | Should -BeTrue
+            $resolvedVersion.ToString() | Should -Be $ExpectedVersion
+            if ($Label) {
+                $pullRequest.Number | Should -Be 64
+            } else {
+                $pullRequest.IsDirectRelease | Should -BeTrue
+            }
         }
 
         It 'uses the configured default bump for a prerelease mode label' {

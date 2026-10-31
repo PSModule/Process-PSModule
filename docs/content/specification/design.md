@@ -47,11 +47,12 @@ That enriched object is an internal inter-workflow contract, not an authoring fo
 
 ## Scenario matrix
 
-Release intent is resolved once, in the Plan job. A default-branch push resolves the merged pull request for its
-labels only when its merge commit exactly matches the pushed SHA; a direct push or manual dispatch defaults to `Patch`
-regardless of `AutoPatching`. Closed pull requests clean up prereleases but cannot authorize a stable release. The
-default label-to-bump mapping is `release:major`, `release:minor`, `release:patch`, `release:pre-release`, and
-`release:skip`. Repositories can override those names in `.github/PSModule.yml`. Handling of conflicting labels and
+Release intent is resolved once, in the Plan job. A default-branch push or recovery dispatch resolves the merged PR's
+labels when its merge commit exactly matches the released SHA. Direct releases use `Publish.Module.DefaultBump`,
+which accepts `patch`, `minor`, or `major` and defaults to `patch`. An explicit configured bump label overrides it.
+Closed pull requests clean up prereleases but cannot authorize a stable release. The default label mapping is
+`release:major`, `release:minor`, `release:patch`, `release:prerelease`, and `release:skip`. Repositories can override
+every mapping in `.github/PSModule.yml`. Handling of conflicting labels and
 branch types that may publish are documented in [Versioning and releases](../guides/versioning-and-releases.md).
 
 Tests run on **Windows** (latest), **Linux** (Ubuntu latest), and **macOS** (latest). Failures on any platform block
@@ -94,7 +95,8 @@ Settings live only as workflow outputs, computed by Plan. Pros: single source of
 **Chosen: default-branch push + current version**
 
 An important default-branch push is the release authority. When its commit exactly matches a merged pull request, the
-bump comes from that PR label; otherwise it is `Patch`. The next version is computed from the current version. Pros:
+bump comes from that PR's configured label; a direct release otherwise uses the effective `DefaultBump`. An ambiguous
+merged association stops publication. The next version is computed from the current version. Pros:
 explicit, git-traceable release metadata without making a pull-request close event a publication authority. Cons: it
 must be re-computed if a PR is re-run or the base version changes.
 

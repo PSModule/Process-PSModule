@@ -12,13 +12,14 @@ back to patch and update old versions of the modules. This means that if we are 
 patch the latest version with a fix, not releasing new versions based on older versions of the module, i.e. not updating the latest 1.x with the
 patch.
 
-## Release and feature branches
+## Trunk-based development
 
-If you need to work forth a bigger release, create a branch representing the release (a release branch) and open a PR towards `main` for this branch.
-For each topic or feature to add to the release, open a new branch representing the feature (a feature branch) and open a PR towards the release
-branch. Optionally add the configured prerelease label (`release:pre-release` by default) on the PR for the release
-branch. AutoPatching supplies a patch bump by default; when it is disabled, add one configured bump label to publish
-preview versions before merging and releasing a published version of the PowerShell module.
+Keep feature branches short-lived and open pull requests directly toward `main`.
+Independent changes use separate branches; use a
+[stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
+only when changes genuinely depend on each other. Add the configured prerelease label (`release:prerelease` by default)
+when a preview version is needed before merging to `main`. One explicit bump label or the effective `DefaultBump`
+supplies its level.
 
 ## Colocation of concerns
 

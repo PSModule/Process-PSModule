@@ -8,6 +8,6 @@ Documentation site generation is powered by Zensical. Repositories define site c
 
 The full documentation is published at:
 
-📖 **[Process-PSModule documentation](https://psmodule.io/docs/)**
+📖 **[Process-PSModule documentation](https://psmodule.io/Process-PSModule/)**
 
 It covers getting started, the pipeline stages, usage, configuration, repository structure, and the principles behind the framework.

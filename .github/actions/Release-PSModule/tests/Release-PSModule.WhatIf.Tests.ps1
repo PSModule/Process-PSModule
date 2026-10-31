@@ -35,15 +35,19 @@ AfterAll {
     foreach ($name in $script:environmentVariableNames) {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
-    Remove-Item -Path function:global:gh -ErrorAction SilentlyContinue
-    Remove-Item -Path function:global:git -ErrorAction SilentlyContinue
+    # Set-Item accepts 'function:global:X' and creates a function named 'X' in the global scope, but
+    # Remove-Item and Get-Item do not resolve that same path back to it, and fail silently rather than
+    # erroring. Removing by name is what actually deletes the shims; leaving them behind would shadow the
+    # real commands for every test file that runs later in the session.
+    Remove-Item -Path 'Function:\gh' -ErrorAction SilentlyContinue
+    Remove-Item -Path 'Function:\git' -ErrorAction SilentlyContinue
 }
 
 Describe 'Release-PSModule WhatIf' {
     BeforeEach {
         $script:moduleName = 'TestModule'
         $script:workspacePath = Join-Path -Path $TestDrive -ChildPath 'workspace'
-        $script:modulePath = Join-Path -Path $script:workspacePath -ChildPath "outputs/module/$script:moduleName"
+        $script:modulePath = Join-Path -Path $script:workspacePath -ChildPath ".PSModule/module/$script:moduleName"
         $manifestPath = Join-Path -Path $script:modulePath -ChildPath "$script:moduleName.psd1"
         $eventPath = Join-Path -Path $TestDrive -ChildPath 'event.json'
         $script:githubOutputPath = Join-Path -Path $TestDrive -ChildPath 'github-output'
@@ -85,7 +89,7 @@ Describe 'Release-PSModule WhatIf' {
         $env:GITHUB_WORKSPACE = $script:workspacePath
         $env:RELEASE_ACTION_GH_CALL_LOG = $script:ghCallLogPath
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_Name = $script:moduleName
-        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath = 'outputs/module'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath = '.PSModule/module'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'true'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'true'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName = 'false'

@@ -25,54 +25,58 @@ Applies to any PowerShell module in the PSModule ecosystem that produces a versi
 
 ### Functional Requirements
 
-### FR1 — Build the module from source { #fr1 }
+### FR1 — Build the module from source {#fr1}
 
 The pipeline MUST compile the PowerShell module source code into a module artifact, stamping it with the resolved semantic version and making it available for downstream testing and publication.
 
-### FR2 — Run cross-platform tests { #fr2 }
+### FR2 — Run cross-platform tests {#fr2}
 
 The pipeline MUST execute the module's test suites against multiple platforms — at minimum Windows, Linux, and macOS — and fail the build if any platform's tests fail. Tests MUST include source-code validation (style, standards), framework tests (module structure, common issues), and module-local tests (user-written Pester tests).
 
-### FR3 — Enforce code quality and coverage gates { #fr3 }
+### FR3 — Enforce code quality and coverage gates {#fr3}
 
 The pipeline MUST measure and enforce code coverage thresholds and static-analysis results. A build MUST NOT proceed to publication if quality or coverage targets are missed; the gate MUST prevent merge unless explicitly overridden by a label.
 
-### FR4 — Generate and publish documentation { #fr4 }
+### FR4 — Generate and publish documentation {#fr4}
 
 The pipeline MUST generate module documentation from the source (cmdlet help, README, schema) and publish it to a static documentation site. Documentation MUST be versioned and deployable alongside the module release.
 
-### FR5 — Support label-driven versioning and publication { #fr5 }
+### FR5 — Support label-driven versioning and publication {#fr5}
 
 The pipeline MUST default to the namespaced pull-request labels `release:major`, `release:minor`, `release:patch`,
-`release:pre-release`, and `release:skip` when deciding publication and the semantic-version bump. Repositories MAY
-override each mapping through `.github/PSModule.yml`. It MUST compute the next version automatically, never reading or
-writing a hand-edited version file. An important push to the release branch MUST trigger publication to the PowerShell
-Gallery and documentation site. With AutoPatching enabled, the configured prerelease label MUST resolve a patch
-prerelease; when AutoPatching is disabled, a configured bump label MUST also be present.
+`release:prerelease`, and `release:skip` when deciding publication and the semantic-version bump. Repositories MAY
+override every mapping and configure `Publish.Module.DefaultBump` as `patch`, `minor`, or `major`, with `patch` when
+omitted. One explicit bump label MUST override that default; a valid effective default MUST NOT be treated as missing
+release intent. A prerelease label MUST select prerelease mode using the resolved bump, not supply a level itself.
 
-### FR6 — Produce immutable, linkable releases { #fr6 }
+The pipeline MUST compute the next version automatically, never reading or writing a hand-edited version file. An
+important default-branch push or recovery dispatch MUST use the merged PR's labels when its merge commit exactly
+matches the released SHA. A direct release without a matching release PR MUST use the effective default; an ambiguous
+merged association MUST stop publication. A closed pull request MUST only clean up its prereleases.
+
+### FR6 — Produce immutable, linkable releases {#fr6}
 
 Each publication MUST produce a GitHub Release, a git tag, and a PowerShell Gallery package version — all linked and versioned together so they are discoverable and pinnable for consumers.
 
 ### Non-Functional Requirements
 
-### NFR1 — Semantic versioning compliance { #nfr1 }
+### NFR1 — Semantic versioning compliance {#nfr1}
 
 Versions MUST follow [SemVer 2.0.0](https://semver.org/) (`vMAJOR.MINOR.PATCH` or `vMAJOR.MINOR.PATCH-prerelease.N`). Breaking changes MUST increment `MAJOR`; new functionality MUST increment `MINOR`; bugfixes MUST increment `PATCH`. Prerelease versions MUST be obtainable but not promoted as the latest stable release.
 
-### NFR2 — Serialized releases { #nfr2 }
+### NFR2 — Serialized releases {#nfr2}
 
 Only one release process MUST run against a given version of the codebase at a time. Concurrent releases to the same ref MUST be prevented, so the tag, version counter, and published artifact remain consistent.
 
-### NFR3 — Single production authority { #nfr3 }
+### NFR3 — Single production authority {#nfr3}
 
-Exactly one branch (typically `main`) MUST be authorized to publish stable releases. All other release branches MUST publish only prerelease versions. This ensures consumers have one unambiguous latest stable version.
+Exactly one branch (the repository default branch, typically `main`) MUST be authorized to publish stable releases. Feature branches MAY publish only prerelease versions. This ensures consumers have one unambiguous latest stable version.
 
-### NFR4 — Rapid feedback on failure { #nfr4 }
+### NFR4 — Rapid feedback on failure {#nfr4}
 
 Pipeline failures MUST be visible in the pull request and block merge. Contributors MUST know within minutes whether their changes pass quality and test gates, not hours or days later.
 
-### NFR5 — Reproducible and auditable { #nfr5 }
+### NFR5 — Reproducible and auditable {#nfr5}
 
 The entire pipeline and its decisions MUST be stored in git, so the build is reproducible and auditable from the commit alone. No external configuration, API calls, or out-of-band decisions.
 
@@ -99,7 +103,7 @@ Scenario: Compute the next version from the merged PR label
   Then the new version is computed as v1.3.0
 
 Scenario: Reject ambiguous version labels
-  Given a pull request with "release:pre-release", "release:major", and "release:minor" labels
+  Given a pull request with "release:prerelease", "release:major", and "release:minor" labels
   When the pull-request pipeline runs
   Then the build fails and the merge is blocked
 ```
@@ -120,7 +124,8 @@ Scenario: Publish a module after a stable release
 
 ```gherkin
 Scenario: Publish a prerelease version
-  Given a pull request with the default label "release:pre-release"
+  Given a pull request with the default label "release:prerelease"
+  And a valid configured DefaultBump or one explicit bump label
   When the PR runs the pipeline
   Then a prerelease version is published (e.g., v1.2.3-pr.1.N)
   And it is available for testing before the PR is merged
