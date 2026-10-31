@@ -244,17 +244,16 @@ function Resolve-ReleasePullRequest {
         Resolves the pull request whose version label drives the release for a commit.
 
         .DESCRIPTION
-        A push resolves the pull request associated with the pushed commit so a default-branch
-        release honours the merged pull request's version label. A manual dispatch on the default
-        branch is the documented recovery route for a failed or cancelled release run and targets
-        the same merge commit, so it must resolve the same pull request. Excluding it left the pull
-        request unresolved, and the version silently fell back to a patch bump through AutoPatching.
+        A push and a default-branch dispatch resolve the exact merged pull request for the released
+        commit. Dispatch uses the current branch tip, so it can recover an intended merge only while
+        that merge is still the tip. Rerun the original workflow's failed jobs for an older commit.
 
         When no pull request is selected, the outcome depends on why. A commit pushed directly to
         the default branch has no label to honour, so the release proceeds with the default patch
         bump. A commit associated with a merged default-branch pull request that does not match it
-        does carry a label, and applying a patch bump would publish a version nobody asked for. A
-        PowerShell Gallery version cannot be reclaimed, so that case throws instead.
+        does carry a label, and applying a patch bump would publish a version nobody asked for.
+        That case throws for an important default-branch push or a recovery dispatch, but not for a
+        documentation-only push that cannot publish.
 
         .OUTPUTS
         PSCustomObject with Resolved, indicating whether the lookup ran, and PullRequest, which is
@@ -264,7 +263,7 @@ function Resolve-ReleasePullRequest {
         Resolve-ReleasePullRequest -EventName workflow_dispatch -CommitSha $sha -DefaultBranch main `
             -IsManualDispatchToDefaultBranch $true -GetAssociatedPullRequest { param($Sha) $pulls }
 
-        Resolves the merged pull request for a recovery dispatch so its version label is honoured.
+        Resolves the merged pull request for a current-tip recovery dispatch so its label is honored.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
         Justification = 'Parameters are used inside a LogGroup script block.')]
@@ -293,6 +292,10 @@ function Resolve-ReleasePullRequest {
         [Parameter()]
         [bool] $IsManualDispatchToDefaultBranch,
 
+        # Whether a default-branch push changes a configured important file.
+        [Parameter()]
+        [bool] $HasImportantChanges = $true,
+
         # Returns the pull requests GitHub associates with a commit. Takes the commit SHA.
         [Parameter(Mandatory)]
         [scriptblock] $GetAssociatedPullRequest
@@ -307,7 +310,7 @@ function Resolve-ReleasePullRequest {
         return [pscustomobject]@{ Resolved = $false; PullRequest = $null }
     }
 
-    LogGroup "Resolve pull request for commit [$CommitSha]" {
+    Set-GitHubLogGroup "Resolve pull request for commit [$CommitSha]" {
         $associated = @((& $GetAssociatedPullRequest $CommitSha) | Where-Object { $null -ne $_ })
         $pullRequest = Select-PullRequestForPush -PullRequest $associated `
             -DefaultBranch $DefaultBranch `
@@ -320,7 +323,7 @@ function Resolve-ReleasePullRequest {
 
         # Only a release-bearing event can publish a wrong version. A push to a feature branch has
         # no release to get wrong, and its commit is legitimately claimed by an open pull request.
-        $isReleaseEvent = $IsPushToDefaultBranch -or $IsManualDispatchToDefaultBranch
+        $isReleaseEvent = ($IsPushToDefaultBranch -and $HasImportantChanges) -or $IsManualDispatchToDefaultBranch
         $discarded = if ($isReleaseEvent) {
             @(Get-DiscardedReleasePullRequest -PullRequest $associated `
                     -DefaultBranch $DefaultBranch `
@@ -334,8 +337,8 @@ function Resolve-ReleasePullRequest {
                 'The following merged pull request(s) are associated with it but none matches the commit ' +
                 "being released: $($discarded -join '; '). " +
                 'Refusing to fall back to a patch bump, because a wrong version published to the ' +
-                'PowerShell Gallery cannot be reclaimed. Re-run the workflow against the merge commit ' +
-                'of the pull request you intend to release.'
+                'PowerShell Gallery cannot be reclaimed. Rerun the original workflow for the intended merge commit. ' +
+                'A default-branch dispatch can recover that commit only while it is still the branch tip.'
             )
         }
 

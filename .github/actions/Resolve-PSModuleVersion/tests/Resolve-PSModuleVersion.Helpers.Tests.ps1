@@ -2,10 +2,6 @@
     'PSUseDeclaredVarsMoreThanAssignments', '',
     Justification = 'Variables are assigned in BeforeAll and used inside It blocks.'
 )]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-    'PSAvoidUsingCmdletAliases', 'Context',
-    Justification = 'Context is a Pester test block, not an implicit call to Get-Context.'
-)]
 [CmdletBinding()]
 param()
 
@@ -145,7 +141,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'ConvertFrom-GitHubReleaseJson' {
-        Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
+        Pester\Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
             It 'ConvertFrom-GitHubReleaseJson - returns an empty array for an empty JSON array' {
                 $result = ConvertFrom-GitHubReleaseJson -Json '[]'
                 @($result).Count | Should -Be 0
@@ -162,7 +158,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'ConvertFrom-GitHubReleaseJson - releases present' {
+        Pester\Context 'ConvertFrom-GitHubReleaseJson - releases present' {
             It 'ConvertFrom-GitHubReleaseJson - returns a flat array of release objects' {
                 $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
                 $result = @(ConvertFrom-GitHubReleaseJson -Json $json)
@@ -185,14 +181,14 @@ Describe 'Resolve-PSModuleVersion' {
 
             It 'ConvertFrom-GitHubReleaseJson - survives the log group wrapper without nesting' {
                 $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
-                $releases = @(LogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
+                $releases = @(Set-GitHubLogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
                 $releases.Count | Should -Be 2
                 $releases[0].tagName | Should -Be 'v1.2.3'
             }
         }
 
         Describe 'Get-ResolvedModuleVersion' {
-            Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
+            Pester\Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
                 It 'Get-ResolvedModuleVersion - reuses the Gallery version that is the next GitHub patch release' {
                     $params = @{
                         GitHubVersion    = New-PSSemVer -Version '1.2.3'
@@ -227,7 +223,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-LatestGitHubVersion' {
-        Context 'Get-LatestGitHubVersion - repository without releases' {
+        Pester\Context 'Get-LatestGitHubVersion - repository without releases' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when the releases list is null' {
                 $result = Get-LatestGitHubVersion -Releases $null
                 $result.ToString() | Should -Be '0.0.0'
@@ -248,7 +244,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestGitHubVersion - releases present but none marked as latest' {
+        Pester\Context 'Get-LatestGitHubVersion - releases present but none marked as latest' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when no release is marked as latest' {
                 $releases = @(
                     [PSCustomObject]@{ tagName = 'v1.2.3'; isLatest = $false; isPrerelease = $false }
@@ -267,7 +263,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestGitHubVersion - releases present' {
+        Pester\Context 'Get-LatestGitHubVersion - releases present' {
             It 'Get-LatestGitHubVersion - returns the version of the release marked as latest' {
                 $releases = @(
                     [PSCustomObject]@{ tagName = 'v1.2.2'; isLatest = $false; isPrerelease = $false }
@@ -291,7 +287,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-LatestPublishedVersion' {
-        Context 'Get-LatestPublishedVersion - brand-new module' {
+        Pester\Context 'Get-LatestPublishedVersion - brand-new module' {
             It 'Get-LatestPublishedVersion - returns 0.0.0 when neither source has a version' {
                 $result = Get-LatestPublishedVersion -GitHubVersion $null -PSGalleryVersion $null
                 $result.ToString() | Should -Be '0.0.0'
@@ -312,7 +308,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestPublishedVersion - one source has a version' {
+        Pester\Context 'Get-LatestPublishedVersion - one source has a version' {
             It 'Get-LatestPublishedVersion - returns the GitHub version when the gallery has none' {
                 $result = Get-LatestPublishedVersion -GitHubVersion (New-PSSemVer -Version '1.2.3') -PSGalleryVersion $null
                 $result.ToString() | Should -Be '1.2.3'
@@ -324,7 +320,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestPublishedVersion - both sources have a version' {
+        Pester\Context 'Get-LatestPublishedVersion - both sources have a version' {
             It 'Get-LatestPublishedVersion - returns the highest of the two versions' {
                 $params = @{
                     GitHubVersion    = New-PSSemVer -Version '1.4.2'
@@ -337,7 +333,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-NextPrereleaseNumber' {
-        Context 'Get-NextPrereleaseNumber - repository without releases' {
+        Pester\Context 'Get-NextPrereleaseNumber - repository without releases' {
             It 'Get-NextPrereleaseNumber - returns 001 when the releases list is null' {
                 $params = @{
                     ModuleName     = 'PSModuleNonExistentModuleForTesting'
@@ -368,7 +364,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-NextPrereleaseNumber - matching prereleases exist on GitHub' {
+        Pester\Context 'Get-NextPrereleaseNumber - matching prereleases exist on GitHub' {
             It 'Get-NextPrereleaseNumber - returns the number after the highest matching GitHub prerelease' {
                 $params = @{
                     ModuleName     = 'PSModuleNonExistentModuleForTesting'
@@ -385,7 +381,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-NextModuleVersion' {
-        Context 'Get-NextModuleVersion - brand-new module without releases' {
+        Pester\Context 'Get-NextModuleVersion - brand-new module without releases' {
             It 'Get-NextModuleVersion - resolves the first patch release to 0.0.1' {
                 $params = @{
                     LatestVersion = New-PSSemVer -Version '0.0.0'
@@ -470,7 +466,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-NextModuleVersion - existing module with releases' {
+        Pester\Context 'Get-NextModuleVersion - existing module with releases' {
             It 'Get-NextModuleVersion - bumps the patch version of the latest release' {
                 $params = @{
                     LatestVersion = New-PSSemVer -Version '1.2.3'
@@ -488,7 +484,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Resolve-PSModuleVersion' {
-        Context 'Resolve-PSModuleVersion - brand-new module with no GitHub release and no gallery version' {
+        Pester\Context 'Resolve-PSModuleVersion - brand-new module with no GitHub release and no gallery version' {
             It 'Resolve-PSModuleVersion - resolves the full chain to the first patch version' {
                 $githubVersion = Get-LatestGitHubVersion -Releases @()
                 $latestVersion = Get-LatestPublishedVersion -GitHubVersion $githubVersion -PSGalleryVersion $null
@@ -636,10 +632,12 @@ Describe 'Resolve-PSModuleVersion' {
             @{ EventName = 'workflow_dispatch'; Label = 'release:minor'; ExpectedVersion = 'v0.5.0' }
             @{ EventName = 'workflow_dispatch'; Label = 'release:patch'; ExpectedVersion = 'v0.4.14' }
             @{ EventName = 'workflow_dispatch'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = 'release:skip'; ExpectedVersion = 'no publication' }
             @{ EventName = 'push'; Label = 'release:major'; ExpectedVersion = 'v1.0.0' }
             @{ EventName = 'push'; Label = 'release:minor'; ExpectedVersion = 'v0.5.0' }
             @{ EventName = 'push'; Label = 'release:patch'; ExpectedVersion = 'v0.4.14' }
             @{ EventName = 'push'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = 'release:skip'; ExpectedVersion = 'no publication' }
         ) {
             $associatedPullRequests = if ($Label) {
                 @([pscustomobject]@{
@@ -683,6 +681,13 @@ Describe 'Resolve-PSModuleVersion' {
             $configuration = Get-TestConfiguration
             $pullRequest = Get-GitHubPullRequest -SettingsJson $settingsJson
             $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+            $resolution.Resolved | Should -BeTrue
+            if ($Label -eq 'release:skip') {
+                $pullRequest.Number | Should -Be 64
+                $decision.ShouldPublish | Should -BeFalse
+                $decision.CreateRelease | Should -BeFalse
+                return
+            }
             $versionParameters = @{
                 GitHubVersion    = New-PSSemVer -Version '0.4.13'
                 PSGalleryVersion = New-PSSemVer -Version '0.4.13'
@@ -692,7 +697,6 @@ Describe 'Resolve-PSModuleVersion' {
             }
             $resolvedVersion = Get-ResolvedModuleVersion @versionParameters
 
-            $resolution.Resolved | Should -BeTrue
             $decision.ShouldPublish | Should -BeTrue
             $resolvedVersion.ToString() | Should -Be $ExpectedVersion
             if ($Label) {
