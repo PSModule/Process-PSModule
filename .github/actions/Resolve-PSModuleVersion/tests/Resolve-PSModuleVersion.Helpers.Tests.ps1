@@ -2,11 +2,16 @@
     'PSUseDeclaredVarsMoreThanAssignments', '',
     Justification = 'Variables are assigned in BeforeAll and used inside It blocks.'
 )]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingCmdletAliases', 'Context',
+    Justification = 'Context is a Pester test block, not an implicit call to Get-Context.'
+)]
 [CmdletBinding()]
 param()
 
 BeforeAll {
     Import-Module -Name 'PSModule' -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../../Get-PSModuleSettings/src/Get-PSModuleSettings.Helpers.psm1') -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../src/Resolve-PSModuleVersion.Helpers.psm1') -Force
 
     function Get-TestConfiguration {
@@ -574,45 +579,75 @@ Describe 'Resolve-PSModuleVersion' {
             $result.PatchRelease | Should -BeTrue
         }
 
-        It 'resolves the labeled minor version once a recovery dispatch supplies pull request context' {
-            # End-to-end guard for issue #530, using the reproduction numbers from
-            # MariusStorhaug/MariusTestModule: latest release v0.4.13 and merged pull request #64
-            # labeled 'minor', so the correct release is 0.5.0. This asserts the version consequence
-            # of the two possible contexts a default-branch dispatch can produce. Get-PSModuleSettings
-            # decides which one it is; that decision is guarded by
-            # Test-ShouldResolveAssociatedPullRequest in the settings action tests.
-            $configuration = Get-TestConfiguration
-            $versionFor = {
-                param($SettingsJson)
-                $pullRequest = Get-GitHubPullRequest -SettingsJson $SettingsJson
-                $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
-                $resolved = Get-ResolvedModuleVersion -GitHubVersion ([PSSemVer]'0.4.13') `
-                    -PSGalleryVersion ([PSSemVer]'0.4.13') `
-                    -Decision $decision `
-                    -Configuration $configuration `
-                    -ModuleName 'MariusTestModule'
-                $resolved.ToString()
+        It 'resolves <ExpectedVersion> for a <EventName> with <Label> release intent' -ForEach @(
+            @{ EventName = 'workflow_dispatch'; Label = 'major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = 'major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'push'; Label = 'minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'push'; Label = 'patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = ''; ExpectedVersion = 'v0.4.14' }
+        ) {
+            $associatedPullRequests = if ($Label) {
+                @([pscustomobject]@{
+                        Number           = 64
+                        Base             = [pscustomobject]@{ Ref = 'main' }
+                        Head             = [pscustomobject]@{ Ref = 'feature/recovered-release' }
+                        merged_at        = '2026-09-02T09:02:24Z'
+                        merge_commit_sha = 'released-sha'
+                        Labels           = @([pscustomobject]@{ Name = $Label })
+                    })
+            } else {
+                @()
             }
-
-            $dispatchContext = @{
-                IsPushToDefaultBranch           = $false
-                IsManualDispatchToDefaultBranch = $true
+            $parameters = @{
+                EventName                       = $EventName
+                CommitSha                       = 'released-sha'
                 DefaultBranch                   = 'main'
+                IsPushToDefaultBranch           = $EventName -eq 'push'
+                IsManualDispatchToDefaultBranch = $EventName -eq 'workflow_dispatch'
+                GetAssociatedPullRequest        = { $associatedPullRequests }.GetNewClosure()
             }
+            $resolution = Resolve-ReleasePullRequest @parameters
+            $resolvedPullRequest = $resolution.PullRequest
+            $normalizedPullRequest = if ($resolvedPullRequest) {
+                @{
+                    Number  = $resolvedPullRequest.Number
+                    HeadRef = $resolvedPullRequest.Head.Ref
+                    Labels  = @($resolvedPullRequest.Labels.Name)
+                }
+            } else {
+                $null
+            }
+            $settingsJson = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $parameters.IsPushToDefaultBranch
+                    IsManualDispatchToDefaultBranch = $parameters.IsManualDispatchToDefaultBranch
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $normalizedPullRequest
+                }
+            } | ConvertTo-Json -Depth 5
+            $configuration = Get-TestConfiguration
+            $pullRequest = Get-GitHubPullRequest -SettingsJson $settingsJson
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+            $versionParameters = @{
+                GitHubVersion    = New-PSSemVer -Version '0.4.13'
+                PSGalleryVersion = New-PSSemVer -Version '0.4.13'
+                Decision         = $decision
+                Configuration    = $configuration
+                ModuleName       = 'DispatchTestModule'
+            }
+            $resolvedVersion = Get-ResolvedModuleVersion @versionParameters
 
-            $withoutPullRequest = & $versionFor (@{
-                    Context = $dispatchContext + @{ PullRequest = $null }
-                } | ConvertTo-Json -Depth 5)
-            $withPullRequest = & $versionFor (@{
-                    Context = $dispatchContext + @{
-                        PullRequest = @{ Number = 64; HeadRef = 'feature/recovered-release'; Labels = @('minor') }
-                    }
-                } | ConvertTo-Json -Depth 5)
-
-            # The silent downgrade the defect produced.
-            $withoutPullRequest | Should -Be 'v0.4.14'
-            # The version the merged pull request's label asks for.
-            $withPullRequest | Should -Be 'v0.5.0'
+            $resolution.Resolved | Should -BeTrue
+            $decision.ShouldPublish | Should -BeTrue
+            $resolvedVersion.ToString() | Should -Be $ExpectedVersion
+            if ($Label) {
+                $pullRequest.Number | Should -Be 64
+            } else {
+                $pullRequest.IsDirectRelease | Should -BeTrue
+            }
         }
 
         It 'does not publish an unlabeled prerelease when AutoPatching is disabled' {

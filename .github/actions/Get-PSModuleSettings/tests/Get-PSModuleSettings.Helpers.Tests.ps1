@@ -278,6 +278,58 @@ Describe 'Resolve-ReleasePullRequest' {
         $result.Resolved | Should -BeTrue
         $result.PullRequest | Should -BeNullOrEmpty
     }
+
+    It 'rejects an unmatched merged pull request for a default-branch push' {
+        $otherMerge = [pscustomobject]@{
+            Number           = 412
+            Base             = [pscustomobject]@{ Ref = 'main' }
+            merged_at        = '2026-09-01T00:00:00Z'
+            merge_commit_sha = 'merge-of-412'
+        }
+        $parameters = @{
+            EventName                = 'push'
+            CommitSha                = 'released-sha'
+            DefaultBranch            = 'main'
+            IsPushToDefaultBranch    = $true
+            GetAssociatedPullRequest = { @($otherMerge) }.GetNewClosure()
+        }
+
+        { Resolve-ReleasePullRequest @parameters } | Should -Throw '*#412*merge-of-412*cannot be reclaimed*'
+    }
+
+    It 'uses the exact merge match when unrelated merged pull requests also claim the commit' {
+        $otherMerge = [pscustomobject]@{
+            Number           = 412
+            Base             = [pscustomobject]@{ Ref = 'main' }
+            merged_at        = '2026-09-03T00:00:00Z'
+            merge_commit_sha = 'merge-of-412'
+        }
+        $matchingPullRequest = $script:mergedPullRequest
+        $parameters = @{
+            EventName                       = 'workflow_dispatch'
+            CommitSha                       = 'released-sha'
+            DefaultBranch                   = 'main'
+            IsManualDispatchToDefaultBranch = $true
+            GetAssociatedPullRequest        = { @($otherMerge, $matchingPullRequest) }.GetNewClosure()
+        }
+
+        $result = Resolve-ReleasePullRequest @parameters
+
+        $result.PullRequest.Number | Should -Be 64
+        $result.PullRequest.Labels.Name | Should -Be @('minor')
+    }
+
+    It 'propagates an association lookup failure instead of treating it as a direct release' {
+        $parameters = @{
+            EventName                       = 'workflow_dispatch'
+            CommitSha                       = 'released-sha'
+            DefaultBranch                   = 'main'
+            IsManualDispatchToDefaultBranch = $true
+            GetAssociatedPullRequest        = { throw 'Commit association lookup failed.' }
+        }
+
+        { Resolve-ReleasePullRequest @parameters } | Should -Throw '*Commit association lookup failed*'
+    }
 }
 
 Describe 'Get-DiscardedReleasePullRequest' {
