@@ -364,6 +364,88 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GitHubWrites | Should -Be 0
     }
 
+    It 'rejects an observed tag that <Mutation> during the shared coordinate reservation' -ForEach @(
+        @{ Mutation = 'disappears' }
+        @{ Mutation = 'is replaced' }
+    ) {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.VersionTag = $null
+        $script:state.VersionTagObject = $null
+        $script:state.LateTagMutation = $Mutation
+        $script:state.OnVersionTagCreate = {
+            param($State)
+            if ($State.LateTagMutation -ceq 'disappears') {
+                $State.Tag = $null
+            } else {
+                Set-PSModuleFixtureClaim -State $State -Claim $State.ExpectedClaim `
+                    -TagSha '4444444444444444444444444444444444444444'
+            }
+        }
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubCreationUpload | Should -Be 0
+        $script:state.Calls | Should -Contain 'module-version-ref-create'
+        $script:state.Calls | Should -Not -Contain 'tag-ref-create'
+        $failure.Exception.Message | Should -Match 'tag.*changed|disappeared'
+    }
+
+    It 'rejects losing a tag first observed after preflight during the shared coordinate reservation' {
+        $script:state.OnTagRead = {
+            param($State)
+            if ($State.TagReads -eq 2) {
+                Set-PSModuleFixtureClaim -State $State -Claim $State.ExpectedClaim
+                $State.VersionTag = $null
+                $State.VersionTagObject = $null
+            }
+        }
+        $script:state.OnVersionTagCreate = {
+            param($State)
+            $State.Tag = $null
+        }
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubCreationUpload | Should -Be 0
+        $script:state.Calls | Should -Contain 'module-version-ref-create'
+        $script:state.Calls | Should -Not -Contain 'tag-ref-create'
+        $script:state.Tag | Should -BeNullOrEmpty
+        $failure.Exception.Message | Should -Match 'tag.*changed|disappeared'
+    }
+
+    It 'reserves a missing shared coordinate without replacing an unchanged existing tag' {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.VersionTag = $null
+        $script:state.VersionTagObject = $null
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GalleryWrites | Should -Be 1
+        $script:state.Tag.sha | Should -BeExactly '3333333333333333333333333333333333333333'
+        $script:state.VersionTag.sha | Should -BeExactly $script:state.Tag.sha
+        $script:state.Calls | Should -Contain 'module-version-ref-create'
+        $script:state.Calls | Should -Not -Contain 'tag-ref-create'
+        $script:state.Calls | Should -Not -Contain 'tag-object-create'
+    }
+
+    It 'completes a partial shared claim when the release tag has never been observed' {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.Tag = $null
+        $script:state.TagObject = $null
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GalleryWrites | Should -Be 1
+        $script:state.Tag.sha | Should -BeExactly $script:state.VersionTag.sha
+        $script:state.Calls | Should -Contain 'tag-ref-create'
+        $script:state.Calls | Should -Not -Contain 'module-version-ref-create'
+        $script:state.Calls | Should -Not -Contain 'tag-object-create'
+    }
+
     It 'rejects supplied PR context without a positive identity before all writes' -ForEach @(
         @{ Json = '{}' }
         @{ Json = '{"Number":0}' }
