@@ -93,7 +93,7 @@ Describe 'Source-bound publication proof' {
 
 Describe 'Tested artifact identity' {
     BeforeEach {
-        $script:modulePath = Join-Path -Path $TestDrive -ChildPath 'TestModule'
+        $script:modulePath = Join-Path -Path $TestDrive -ChildPath ([guid]::NewGuid().ToString()) -AdditionalChildPath 'TestModule'
         $null = New-Item -Path $script:modulePath -ItemType Directory -Force
         [IO.File]::WriteAllText(
             (Join-Path -Path $script:modulePath -ChildPath 'TestModule.psm1'),
