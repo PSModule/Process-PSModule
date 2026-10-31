@@ -67,6 +67,44 @@ Describe 'Source-bound publication proof' {
         { Get-PSModulePublicationClaim -Message $Message } | Should -Throw '*publication*'
     }
 
+    It 'rejects an array-valued publication <Field> instead of coercing its proof' -ForEach @(
+        @{ Field = 'Repository' }
+        @{ Field = 'CommitSha' }
+        @{ Field = 'ModuleName' }
+        @{ Field = 'GalleryVersion' }
+        @{ Field = 'VersionPrefix' }
+        @{ Field = 'ReleaseTag' }
+        @{ Field = 'ReleaseType' }
+        @{ Field = 'ArtifactSha256' }
+        @{ Field = 'AssetName' }
+        @{ Field = 'AssetSha256' }
+    ) {
+        $script:claim[$Field] = @($script:claim[$Field])
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(
+                ($script:claim | ConvertTo-Json -Compress)
+            ))
+
+        { Get-PSModulePublicationClaim -Message "<!-- PSModule.Publication:v1:$encoded -->" } |
+            Should -Throw '*publication*'
+    }
+
+    It 'rejects an array-valued ownership <Field> instead of projecting a scalar' -ForEach @(
+        @{ Field = 'Repository' }
+        @{ Field = 'PullRequest' }
+        @{ Field = 'CommitSha' }
+    ) {
+        $owner = @{
+            Repository = 'PSModule/TestModule'; PullRequest = 42; CommitSha = $script:claim.CommitSha
+        }
+        $owner[$Field] = @($owner[$Field])
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(
+                ($owner | ConvertTo-Json -Compress)
+            ))
+
+        { Get-PSModulePrereleaseOwnership -Body "<!-- PSModule.PrereleaseOwner:v1:$encoded -->" } |
+            Should -Throw '*footer*'
+    }
+
     It 'rejects a foreign PR footer even when its immutable source matches' {
         $owner = @{
             Repository  = 'PSModule/TestModule'
