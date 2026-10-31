@@ -199,6 +199,7 @@ function New-PSModulePublicationFixture {
         TagReads             = 0
         OnTagRead            = $null
         OnTagCreate          = $null
+        OnGeneratedNotes     = $null
         FailReleaseCreate    = $false
         ExpectedClaim        = [pscustomobject]@{
             Repository     = "PSModule/$name"
@@ -312,6 +313,9 @@ function New-PSModulePublicationFixture {
                         $status = 201
                     }
                 } elseif ($endpoint -ceq "repos/$($claim.Repository)/releases/generate-notes") {
+                    if ($null -ne $state.OnGeneratedNotes) {
+                        & $state.OnGeneratedNotes $state
+                    }
                     $value = @{ body = 'Complete independently generated fixture notes.' }
                 } else {
                     throw "Unexpected create API in the publication fixture: [$endpoint]."

@@ -448,6 +448,9 @@ function Get-PSModulePublicationState {
         }
     }
     if ($null -ne $release) {
+        if ($release.draft -eq $true) {
+            throw 'The existing release is a draft. Refusing Gallery publication or a success-shaped incomplete release.'
+        }
         if ($release.tag_name -cne $expected.ReleaseTag -or
             [string]::IsNullOrWhiteSpace($release.html_url) -or
             $release.prerelease -isnot [bool] -or
@@ -532,10 +535,10 @@ function New-PSModulePublicationTag {
     )
 
     $current = Get-PSModulePublicationState -ExpectedClaim $Claim -Reader $Reader
+    if ($null -ne $State.TagSha -and $current.TagSha -cne $State.TagSha) {
+        throw 'The existing publication tag changed or disappeared after preflight. Refusing Gallery publication.'
+    }
     if ($null -ne $current.TagSha) {
-        if ($null -ne $State.TagSha -and $current.TagSha -cne $State.TagSha) {
-            throw 'The existing publication tag changed after preflight. Refusing Gallery publication.'
-        }
         return $current
     }
     if (-not $PSCmdlet.ShouldProcess("$($Claim.Repository):$($Claim.ReleaseTag)", 'Create source-bound annotated version tag')) {
