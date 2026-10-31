@@ -8,6 +8,15 @@ param()
 BeforeAll {
     Import-Module -Name 'PSModule' -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../src/Resolve-PSModuleVersion.Helpers.psm1') -Force
+    Mock -CommandName Find-PSResource -ModuleName Resolve-PSModuleVersion.Helpers -MockWith {
+        $errorRecord = [Management.Automation.ErrorRecord]::new(
+            [Exception]::new('The isolated fixture module is absent.'),
+            'PackageNotFound,Find-PSResource',
+            [Management.Automation.ErrorCategory]::ObjectNotFound,
+            'PSModuleNonExistentModuleForTesting'
+        )
+        throw $errorRecord
+    }
 
     function Get-TestConfiguration {
         <#

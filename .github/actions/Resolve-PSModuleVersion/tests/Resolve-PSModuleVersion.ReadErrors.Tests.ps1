@@ -89,4 +89,17 @@ Describe 'Version lookup errors are not version baselines' {
 
         { Get-NextPrereleaseNumber @parameters } | Should -Throw
     }
+
+    It 'rejects prerelease missing version metadata before filtering' {
+        $script:state.Package = [pscustomobject]@{ Name = 'TestModule'; Version = $null; Prerelease = 'preview001' }
+        $parameters = @{ ModuleName = 'TestModule'; BaseVersion = '1.2.4'; PrereleaseName = 'preview'; Releases = @() }
+
+        { Get-NextPrereleaseNumber @parameters } | Should -Throw '*metadata*'
+    }
+
+    It 'rejects prerelease empty successful enumeration instead of treating it as verified absence' {
+        $parameters = @{ ModuleName = 'TestModule'; BaseVersion = '1.2.4'; PrereleaseName = 'preview'; Releases = @() }
+
+        { Get-NextPrereleaseNumber @parameters } | Should -Throw '*metadata*'
+    }
 }
