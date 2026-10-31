@@ -4,6 +4,8 @@ Publishes a pre-versioned, tested PowerShell module artifact to the PowerShell G
 
 The publisher verifies the original source, exact resolved tag/version, producing repository/PR or direct-release context, and tested bytes before an external versioned-artifact mutation. An absent Gallery module/version is reserved at `PSModule-Publication/<lowercase-module>/<lowercase-version>`, independently of the configured release-tag prefix. The shared coordinate and release tag reference the same immutable annotated source/context/file-tree/ZIP claim. Existing tags are never updated or deleted; the package ownership coordinate is retained for immutable Gallery proof.
 
+An observed release tag must remain unchanged through shared coordinate creation. If it disappears or is replaced during that reservation, the attempt fails instead of recreating it. A valid partial shared claim can still create an absent release tag that has never been observed in the attempt.
+
 An existing Gallery package is retained only when its raw nupkg payload matches that proof and the tested artifact. Package code is never imported to establish ownership. Unknown legacy proof, foreign tags/releases/assets, changed claims, authentication errors, and API failures stop publication explicitly.
 
 ## Inputs
