@@ -1,13 +1,13 @@
 ---
 title: Versioning and releases
-description: How Process-PSModule resolves a version from pull-request labels, publishes stable releases from default-branch pushes, and cleans up prereleases.
+description: How Process-PSModule resolves release labels, publishes default-branch releases, and safely recovers failed publication.
 ---
 
 # Versioning and releases
 
 Process-PSModule orchestrates the module lifecycle through GitHub Actions. Version progression is label-driven in pull
-requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs only from a push to
-the configured default branch.
+requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs from a push or a
+supported recovery dispatch on the configured default branch.
 
 ## Flow
 
@@ -37,7 +37,10 @@ The bump comes from the pull-request label; the next version is computed as `cur
 
 Multiple or conflicting version labels (for example `major` together with `NoRelease`) are rejected and block the merge.
 With `AutoPatching: true`, an unlabeled pull request defaults to `Patch`; otherwise it needs an explicit version label.
-Direct pushes and manual dispatches on the default branch always use `Patch`, regardless of `AutoPatching`.
+A direct default-branch release without an associated merged PR uses `Patch`, regardless of `AutoPatching`. A
+default-branch recovery dispatch at the matching merge commit retains the PR's configured bump or ignore label and
+release notes, just like the equivalent push. A documentation-only push does not fail merely because an unrelated
+merged PR also claims its commit.
 
 The label names are configurable through `Publish.Module.MajorLabels`, `MinorLabels`, `PatchLabels`, and
 `IgnoreLabels` — see [Settings](../reference/settings.md).
@@ -52,6 +55,18 @@ unambiguous latest version. Use a
 [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
 when changes genuinely depend on each other; independent changes remain separate
 short-lived pull requests targeting `main`.
+
+## Recovering a failed release
+
+Rerun the failed jobs in the original workflow run to preserve its source SHA, resolved version, and any successful
+build artifacts. A manual dispatch on the default branch uses that branch's current tip, not an arbitrary historical
+SHA. It can recover the intended merge only while that merge remains the tip. If the branch has advanced, rerun the
+original workflow rather than dispatching the newer tip or selecting an old tag; a tag dispatch is not a
+default-branch recovery.
+
+An ambiguous merged-PR association stops a release-capable run instead of falling back to patch. Prerelease cleanup
+uses the exact GitHub release target branch, not a sanitized-name substring, so recovery cannot clean another branch's
+prereleases. Stable releases and the current published tag are retained.
 
 ## Prereleases
 

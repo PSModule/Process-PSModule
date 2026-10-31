@@ -28,9 +28,11 @@ execution; other pages link here rather than repeating it.
 
 - \* Only when `Publish.Site.Skip` is `false`.
 - † Requires an important change and all required build, test, and coverage gates to succeed. An open PR also requires
-  the `Prerelease` label. A default-branch push uses labels and notes only when its SHA exactly matches a merged pull
-  request; otherwise it releases a Patch version with commit-based notes. A default-branch manual run is also a Patch
-  release with commit-based notes.
+  configured prerelease label. A default-branch push or recovery dispatch uses a merged PR's configured bump or ignore
+  label and notes when its SHA exactly matches that PR's merge commit. A direct release without an associated merged
+  PR uses Patch and commit-based notes. An unmatched merged association stops a release-capable run, not a
+  documentation-only push. Dispatch recovers only the current branch tip; rerun the original workflow for an older
+  merge.
 - ‡ Cleans up prerelease versions and tags for the closed pull request when `Publish.Module.AutoCleanup` is enabled;
   it does not publish a stable release.
 - § A successful stable release also retries prerelease cleanup when `Publish.Module.AutoCleanup` is enabled.

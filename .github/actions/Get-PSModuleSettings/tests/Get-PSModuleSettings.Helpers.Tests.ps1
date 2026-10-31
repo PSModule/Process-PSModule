@@ -330,6 +330,30 @@ Describe 'Resolve-ReleasePullRequest' {
 
         { Resolve-ReleasePullRequest @parameters } | Should -Throw '*Commit association lookup failed*'
     }
+
+    It 'does not reject an unmatched merged association for a documentation-only default-branch push' {
+        $otherMerge = [pscustomobject]@{
+            Number           = 412
+            Base             = [pscustomobject]@{ Ref = 'main' }
+            merged_at        = '2026-09-01T00:00:00Z'
+            merge_commit_sha = 'merge-of-412'
+        }
+        $parameters = @{
+            EventName                = 'push'
+            CommitSha                = 'documentation-sha'
+            DefaultBranch            = 'main'
+            IsPushToDefaultBranch    = $true
+            HasImportantChanges      = $false
+            GetAssociatedPullRequest = { @($otherMerge) }.GetNewClosure()
+        }
+
+        $result = Resolve-ReleasePullRequest @parameters
+        $routing = Resolve-WorkflowEventRouting -EventName push -IsPushToDefaultBranch $true -HasImportantChanges $false
+
+        $result.Resolved | Should -BeTrue
+        $result.PullRequest | Should -BeNullOrEmpty
+        $routing.ReleaseType | Should -Be 'None'
+    }
 }
 
 Describe 'Get-DiscardedReleasePullRequest' {
