@@ -623,12 +623,16 @@ function New-PSModulePublicationTag {
     }
     if ($null -eq $current.VersionTagSha) {
         $versionTag = Get-PSModulePublicationVersionTag -ModuleName $Claim.ModuleName -GalleryVersion $Claim.GalleryVersion
+        $observedTagSha = $current.TagSha
         $reference = Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/refs" `
             -Method POST -Field @{ ref = "refs/tags/$versionTag"; sha = $claimSha } -AllowConflict
         if ($reference.StatusCode -ne 201 -and $reference.Value.message -cne 'Reference already exists') {
             throw "Cannot atomically reserve module/version [$versionTag] (HTTP $($reference.StatusCode))."
         }
         $current = Get-PSModulePublicationState -ExpectedClaim $Claim -Reader $Reader
+        if ($null -ne $observedTagSha -and $current.TagSha -cne $observedTagSha) {
+            throw 'The existing publication tag changed or disappeared during the shared module/version claim. Refusing publication.'
+        }
         if ($null -eq $current.VersionTagSha -or
             ($reference.StatusCode -eq 201 -and $current.VersionTagSha -cne $claimSha)) {
             throw 'The module/version coordinate changed during its create-only claim. Refusing publication.'
