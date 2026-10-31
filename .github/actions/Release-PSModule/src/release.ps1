@@ -120,6 +120,11 @@ LogGroup 'Load release context' {
         }
     }
     $prNumber = Get-PSModuleProducingPullRequestNumber -PullRequest $pullRequest
+    foreach ($field in @('Title', 'Body', 'HeadRef')) {
+        if ($null -ne $pullRequest.$field -and $pullRequest.$field -isnot [string]) {
+            throw "Supplied release context requires scalar string metadata for [$field]."
+        }
+    }
     $prHeadRef = $pullRequest.HeadRef
     $commitMessage = $githubEvent.head_commit.message
     if ([string]::IsNullOrWhiteSpace($commitMessage) -and -not [string]::IsNullOrWhiteSpace($commitSha)) {
@@ -275,40 +280,40 @@ LogGroup 'Create GitHub release' {
             $releaseCreateCommand += @('--target', $sourceCommit)
             if ($createPrerelease) {
                 $releaseCreateCommand += '--prerelease'
-                if ($prNumber) {
-                    $ownership = [pscustomobject]@{
-                        Repository  = $env:GITHUB_REPOSITORY
-                        PullRequest = [long]$prNumber
-                        CommitSha   = $sourceCommit
-                    } | ConvertTo-Json -Compress
-                    $encodedOwnership = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ownership))
-                    $ownershipFooter = "<!-- PSModule.PrereleaseOwner:v1:$encodedOwnership -->"
-                    if ($null -eq $notesFilePath) {
-                        if ($whatIf) {
-                            Write-Host (
-                                "WhatIf: gh api repos/$env:GITHUB_REPOSITORY/releases/generate-notes --method POST " +
-                                "--field tag_name=$releaseTag --field target_commitish=$sourceCommit"
-                            )
-                            $generatedBody = ''
-                        } else {
-                            $generatedNotes = gh api "repos/$env:GITHUB_REPOSITORY/releases/generate-notes" --method POST `
-                                --field "tag_name=$releaseTag" --field "target_commitish=$sourceCommit"
-                            if ($LASTEXITCODE -ne 0) {
-                                throw "Cannot generate prerelease notes (gh exited $LASTEXITCODE)."
-                            }
-                            $generated = $generatedNotes | ConvertFrom-Json -ErrorAction Stop
-                            if ($generated.PSObject.Properties.Name -notcontains 'body') {
-                                throw 'Generated release notes have no body. Refusing incomplete notes.'
-                            }
-                            $generatedBody = [string]$generated.body
+            }
+            if ($prNumber) {
+                $ownership = [pscustomobject]@{
+                    Repository  = $env:GITHUB_REPOSITORY
+                    PullRequest = [long]$prNumber
+                    CommitSha   = $sourceCommit
+                } | ConvertTo-Json -Compress
+                $encodedOwnership = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ownership))
+                $ownershipFooter = "<!-- PSModule.PrereleaseOwner:v1:$encodedOwnership -->"
+                if ($null -eq $notesFilePath) {
+                    if ($whatIf) {
+                        Write-Host (
+                            "WhatIf: gh api repos/$env:GITHUB_REPOSITORY/releases/generate-notes --method POST " +
+                            "--field tag_name=$releaseTag --field target_commitish=$sourceCommit"
+                        )
+                        $generatedBody = ''
+                    } else {
+                        $generatedNotes = gh api "repos/$env:GITHUB_REPOSITORY/releases/generate-notes" --method POST `
+                            --field "tag_name=$releaseTag" --field "target_commitish=$sourceCommit"
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Cannot generate release notes (gh exited $LASTEXITCODE)."
                         }
-                        $notesFilePath = [IO.Path]::GetTempFileName()
-                        Set-Content -LiteralPath $notesFilePath -Value $generatedBody -Encoding utf8
-                        $releaseCreateCommand = @($releaseCreateCommand | Where-Object { $_ -ne '--generate-notes' })
-                        $releaseCreateCommand += @('--notes-file', $notesFilePath)
+                        $generated = ConvertFrom-Json -InputObject ($generatedNotes -join "`n") -NoEnumerate -ErrorAction Stop
+                        if ($generated -isnot [PSCustomObject] -or $generated -is [array] -or $generated.body -isnot [string]) {
+                            throw 'Generated release notes have no scalar body. Refusing incomplete notes.'
+                        }
+                        $generatedBody = $generated.body
                     }
-                    Add-Content -LiteralPath $notesFilePath -Value "`n$ownershipFooter" -Encoding utf8
+                    $notesFilePath = [IO.Path]::GetTempFileName()
+                    Set-Content -LiteralPath $notesFilePath -Value $generatedBody -Encoding utf8
+                    $releaseCreateCommand = @($releaseCreateCommand | Where-Object { $_ -ne '--generate-notes' })
+                    $releaseCreateCommand += @('--notes-file', $notesFilePath)
                 }
+                Add-Content -LiteralPath $notesFilePath -Value "`n$ownershipFooter" -Encoding utf8
             }
 
             try {
