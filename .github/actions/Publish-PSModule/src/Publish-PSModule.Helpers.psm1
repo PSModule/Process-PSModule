@@ -128,7 +128,7 @@ function Invoke-PSModulePublicationApi {
         throw "The GitHub API response for [$Endpoint] has no verifiable JSON body."
     }
     $body = $parts[1] -replace '(?m)^gh:.*(?:\r?\n|\z)', ''
-    $value = $body | ConvertFrom-Json -NoEnumerate -ErrorAction Stop
+    $value = ConvertFrom-Json -InputObject $body -NoEnumerate -ErrorAction Stop
     if ($null -eq $value) {
         throw "The GitHub API response for [$Endpoint] returned no resource metadata."
     }
@@ -302,55 +302,57 @@ function Get-PSModulePublicationReader {
 
     Write-Verbose "Binding publication readers to [$Repository]."
     $requiresWriteAccess = -not $ReadOnly
+    $readTagReference = {
+        param($Tag)
+        $encodedTag = [Uri]::EscapeDataString($Tag)
+        $response = Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/ref/tags/$encodedTag" -AllowMissing
+        if ($null -eq $response) { return }
+        $value = $response.Value
+        if ($value -isnot [PSCustomObject] -or $value -is [array] -or
+            $value.ref -isnot [string] -or $value.ref -cne "refs/tags/$Tag" -or
+            $value.object -isnot [PSCustomObject] -or $value.object -is [array] -or
+            $value.object.sha -isnot [string] -or $value.object.sha -notmatch '^[0-9a-f]{40}$' -or
+            $value.object.type -isnot [string] -or $value.object.type -cnotin @('tag', 'commit')) {
+            throw "The tag lookup for [$Tag] returned unverifiable reference metadata."
+        }
+        $value.object
+    }.GetNewClosure()
     @{
         GetSource                = {
             param($CommitSha)
             $repositoryMetadata = (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository").Value
-            if ($repositoryMetadata.full_name -ine $Repository) {
+            if ($repositoryMetadata -isnot [PSCustomObject] -or $repositoryMetadata -is [array] -or
+                $repositoryMetadata.full_name -isnot [string] -or $repositoryMetadata.full_name -ine $Repository) {
                 throw "Cannot establish access to the exact consumer repository [$Repository]."
             }
-            if ($requiresWriteAccess -and $repositoryMetadata.permissions.push -ne $true) {
+            if ($requiresWriteAccess -and ($repositoryMetadata.permissions.push -isnot [bool] -or
+                    $repositoryMetadata.permissions.push -ne $true)) {
                 throw "Cannot verify release visibility and write access in [$Repository]. Refusing to treat hidden releases as absent."
             }
             $commit = (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/commits/$CommitSha").Value
-            if ($commit.sha -cne $CommitSha) {
+            if ($commit -isnot [PSCustomObject] -or $commit -is [array] -or
+                $commit.sha -isnot [string] -or $commit.sha -cne $CommitSha) {
                 throw "Cannot verify the original immutable source [$CommitSha] in [$Repository]."
             }
             [string]$commit.sha
         }.GetNewClosure()
-        GetTagReference          = {
-            param($Tag)
-            $encodedTag = [Uri]::EscapeDataString($Tag)
-            $response = Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/ref/tags/$encodedTag" -AllowMissing
-            if ($null -eq $response) {
-                return
-            }
-            if ($response.Value.ref -cne "refs/tags/$Tag" -or $null -eq $response.Value.object) {
-                throw "The tag lookup for [$Tag] did not return the exact tag reference."
-            }
-            $response.Value.object
-        }.GetNewClosure()
+        GetTagReference          = $readTagReference
         GetTagList               = {
             (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/matching-refs/tags/").Value
         }.GetNewClosure()
         GetVersionReference      = {
             param($Name, $Version)
             $tag = Get-PSModulePublicationVersionTag -ModuleName $Name -GalleryVersion $Version
-            $encodedTag = [Uri]::EscapeDataString($tag)
-            $response = Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/ref/tags/$encodedTag" -AllowMissing
-            if ($null -eq $response) {
-                return
-            }
-            if ($response.Value.ref -cne "refs/tags/$tag" -or $null -eq $response.Value.object) {
-                throw "Cannot verify the shared module/version ownership coordinate [$tag]."
-            }
-            $response.Value.object
+            & $readTagReference $tag
         }.GetNewClosure()
         GetTagObject             = {
             param($Sha)
             $response = (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/git/tags/$Sha").Value
-            if ($response.sha -cne $Sha -or $null -eq $response.object -or
-                $response.PSObject.Properties.Name -notcontains 'message') {
+            if ($response -isnot [PSCustomObject] -or $response -is [array] -or
+                $response.sha -isnot [string] -or $response.sha -cne $Sha -or $response.tag -isnot [string] -or
+                $response.object -isnot [PSCustomObject] -or $response.object -is [array] -or
+                $response.object.type -isnot [string] -or $response.object.sha -isnot [string] -or
+                $response.object.sha -notmatch '^[0-9a-f]{40}$' -or $response.message -isnot [string]) {
                 throw "Cannot verify the annotated publication tag [$Sha]."
             }
             $response
@@ -358,7 +360,12 @@ function Get-PSModulePublicationReader {
         GetRelease               = {
             param($Tag)
             $encodedTag = [Uri]::EscapeDataString($Tag)
-            (Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/releases/tags/$encodedTag" -AllowMissing).Value
+            $response = Invoke-PSModulePublicationApi -Endpoint "repos/$Repository/releases/tags/$encodedTag" -AllowMissing
+            if ($null -eq $response) { return }
+            if ($response.Value -isnot [PSCustomObject] -or $response.Value -is [array]) {
+                throw "The release lookup for [$Tag] returned unverifiable resource metadata."
+            }
+            $response.Value
         }.GetNewClosure()
         GetPackage               = {
             param($Name, $Version)
@@ -513,7 +520,7 @@ function Get-PSModulePublicationState {
             throw "Cannot verify the existing release context for [$($expected.ReleaseTag)]."
         }
         $owner = Get-PSModulePrereleaseOwnership -Body $release.body
-        if ($null -ne $owner -or ($expected.ReleaseType -ceq 'Prerelease' -and $expected.PullRequest -gt 0)) {
+        if ($null -ne $owner -or $expected.PullRequest -gt 0) {
             if ($expected.PullRequest -lt 1) {
                 throw 'The existing release ownership footer conflicts with the direct-release context.'
             }
@@ -525,6 +532,9 @@ function Get-PSModulePublicationState {
             throw 'The existing release contains foreign or ambiguous module assets.'
         }
         if ($assets.Count -eq 1) {
+            if ($assets[0].name -isnot [string] -or $assets[0].digest -isnot [string] -or $assets[0].state -isnot [string]) {
+                throw 'The existing module asset has unverifiable byte-proof metadata.'
+            }
             $digest = [regex]::Match([string]$assets[0].digest, '^sha256:([0-9A-Fa-f]{64})$')
             if (-not $digest.Success -or $assets[0].state -cne 'uploaded') {
                 throw "The existing asset [$($expected.AssetName)] has no verifiable published-byte proof."
@@ -618,7 +628,10 @@ function New-PSModulePublicationTag {
         }
         $tag = (Invoke-PSModulePublicationApi -Endpoint "repos/$($Claim.Repository)/git/tags" `
                 -Method POST -Field $tagFields).Value
-        if ($tag.sha -notmatch '^[0-9a-f]{40}$' -or $tag.tag -cne $Claim.ReleaseTag -or
+        if ($tag -isnot [PSCustomObject] -or $tag -is [array] -or
+            $tag.sha -isnot [string] -or $tag.sha -notmatch '^[0-9a-f]{40}$' -or $tag.tag -isnot [string] -or
+            $tag.message -isnot [string] -or $tag.object.sha -isnot [string] -or $tag.object.type -isnot [string] -or
+            $tag.tag -cne $Claim.ReleaseTag -or
             $tag.object.type -cne 'commit' -or $tag.object.sha -cne $Claim.CommitSha -or $tag.message -cne $message) {
             throw 'The annotated object did not preserve the exact source/context/artifact claim.'
         }
