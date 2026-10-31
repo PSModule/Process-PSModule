@@ -6,6 +6,10 @@
 param()
 
 BeforeAll {
+    $script:environmentMutex = [Threading.Mutex]::new($false, "PSModule-ActionTests-Environment-$PID")
+    if (-not $script:environmentMutex.WaitOne([TimeSpan]::FromMinutes(5))) {
+        throw 'Cannot acquire the process environment lock for action tests.'
+    }
     Import-Module -Name PSModule -Force
     $script:cleanupScriptPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/cleanup.ps1'
     $script:environmentNames = @(
@@ -22,10 +26,15 @@ BeforeAll {
 }
 
 AfterAll {
-    foreach ($name in $script:environmentNames) {
-        [Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+    try {
+        foreach ($name in $script:environmentNames) {
+            [Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+        }
+        Remove-Item -Path 'Function:\gh' -ErrorAction SilentlyContinue
+    } finally {
+        $script:environmentMutex.ReleaseMutex()
+        $script:environmentMutex.Dispose()
     }
-    Remove-Item -Path 'Function:\gh' -ErrorAction SilentlyContinue
 }
 
 Describe 'Cleanup-PSModulePrereleases ownership' {
@@ -60,7 +69,9 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
 
             $state.Calls.Add($Arguments -join ' ')
             $global:LASTEXITCODE = 0
-            if ($Arguments[0] -eq 'api' -or ($Arguments[0] -eq 'release' -and $Arguments[1] -eq 'list')) {
+            if ($Arguments[0] -eq 'api' -and $Arguments[1] -match '/pulls/') {
+                'PSModule/CleanupFixture'
+            } elseif ($Arguments[0] -eq 'api' -or ($Arguments[0] -eq 'release' -and $Arguments[1] -eq 'list')) {
                 $state.Releases | ConvertTo-Json -Compress
             }
         }.GetNewClosure()
@@ -70,6 +81,7 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
         $env:GITHUB_REPOSITORY = 'PSModule/CleanupFixture'
         $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
             Number = 42; HeadRef = 'feature/a'
+            HeadRepository = 'PSModule/CleanupFixture'
         } | ConvertTo-Json
         $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf = 'true'
         $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_CONTEXT_ReleaseTag = 'v1.2.4-featurea003'
@@ -107,11 +119,38 @@ Describe 'Cleanup-PSModulePrereleases ownership' {
         )
         $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
             Number = 42; HeadRef = 'feature/1'
+            HeadRepository = 'PSModule/CleanupFixture'
         } | ConvertTo-Json
 
         $output = & $script:cleanupScriptPath 6>&1 | Out-String
 
         $output | Should -Match 'release delete.*v1\.2\.4-feature1001'
         $output | Should -Not -Match 'release delete.*v1\.2\.4-feature10001'
+    }
+
+    It 'does not clean base-repository prereleases for a fork with the same head ref' {
+        $script:state.Releases = @([pscustomobject]@{
+                tagName = 'v1.2.4-main001'; isPrerelease = $true; targetCommitish = 'main'
+            })
+        $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
+            Number = 42; HeadRef = 'main'; HeadRepository = 'AnotherOwner/Fork'
+        } | ConvertTo-Json
+
+        $output = & $script:cleanupScriptPath 6>&1 | Out-String
+
+        $output | Should -Not -Match 'release delete.*v1\.2\.4-main001'
+        @($script:state.Calls | Where-Object { $_ -like 'release delete*' }).Count | Should -Be 0
+    }
+
+    It 'resolves repository ownership for an older normalized PR payload' {
+        $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest = @{
+            Number = 42; HeadRef = 'feature/a'
+        } | ConvertTo-Json
+
+        $output = & $script:cleanupScriptPath 6>&1 | Out-String
+
+        $output | Should -Match 'release delete.*v1\.2\.4-featurea001'
+        @($script:state.Calls | Where-Object { $_ -match '/pulls/42' }).Count | Should -Be 1
+        $output | Should -Not -Match 'release delete.*v1\.2\.4-featureab001'
     }
 }

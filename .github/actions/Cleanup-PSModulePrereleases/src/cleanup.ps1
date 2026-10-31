@@ -12,17 +12,40 @@ Set-GitHubLogGroup 'Load inputs' {
     $whatIf = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_WhatIf -eq 'true'
 
     $pullRequestJson = $env:PSMODULE_CLEANUP_PSMODULEPRERELEASES_INPUT_PullRequest
-    $prHeadRef = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
-        ($pullRequestJson | ConvertFrom-Json).HeadRef
+    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequestJson | ConvertFrom-Json
     } else {
         $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
         $githubEvent = $githubEventJson | ConvertFrom-Json
-        $githubEvent.pull_request.head.ref
+        [pscustomobject]@{
+            Number         = $githubEvent.pull_request.number
+            HeadRef        = $githubEvent.pull_request.head.ref
+            HeadRepository = $githubEvent.pull_request.head.repo.full_name
+        }
     }
+    $prHeadRef = $pullRequest.HeadRef
 
     if ([string]::IsNullOrWhiteSpace($prHeadRef)) {
         Write-Host '::notice::No pull request head ref is available. Nothing to cleanup.'
         exit 0
+    }
+    $headRepository = $pullRequest.HeadRepository
+    if ([string]::IsNullOrWhiteSpace($headRepository) -and $pullRequest.Number) {
+        $number = [int]$pullRequest.Number
+        if ($number -lt 1) {
+            throw 'A positive pull request number is required to establish cleanup ownership.'
+        }
+        $headRepository = gh api "repos/$env:GITHUB_REPOSITORY/pulls/$number" --jq '.head.repo.full_name'
+        if ($LASTEXITCODE -ne 0) {
+            throw "Cannot establish cleanup head repository (gh exited $LASTEXITCODE)."
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($headRepository)) {
+        throw 'Cannot establish the head repository for prerelease cleanup. Supply normalized PR context.'
+    }
+    if ($headRepository -ne $env:GITHUB_REPOSITORY) {
+        Write-Host "::notice::Fork-owned branch [$headRepository/$prHeadRef] is not eligible for base-repository cleanup."
+        return
     }
     Write-Host "PR head ref:      [$prHeadRef]"
     Write-Host "WhatIf:           [$whatIf]"
@@ -43,9 +66,11 @@ Set-GitHubLogGroup "Find prereleases to cleanup for [$prHeadRef]" {
     }
     $releases = @($releaseListOutput | ForEach-Object { $_ | ConvertFrom-Json })
     $parameters = @{
-        HeadRef    = $prHeadRef
-        Release    = $releases
-        ReleaseTag = $publishedReleaseTag
+        HeadRef        = $prHeadRef
+        Repository     = $env:GITHUB_REPOSITORY
+        HeadRepository = $headRepository
+        Release        = $releases
+        ReleaseTag     = $publishedReleaseTag
     }
     $prereleasesToCleanup = Get-PSModulePrereleaseForCleanup @parameters
     $tagsToDelete = @($prereleasesToCleanup | ForEach-Object { $_.tagName } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })

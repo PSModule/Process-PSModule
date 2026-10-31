@@ -62,6 +62,11 @@ the original failed workflow for an older merge instead of selecting a tag. See
 [Recovering a failed release](versioning-and-releases.md#recovering-a-failed-release). Keep the `pull_request` trigger
 for CI, prereleases, and prerelease cleanup.
 
+Before retrying publication, verify that the original version/tag is unclaimed or resolves to the original source
+commit. A conflicting tag or differing published asset is not safe to overwrite. A dispatch at an already-released
+commit is rejected; rerun the original failed publication job with its resolved outputs after the ownership check.
+The publisher resumes only safe same-source work and never clobbers published bytes.
+
 The concurrency key keeps a pull request distinct from a default-branch push, so the close-event cleanup and the
 resulting stable release do not serialize as one run. Keep `cancel-in-progress: false`: a release-capable run mutates
 the PowerShell Gallery, GitHub Releases, and tags, so later runs must queue rather than interrupt it.

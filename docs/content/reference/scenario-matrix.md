@@ -33,6 +33,10 @@ execution; other pages link here rather than repeating it.
   PR uses Patch and commit-based notes. An unmatched merged association stops a release-capable run, not a
   documentation-only push. Dispatch recovers only the current branch tip; rerun the original workflow for an older
   merge.
+  Before a retry, its original version/tag must be unclaimed or belong to its original immutable source. An
+  already-released commit cannot use a new dispatch to compute another bump, and a conflicting tag or published ZIP
+  cannot be overwritten. Resume the original failed publication job with its resolved outputs after verifying
+  ownership.
 - ‡ Cleans up prerelease versions and tags for the closed pull request when `Publish.Module.AutoCleanup` is enabled;
   it does not publish a stable release.
 - § A successful stable release also retries prerelease cleanup when `Publish.Module.AutoCleanup` is enabled.
