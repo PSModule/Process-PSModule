@@ -119,8 +119,8 @@ versions — security fixes go on the current tip of `main` only.
 
 Keep feature branches short-lived and target `main` directly. Use a
 [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
-only when changes genuinely depend on each other. Apply the `Prerelease` label to a
-feature pull request to publish a preview before merging it to `main`.
+only when changes genuinely depend on each other. Apply the configured prerelease label (`release:prerelease` by
+default) to a feature pull request to publish a preview before merging it to `main`.
 
 ## CI/CD pipeline
 
@@ -202,16 +202,21 @@ The **Plan** job resolves the next version before any build occurs. This means t
 
 | Labels (configurable) | Bump type | Default label values |
 | --------------------- | --------- | -------------------- |
-| Major | Major (`X.0.0`) | `major`, `breaking` |
-| Minor | Minor (`x.Y.0`) | `minor`, `feature` |
-| Patch | Patch (`x.y.Z`) | `patch`, `fix` |
-| Ignore | No release | `NoRelease` |
-| None of the above | Patch (when `AutoPatching: true`) | — |
+| Major | Major (`X.0.0`) | `release:major` |
+| Minor | Minor (`x.Y.0`) | `release:minor` |
+| Patch | Patch (`x.y.Z`) | `release:patch` |
+| Ignore | No release | `release:skip` |
+| None of the above | Effective `DefaultBump` (`patch`, `minor`, or `major`; default `patch`) | — |
 
-**Prerelease versions:** Adding a `Prerelease` label to the PR produces a prerelease tag (e.g., `1.2.3-preview0001`). The format is controlled by `IncrementalPrerelease` (sequential numbering) or `DatePrereleaseFormat` (.NET DateTime format string).
+**Prerelease versions:** Adding the configured prerelease label (`release:prerelease` by default) produces a
+prerelease tag (e.g., `1.2.3-preview0001`) using one explicit bump label or the effective `DefaultBump`.
+The format is controlled by `IncrementalPrerelease` (sequential numbering) or `DatePrereleaseFormat` (.NET DateTime
+format string).
 
-An important direct default-branch push and a default-branch manual dispatch always resolve to `Patch`, regardless of
-`AutoPatching`. A push that exactly matches a merged pull request uses that PR's version label instead.
+All five label mappings remain configurable in `.github/PSModule.yml`.
+
+An important direct default-branch push or dispatch uses the effective `DefaultBump`. A push or recovery dispatch that
+exactly matches a merged pull request uses that PR's configured version label instead.
 
 **Tag format:** Releases are tagged with a configurable prefix (default `v`) — e.g., `v1.2.3`.
 
@@ -220,7 +225,7 @@ An important direct default-branch push and a default-branch manual dispatch alw
 All settings have sensible defaults. An empty or missing file uses the defaults below:
 
 ```yaml
-Name: null                      # Defaults to the repository name
+# Omit Name to use the repository name.
 
 ImportantFilePatterns:
   - '^src/'
@@ -261,14 +266,15 @@ Publish:
   Module:
     Skip: false
     AutoCleanup: true           # Delete prerelease tags after stable release or PR closure
-    AutoPatching: true           # Unlabeled PRs default to patch bump
+    DefaultBump: patch           # Used when no configured bump label is present
     IncrementalPrerelease: true  # Sequential prerelease numbering
     DatePrereleaseFormat: ''     # Alternative: .NET DateTime format for prerelease
     VersionPrefix: 'v'          # Git tag prefix
-    MajorLabels: 'major, breaking'
-    MinorLabels: 'minor, feature'
-    PatchLabels: 'patch, fix'
-    IgnoreLabels: 'NoRelease'
+    MajorLabels: 'release:major'
+    MinorLabels: 'release:minor'
+    PatchLabels: 'release:patch'
+    IgnoreLabels: 'release:skip'
+    PrereleaseLabels: 'release:prerelease'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true
@@ -293,7 +299,7 @@ The publish step only runs when:
 
 - All tests and code coverage pass (or are skipped)
 - An important push reaches the default branch (stable release), or
-- The PR carries the `Prerelease` label (prerelease from the feature branch)
+- The PR carries the configured prerelease label and resolves a bump
 
 On any closed PR, the pipeline cleans up any prerelease tags created for that branch. A closed pull request cannot
 create a stable release.

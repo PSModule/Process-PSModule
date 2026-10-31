@@ -17,8 +17,9 @@ patch.
 Keep feature branches short-lived and open pull requests directly toward `main`.
 Independent changes use separate branches; use a
 [stacked pull request](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/#stacked-pull-requests)
-only when changes genuinely depend on each other. Add the `Prerelease` label to a
-feature pull request when a preview version is needed before merging to `main`.
+only when changes genuinely depend on each other. Add the configured prerelease label (`release:prerelease` by default)
+when a preview version is needed before merging to `main`. One explicit bump label or the effective `DefaultBump`
+supplies its level.
 
 ## Colocation of concerns
 
