@@ -196,6 +196,53 @@ Describe 'Release-PSModule WhatIf' {
         Get-Content -Path $script:githubOutputPath | Should -Contain 'ReleaseTag=v1.2.3-preview.1'
     }
 
+    It 'prevents upload when an existing release footer conflicts with the <Conflict>' -ForEach @(
+        @{ Conflict = 'repository'; OwnerRepository = 'OtherOwner/TestModule'; OwnerPullRequest = 42 }
+        @{ Conflict = 'pull request'; OwnerRepository = 'PSModule/TestModule'; OwnerPullRequest = 99 }
+    ) {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
+        $ownership = @{
+            Repository  = $OwnerRepository
+            PullRequest = $OwnerPullRequest
+            CommitSha   = 'original-source-sha'
+        } | ConvertTo-Json -Compress
+        $encodedOwnership = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ownership))
+        $script:releaseFixture.Body = "Release notes`n`n<!-- PSModule.PrereleaseOwner:v1:$encodedOwnership -->"
+        $exception = $null
+        try {
+            & $script:releaseScriptPath
+        } catch {
+            $exception = $_.Exception
+        }
+
+        $uploads = @(Get-Content -LiteralPath $script:ghCallLogPath | Where-Object { $_ -like 'release upload *' })
+        $uploads.Count | Should -Be 0
+        $exception | Should -Not -BeNullOrEmpty
+        $exception.Message | Should -Match 'ownership footer conflicts'
+        $script:releaseFixture.SourceSha | Should -BeExactly 'original-source-sha'
+        Get-Content -LiteralPath $script:githubOutputPath -Raw | Should -BeNullOrEmpty
+    }
+
+    It 'resumes a missing upload when the recorded footer matches repository, PR, and source' {
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
+        $ownership = @{
+            Repository  = 'PSModule/TestModule'
+            PullRequest = 42
+            CommitSha   = 'original-source-sha'
+        } | ConvertTo-Json -Compress
+        $encodedOwnership = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ownership))
+        $script:releaseFixture.Body = "Release notes`n`n<!-- PSModule.PrereleaseOwner:v1:$encodedOwnership -->"
+
+        { & $script:releaseScriptPath } | Should -Not -Throw
+
+        $calls = Get-Content -LiteralPath $script:ghCallLogPath
+        @($calls | Where-Object { $_ -like 'release upload *' }).Count | Should -Be 1
+        $calls | Should -Not -Match 'release create|--clobber'
+        Get-Content -LiteralPath $script:githubOutputPath | Should -Contain 'ReleaseTag=v1.2.3-preview.1'
+    }
+
     It 'refuses to resume a tag owned by a different commit without uploading' {
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'original-source-sha'
