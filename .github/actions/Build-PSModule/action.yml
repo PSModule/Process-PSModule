@@ -9,7 +9,7 @@ inputs:
   OutputFolder:
     description: Path to the folder where the built module is outputted.
     required: false
-    default: 'outputs/module'
+    default: '.PSModule/module'
   Version:
     description: Module version to stamp into the manifest.
     required: true

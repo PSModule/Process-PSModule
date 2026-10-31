@@ -28,7 +28,7 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Folder where the built modules are outputted. 'outputs/modules/MyModule'
+        # Folder where the built module is outputted. '.PSModule/module/MyModule'
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleOutputFolder,
 

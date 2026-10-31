@@ -84,7 +84,7 @@ Module repositories use the PSModule framework layout:
 | `SECURITY.md` | Security support policy and private vulnerability reporting instructions. |
 | `SUPPORT.md` | Support expectations and where users ask for help. |
 | `CODE_OF_CONDUCT.md` | Community conduct expectations. |
-| `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/docs/`. |
+| `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
 | `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
 | `.github/workflows/Process-PSModule.yml` | Caller workflow that runs the module's CI/CD by calling the shared Process-PSModule workflow. |
@@ -151,7 +151,7 @@ Required baseline files for module repositories:
 | `SECURITY.md` | Private vulnerability reporting and latest-version support policy. |
 | `SUPPORT.md` | Support channel and issue-routing expectations. |
 | `CODE_OF_CONDUCT.md` | Community participation rules. |
-| `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/docs/`. |
+| `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
 | `CLAUDE.md` | Claude Code entry point that imports `AGENTS.md`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
@@ -168,14 +168,14 @@ Each repository must stand on its own. It carries its own copy of every file abo
 
 Every repository must be usable by an agent that has never seen it before, without special configuration. Each repository carries its own agent entry points that point to the authoritative documentation instead of restating it:
 
-- `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/docs](https://psmodule.io/docs/).
+- `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/Process-PSModule](https://psmodule.io/Process-PSModule/).
 - `CLAUDE.md`: a thin file that imports `AGENTS.md` with `@AGENTS.md` so Claude Code reads the same instructions. Claude-specific notes, if any, go below the import.
 
 See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule) for a concrete implementation example of `AGENTS.md` and `CLAUDE.md`.
 
 `AGENTS.md` and `CLAUDE.md` are the required set. `AGENTS.md` is the entry point that AGENTS.md-aware runtimes read directly, so a repository is usable by an agent without a per-runtime copy of the same pointer.
 
-Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Ways-of-Working/Agentic-Development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
+Runtime-specific adapter files such as `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` are optional. MSX treats them as client adapters that *may* add runtime-specific loading or path rules, described in [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/) and its [capability specification](https://msx.no/docs/Capabilities/agentic-development/spec/). Add one when a runtime needs loading or path rules that `AGENTS.md` cannot express, and keep it pointing at `AGENTS.md` rather than restating it. `Template-PSModule` ships without one.
 
 These files are the agent equivalent of the README: pointers, not copies. Keep them short so the linked documentation stays the single source of truth. Like the other governance files, they live in the repository itself so it can stand on its own.
 

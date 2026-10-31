@@ -1,6 +1,6 @@
 # Structure-Site
 
-Prepares site content and writes a resolved Zensical config file under `outputs/site`.
+Prepares site content and writes a resolved Zensical config file under `.PSModule/site`.
 
 ## Inputs
 

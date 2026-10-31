@@ -9,8 +9,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $resolvedWorkingDirectory = Resolve-Path -Path $WorkingDirectory | Select-Object -ExpandProperty Path
-$siteOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'outputs/site'
-$docsOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'outputs/docs'
+$siteOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath '.PSModule/site'
+$docsOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath '.PSModule/docs'
 $moduleSourcePath = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'src'
 $moduleName = if ([string]::IsNullOrEmpty($Name)) { $env:GITHUB_REPOSITORY_NAME } else { $Name }
 

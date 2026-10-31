@@ -42,7 +42,7 @@ Describe 'Publish-PSModule recovery' {
     BeforeEach {
         $script:moduleName = 'TestModule'
         $script:workspacePath = Join-Path -Path $TestDrive -ChildPath 'workspace'
-        $script:modulePath = Join-Path -Path $script:workspacePath -ChildPath "outputs/module/$script:moduleName"
+        $script:modulePath = Join-Path -Path $script:workspacePath -ChildPath ".PSModule/module/$script:moduleName"
         $manifestPath = Join-Path -Path $script:modulePath -ChildPath "$script:moduleName.psd1"
         $eventPath = Join-Path -Path $TestDrive -ChildPath 'event.json'
         $null = New-Item -Path $script:modulePath -ItemType Directory -Force
@@ -68,7 +68,7 @@ Describe 'Publish-PSModule recovery' {
         $env:GITHUB_REPOSITORY = "PSModule/$script:moduleName"
         $env:GITHUB_WORKSPACE = $script:workspacePath
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_Name = $script:moduleName
-        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath = 'outputs/module'
+        $env:PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath = '.PSModule/module'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY = 'test-key'
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'

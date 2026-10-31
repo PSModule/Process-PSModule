@@ -40,8 +40,8 @@ Get-ChildItem -Path $path -Filter '*.ps1' -Recurse | Resolve-Path -Relative | Fo
 Write-Host '::group::Loading inputs'
 $env:GITHUB_REPOSITORY_NAME = $env:GITHUB_REPOSITORY -replace '.+/'
 $moduleSourceFolderPath = Resolve-Path -Path 'src' | Select-Object -ExpandProperty Path
-$modulesOutputFolderPath = Join-Path -Path . -ChildPath 'outputs/module'
-$docsOutputFolderPath = Join-Path -Path . -ChildPath 'outputs/docs'
+$modulesOutputFolderPath = Join-Path -Path . -ChildPath '.PSModule/module'
+$docsOutputFolderPath = Join-Path -Path . -ChildPath '.PSModule/docs'
 
 $params = @{
     ModuleName              = [string]::IsNullOrEmpty($Name) ? $env:GITHUB_REPOSITORY_NAME : $Name
