@@ -854,6 +854,34 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GitHubWrites | Should -Be 0
     }
 
+    It 'rejects <Shape> draft metadata before Gallery or GitHub writes' -ForEach @(
+        @{ Shape = 'missing' }
+        @{ Shape = 'null' }
+        @{ Shape = 'string false' }
+        @{ Shape = 'array false' }
+    ) {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $release = [pscustomobject]@{
+            tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; body = 'Direct release notes.'; assets = @()
+        }
+        if ($Shape -ceq 'null') {
+            $release | Add-Member -NotePropertyName draft -NotePropertyValue $null
+        } elseif ($Shape -ceq 'string false') {
+            $release | Add-Member -NotePropertyName draft -NotePropertyValue 'false'
+        } elseif ($Shape -ceq 'array false') {
+            $release | Add-Member -NotePropertyName draft -NotePropertyValue @($false)
+        }
+        $script:state.ApiResponses['repos/PSModule/TestModule/releases/tags/v1.2.4'] = $release
+
+        $failure = $null
+        try { & $script:publishScriptPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+        $failure.Exception.Message | Should -Match 'draft|published'
+    }
+
     It 'rejects a competing module/version claim under another prefix with identical bytes' {
         $foreign = $script:state.ExpectedClaim | ConvertTo-Json -Compress | ConvertFrom-Json
         $foreign.CommitSha = '2222222222222222222222222222222222222222'
