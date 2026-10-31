@@ -12,6 +12,9 @@ BeforeAll {
     }
     Import-Module -Name 'PSModule' -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Publish-PSModule.TestFixture.psm1') -Force
+    Import-Module -Name ([IO.Path]::Combine(
+            $PSScriptRoot, '..', '..', 'Resolve-PSModuleVersion', 'src', 'Resolve-PSModuleVersion.Helpers.psm1'
+        )) -Force
 
     $script:publishScriptPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/publish.ps1'
     $script:environmentVariableNames = @(
@@ -19,6 +22,7 @@ BeforeAll {
         'GITHUB_REPOSITORY'
         'GITHUB_SHA'
         'GITHUB_WORKSPACE'
+        'GITHUB_OUTPUT'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_Name'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_ModulePath'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_PSGALLERY_API_KEY'
@@ -26,6 +30,15 @@ BeforeAll {
         'PSMODULE_PUBLISH_PSMODULE_INPUT_ReleaseTag'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha'
         'PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_Name'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest'
+        'PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha'
     )
     $script:originalEnvironment = @{}
     foreach ($name in $script:environmentVariableNames) {
@@ -85,6 +98,36 @@ Describe 'Publish-PSModule recovery' {
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
         $env:PSMODULE_PUBLISH_PSMODULE_INPUT_WhatIf = 'false'
         $script:state = New-PSModulePublicationFixture -Path $script:modulePath -Version '1.2.4' -Tag 'v1.2.4'
+        $script:releaseScriptPath = [IO.Path]::Combine(
+            $PSScriptRoot, '..', '..', 'Release-PSModule', 'src', 'release.ps1'
+        )
+        $env:GITHUB_OUTPUT = Join-Path -Path $TestDrive -ChildPath 'output'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_Name = $script:moduleName
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ModulePath = '.PSModule/module'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRBodyAsReleaseNotes = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading = 'false'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.4'
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = ''
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = $env:GITHUB_SHA
+        $script:recoveryParameters = @{
+            GitHubVersion      = New-PSSemVer -Version '1.2.3'
+            PSGalleryVersion   = New-PSSemVer -Version '1.2.4'
+            ModuleName         = 'TestModule'
+            Releases           = @()
+            PublicationContext = [pscustomobject]@{
+                Repository = 'PSModule/TestModule'; PullRequest = 0; CommitSha = $env:GITHUB_SHA
+            }
+            Configuration      = [pscustomobject]@{
+                VersionPrefix = 'v'; AutoPatching = $true; IncrementalPrerelease = $false; DatePrereleaseFormat = ''
+            }
+            Decision           = [pscustomobject]@{
+                ShouldPublish = $true; CreateRelease = $true; CreatePrerelease = $false
+                MajorRelease = $false; MinorRelease = $false; PatchRelease = $true
+                HasVersionBump = $true; PrereleaseName = ''
+            }
+        }
     }
 
     It 'rejects a Gallery-only version whose source and artifact proof is missing' {
@@ -135,5 +178,70 @@ Describe 'Publish-PSModule recovery' {
 
         $script:state.GalleryWrites | Should -Be 0
         $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'recovers Gallery success then GitHub failure using the same version and exact bytes' {
+        @{ head_commit = @{ message = 'Anonymous stable release notes.' } } |
+            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $env:GITHUB_EVENT_PATH
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+        $originalPackageHash = (Get-FileHash -LiteralPath $script:state.RawPackage).Hash
+        $script:state.FailReleaseCreate = $true
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*Failed to create*'
+
+        $version = Get-ResolvedModuleVersion @script:recoveryParameters
+        $version.ToString() | Should -BeExactly 'v1.2.4'
+        $script:state.Calls.Add('build-start')
+        $script:state.Calls.IndexOf('raw-package-read') | Should -BeLessThan $script:state.Calls.IndexOf('build-start')
+        $script:state.FailReleaseCreate = $false
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GalleryWrites | Should -Be 1
+        $script:state.Release.tag_name | Should -BeExactly 'v1.2.4'
+        $script:state.Release.assets[0].digest | Should -BeExactly "sha256:$($script:state.ExpectedClaim.AssetSha256)"
+        (Get-FileHash -LiteralPath $script:state.RawPackage).Hash | Should -BeExactly $originalPackageHash
+        ($script:state.Calls -join "`n") | Should -Not -Match '--clobber'
+    }
+
+    It 'rejects changed rebuilt bytes without a duplicate Gallery or GitHub upload' {
+        @{ head_commit = @{ message = 'Anonymous stable release notes.' } } |
+            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $env:GITHUB_EVENT_PATH
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+        $script:state.FailReleaseCreate = $true
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*Failed to create*'
+        (Get-ResolvedModuleVersion @script:recoveryParameters).ToString() | Should -BeExactly 'v1.2.4'
+        $writes = $script:state.GitHubCreationUpload
+        [IO.File]::WriteAllText(
+            (Join-Path -Path $script:modulePath -ChildPath 'TestModule.psm1'), '# Different rebuilt artifact.'
+        )
+        $script:state.FailReleaseCreate = $false
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*artifact*'
+
+        $script:state.GalleryWrites | Should -Be 1
+        $script:state.GitHubCreationUpload | Should -Be $writes
+        $script:state.Release | Should -BeNullOrEmpty
+    }
+
+    It 'recovers the original version and missing upload even when GitHub already has the release' {
+        @{ head_commit = @{ message = 'Complete anonymous stable notes.' } } |
+            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $env:GITHUB_EVENT_PATH
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+        $script:state.FailAssetUpload = $true
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*Failed to upload*'
+        $originalNotes = $script:state.Release.body
+        $script:recoveryParameters.GitHubVersion = New-PSSemVer -Version '1.2.4'
+
+        (Get-ResolvedModuleVersion @script:recoveryParameters).ToString() | Should -BeExactly 'v1.2.4'
+        $script:state.FailAssetUpload = $false
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GalleryWrites | Should -Be 1
+        $script:state.Release.body | Should -BeExactly $originalNotes
+        @($script:state.Release.assets).Count | Should -Be 1
+        @($script:state.Calls | Where-Object { $_ -ceq 'release-create' }).Count | Should -Be 1
+        $script:state.Release.assets[0].digest | Should -BeExactly "sha256:$($script:state.ExpectedClaim.AssetSha256)"
     }
 }

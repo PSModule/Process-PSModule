@@ -195,11 +195,13 @@ function New-PSModulePublicationFixture {
         Release              = $null
         Package              = $null
         RawPackage           = ''
+        ModulePath           = $Path
         ApiError             = ''
         TagReads             = 0
         OnTagRead            = $null
         OnTagCreate          = $null
         FailReleaseCreate    = $false
+        FailAssetUpload      = $false
         ExpectedClaim        = [pscustomobject]@{
             Repository     = "PSModule/$name"
             PullRequest    = $PullRequest
@@ -222,7 +224,7 @@ function New-PSModulePublicationFixture {
             [switch] $Prerelease
         )
         if ($Name -ine $state.ExpectedClaim.ModuleName -or
-            $Version -cne $state.ExpectedClaim.GalleryVersion -or $Repository -cne 'PSGallery' -or
+            ($Version -and $Version -cne $state.ExpectedClaim.GalleryVersion) -or $Repository -cne 'PSGallery' -or
             $Prerelease.IsPresent -ne ($state.ExpectedClaim.ReleaseType -ceq 'Prerelease')) {
             throw "Unexpected exact Gallery lookup: [$Name] [$Version] [$Repository]."
         }
@@ -235,6 +237,16 @@ function New-PSModulePublicationFixture {
     Set-Item -Path function:global:Publish-PSResource -Value {
         $state.Calls.Add('gallery-write')
         $state.GalleryWrites++
+        $state.RawPackage = Join-Path -Path (Split-Path -Path $state.ModulePath -Parent) -ChildPath 'published-fixture.nupkg'
+        New-PSModuleFixturePackage -Path $state.ModulePath -DestinationPath $state.RawPackage `
+            -Version $state.ExpectedClaim.GalleryVersion
+        $state.Package = [pscustomobject]@{
+            Name       = $state.ExpectedClaim.ModuleName
+            Version    = ($state.ExpectedClaim.GalleryVersion -split '-', 2)[0]
+            Prerelease = if ($state.ExpectedClaim.ReleaseType -ceq 'Prerelease') {
+                ($state.ExpectedClaim.GalleryVersion -split '-', 2)[1]
+            } else { '' }
+        }
     }.GetNewClosure()
     Set-Item -Path function:global:Save-PSResource -Value {
         [CmdletBinding()]
@@ -320,6 +332,11 @@ function New-PSModulePublicationFixture {
                 $value = @{ full_name = $claim.Repository; permissions = @{ push = $true } }
             } elseif ($endpoint -ceq "repos/$($claim.Repository)/git/commits/$($claim.CommitSha)") {
                 $value = @{ sha = $claim.CommitSha }
+            } elseif ($endpoint -ceq "repos/$($claim.Repository)/git/matching-refs/tags/") {
+                $value = @()
+                if ($null -ne $state.Tag) {
+                    $value = @(@{ ref = "refs/tags/$($claim.ReleaseTag)"; object = $state.Tag })
+                }
             } elseif ($endpoint -like '*/git/ref/tags/*') {
                 $state.TagReads++
                 if ($null -ne $state.OnTagRead) {
@@ -340,9 +357,12 @@ function New-PSModulePublicationFixture {
                 $global:LASTEXITCODE = 1
                 $value = @{ message = 'Not Found' }
             }
-            $json = $value | ConvertTo-Json -Depth 20 -Compress
+            $json = ConvertTo-Json -InputObject $value -Depth 20 -Compress
             if ($Arguments -contains '--include') {
                 return "HTTP/2.0 $status Fixture`n`n$json"
+            }
+            if ($Arguments[0] -ceq 'release' -and $Arguments[1] -ceq 'list') {
+                return '[{"tagName":"v1.2.3","isLatest":true,"isDraft":false,"isPrerelease":false}]'
             }
             return $json
         }
@@ -374,6 +394,10 @@ function New-PSModulePublicationFixture {
             $state.GitHubWrites++
             $state.GitHubCreationUpload++
             $state.Calls.Add('asset-upload')
+            if ($state.FailAssetUpload) {
+                $global:LASTEXITCODE = 1
+                return 'Injected missing-asset upload failure.'
+            }
             if ($Arguments -contains '--clobber' -or $null -eq $state.Release -or @($state.Release.assets).Count -gt 0) {
                 throw 'The fixture refuses missing-release uploads and replacement of published bytes.'
             }
