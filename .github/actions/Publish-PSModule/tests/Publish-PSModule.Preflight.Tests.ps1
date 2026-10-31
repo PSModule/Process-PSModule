@@ -541,6 +541,31 @@ Describe 'Publish-PSModule source-bound preflight' {
         $script:state.GitHubWrites | Should -Be 0
     }
 
+    It 'rejects original event PR context before projection' -ForEach @(
+        @{ EventJson = '{"pull_request":[{"number":42}]}' }
+        @{ EventJson = '{"pull_request":{"number":[42]}}' }
+        @{ EventJson = '[{"pull_request":{"number":42}}]' }
+        @{ EventJson = '{"pull_request":{}}' }
+    ) {
+        [IO.File]::WriteAllText($env:GITHUB_EVENT_PATH, $EventJson)
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Throw '*context*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'retains the valid producing event PR number before projection' {
+        [IO.File]::WriteAllText($env:GITHUB_EVENT_PATH, '{"pull_request":{"number":42}}')
+        $script:state.ExpectedClaim.PullRequest = 42
+
+        { & $script:publishScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        $script:state.GalleryWrites | Should -Be 1
+        $claim = Get-PSModulePublicationClaim -Message $script:state.TagObject.message
+        $claim.PullRequest | Should -Be 42
+    }
+
     It 'rejects a draft release before Gallery publication rather than reporting completed publication' {
         Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
         $script:state.Release = [pscustomobject]@{
