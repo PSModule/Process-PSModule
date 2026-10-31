@@ -137,6 +137,25 @@ Describe 'Tested artifact identity' {
         Get-PSModuleArtifactDigest -Path $script:modulePath | Should -Not -BeExactly $original
     }
 
+    It 'rejects a literal Unix filename backslash before hashing or creating an archive' -Skip:$IsWindows {
+        [IO.File]::WriteAllText([IO.Path]::Combine($script:modulePath, 'data\value.txt'), 'Literal filename bytes.')
+        $archivePath = Join-Path -Path $TestDrive -ChildPath 'rejected-backslash.zip'
+
+        { Get-PSModuleArtifactDigest -Path $script:modulePath } | Should -Throw '*backslash*'
+        { New-PSModuleReleaseArchive -Path $script:modulePath -DestinationPath $archivePath } | Should -Throw '*backslash*'
+        Test-Path -LiteralPath $archivePath | Should -BeFalse
+    }
+
+    It 'does not treat a raw backslash file record as a directory path' {
+        $record = [pscustomobject]@{
+            RelativePath = 'data\value.txt'
+            Length       = 1L
+            Hash         = [byte[]](0..31)
+        }
+
+        { Get-PSModuleContentDigest -File @($record) } | Should -Throw '*path*'
+    }
+
     It 'compares raw nupkg payload files without importing or changing consumer metadata' {
         $packagePath = Join-Path -Path $TestDrive -ChildPath 'TestModule.1.2.4.nupkg'
         $stream = [IO.File]::Create($packagePath)
