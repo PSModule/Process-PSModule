@@ -50,7 +50,13 @@ function Resolve-PSModuleReleaseTagCommit {
         return
     }
     $visited = [System.Collections.Generic.HashSet[string]]::new()
-    while ($reference.type -eq 'tag') {
+    while ($null -ne $reference) {
+        if ($reference -is [array] -or
+            ($reference -isnot [PSCustomObject] -and $reference -isnot [Collections.IDictionary]) -or
+            $reference.type -isnot [string] -or $reference.sha -isnot [string]) {
+            throw "Cannot determine release source: tag [$Tag] has unverifiable reference metadata."
+        }
+        if ($reference.type -ne 'tag') { break }
         if ([string]::IsNullOrWhiteSpace($reference.sha) -or -not $visited.Add($reference.sha)) {
             throw "Cannot determine release source: tag [$Tag] has invalid or cyclic tag data."
         }
@@ -66,7 +72,7 @@ function Resolve-PSModuleReleaseTagCommit {
 function Get-PSModulePrereleaseOwnership {
     <#
         .SYNOPSIS
-        Read the controller-owned prerelease provenance footer.
+        Read the controller-owned producing-release provenance footer.
 
         .DESCRIPTION
         Reads only the final versioned footer appended after authored notes.
@@ -85,7 +91,7 @@ function Get-PSModulePrereleaseOwnership {
         .OUTPUTS
         System.Management.Automation.PSCustomObject
 
-        Validated prerelease ownership evidence, when present.
+        Validated producing-release ownership evidence, when present.
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -99,7 +105,7 @@ function Get-PSModulePrereleaseOwnership {
 
     $match = [regex]::Match($Body, '(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:v1:([A-Za-z0-9+/=]+) -->\s*\z')
     if (-not $match.Success) {
-        if ($Body -match '(?s)(?:^|\r?\n)<!-- PSModule\.PrereleaseOwner:(?:(?!-->).)*(?:-->)?\s*\z') {
+        if ($Body -match '(?s)<!--(?:(?!-->).)*PSModule\.PrereleaseOwner(?:(?!-->).)*(?:-->)?\s*\z') {
             throw 'The published ownership footer is malformed or uses an unsupported provenance version.'
         }
         return
@@ -445,7 +451,8 @@ function Get-PSModulePublicationVersionTag {
         [string] $GalleryVersion
     )
 
-    "PSModule-Publication/$($ModuleName.ToLowerInvariant())/$($GalleryVersion.ToLowerInvariant())"
+    $moduleCoordinate = $ModuleName.ToLowerInvariant().Replace('.', '%2e')
+    "PSModule-Publication/$moduleCoordinate/$($GalleryVersion.ToLowerInvariant())"
 }
 
 function Get-PSModuleContentDigest {

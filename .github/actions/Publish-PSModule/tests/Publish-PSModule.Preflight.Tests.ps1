@@ -183,11 +183,15 @@ Describe 'Publish-PSModule source-bound preflight' {
         @{ Resource = 'repository array' }
         @{ Resource = 'commit array' }
         @{ Resource = 'string write permission' }
+        @{ Resource = 'release ref array' }
+        @{ Resource = 'annotation target array' }
+        @{ Resource = 'release array' }
+        @{ Resource = 'asset digest array' }
     ) {
         if ($Resource -ceq 'commit array') {
             $endpoint = "repos/PSModule/TestModule/git/commits/$env:GITHUB_SHA"
             $script:state.ApiResponses[$endpoint] = @([pscustomobject]@{ sha = $env:GITHUB_SHA })
-        } else {
+        } elseif ($Resource -in @('repository array', 'string write permission')) {
             $metadata = [pscustomobject]@{
                 full_name = 'PSModule/TestModule'; permissions = [pscustomobject]@{ push = $true }
             }
@@ -197,6 +201,29 @@ Describe 'Publish-PSModule source-bound preflight' {
             } else {
                 $script:state.ApiResponses['repos/PSModule/TestModule'] = @($metadata)
             }
+        } else {
+            Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+            if ($Resource -ceq 'release ref array') {
+                $script:state.ApiResponses['repos/PSModule/TestModule/git/ref/tags/v1.2.4'] = @([pscustomobject]@{
+                        ref = 'refs/tags/v1.2.4'; object = $script:state.Tag
+                    })
+            } elseif ($Resource -ceq 'annotation target array') {
+                $script:state.TagObject.object = @([pscustomobject]@{ type = 'commit'; sha = $env:GITHUB_SHA })
+            } else {
+                $release = [pscustomobject]@{
+                    tag_name = 'v1.2.4'; html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+                    prerelease = $false; draft = $false; body = 'Direct release notes.'; assets = @()
+                }
+                if ($Resource -ceq 'release array') {
+                    $script:state.ApiResponses['repos/PSModule/TestModule/releases/tags/v1.2.4'] = @($release)
+                } else {
+                    $release.assets = @([pscustomobject]@{
+                            name = 'TestModule-1.2.4.zip'; state = 'uploaded'
+                            digest = @("sha256:$($script:state.ExpectedClaim.AssetSha256)")
+                        })
+                    $script:state.Release = $release
+                }
+            }
         }
 
         $failure = $null
@@ -204,7 +231,7 @@ Describe 'Publish-PSModule source-bound preflight' {
 
         $script:state.GalleryWrites | Should -Be 0
         $script:state.GitHubWrites | Should -Be 0
-        $failure.Exception.Message | Should -Match 'metadata|access|source'
+        $failure.Exception.Message | Should -Match 'metadata|access|source|tag'
     }
 
     It 'retains a verified empty tag enumeration instead of treating it as an unknown JSON response' {
@@ -580,6 +607,65 @@ Describe 'Publish-PSModule source-bound preflight' {
 
         $script:state.GitHubCreationUpload | Should -Be 1
         $script:state.Release.body | Should -BeExactly $originalNotes
+    }
+
+    It 'rejects array-valued release <Field> metadata before any claim or upload' -ForEach @(
+        @{ Field = 'Title' }
+        @{ Field = 'Body' }
+        @{ Field = 'HeadRef' }
+    ) {
+        $context = @{ Number = 42 }
+        $context[$Field] = @('Unverifiable projected metadata.')
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = $context | ConvertTo-Json -Compress
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*metadata*'
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+    }
+
+    It 'rejects <Shape> generated stable notes before release creation or upload' -ForEach @(
+        @{ Shape = 'array-valued body' }
+        @{ Shape = 'top-level array' }
+    ) {
+        $script:state.ExpectedClaim.PullRequest = 42
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = '{"Number":42}'
+        [IO.File]::WriteAllText($env:GITHUB_EVENT_PATH, '{"head_commit":{"message":""}}')
+        Mock -CommandName git -MockWith {
+            $global:LASTEXITCODE = 0
+            ''
+        }
+        $notes = [pscustomobject]@{ body = 'Complete notes.' }
+        if ($Shape -ceq 'array-valued body') {
+            $notes.body = @('Incomplete projected notes.')
+            $script:state.ApiResponses['repos/PSModule/TestModule/releases/generate-notes'] = $notes
+        } else {
+            $script:state.ApiResponses['repos/PSModule/TestModule/releases/generate-notes'] = @($notes)
+        }
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Throw '*notes*'
+
+        Should -Invoke -CommandName git -Times 1 -Exactly
+        ($script:state.Calls -join "`n") | Should -Match 'releases/generate-notes'
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubCreationUpload | Should -Be 0
+    }
+
+    It 'retains complete generated stable notes before the producing-context footer' {
+        $script:state.ExpectedClaim.PullRequest = 42
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = '{"Number":42}'
+        [IO.File]::WriteAllText($env:GITHUB_EVENT_PATH, '{"head_commit":{"message":""}}')
+        Mock -CommandName git -MockWith {
+            $global:LASTEXITCODE = 0
+            ''
+        }
+
+        { & $script:releaseScriptPath 1>$null 6>$null } | Should -Not -Throw
+
+        Should -Invoke -CommandName git -Times 1 -Exactly
+        ($script:state.Calls -join "`n") | Should -Match 'releases/generate-notes'
+        $script:state.Release.body | Should -Match '^Complete independently generated fixture notes\.'
+        (Get-PSModulePrereleaseOwnership -Body $script:state.Release.body).PullRequest | Should -Be 42
     }
 
     It 'rejects a disappeared previously claimed tag rather than recreating it' {

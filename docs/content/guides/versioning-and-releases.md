@@ -77,10 +77,13 @@ Release names and notes can be generated from the pull request — see
 
 Before taking a Gallery version, the publisher verifies the immutable consumer source, the Plan job's exact
 resolved version/tag, the producing repository/PR or direct-release context, and the tested module bytes.
-The Gallery module/version is reserved at a prefix-independent `PSModule-Publication/<module>/<version>`
+The Gallery module/version is reserved at a prefix-independent `PSModule-Publication/<escaped-module>/<version>`
 coordinate, and the configured release tag references that same immutable annotated claim. It records the
 source/context, tested file-tree and release-ZIP SHA-256 digests. The resolver's existing prefix must bind
 the tag to the tested artifact version. Existing tags are not updated or deleted.
+
+The module coordinate is lowercase with dots encoded as `%2e`, preserving valid module names without Git-invalid
+`..` or `.lock` components. The original module name and consumer metadata are unchanged.
 
 Standalone tags, annotated tags, releases, provenance footers, module assets, and exact Gallery packages must
 agree with that claim. Raw nupkg files are read without importing package code. Verified absence is different
@@ -90,8 +93,9 @@ than being discarded only when verifying a published package.
 
 The publisher rechecks the claim and tested files immediately before Gallery upload. GitHub release creation
 and upload repeat the ownership checks. Missing uploads may resume, identical published ZIP bytes are retained,
-and differing or unverifiable assets are never clobbered. Complete authored or generated prerelease notes remain
-before their final producing-repository/PR/source footer.
+and differing or unverifiable assets are never clobbered. Complete authored or generated notes for stable and
+prerelease PR releases remain before their final producing-repository/PR/source footer. Existing PR releases
+without that proof cannot resume; indented, inline, and unreadable terminal markers fail explicitly.
 
 A retry retains the original source, resolved coordinates, release context, and tested bytes. Legacy incomplete
 publications without proof require reviewed forward-only recovery, not a guessed version, retagging, asset

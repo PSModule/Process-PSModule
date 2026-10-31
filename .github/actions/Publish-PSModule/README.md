@@ -2,13 +2,15 @@
 
 Publishes a pre-versioned, tested PowerShell module artifact to the PowerShell Gallery after source-bound ownership preflight. GitHub Release creation is handled by the separate [Release-PSModule](../Release-PSModule/README.md) action.
 
-The publisher verifies the original source, exact resolved tag/version, producing repository/PR or direct-release context, and tested bytes before an external versioned-artifact mutation. An absent Gallery module/version is reserved at `PSModule-Publication/<lowercase-module>/<lowercase-version>`, independently of the configured release-tag prefix. The shared coordinate and release tag reference the same immutable annotated source/context/file-tree/ZIP claim. Existing tags are never updated or deleted; the package ownership coordinate is retained for immutable Gallery proof.
+The publisher verifies the original source, exact resolved tag/version, producing repository/PR or direct-release context, and tested bytes before an external versioned-artifact mutation. An absent Gallery module/version is reserved at `PSModule-Publication/<escaped-lowercase-module>/<lowercase-version>`, independently of the configured release-tag prefix. Module-name dots are encoded as `%2e` so valid dotted names cannot produce Git-invalid `..` or `.lock` components. The shared coordinate and release tag reference the same immutable annotated source/context/file-tree/ZIP claim. Existing tags are never updated or deleted; the package ownership coordinate is retained for immutable Gallery proof.
 
 An observed release tag must remain unchanged through shared coordinate creation. If it disappears or is replaced during that reservation, the attempt fails instead of recreating it. A valid partial shared claim can still create an absent release tag that has never been observed in the attempt.
 
 An existing Gallery package is retained only when its raw nupkg payload matches that proof and the tested artifact. Package code is never imported to establish ownership. Unknown legacy proof, foreign tags/releases/assets, changed claims, authentication errors, and API failures stop publication explicitly.
 
 Provenance must contain one original JSON object with scalar proof fields; arrays are not projected into valid identities. The ZIP's exact bytes and canonical payload digest are verified together against the tested file tree before a claim or Gallery write. Original event PR context is validated before normalized fields are selected.
+
+GitHub resource responses must have valid object/scalar shapes, while verified empty tag collections remain valid absence. An existing PR-produced stable or prerelease release requires its producing-context footer; unreadable terminal markers are errors even when indented or inline. Unknown legacy PR release context is not inferred from a matching tag.
 
 ## Inputs
 
