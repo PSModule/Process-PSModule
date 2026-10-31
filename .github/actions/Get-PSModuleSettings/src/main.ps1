@@ -232,8 +232,9 @@ Set-GitHubLogGroup 'Calculate Job Run Conditions:' {
     $commitSha = if ($isPush) { $eventData.After ?? $env:GITHUB_SHA } else { $env:GITHUB_SHA }
     $pushBranch = if ($isPush) { $eventData.Ref -replace '^refs/heads/', '' } else { '' }
     $workflowRef = if ($isPush) { $pushBranch } else { $env:GITHUB_REF_NAME }
-    $isPushToDefaultBranch = $isPush -and $pushBranch -eq $defaultBranch
-    $isManualDispatchToDefaultBranch = $isManualDispatch -and $workflowRef -eq $defaultBranch
+    $defaultBranchRef = "refs/heads/$defaultBranch"
+    $isPushToDefaultBranch = $isPush -and $eventData.Ref -ceq $defaultBranchRef
+    $isManualDispatchToDefaultBranch = $isManualDispatch -and $env:GITHUB_REF -ceq $defaultBranchRef
     $pullRequest = $eventData.PullRequest
 
     $pullRequestIsClosed = $null -ne $pullRequest -and $pullRequest.State -eq 'closed'
@@ -375,6 +376,26 @@ If you believe this is incorrect, please verify that your changes are in the cor
             $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$Sha/pulls" -Method GET
             $response.Response
         }
+        GetPublishedReleaseForCommit    = {
+            param($Sha)
+            $owner = $env:GITHUB_REPOSITORY_OWNER
+            $repo = $env:GITHUB_REPOSITORY_NAME
+            $releases = (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/releases?per_page=100" -Method GET -ErrorAction Stop).Response
+            $parameters = @{
+                CommitSha       = $Sha
+                Release         = @($releases)
+                GetTagReference = {
+                    param($Tag)
+                    $encodedTag = [Uri]::EscapeDataString($Tag)
+                    (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/git/ref/tags/$encodedTag" -Method GET -ErrorAction Stop).Response.object
+                }.GetNewClosure()
+                GetTagObject    = {
+                    param($TagSha)
+                    (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/git/tags/$TagSha" -Method GET -ErrorAction Stop).Response.object
+                }.GetNewClosure()
+            }
+            Get-PSModuleReleaseForCommit @parameters
+        }
     }
     $resolution = Resolve-ReleasePullRequest @resolveParams
     if ($resolution.Resolved) {
@@ -397,6 +418,7 @@ If you believe this is incorrect, please verify that your changes are in the cor
             Title          = $pullRequest.Title
             Body           = $pullRequest.Body
             HeadRef        = $pullRequest.Head.Ref
+            HeadRepository = $pullRequest.Head.Repo.full_name
             BaseRef        = $pullRequest.Base.Ref
             Labels         = @($pullRequest.Labels.Name)
             Merged         = $pullRequestIsMerged

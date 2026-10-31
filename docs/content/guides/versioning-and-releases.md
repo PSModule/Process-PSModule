@@ -60,15 +60,26 @@ short-lived pull requests targeting `main`.
 
 ## Recovering a failed release
 
+Before retrying, identify the original Plan output's version/tag and source SHA. Retry only when the tag is unclaimed
+or its actual immutable commit belongs to that original source. Resolve annotated tags when checking; a release's
+`target_commitish` hint is not source proof. If a newer run claimed the same version for different source or contents,
+stop and reconcile the conflict instead of retagging or overwriting the published artifact.
+
 Rerun the failed jobs in the original workflow run to preserve its source SHA, resolved version, and any successful
 build artifacts. A manual dispatch on the default branch uses that branch's current tip, not an arbitrary historical
 SHA. It can recover the intended merge only while that merge remains the tip. If the branch has advanced, rerun the
 original workflow rather than dispatching the newer tip or selecting an old tag; a tag dispatch is not a
 default-branch recovery.
 
+A new dispatch is rejected when that commit already has a published GitHub release. It must not compute a second
+bump after release creation succeeded but asset upload failed. Use the original failed publication job with its
+already-resolved version instead. The publisher verifies tag/source ownership, resumes a missing ZIP, retains an
+identical existing asset, and rejects different or unverifiable contents without `--clobber`.
+
 An ambiguous merged-PR association stops a release-capable run instead of falling back to patch. Prerelease cleanup
 uses the exact GitHub release target branch, not a sanitized-name substring, so recovery cannot clean another branch's
-prereleases. Stable releases and the current published tag are retained.
+prereleases. Fork-owned refs are excluded even when their branch names match. Stable releases and the current
+published tag are retained.
 
 ## Prereleases
 

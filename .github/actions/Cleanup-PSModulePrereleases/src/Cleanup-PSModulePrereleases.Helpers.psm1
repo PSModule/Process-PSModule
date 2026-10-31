@@ -11,9 +11,10 @@ function Get-PSModulePrereleaseForCleanup {
         branch's releases, and the supplied published tag are never selected.
 
         .EXAMPLE
-        Get-PSModulePrereleaseForCleanup -Release $releases -HeadRef 'feature/a'
+        Get-PSModulePrereleaseForCleanup -Release $releases -HeadRef 'feature/a' `
+            -Repository 'PSModule/MyModule' -HeadRepository 'PSModule/MyModule'
 
-        Returns only prereleases whose targetCommitish is exactly feature/a.
+        Returns only same-repository prereleases whose targetCommitish is exactly feature/a.
 
         .INPUTS
         None
@@ -33,6 +34,16 @@ function Get-PSModulePrereleaseForCleanup {
         [ValidateNotNullOrEmpty()]
         [string] $HeadRef,
 
+        # The base repository in owner/name form.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Repository,
+
+        # The repository that owns the unsanitized head reference.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $HeadRepository,
+
         # Release objects with tagName, isPrerelease, and targetCommitish.
         [Parameter()]
         [object[]] $Release,
@@ -41,6 +52,11 @@ function Get-PSModulePrereleaseForCleanup {
         [Parameter()]
         [string] $ReleaseTag
     )
+
+    if ($HeadRepository -ne $Repository) {
+        Write-Verbose "Fork-owned ref [${HeadRepository}:$HeadRef] cannot establish base-repository cleanup ownership."
+        return
+    }
 
     foreach ($candidate in $Release) {
         if ($null -eq $candidate -or -not $candidate.isPrerelease -or $candidate.tagName -ceq $ReleaseTag) {

@@ -1,3 +1,7 @@
+Import-Module -Name (
+    Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath '..', 'Release-PSModule', 'src', 'Release-PSModule.Helpers.psm1'
+) -Force
+
 function Resolve-WorkflowEventRouting {
     <#
         .SYNOPSIS
@@ -308,7 +312,11 @@ function Resolve-ReleasePullRequest {
 
         # Returns the pull requests GitHub associates with a commit. Takes the commit SHA.
         [Parameter(Mandatory)]
-        [scriptblock] $GetAssociatedPullRequest
+        [scriptblock] $GetAssociatedPullRequest,
+
+        # Returns published GitHub releases whose immutable tag points to the commit.
+        [Parameter()]
+        [scriptblock] $GetPublishedReleaseForCommit
     )
 
     $isPush = $EventName -eq 'push'
@@ -325,6 +333,17 @@ function Resolve-ReleasePullRequest {
         $pullRequest = Select-PullRequestForPush -PullRequest $associated `
             -DefaultBranch $DefaultBranch `
             -CommitSha $CommitSha
+
+        if ($IsManualDispatchToDefaultBranch -and $null -ne $GetPublishedReleaseForCommit) {
+            $published = @((& $GetPublishedReleaseForCommit $CommitSha) | Where-Object { $null -ne $_ })
+            if ($published.Count -gt 0) {
+                throw (
+                    "Commit [$CommitSha] already has a GitHub release: [$($published.tag_name -join ', ')]. " +
+                    'Do not resolve another version bump for this dispatch. Verify that the original version/tag ' +
+                    'is unclaimed or belongs to its original commit, then rerun the original failed publication job.'
+                )
+            }
+        }
 
         if ($pullRequest) {
             Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$CommitSha]."
@@ -347,13 +366,80 @@ function Resolve-ReleasePullRequest {
                 'The following merged pull request(s) are associated with it but none matches the commit ' +
                 "being released: $($discarded -join '; '). " +
                 'Refusing to discard the release intent and apply DefaultBump, because a wrong version published to the ' +
-                'PowerShell Gallery cannot be reclaimed. Rerun the original workflow for the intended merge commit. ' +
+                'PowerShell Gallery cannot be reclaimed. Verify that the original version/tag is unclaimed or belongs to ' +
+                'the original commit before rerunning its failed workflow job. ' +
                 'A default-branch dispatch can recover that commit only while it is still the branch tip.'
             )
         }
 
         Write-Host "::notice::No pull request is associated with commit [$CommitSha]."
         [pscustomobject]@{ Resolved = $true; PullRequest = $null }
+    }
+}
+
+function Get-PSModuleReleaseForCommit {
+    <#
+        .SYNOPSIS
+        Find published releases bound to an exact commit.
+
+        .DESCRIPTION
+        Resolves each stable release's tag reference and peels annotated tag
+        objects. A mutable target_commitish creation hint is not source proof.
+        Unresolvable or cyclic tag data fails rather than inventing a new bump.
+
+        .EXAMPLE
+        Get-PSModuleReleaseForCommit -CommitSha $sha -Release $releases `
+            -GetTagReference $readRef -GetTagObject $readTag
+
+        Returns stable releases whose actual tag resolves to the supplied SHA.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Get-PSModuleReleaseForCommit.
+
+        .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        A published release bound to the supplied commit.
+    #>
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        # The immutable source commit being considered for recovery.
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $CommitSha,
+
+        # Returns the object referenced by a release tag name.
+        [Parameter(Mandatory)]
+        [scriptblock] $GetTagReference,
+
+        # Returns the object targeted by an annotated-tag SHA.
+        [Parameter(Mandatory)]
+        [scriptblock] $GetTagObject,
+
+        # REST release records, including tag_name, prerelease, and draft.
+        [Parameter()]
+        [object[]] $Release
+    )
+
+    foreach ($candidate in $Release) {
+        if ($null -eq $candidate -or $candidate.prerelease -or $candidate.draft) {
+            continue
+        }
+        if ([string]::IsNullOrWhiteSpace($candidate.tag_name)) {
+            throw 'Cannot determine release source: a release has no tag_name.'
+        }
+        $parameters = @{
+            Tag             = $candidate.tag_name
+            GetTagReference = $GetTagReference
+            GetTagObject    = $GetTagObject
+        }
+        $source = Resolve-PSModuleReleaseTagCommit @parameters
+        if ($source -ceq $CommitSha) {
+            $candidate
+        }
     }
 }
 

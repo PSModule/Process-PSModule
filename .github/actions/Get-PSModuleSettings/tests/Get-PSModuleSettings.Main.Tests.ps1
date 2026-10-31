@@ -6,6 +6,10 @@
 param()
 
 BeforeAll {
+    $script:environmentMutex = [Threading.Mutex]::new($false, "PSModule-ActionTests-Environment-$PID")
+    if (-not $script:environmentMutex.WaitOne([TimeSpan]::FromMinutes(5))) {
+        throw 'Cannot acquire the process environment lock for action tests.'
+    }
     Import-Module -Name PSModule -Force
     $script:settingsScriptPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/main.ps1'
     $script:environmentNames = @(
@@ -31,13 +35,18 @@ BeforeAll {
 }
 
 AfterAll {
-    foreach ($name in $script:environmentNames) {
-        [Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+    try {
+        foreach ($name in $script:environmentNames) {
+            [Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+        }
+        foreach ($name in @('Install-PSResource', 'Get-GitHubEventData', 'Invoke-GitHubAPI', 'Set-GitHubOutput')) {
+            Remove-Item -Path "Function:\$name" -ErrorAction SilentlyContinue
+        }
+        Import-Module -Name PSModule -Force
+    } finally {
+        $script:environmentMutex.ReleaseMutex()
+        $script:environmentMutex.Dispose()
     }
-    foreach ($name in @('Install-PSResource', 'Get-GitHubEventData', 'Invoke-GitHubAPI', 'Set-GitHubOutput')) {
-        Remove-Item -Path "Function:\$name" -ErrorAction SilentlyContinue
-    }
-    Import-Module -Name PSModule -Force
 }
 
 Describe 'Get-PSModuleSettings release-bearing push detection' {
@@ -47,6 +56,9 @@ Describe 'Get-PSModuleSettings release-bearing push detection' {
             Calls          = [System.Collections.Generic.List[string]]::new()
             InstalledNames = [System.Collections.Generic.List[string]]::new()
             Outputs        = @{}
+            Releases       = @()
+            TagReferences  = @{}
+            TagObjects     = @{}
             Event          = [pscustomobject]@{
                 Repository  = [pscustomobject]@{ default_branch = 'main' }
                 Action      = ''
@@ -103,6 +115,13 @@ Describe 'Get-PSModuleSettings release-bearing push detection' {
                 }
             } elseif ($ApiEndpoint -match '/commits/.+/pulls$') {
                 [pscustomobject]@{ Response = $state.Associated }
+            } elseif ($ApiEndpoint -match '/releases') {
+                [pscustomobject]@{ Response = $state.Releases }
+            } elseif ($ApiEndpoint -match '/git/ref/tags/(.+)$') {
+                $tag = [Uri]::UnescapeDataString($Matches[1])
+                [pscustomobject]@{ Response = [pscustomobject]@{ object = $state.TagReferences[$tag] } }
+            } elseif ($ApiEndpoint -match '/git/tags/(.+)$') {
+                [pscustomobject]@{ Response = [pscustomobject]@{ object = $state.TagObjects[$Matches[1]] } }
             } else {
                 throw "Unexpected GitHub endpoint in settings test: [$ApiEndpoint]."
             }
@@ -156,6 +175,36 @@ Describe 'Get-PSModuleSettings release-bearing push detection' {
         $script:state.Files = @('src/Module.psm1')
 
         { & $script:settingsScriptPath } | Should -Throw '*another-merge-sha*cannot be reclaimed*'
+
+        $script:state.Outputs.Count | Should -Be 0
+    }
+
+    It 'does not classify <Reference> as a default-branch dispatch' -ForEach @(
+        @{ Reference = 'refs/tags/main'; RefName = 'main' }
+        @{ Reference = 'refs/heads/Main'; RefName = 'Main' }
+    ) {
+        $env:GITHUB_EVENT_NAME = 'workflow_dispatch'
+        $env:GITHUB_REF = $Reference
+        $env:GITHUB_REF_NAME = $RefName
+        $script:state.Associated[0].merge_commit_sha = 'pushed-sha'
+
+        & $script:settingsScriptPath
+        $settings = $script:state.Outputs.Settings | ConvertFrom-Json
+
+        $settings.Context.IsManualDispatchToDefaultBranch | Should -BeFalse
+        $settings.Publish.Module.ReleaseType | Should -Be 'None'
+        @($script:state.Calls | Where-Object { $_ -match '/commits/.+/pulls$' }).Count | Should -Be 0
+    }
+
+    It 'rejects a dispatch whose commit already has a GitHub release instead of resolving another bump' {
+        $env:GITHUB_EVENT_NAME = 'workflow_dispatch'
+        $script:state.Associated[0].merge_commit_sha = 'pushed-sha'
+        $script:state.Releases = @([pscustomobject]@{
+                tag_name = 'v1.1.0'; prerelease = $false; draft = $false; target_commitish = 'main'
+            })
+        $script:state.TagReferences['v1.1.0'] = [pscustomobject]@{ type = 'commit'; sha = 'pushed-sha' }
+
+        { & $script:settingsScriptPath } | Should -Throw '*already*release*v1.1.0*original*'
 
         $script:state.Outputs.Count | Should -Be 0
     }
