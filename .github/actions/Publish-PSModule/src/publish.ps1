@@ -72,10 +72,15 @@ LogGroup 'Load release context' {
         $pullRequest = ConvertFrom-Json -InputObject $pullRequestJson -NoEnumerate -ErrorAction Stop
     } else {
         $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
-        $githubEvent = $githubEventJson | ConvertFrom-Json
-        if ($githubEvent.pull_request) {
+        $githubEvent = ConvertFrom-Json -InputObject $githubEventJson -NoEnumerate -ErrorAction Stop
+        if ($githubEvent -is [array] -or $githubEvent -isnot [PSCustomObject]) {
+            throw 'The original GitHub event context requires one event object.'
+        }
+        $eventPullRequest = $githubEvent.pull_request
+        $null = Get-PSModuleProducingPullRequestNumber -PullRequest $eventPullRequest
+        if ($null -ne $eventPullRequest) {
             $pullRequest = [pscustomobject]@{
-                Number = $githubEvent.pull_request.number
+                Number = $eventPullRequest.number
             }
         }
     }
@@ -178,6 +183,11 @@ try {
                 AssetName      = $zipFileName
                 AssetSha256    = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
             }
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256) {
+                throw 'The release archive does not match the tested file-tree and asset claim. Refusing publication.'
+            }
             $publicationReader = Get-PSModulePublicationReader -Repository $env:GITHUB_REPOSITORY
             $publicationState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
         }
@@ -195,10 +205,19 @@ try {
             Write-Host "WhatIf: Create-only annotated claim for [$releaseTag]; retain any existing published bytes."
             Write-Host "Publish-PSResource -Path $modulePath -Repository PSGallery -ApiKey ***"
         } else {
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
+                (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                throw 'The tested artifact or release archive changed before the immutable claim. Refusing publication.'
+            }
             $publicationState = New-PSModulePublicationTag -Claim $claim -State $publicationState -Reader $publicationReader
             $currentState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
             if ($currentState.TagSha -cne $publicationState.TagSha -or
                 $currentState.VersionTagSha -cne $publicationState.VersionTagSha -or
+                $archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
                 (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
                 throw 'The publication claim or tested artifact changed before the Gallery write. Refusing publication.'
             }

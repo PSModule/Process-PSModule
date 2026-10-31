@@ -48,4 +48,6 @@ The action supports normalized pull-request context and direct stable releases. 
 
 Release creation and upload recheck the release tag, shared module/version coordinate, provenance, and artifact identity. Both refs must bind the same immutable claim, regardless of tag prefix. A missing upload can resume. An existing asset is retained only when its published SHA-256 matches the exact local ZIP; differing, ambiguous, or unverifiable bytes stop the action. Uploads never use `--clobber`, and tags are never retargeted.
 
+The local ZIP's exact bytes and payload digest are verified together against the tested file tree before claiming, creating, or uploading. Original event PR context and versioned provenance must have valid object/scalar shapes before normalization; arrays cannot supply publication ownership.
+
 Complete authored or generated prerelease notes precede a final repository/producing-PR/source footer. A matching tag/source does not authorize another PR's release. Legacy records without proof require reviewed forward-only recovery; the action does not fabricate provenance or alter consumer metadata.

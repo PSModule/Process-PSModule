@@ -185,6 +185,31 @@ Describe 'Tested artifact identity' {
         Get-PSModuleArtifactDigest -Path $script:modulePath | Should -Not -BeExactly $original
     }
 
+    It 'reads the exact archive bytes and canonical payload as a paired proof' {
+        $archivePath = Join-Path -Path $TestDrive -ChildPath 'paired-proof.zip'
+        $expected = Get-PSModuleArtifactDigest -Path $script:modulePath
+        $null = New-PSModuleReleaseArchive -Path $script:modulePath -DestinationPath $archivePath
+
+        $proof = Get-PSModuleReleaseArchiveProof -Path $archivePath -ModuleName 'TestModule'
+
+        $proof.ArtifactSha256 | Should -BeExactly $expected
+        $proof.AssetSha256 | Should -BeExactly (Get-FileHash -LiteralPath $archivePath).Hash.ToLowerInvariant()
+    }
+
+    It 'rejects an archive with a foreign module root rather than ignoring its payload' {
+        $archivePath = Join-Path -Path $TestDrive -ChildPath 'foreign-root.zip'
+        $null = New-PSModuleReleaseArchive -Path $script:modulePath -DestinationPath $archivePath
+        $archive = [IO.Compression.ZipFile]::Open($archivePath, [IO.Compression.ZipArchiveMode]::Update)
+        try {
+            $writer = [IO.StreamWriter]::new($archive.CreateEntry('OtherModule/data.txt').Open())
+            try { $writer.Write('Foreign payload.') } finally { $writer.Dispose() }
+        } finally {
+            $archive.Dispose()
+        }
+
+        { Get-PSModuleReleaseArchiveProof -Path $archivePath -ModuleName 'TestModule' } | Should -Throw '*foreign*'
+    }
+
     It 'rejects a literal Unix filename backslash before hashing or creating an archive' -Skip:$IsWindows {
         [IO.File]::WriteAllText([IO.Path]::Combine($script:modulePath, 'data\value.txt'), 'Literal filename bytes.')
         $archivePath = Join-Path -Path $TestDrive -ChildPath 'rejected-backslash.zip'
