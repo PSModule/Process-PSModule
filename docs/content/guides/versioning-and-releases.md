@@ -73,6 +73,27 @@ Each publication produces three linked, immutable artifacts:
 Release names and notes can be generated from the pull request — see
 [Configuring the pipeline](configuring-the-pipeline.md).
 
+## Publication ownership
+
+Before taking a Gallery version, the publisher verifies the immutable consumer source, the Plan job's exact
+resolved version/tag, the producing repository/PR or direct-release context, and the tested module bytes.
+An absent version tag is reserved with a create-only annotated claim containing the tested file-tree and
+release-ZIP SHA-256 digests. Existing tags are not updated or deleted.
+
+Standalone tags, annotated tags, releases, provenance footers, module assets, and exact Gallery packages must
+agree with that claim. Raw nupkg files are read without importing package code. Verified absence is different
+from an authentication/API failure or unknown ownership proof; errors and unavailable proof stop publication.
+
+The publisher rechecks the claim and tested files immediately before Gallery upload. GitHub release creation
+and upload repeat the ownership checks. Missing uploads may resume, identical published ZIP bytes are retained,
+and differing or unverifiable assets are never clobbered. Complete authored or generated prerelease notes remain
+before their final producing-repository/PR/source footer.
+
+A retry retains the original source, resolved coordinates, release context, and tested bytes. Legacy incomplete
+publications without proof require reviewed forward-only recovery, not a guessed version, retagging, asset
+replacement, or metadata edits. See the [publisher](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Publish-PSModule)
+and [release action](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Release-PSModule) contracts.
+
 ## Linear versioning
 
 Only a single linear ancestry of versions is maintained. Old versions are not patched: if a security issue is found on
