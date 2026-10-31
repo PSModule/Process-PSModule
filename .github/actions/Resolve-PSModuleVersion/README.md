@@ -24,6 +24,8 @@ Only one exact source/context claim with matching raw package bytes can select a
 
 An unpublished shared-only claim still stops Plan for original-job retry, even after a later source completes another version. A new source checks baseline completeness using the actual historical tag and release, not a tag reconstructed with the current configured prefix. Recovery and new claims still require exact configured-prefix binding; ambiguous historical baselines stop explicitly.
 
+Historical prefixes may contain digits, with or without a separator. A matching version suffix only discovers a candidate tag; exact release metadata, matching module/version asset and immutable tag source must establish baseline completeness. Numeric suffixes alone never establish ownership.
+
 | Failure | Safe behavior |
 | --- | --- |
 | Gallery-only package has missing, foreign, or legacy proof | Stop version resolution; do not reuse the package or invent a fallback number. |
