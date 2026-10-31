@@ -597,6 +597,18 @@ function Get-NextPrereleaseNumber {
     }
     try {
         $galleryVersions = @(Find-PSResource @params)
+        if ($galleryVersions.Count -eq 0) {
+            throw 'The successful prerelease enumeration returned no verifiable package metadata.'
+        }
+        $galleryVersions = @($galleryVersions | ForEach-Object {
+                if ($_.Name -ine $ModuleName -or [string]$_.Version -notmatch '^\d+\.\d+\.\d+$') {
+                    throw "The Gallery prerelease enumeration returned unverifiable version metadata for [$ModuleName]."
+                }
+                [pscustomobject]@{
+                    Version    = [version]([string]$_.Version)
+                    Prerelease = $_.Prerelease
+                }
+            })
     } catch {
         $failure = $_
         if ($failure.FullyQualifiedErrorId -notlike 'PackageNotFound,*') {
