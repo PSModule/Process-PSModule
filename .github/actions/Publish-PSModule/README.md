@@ -54,3 +54,9 @@ Provide `GH_TOKEN` with contents-write access scoped to the consumer repository.
 NuGet-reserved container metadata paths are rejected in the tested candidate before a claim or upload, using the same path classification as raw package verification. A published package without its shared module/version coordinate is unproven; the publisher does not fabricate that ownership record on retry.
 
 Use [Release-PSModule](../Release-PSModule/README.md) in a separate step to create the GitHub release from the same source and tested artifact. A retry must retain the original coordinates and bytes; unproven legacy publication requires reviewed forward-only recovery, not numeric guessing, retagging, or metadata changes.
+
+## Retry eligibility
+
+The action downloads `ArtifactName` from the current workflow run. That name is not an immutable selector for an earlier producing run or attempt. A retry of the original failed publishing job can retain a proven Gallery package and continue GitHub completion only when it downloads the original tested bytes and preserves the original settings, source/context, and verifiable required test evidence. The original runtime must already include the ownership checks.
+
+A full or new workflow run can rebuild different bytes even at the same source and version, including when Build generates an omitted manifest `GUID`. Those bytes fail the original claim check; the action does not recover them by rewriting metadata, importing a Gallery package, or promoting an earlier artifact automatically. Missing or expired downloads fail, and missing or unverifiable source/test evidence makes the retry ineligible. See [Retry eligibility and artifact retention](../../../docs/content/guides/versioning-and-releases.md#retry-eligibility-and-artifact-retention) for retention, verification, and failure handling.

@@ -112,11 +112,59 @@ ambiguous claim, unavailable legacy proof, or API failure stops resolution witho
 For a new source, baseline completeness uses its actual historical tag/release, even when the configured prefix
 changes. Recovery and new claims still bind the current prefix exactly; ambiguous completed baseline tags fail.
 
-If Gallery publication succeeded and GitHub creation or upload failed, the retry retains that proven version,
-skips only the identical Gallery upload, and completes the missing GitHub work without replacing bytes.
-Build and tests still run, and the publisher rechecks the resulting artifact against the original claim.
-See the [resolver contract](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Resolve-PSModuleVersion)
-for safe recovery failures and the original-job retry path.
+## Retry eligibility and artifact retention
+
+Version recovery and tested-artifact reuse are separate checks. If Gallery publication succeeds but GitHub creation
+or upload fails, Plan can select the proven original version. Completion still requires the original tested file
+tree and matching release ZIP, with the same immutable source, producing context, prefix, and resolved coordinates.
+Only the proven duplicate Gallery upload is skipped; published bytes are not replaced. See the
+[resolver contract](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Resolve-PSModuleVersion)
+for version-selection failures.
+
+### Before retrying
+
+The original workflow/action revision must already contain the ownership checks. Retrying an older failed job
+does not install a later framework implementation: GitHub
+[reuses the first attempt's reusable-workflow commit for failed or specific job reruns](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#behavior-of-reusable-workflows-when-re-running-jobs).
+The original artifact and settings must remain available, and the caller or operator must be able to verify the
+required test, lint, and coverage results against that exact artifact. A matching version, artifact name, or
+successful-looking workflow conclusion alone is not completed-test evidence.
+
+The [Build action](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Build-PSModule) retains its
+uploaded artifact for one day; the framework calls it `module`. The test, publish, and release wrappers download
+the named artifact from the current run. They do not expose an immutable original-run/attempt/artifact selector
+or a completed-test provenance contract for cross-run reuse. An artifact name, including a duplicate name from
+another attempt, is not proof that the selected bytes are the original tested artifact. Raw Gallery package
+verification establishes payload identity; it is not an original-artifact retrieval or promotion path.
+
+### Choose the retry path
+
+| Retry path | Supported behavior and limit |
+| --- | --- |
+| Only the original failed publishing job; no new Plan, Build, or test execution | Can reuse surviving original bytes and settings when the selected artifact, ownership, and required test evidence remain verifiable and the original runtime contains the safety checks. |
+| All jobs in the workflow | Enabled Build and test jobs run again, and downloads select that run's artifact. Resolving the original version does not guarantee the rebuilt artifact matches its original claim. |
+| A new full workflow run at the same source | Produces a new run/artifact rather than automatically selecting the original tested artifact. Whole-run or cross-run original-artifact recovery is not supplied by the wrappers. |
+| Missing or expired artifact, or unavailable/unverifiable source, context, or test evidence | Stop recovery. Do not infer success, invent a fallback version, or fabricate proof. Reviewed forward-only reconciliation is required when original proof cannot be retained. |
+
+A supported source manifest can omit `GUID`; Build then generates a GUID when creating the manifest. A clean
+rebuild can therefore change manifest, file-tree, and ZIP bytes even when the source and resolved version are
+unchanged. The publisher rechecks the resulting bytes against the original claim and fails on a mismatch.
+Do not insert or replace a consumer GUID or other metadata to force a same-source retry to match. A full rerun
+is not a substitute for retaining the original tested artifact.
+
+### Verify the retained evidence
+
+1. Confirm the selected artifact is the original available Build output and that its immutable source, original
+   settings, producing context, and resolved coordinates match the publication claim.
+2. Verify every required test, lint, and coverage result was completed for those exact bytes. The existing
+   [pipeline stages](../reference/pipeline-stages.md#framework-test) describe those checks; the publication claim's
+   byte digests do not replace their results.
+3. Retain the file-tree and exact ZIP proof. Publication rechecks must agree before another mutation; differing,
+   ambiguous, or unverifiable bytes fail rather than replacing a package, tag, or asset.
+
+Missing or expired artifacts fail the named download. Missing source/context/test evidence makes the retry
+ineligible even if some workflow jobs report success. Stop rather than relax ownership or byte checks,
+import package code as proof, edit metadata, or assume automatic selection of the original artifact.
 
 ## Linear versioning
 
