@@ -15,7 +15,7 @@ If the repository-relative guide is unavailable from an installed plugin, read i
 
 ## Agent-specific contract
 
-- Read the target repository's instructions and PR template before editing its metadata.
+- Read the target repository's instructions and linked evergreen documentation before editing PR metadata.
 - Apply the guide's authoring and replay checks to the full delivered range.
 - Report the edited PR URL, relevant baseline, verified impact, and validation outcomes to the owning session.
 - Stop and report when the cited guidance or required source evidence is unavailable; identify the evidence gap.

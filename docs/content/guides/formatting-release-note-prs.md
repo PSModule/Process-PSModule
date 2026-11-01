@@ -14,10 +14,9 @@ the description as the release notes body. The release name is the resolved vers
 `Publish.Module.UsePRTitleAsReleaseName` changes that setting. This guide governs authoring; it does not change the
 publisher, version resolver, label mappings, or release-note settings.
 
-Use the [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/) for titles and description structure, and the
-[repository template](https://github.com/PSModule/Process-PSModule/blob/main/.github/PULL_REQUEST_TEMPLATE.md) as the
-local starting point. The guidance applies to PowerShell modules, reusable workflows, GitHub Actions, libraries,
-services, infrastructure modules, and published guidance.
+Use the [MSX PR format](https://msx.no/docs/Ways-of-Working/PR-Format/) for titles and description structure.
+Write the record directly in the pull request using its in-document examples. The guidance applies to PowerShell
+modules, reusable workflows, GitHub Actions, libraries, services, infrastructure modules, and published guidance.
 
 ## Release records and evergreen documentation
 
