@@ -37,6 +37,10 @@ inputs:
   ReleaseTag:
     description: Full GitHub release tag resolved by Resolve-PSModuleVersion.
     required: true
+  VersionPrefix:
+    description: Configured resolver prefix used to verify the tag against the tested artifact version.
+    required: false
+    default: v
   PullRequest:
     description: Normalized pull request context JSON from Get-PSModuleSettings.
     required: false
@@ -78,6 +82,7 @@ runs:
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName: ${{ inputs.UsePRTitleAsReleaseName }}
         PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading: ${{ inputs.UsePRTitleAsNotesHeading }}
         PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag: ${{ inputs.ReleaseTag }}
+        PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix: ${{ inputs.VersionPrefix }}
         PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest: ${{ inputs.PullRequest }}
         PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha: ${{ inputs.CommitSha || github.sha }}
       run: ${{ github.action_path }}/src/release.ps1
