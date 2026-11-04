@@ -7,10 +7,9 @@ description: The versioning, branching, and colocation principles behind Process
 
 ## Linear versioning
 
-The contribution and release process is based on the idea that a PR is a release, and we only maintain a single linear ancestry of versions, not going
-back to patch and update old versions of the modules. This means that if we are on version `2.1.3` of a module and there is a security issue, we only
-patch the latest version with a fix, not releasing new versions based on older versions of the module, i.e. not updating the latest 1.x with the
-patch.
+The contribution and release process treats a PR as a release and maintains one linear version history. Only the latest version receives patches and updates.
+
+For example, if version `2.1.3` has a security issue, the fix applies to the latest version. The 1.x series does not receive the patch.
 
 ## Trunk-based development
 
@@ -22,10 +21,9 @@ feature pull request when a preview version is needed before merging to `main`.
 
 ## Colocation of concerns
 
-Colocate concerns for long-term maintainability. For example, `#Requires -Modules` statements belong in the function files that use them, not in a
-central manifest — this makes it immediately visible which functions drive each external dependency, and avoids silent drift between the manifest and
-the actual code. Another example is how parameter descriptions are placed as comments in the `param()` block directly above each parameter
-declaration, rather than in the comment-based help at the top of the function — this keeps the description next to the code it documents.
+Colocate concerns for long-term maintainability. For example, `#Requires -Modules` statements belong in the function files that use them, not in a central manifest. This shows which functions use each external dependency and prevents silent drift between the manifest and the code.
+
+Parameter descriptions are comments in the `param()` block, directly above each parameter declaration. This keeps each description next to its code, rather than in the comment-based help at the top of the function.
 
 ## Compatibility
 
