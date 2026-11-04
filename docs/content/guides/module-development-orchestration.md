@@ -1,18 +1,17 @@
 ---
 title: Module development orchestration
-description: Coordinate substantial module work across an orchestrator session and narrowly scoped child sessions, then integrate it safely for release.
+description: Coordinate scoped module changes through an orchestrator, child sessions, and verified integration.
 ---
 
 # Module development orchestration
 
-Substantial module work is easier to review and integrate when it is split into
-small, independently verifiable changes. Use one parent (orchestrator) session
-to own the plan and integration, and use narrowly scoped child sessions for the
-work that can proceed independently.
+Coordinate module work as small, independently verifiable changes. Use one
+parent (orchestrator) session for the plan and integration. Assign independent
+work to narrowly scoped child sessions.
 
-This complements [Module bootstrap](../get-started/module-bootstrap.md). During
-bootstrap, the shared branch is an **integration branch** for the load-bearing
-core. For an existing module, follow the repository's
+During [Module bootstrap](../get-started/module-bootstrap.md), the shared
+**integration branch** holds the load-bearing core. For an existing module,
+follow the repository's
 [trunk-based development](../specification/principles-and-practices.md#trunk-based-development)
 default: child pull requests use short-lived branches and target `main`.
 Use a stacked pull request only when a dependency requires it.
@@ -27,36 +26,34 @@ The orchestrator:
 - creates the bootstrap integration branch and its draft pull request to
   `main` when the module needs one
 - gives each child one reviewable unit of work and the branch it must target
-- keeps shared design decisions, naming, and cross-cutting changes coherent
+- keeps shared design decisions, naming, and cross-cutting changes consistent
 - reviews each child pull request, runs the relevant validation, and integrates
   it into the shared branch
 - owns release readiness for the coordinated change set
 
-The orchestrator coordinates the work; it does not become a second place where
-the implementation is silently changed. Changes outside a child's scope should
-become a new child task or an explicitly recorded decision.
+The orchestrator does not change a child's implementation without a recorded
+scope decision. For changes outside a child's scope, the orchestrator should
+create a separate child task or record an explicit decision.
 
 ### Child session
 
-A child session owns one cohesive change, such as one public function and its
-tests, one documentation page, or one focused fix. A child should be able to
-describe its change without referring to unrelated planned work.
+A child session owns one cohesive change. Examples include one public function
+with tests, one documentation page, or one focused fix. A child should be able
+to describe its change without references to unrelated planned work.
 
-Each child:
+For each assigned change:
 
-1. starts from `main`, or from the bootstrap integration branch when one is
-   required
-2. opens a **draft pull request** targeting `main`, or the bootstrap integration
-   branch when one is required
-3. implements and validates only its assigned scope
-4. updates the documentation and tests required by that scope
-5. reports the result to the orchestrator before asking for integration
+1. Start from `main` or the required bootstrap integration branch.
+2. Open a **draft pull request** that targets the same branch.
+3. Implement only the assigned scope. Validate the assigned change.
+4. Update the documentation and tests required by that scope.
+5. Before you request integration, report the result to the orchestrator.
 
-Use the repository's normal [branching and merging
+Follow the repository's [branching and merging
 practice](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/) and the
-shared [workflow](https://msx.no/docs/Ways-of-Working/Workflow/) for the
-ordinary branch, draft PR, implementation, test, and review loop. This page
-only describes how to coordinate several such changes.
+shared [workflow](https://msx.no/docs/Ways-of-Working/Workflow/) for branches,
+draft PRs, implementation, tests, and review. This page describes how to
+coordinate those changes.
 
 ## Coordination protocol
 
@@ -73,9 +70,9 @@ The orchestrator's handoff should include:
 - the validation expected before the child reports completion
 - the orchestrator session's identifier or communication channel
 
-If the child discovers a missing prerequisite or a conflicting design choice,
-it should stop at that boundary and report it rather than expanding its scope
-silently.
+If a prerequisite is missing or a design decision conflicts, the child should
+stop at that boundary. The child should report the problem instead of
+expanding its scope without a record.
 
 ### Require a useful completion report
 
@@ -88,50 +85,53 @@ The child reports:
 - decisions or risks the orchestrator must review
 - follow-up issues for work that does not belong in the child pull request
 
-The orchestrator treats this as input to review, not as a substitute for
-review. Read the diff, verify the acceptance criteria, and run the smallest
-relevant checks before merging. Use
+The completion report does not replace review. Before you merge, read the
+diff. Make sure that it satisfies the acceptance criteria. Run the smallest
+relevant checks. Use
 [Validating before review](validating-before-review.md) for the PSModule
-specific validation pass.
+validation pass.
 
 ### Integrate deliberately
 
-Merge children only after their checks and review are complete. Merge
-independent children into `main` in any order. For dependent work, either wait
-for the prerequisite to merge or make the dependency explicit in a stacked
-branch arrangement; do not make a child appear independent by copying
-unreviewed changes. During bootstrap, merge children into the integration
-branch, then merge that branch to `main` when the load-bearing core is ready.
+After checks and review are complete, merge independent child pull requests
+into `main` in any order. For dependent work, wait for the prerequisite to
+merge or use an explicit stacked branch arrangement. Do not copy unreviewed
+changes to make a child appear independent.
 
-Keep `main` or the bootstrap integration branch buildable. Resolve conflicts in
-the orchestrator's context, rerun affected checks after integration, and record
-any cross-cutting decision in the relevant pull request or issue.
+During bootstrap, merge child pull requests into the integration branch.
+When the load-bearing core is ready, merge that branch to `main`.
+
+Keep `main` or the bootstrap integration branch buildable. Resolve conflicts
+in the orchestrator's context. After integration, rerun the affected checks.
+Record cross-cutting decisions in the relevant pull request or issue.
 
 ## Release readiness
 
-Release readiness is a property of the integrated change, not a reason to keep
-a long-lived release branch. Before marking a bootstrap integration pull
-request ready, or reporting a coordinated trunk-based change complete, confirm:
+Release readiness applies to the integrated change. It does not justify a
+long-lived release branch. Before you mark a bootstrap integration pull
+request ready, examine the integrated change against these conditions.
+Apply the same conditions before you report a coordinated trunk-based change
+complete:
 
 - every child pull request is merged, closed with a documented reason, or
   explicitly deferred with a follow-up issue
 - the integrated branch passes the applicable build, test, lint, and
   documentation checks
-- the final tree still follows
+- the final tree follows
   [Structuring your module](structuring-your-module.md), the module
   [repository standard](../reference/repository-standard.md), and the
   [test specification](../reference/test-specification.md)
 - user-facing documentation, examples, and generated-help inputs describe the
   integrated behavior
-- the parent or coordinating pull request records the outcome, links the child
-  pull requests when one exists, and identifies related issues without claiming
+- if a parent or coordinating pull request exists, it records the outcome,
+  links the child pull requests, and identifies related issues without claiming
   unrelated work
 - the version and prerelease intent match
   [Versioning and releases](versioning-and-releases.md)
 
-If the change is not ready, keep the relevant pull request in draft and create
-another focused child task or follow-up issue. Once it is ready, follow [Your
-first release](../get-started/your-first-release.md) and the canonical MSX
+If the change is not ready, keep the relevant pull request in draft.
+Create a focused child task or follow-up issue for the remaining work.
+When the change is ready, follow [Your first release](../get-started/your-first-release.md) and the canonical MSX
 [definition of ready for review](https://msx.no/docs/Ways-of-Working/Definition-of-Ready-and-Done/#definition-of-ready-for-review).
 
 ## Relationship to other work
@@ -140,6 +140,6 @@ first release](../get-started/your-first-release.md) and the canonical MSX
   needs a load-bearing core before its first release.
 - For an existing module, use short-lived topic branches targeting `main`, as
   described in [Principles and practices](../specification/principles-and-practices.md).
-- Use a stacked pull request only when the changes genuinely depend on one
-  another; see [MSX branching and
+- Use a stacked pull request only when one change depends on another.
+  See [MSX branching and
   merging](https://msx.no/docs/Ways-of-Working/Branching-and-Merging/).
