@@ -44,8 +44,8 @@ jobs:
           $configuration = New-PesterConfiguration
           $configuration.Run.Shuffle = $true
           $configuration.Run.ShuffleSeed = 42
-          $configuration.Run.Parallel = $true
-          $configuration.Run.ParallelThrottleLimit = 2
+          # These suites share process-wide environment variables.
+          $configuration.Run.Parallel = $false
           $configuration.Debug.ShowStartMarkers = $true
 
           $testPaths = Get-ChildItem -Path '.github/actions' -Directory |
