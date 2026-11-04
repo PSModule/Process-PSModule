@@ -123,8 +123,8 @@ complete:
   [test specification](../reference/test-specification.md)
 - user-facing documentation, examples, and generated-help inputs describe the
   integrated behavior
-- if a parent or coordinating pull request exists, it records the outcome,
-  links the child pull requests, and identifies related issues without claiming
+- if a parent or coordinating pull request exists, it records the outcome and
+  links the child pull requests. It identifies related issues without claiming
   unrelated work
 - the version and prerelease intent match
   [Versioning and releases](versioning-and-releases.md)

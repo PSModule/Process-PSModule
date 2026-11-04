@@ -11,7 +11,7 @@ The tests run in parallel across Windows, Linux, and macOS.
 
 ## Pester version
 
-At the top of each `*.Tests.ps1`, declare a Pester **6.1.x** requirement:
+At the top of each `*.Tests.ps1`, declare this Pester requirement:
 
 ```powershell
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.1.0'; MaximumVersion = '6.*' }
