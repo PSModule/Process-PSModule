@@ -5,4 +5,4 @@ abbreviations: []
 
 # Pipeline
 
-A series of automated processes that allow developers and [DevOps](devops.md) professionals to reliably and efficiently compile, build, and deploy their code.
+A pipeline is a series of automated processes that developers and [DevOps](devops.md) teams use to compile, build, and deploy code.

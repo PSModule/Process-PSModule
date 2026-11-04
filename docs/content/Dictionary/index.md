@@ -42,7 +42,7 @@ The quick reference lists common PSModule terms.
 
 - [API](api.md) - Application Programming Interface
 - [Azure](azure.md) - Microsoft's cloud platform
-- [CI/CD](ci-cd.md) - Continuous Integration/Continuous Deployment
+- [CI/CD](ci-cd.md) - Continuous Integration with Continuous Delivery or Continuous Deployment
 - [Cmdlet](cmdlet.md) - PowerShell command
 - [Git](git.md) - Version control system
 - [GitHub](github.md) - Code hosting platform
