@@ -47,12 +47,12 @@ inputs:
     description: |
       If the test run fails, exit with a nonzero code.
       The run sets `$LASTEXITCODE` even when this option is `$false`.
-      If Throw is also enabled, prefer an exception.
+      Run_Throw takes precedence over Run_Exit when both are enabled.
     required: false
   Run_Throw:
     description: |
       If the test run fails, throw an exception.
-      If Exit is also enabled, prefer an exception.
+      Run_Throw takes precedence over Run_Exit when both are enabled.
     required: false
   Run_SkipRun:
     description: |

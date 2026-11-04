@@ -11,6 +11,8 @@
     The multiline string to normalize.
 
     .OUTPUTS
+    System.String
+
     The multiline string with adjusted indentation.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Scope = 'Function', Justification = 'Function isn''t exported.')]
