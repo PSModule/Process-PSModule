@@ -1,8 +1,8 @@
 # Glossary
 
-Welcome to the PSModule Glossary, a reference of terms, concepts, and technologies used throughout our projects and documentation.
+This glossary is a reference for terms, concepts, and technologies in PSModule projects and documentation.
 
-## Table of Contents
+## Table of contents
 
 - [API](api.md)
 - [Azure](azure.md)
@@ -36,12 +36,13 @@ Welcome to the PSModule Glossary, a reference of terms, concepts, and technologi
 - [Workflow](workflow.md)
 - [YAML](yaml.md)
 
-## Quick Reference
+## Quick reference
 
-Common terms you might encounter:
+The quick reference lists common PSModule terms.
+
 - [API](api.md) - Application Programming Interface
 - [Azure](azure.md) - Microsoft's cloud platform
-- [CI/CD](ci-cd.md) - Continuous Integration/Continuous Deployment
+- [CI/CD](ci-cd.md) - Continuous Integration with Continuous Delivery or Continuous Deployment
 - [Cmdlet](cmdlet.md) - PowerShell command
 - [Git](git.md) - Version control system
 - [GitHub](github.md) - Code hosting platform
@@ -55,10 +56,10 @@ Common terms you might encounter:
 
 ## Overview
 
-This glossary serves as a reference for developers, contributors, and users to understand the terminology and concepts used in PSModule projects. Each entry includes clear definitions, usage examples, and related links where applicable.
+Each entry gives a definition. Some entries also include examples and links to related terms.
 
-!!! info "Contributing to the Glossary"
-    Found a term that should be added or need to update an existing definition? Please [create an issue](https://github.com/PSModule/Process-PSModule/issues) or submit a pull request with your suggestions.
+!!! info "Contributing to the glossary"
+    To add a term or correct a definition, [create an issue](https://github.com/PSModule/Process-PSModule/issues) or submit a pull request.
 
-!!! tip "Search Functionality"
-    Use the search feature in the top navigation to quickly find specific terms and their definitions across the entire documentation site.
+!!! tip "Search functionality"
+    Use the search field in the top navigation to find terms and definitions across the documentation site.
