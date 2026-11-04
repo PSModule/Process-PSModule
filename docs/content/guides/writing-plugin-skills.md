@@ -37,7 +37,7 @@ Use lowercase, descriptive, hyphen-separated identifiers. Start `SKILL.md`
 with front matter containing the matching `name` and a concise `description`.
 The description should identify when to use the skill without the full procedure.
 
-After the front matter, include:
+After the front matter, follow these steps:
 
 1. State the purpose. Link to the shared documentation.
 2. Add agent-specific operating instructions.
