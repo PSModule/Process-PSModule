@@ -175,6 +175,11 @@ Describe 'Release-PSModule WhatIf' {
         if ($LASTEXITCODE -ne 0) {
             throw 'Could not read the release test commit.'
         }
+        $gitArguments[-1] = 'Do not use the latest commit for this release'
+        git @gitArguments
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not create the newer unrelated test commit.'
+        }
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = $commitSha
 
         # Intercept unsafe GitHub writes. This proves script inputs, not the live API contract.
