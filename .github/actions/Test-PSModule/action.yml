@@ -1,95 +1,104 @@
 name: Test-PSModule
-description: Test a PowerShell module before publishing the module to the PowerShell Gallery.
+description: Test a PowerShell module before PowerShell Gallery publication.
 author: PSModule
 
 inputs:
   Name:
-    description: The name of the module to test. The name of the repository is used if not specified.
+    description: Module name. If omitted, the action uses the repository name.
     required: false
   Settings:
-    description: The type of tests to run. Can be either 'Module' or 'SourceCode'.
+    description: Test type. Use 'Module' or 'SourceCode'.
     required: true
   StepSummary_Mode:
     description: |
-      Controls which tests to show in the GitHub step summary. Allows "Full" (show all tests), "Failed" (only failed tests), or "None" (disable step summary).
+      Select the tests to show in the GitHub step summary.
+      Use "Full" for all tests, "Failed" for failed tests,
+      or "None" to omit the summary.
     required: false
   StepSummary_ShowTestOverview:
     description: |
-      Controls whether to show the test overview table in the GitHub step summary.
+      Show the test overview table in the GitHub step summary.
     required: false
   StepSummary_ShowConfiguration:
     description: |
-      Controls whether to show the configuration details in the GitHub step summary.
+      Show configuration details in the GitHub step summary.
     required: false
   Run_Path:
     description: |
-      Directories to be searched for tests, paths directly to test files, or combination of both.
+      Directories to search for tests, paths to test files, or both.
     required: false
   Run_ExcludePath:
     description: |
-      Directories or files to be excluded from the run.
+      Directories or files to exclude from the run.
     required: false
   Run_ScriptBlock:
     description: |
-      ScriptBlocks containing tests to be executed.
+      ScriptBlocks with tests to run.
     required: false
   Run_Container:
     description: |
-      ContainerInfo objects containing tests to be executed.
+      ContainerInfo objects with tests to run.
     required: false
   Run_TestExtension:
     description: |
-      Filter used to identify test files.
+      Filter that identifies test files.
     required: false
   Run_Exit:
     description: |
-      Exit with non-zero exit code when the test run fails. Exit code is always set to `$LASTEXITCODE` even when this option is `$false`.
-      When used together with Throw, throwing an exception is preferred.
+      If the test run fails, exit with a nonzero code.
+      The run sets `$LASTEXITCODE` even when this option is `$false`.
+      If Throw is also enabled, prefer an exception.
     required: false
   Run_Throw:
     description: |
-      Throw an exception when test run fails. When used together with Exit, throwing an exception is preferred.
+      If the test run fails, throw an exception.
+      If Exit is also enabled, prefer an exception.
     required: false
   Run_SkipRun:
     description: |
-      Runs the discovery phase but skips run. Use it with PassThru to get object populated with all tests.
+      Run test discovery without test execution.
+      Use PassThru to return an object with all tests.
     required: false
   Run_SkipRemainingOnFailure:
     description: |
-      Skips remaining tests after failure for selected scope, options are None, Run, Container and Block.
+      Skip the remaining tests after a failure in the selected scope.
+      Options: None, Run, Container, and Block.
     required: false
   Filter_Tag:
     description: |
-      Tags of Describe, Context or It to be run.
+      Tags on Describe, Context, or It blocks to run.
     required: false
   Filter_ExcludeTag:
     description: |
-      Tags of Describe, Context or It to be excluded from the run.
+      Tags on Describe, Context, or It blocks to exclude from the run.
     required: false
   Filter_Line:
     description: |
-      Filter by file and scriptblock start line, useful to run parsed tests programmatically to avoid problems with expanded names.
+      Filter parsed tests by file and scriptblock start line
+      to avoid errors from expanded names.
       Example: 'C:\tests\file1.Tests.ps1:37'
     required: false
   Filter_ExcludeLine:
     description: |
-      Exclude by file and scriptblock start line, takes precedence over Line.
+      Exclude tests by file and scriptblock start line.
+      This filter takes precedence over Line.
     required: false
   Filter_FullName:
     description: |
-      Full name of test with -like wildcards, joined by dot. Example: '*.describe Get-Item.test1'
+      Full test name with -like wildcards and dot-separated parts.
+      Example: '*.describe Get-Item.test1'
     required: false
   CodeCoverage_Enabled:
     description: |
-      Enable CodeCoverage.
+      Enable code coverage.
     required: false
   CodeCoverage_OutputFormat:
     description: |
-      Format to use for code coverage report. Possible values in Pester 6.1: JaCoCo or Cobertura.
+      Code coverage report format. Pester 6.1 supports JaCoCo or Cobertura.
     required: false
   CodeCoverage_OutputPath:
     description: |
-      Path relative to the current directory where code coverage report is saved.
+      Code coverage report path, relative to the current directory.
     required: false
   CodeCoverage_OutputEncoding:
     description: |
@@ -97,19 +106,21 @@ inputs:
     required: false
   CodeCoverage_Path:
     description: |
-      Directories or files to be used for code coverage, by default the Path(s) from general settings are used, unless overridden here.
+      Directories or files for code coverage.
+      Without an override, the action uses Path(s) from the general settings.
     required: false
   CodeCoverage_ExcludeTests:
     description: |
-      Exclude tests from code coverage. This uses the TestFilter from general configuration.
+      Exclude tests from code coverage.
+      This option uses TestFilter from the general configuration.
     required: false
   CodeCoverage_RecursePaths:
     description: |
-      Will recurse through directories in the Path option.
+      Search subdirectories of the directories in the Path option.
     required: false
   CodeCoverage_CoveragePercentTarget:
     description: |
-      Target percent of code coverage that you want to achieve.
+      Target percentage for code coverage.
     required: false
   CodeCoverage_UseBreakpoints:
     description: |
@@ -117,19 +128,19 @@ inputs:
     required: false
   CodeCoverage_SingleHitBreakpoints:
     description: |
-      Remove breakpoint when it is hit.
+      Remove each breakpoint after its first hit.
     required: false
   TestResult_Enabled:
     description: |
-      Enable TestResult.
+      Enable test result reports.
     required: false
   TestResult_OutputFormat:
     description: |
-      Format to use for test result report. Possible values: NUnitXml, NUnit2.5, NUnit3 or JUnitXml
+      Test result report format: NUnitXml, NUnit2.5, NUnit3, or JUnitXml.
     required: false
   TestResult_OutputPath:
     description: |
-      Path relative to the current directory where test result report is saved.
+      Test result report path, relative to the current directory.
     required: false
   TestResult_OutputEncoding:
     description: |
@@ -137,53 +148,59 @@ inputs:
     required: false
   TestResult_TestSuiteName:
     description: |
-      Set the name assigned to the root 'test-suite' element.
+      Set the name of the root 'test-suite' element.
     required: false
   Should_ErrorAction:
     description: |
-      Controls if Should throws on error. Use 'Stop' to throw on error, or 'Continue' to fail at the end of the test.
+      Select the error behavior for Should.
+      Use 'Stop' to throw on error,
+      or 'Continue' to fail at the end of the test.
     required: false
   Debug_ShowFullErrors:
     description: |
-      Show full errors including Pester internal stack. This property is deprecated, and if set to true it will override Output.StackTraceVerbosity to 'Full'.
+      Show full errors with the internal Pester stack.
+      When true, this deprecated property overrides
+      Output.StackTraceVerbosity with 'Full'.
     required: false
   Debug_WriteDebugMessages:
     description: |
-      Write Debug messages to screen.
+      Write debug messages to the screen.
     required: false
   Debug_WriteDebugMessagesFrom:
     description: |
-      Write Debug messages from a given source, WriteDebugMessages must be set to true for this to work.
-      You can use like wildcards to get messages from multiple sources, as well as * to get everything.
+      Write debug messages from the selected source.
+      Set WriteDebugMessages to true to enable these messages.
+      Use like wildcards for multiple sources, or * for all sources.
     required: false
   Debug_ShowNavigationMarkers:
     description: |
-      Write paths after every block and test, for easy navigation in VSCode.
+      Write paths after each block and test for navigation in VSCode.
     required: false
   Debug_ReturnRawResultObject:
     description: |
-      Returns unfiltered result object, this is for development only. Do not rely on this object for additional properties,
-      non-public properties will be renamed without previous notice.
+      Return the unfiltered result object for development only.
+      Do not depend on additional properties.
+      Non-public property names change without prior notice.
     required: false
   Output_Verbosity:
     description: |
-      The verbosity of output, options are None, Normal, Detailed and Diagnostic.
+      Output verbosity: None, Normal, Detailed, or Diagnostic.
     required: false
   Output_StackTraceVerbosity:
     description: |
-      The verbosity of stacktrace output, options are None, FirstLine, Filtered and Full.
+      Stack trace verbosity: None, FirstLine, Filtered, or Full.
     required: false
   Output_CIFormat:
     description: |
-      The CI format of error output in build logs, options are None, Auto, AzureDevops and GithubActions.
+      CI error format in build logs: None, Auto, AzureDevops, or GithubActions.
     required: false
   Output_CILogLevel:
     description: |
-      The CI log level in build logs, options are Error and Warning.
+      CI log level in build logs: Error or Warning.
     required: false
   Output_RenderMode:
     description: |
-      The mode used to render console output, options are Auto, Ansi, ConsoleColor and Plaintext.
+      Console output mode: Auto, Ansi, ConsoleColor, or Plaintext.
     required: false
   TestDrive_Enabled:
     description: |
@@ -202,14 +219,14 @@ inputs:
     required: false
     default: 'false'
   Version:
-    description: Specifies the version of the GitHub module to be installed. The value must be an exact version.
+    description: GitHub module version to install. The value must be an exact version.
     required: false
   Prerelease:
     description: Allow prerelease versions if available.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory to use for the action. This is the root folder where tests and outputs are expected.
+    description: Working directory for the action. Tests and outputs use this root folder.
     required: false
     default: '.'
 
@@ -224,11 +241,11 @@ outputs:
     value: ${{ steps.test.conclusion }}
   Executed:
     description: |
-      Whether tests were executed.
+      Whether the run executed tests.
     value: ${{ steps.test.outputs.Executed }}
   Result:
     description: |
-      Overall result of the Pester test run (e.g., Passed, Failed).
+      Overall Pester result (for example, Passed, Failed).
     value: ${{ steps.test.outputs.Result }}
   FailedCount:
     description: |
@@ -256,7 +273,7 @@ outputs:
     value: ${{ steps.test.outputs.InconclusiveCount }}
   NotRunCount:
     description: |
-      Number of tests not run.
+      Number of tests that did not run.
     value: ${{ steps.test.outputs.NotRunCount }}
   TotalCount:
     description: |

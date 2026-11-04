@@ -10,7 +10,7 @@ inputs:
     description: Source code test suites whose results the action expects.
     required: true
   PSModuleTestSuites:
-    description: PSModule framework test suites whose results the action expects.
+    description: PSModule test suites whose results the action expects.
     required: true
   ModuleTestSuites:
     description: Module-local test suites whose results the action expects.

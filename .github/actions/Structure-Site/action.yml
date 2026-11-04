@@ -1,5 +1,5 @@
 name: Structure-Site
-description: Structure generated documentation and create the Zensical site configuration.
+description: Prepare documentation and site configuration for Zensical.
 
 inputs:
   WorkingDirectory:

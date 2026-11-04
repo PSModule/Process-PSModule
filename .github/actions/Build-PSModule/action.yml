@@ -1,5 +1,5 @@
 name: Build-PSModule
-description: Build a PowerShell module for publication to the PowerShell Gallery.
+description: Build a PowerShell module for the PowerShell Gallery.
 author: PSModule
 
 inputs:
