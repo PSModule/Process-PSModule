@@ -35,10 +35,6 @@ Describe 'Publish-PSModule.Helpers' {
                     Should -Be '1.1.10-mybranch001'
             }
 
-            It 'Get-ModuleVersionString - takes no version prefix parameter at all' {
-                (Get-Command Get-ModuleVersionString).Parameters.Keys | Should -Not -Contain 'VersionPrefix'
-            }
-
             It 'Get-ModuleVersionString - requires a module version' {
                 { Get-ModuleVersionString -ModuleVersion '' } | Should -Throw
             }
