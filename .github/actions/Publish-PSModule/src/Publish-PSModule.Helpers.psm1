@@ -4,7 +4,7 @@
         Build the SemVer version string that identifies the module.
 
         .DESCRIPTION
-        The function combines the module version with the prerelease label, if present.
+        If a prerelease label is present, the function puts the module version and the label together.
         The PowerShell Gallery and the module manifest use this string: `Major.Minor.Patch` optionally followed by `-<prerelease>`.
         The string never includes the repository's version prefix.
         Neither the manifest's `ModuleVersion` nor a Gallery package version accepts a prefix.

@@ -211,7 +211,7 @@ function Get-GitHubPullRequest {
 function Resolve-ReleaseDecision {
     <#
         .SYNOPSIS
-        Determine whether to publish a release and which version bump to apply.
+        Find whether to publish a release and which version bump to apply.
 
         .DESCRIPTION
         The function evaluates the PR labels against the configured label categories and release type to produce a complete release decision.
