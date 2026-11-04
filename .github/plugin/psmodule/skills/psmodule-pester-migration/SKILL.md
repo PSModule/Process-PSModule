@@ -177,8 +177,7 @@ pattern as setup.
 
 Record the `PSModule/Invoke-Pester` action revision separately from the Pester
 module version. When adopting Pester 6.1.0, check both the action revision and its
-Pester installation policy. This includes workflows that reference `v5.1.0`.
-Updating one does not prove that the other changed.
+Pester installation policy. Updating one does not prove that the other changed.
 
 Use this per-repository checklist:
 
