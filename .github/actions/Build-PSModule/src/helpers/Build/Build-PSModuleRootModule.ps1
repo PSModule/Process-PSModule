@@ -1,16 +1,15 @@
 ﻿function Build-PSModuleRootModule {
     <#
         .SYNOPSIS
-        Compiles the module root module files.
+        Build the root module file from source scripts.
 
         .DESCRIPTION
-        This function will compile the modules root module from source files.
-        It will copy the source files to the output folder and start compiling the module.
-        During compilation, the source files are added to the root module file in the following order:
+        Build-PSModuleRootModule combines source scripts in the output folder into the root module file.
+        It adds content in this order:
 
-        1. Module header from header.ps1 file. Usually to suppress code analysis warnings/errors and to add [CmdletBinding()] to the module.
-        2. Data loader is added if data files are available.
-        3. Combines *.ps1 files from the following folders in alphabetical order from each folder:
+        1. The header.ps1 module header, which can suppress code analysis warnings and errors or add [CmdletBinding()].
+        2. A data loader, if data files are available.
+        3. The *.ps1 files from these folders, in alphabetical order within each folder:
             1. init
             2. classes/private
             3. classes/public
@@ -18,13 +17,13 @@
             5. functions/public
             6. variables/private
             7. variables/public
-            8. Any remaining *.ps1 on module root.
-        4. Adds a class loader for classes found in the classes/public folder.
-        5. Export-ModuleMember by using the functions, cmdlets, variables and aliases found in the source files.
-            - `Functions` will only contain functions that are from the `functions/public` folder.
+            8. Any remaining *.ps1 files in the module root.
+        4. A class loader for classes in the classes/public folder.
+        5. An Export-ModuleMember call with the functions, cmdlets, variables, and aliases from the source files.
+            - `Functions` contains only functions from the `functions/public` folder.
             - `Cmdlets` will only contain cmdlets that are from the `cmdlets/public` folder.
-            - `Variables` will only contain variables that are from the `variables/public` folder.
-            - `Aliases` will only contain aliases that are from the functions from the `functions/public` folder.
+            - `Variables` contains only variables from the `variables/public` folder.
+            - `Aliases` contains only aliases from functions in the `functions/public` folder.
 
         .EXAMPLE
         Build-PSModuleRootModule -SourceFolderPath 'C:\MyModule\src\MyModule' -OutputFolderPath 'C:\MyModule\build\MyModule'
@@ -43,7 +42,7 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Folder where the built module is outputted. '.PSModule/module/MyModule'
+        # Folder for the built module files. '.PSModule/module/MyModule'
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleOutputFolder
     )

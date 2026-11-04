@@ -1,5 +1,5 @@
 name: Build-PSModule
-description: Build a PowerShell module to the PowerShell Gallery.
+description: Build a PowerShell module for publication to the PowerShell Gallery.
 author: PSModule
 
 inputs:
@@ -7,21 +7,21 @@ inputs:
     description: Name of the module to build. Defaults to the repository name.
     required: false
   OutputFolder:
-    description: Path to the folder where the built module is outputted.
+    description: Path to the folder for the built module.
     required: false
     default: '.PSModule/module'
   Version:
     description: Module version to stamp into the manifest.
     required: true
   Prerelease:
-    description: Prerelease tag to stamp into the manifest's `PrivateData.PSData.Prerelease`. When empty, no prerelease tag is written.
+    description: Prerelease tag for the manifest's `PrivateData.PSData.Prerelease`. An empty value omits the prerelease tag.
     required: false
   ArtifactName:
     description: Name of the artifact to upload.
     required: false
     default: module
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: '.'
 
