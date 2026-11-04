@@ -5,8 +5,7 @@ description: The inputs, secrets, and permissions declared by the Process-PSModu
 
 # Workflow inputs
 
-The reusable workflow lives at `PSModule/Process-PSModule/.github/workflows/workflow.yml`. This page is the exact
-interface it exposes to a caller workflow. For how to wire it up, see
+The reusable workflow is at `PSModule/Process-PSModule/.github/workflows/workflow.yml`. This page describes its exact caller interface. For caller configuration, see
 [Calling the workflow](../guides/calling-the-workflow.md).
 
 ## Inputs
@@ -23,8 +22,8 @@ interface it exposes to a caller workflow. For how to wire it up, see
 
 ## Secrets
 
-The workflow declares four workflow-call secrets, which keeps the calling workflow in full control of the
-credentials that are exposed. `secrets: inherit` is intentionally not required.
+The workflow declares four workflow-call secrets. The caller controls which credentials it exposes.
+`secrets: inherit` is intentionally not required.
 
 | Name | Location | Description | Required |
 | ---- | -------- | ----------- | -------- |
@@ -47,7 +46,7 @@ permissions:
   id-token: write      # to verify the Pages deployment originates from an appropriate source
 ```
 
-For more info, see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
+For more information, see [Deploy GitHub Pages site](https://github.com/marketplace/actions/deploy-github-pages-site).
 
 ## GitHub App permissions
 
