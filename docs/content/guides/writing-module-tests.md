@@ -1,51 +1,56 @@
 ---
 title: Writing module tests
-description: How Process-PSModule discovers module-local Pester tests, the setup and teardown phases, and how to share test infrastructure across the platform matrix.
+description: Discover module-local Pester tests and share test infrastructure across the platform matrix.
 ---
 
 # Writing module tests
 
-Module-local tests are the Pester tests you write for your own module, as opposed to the framework tests that
-Process-PSModule enforces on every module. They run in parallel across Windows, Linux, and macOS after the module has
-been built and imported.
+Module-local Pester tests verify the module's own behavior. They are separate from the framework tests that
+Process-PSModule enforces on every module. The workflow builds and imports the module before it runs module-local tests.
+The tests run in parallel across Windows, Linux, and macOS.
 
 ## Pester version
 
-Module test files declare a Pester **6.1.x** requirement at the top of each `*.Tests.ps1`:
+At the top of each `*.Tests.ps1`, declare a Pester **6.1.x** requirement:
 
 ```powershell
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.1.0'; MaximumVersion = '6.*' }
 ```
 
-This is a convention module authors add. Process-PSModule pins its reusable
+This declaration is a module-author convention. Process-PSModule pins its reusable
 [Invoke-Pester](https://github.com/PSModule/Invoke-Pester) action runs to the
-`[6.1.0,7.0.0)` range, so patch updates flow in automatically while a new
-major stays a deliberate, reviewed change.
+`[6.1.0,7.0.0)` range. Patch updates install automatically. A major-version
+change requires explicit review.
 
-Pester 6.1 adds opt-in controls for shuffled and parallel file execution
+Pester 6.1 provides opt-in controls for shuffled and parallel file execution
 (`Run.Shuffle`, `Run.ShuffleSeed`, `Run.Parallel`, and
 `Run.ParallelThrottleLimit`) and diagnostic start markers
-(`Debug.ShowStartMarkers`). These controls are available when invoking Pester
-directly with `New-PesterConfiguration`. Process-PSModule's reusable action will
-expose them after the coordinated `PSModule/Invoke-Pester` action adds matching
-inputs; the current v5.1.0 action contract does not accept them.
+(`Debug.ShowStartMarkers`). Direct Pester invocations with
+`New-PesterConfiguration` support these controls. The pinned
+`PSModule/Invoke-Pester` v5.1.1
+[action contract](https://github.com/PSModule/Invoke-Pester/blob/c5494aba3c07d7bfd81bdbbc9f301e8fa4a729fb/action.yml)
+does not accept these controls. Process-PSModule does not expose them through
+its reusable workflow.
 
 ## Test discovery
 
 Simple, Standard, and Advanced are
 [documentation profiles](https://msx.no/docs/Coding-Standards/PowerShell/Testing/#module-test-profiles), not
 selectable workflow modes. The same discovery engine handles every profile. `.github/PSModule.yml` has no test-layout
-or suite-matrix setting; `Settings.Test.Module.Suites` is computed internally from the repository files.
+or suite-matrix setting. Process-PSModule calculates `Settings.Test.Module.Suites` from the repository files.
 
-Process-PSModule inspects `tests/` recursively. Within each directory it uses the first matching form:
+Process-PSModule inspects `tests/` recursively. In each directory, it selects the first matching form:
 
-1. Exactly one `*.Configuration.ps1`. Discovery fails when a directory contains more than one. When selected, sibling `*.Container.ps1` and `*.Tests.ps1` files are not independently selected.
-2. Otherwise, one or more `*.Container.ps1`. When selected, sibling `*.Tests.ps1` files are not independently selected.
+1. Exactly one `*.Configuration.ps1`. If a directory contains more than one, discovery fails. Discovery does not independently select sibling `*.Container.ps1` or `*.Tests.ps1` files.
+2. Otherwise, one or more `*.Container.ps1`. Discovery does not independently select sibling `*.Tests.ps1` files.
 3. Otherwise, all `*.Tests.ps1`.
 
-The selected form takes precedence only in that directory. Child directories are still inspected independently, so a repository may mix configurations, containers, and ordinary test files across different directories.
+Precedence applies separately to each directory. Discovery also inspects child directories.
+A repository can mix configurations, containers, and ordinary test files across different directories.
 
-Every discovered artifact needs a unique prefix before its first dot because that prefix becomes `TestName`. For example, `Users.Unit.Tests.ps1` and `Users.Integration.Tests.ps1` both become `Users`; use distinct prefixes such as `UsersUnit` and `UsersIntegration`.
+Each discovered artifact needs a unique filename prefix before its first dot. Discovery uses that prefix as `TestName`.
+For example, `Users.Unit.Tests.ps1` and `Users.Integration.Tests.ps1` both produce `Users`.
+Use distinct prefixes such as `UsersUnit` and `UsersIntegration`.
 
 Discovery does not affect which changes trigger a release. A test-only change does not enter the build, test, and
 publish path unless `^tests/` is added to
@@ -53,20 +58,20 @@ publish path unless `^tests/` is added to
 
 ## Setup and teardown scripts
 
-The workflow supports automatic execution of setup and teardown scripts for module tests:
+The workflow runs setup and teardown scripts for module tests:
 
 - `tests/BeforeAll.ps1` and `tests/AfterAll.ps1` are special workflow phase files, not ordinary recursively discovered test entries.
-- Each phase is enabled only when its exact file exists at the root of `tests/`.
-- If either file is absent, the workflow skips that phase and continues normally.
+- The workflow enables each phase only when its exact file exists at the root of `tests/`.
+- If either file is absent, the workflow skips that phase and continues without it.
 - Phase detection is **not** recursive. Nested files named `BeforeAll.ps1` or `AfterAll.ps1` do not create workflow phases.
-- Both scripts run with the same environment variables as the tests, including anything passed through
+- Both scripts receive the same caller-provided environment variables as the tests through
   [`TestData`](calling-the-workflow.md#passing-test-data).
 
 ### Setup - `BeforeAll.ps1`
 
-- Place at the exact repository-root path `tests/BeforeAll.ps1`.
-- Runs once before all test matrix jobs to prepare the test environment.
-- Deploy test infrastructure, download test data, initialize databases, or configure services.
+- Place the script at the exact repository-root path `tests/BeforeAll.ps1`.
+- The workflow runs this script once before all test matrix jobs to prepare the test environment.
+- Use it to deploy test infrastructure, download test data, initialize databases, or configure services.
 
 ```powershell
 Write-Host "Setting up test environment..."
@@ -78,9 +83,9 @@ Write-Host "Test environment ready!"
 
 ### Teardown - `AfterAll.ps1`
 
-- Place at the exact repository-root path `tests/AfterAll.ps1`.
-- Runs once after all test matrix jobs complete to clean up the test environment.
-- Remove test resources, clean up databases, stop services, or upload artifacts.
+- Place the script at the exact repository-root path `tests/AfterAll.ps1`.
+- The workflow runs this script once after all test matrix jobs complete to clean up the test environment.
+- Use it to remove test resources, clean up databases, stop services, or upload artifacts.
 
 ```powershell
 Write-Host "Cleaning up test environment..."
@@ -92,14 +97,14 @@ Write-Host "Cleanup completed!"
 
 ## Sharing test infrastructure
 
-Tests run in parallel across multiple OS runners. To avoid rate limits or conflicts from excessive resource creation,
-provision shared infrastructure once in `BeforeAll.ps1` and tear it down in `AfterAll.ps1`. Individual test files
-should consume the shared infrastructure instead of creating their own.
+Tests run in parallel across multiple OS runners. To limit resource creation and avoid rate limits or conflicts,
+provision shared infrastructure once in `BeforeAll.ps1`. Remove it in `AfterAll.ps1`.
+Individual test files should use the shared infrastructure instead of creating their own.
 
 ### Use deterministic naming with `$env:GITHUB_RUN_ID`
 
-Use `$env:GITHUB_RUN_ID` (stable per workflow run, shared across OS runners) to build deterministic resource names.
-This lets test files reference shared resources by name without passing state between jobs.
+Use `$env:GITHUB_RUN_ID` to build deterministic resource names. The value is stable per workflow run and shared across OS runners.
+Test files can then reference shared resources by name without state transfer between jobs.
 
 ```powershell
 # BeforeAll.ps1
@@ -108,13 +113,13 @@ $id = $env:GITHUB_RUN_ID
 $resourceName = "Test-$os-$id"
 ```
 
-Do **not** use `[guid]::NewGuid()` or `Get-Random` for shared resource names — these produce different values on
-each runner and cannot be referenced by other jobs.
+Do **not** use `[guid]::NewGuid()` or `Get-Random` for shared resource names.
+These produce different values on each runner. Other jobs cannot derive those values.
 
 ### Clean up stale resources from previous failed runs
 
-If a previous workflow run failed before teardown completed, stale resources may remain. Start `BeforeAll.ps1` by
-removing any resources matching your naming prefix before creating new ones:
+After a failed workflow run, stale resources can remain if teardown does not complete.
+At the start of `BeforeAll.ps1`, remove resources with the naming prefix before you create others:
 
 ```powershell
 # Remove stale resources from previous failed runs
@@ -126,7 +131,7 @@ New-Resource -Name "Test-$os-$id"
 
 ### Tests reference shared resources — they do not create them
 
-Test files should fetch the shared resource by its deterministic name, not create new resources:
+Test files should get the shared resource by its deterministic name, not create another resource:
 
 ```powershell
 # Inside a test file
@@ -137,12 +142,12 @@ BeforeAll {
 }
 ```
 
-Test-specific ephemeral resources (for example, secrets, variables, or temporary items) can still be created and
-cleaned up within each test file. Only long-lived or expensive resources should be shared.
+Test files can create and remove test-specific resources, such as secrets, variables, or temporary items.
+Test files should share only long-lived or expensive resources.
 
 ### Naming conventions
 
-Use a consistent naming scheme so that resources are easy to identify and clean up. A recommended pattern:
+Use a consistent naming scheme to identify and remove resources. The following table gives recommended patterns:
 
 | Resource          | Pattern                               | Example                    |
 |-------------------|---------------------------------------|----------------------------|
@@ -151,8 +156,8 @@ Use a consistent naming scheme so that resources are easy to identify and clean 
 | Secret / variable | `{TestName}_{OS}_{RunID}`             | `Secrets_Linux_1234`       |
 | Environment       | `{TestName}-{OS}-{RunID}`             | `Secrets-Linux-1234`       |
 
-When tests use multiple authentication contexts that share the same runner, include a token or context identifier in
-the name to avoid collisions (for example, `Test-{OS}-{ContextID}-{RunID}`).
+If multiple authentication contexts share a runner, include a token or context identifier in each resource name to prevent collisions.
+For example, use `Test-{OS}-{ContextID}-{RunID}`.
 
 ## Related
 

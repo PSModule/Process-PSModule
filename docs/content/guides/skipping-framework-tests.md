@@ -1,36 +1,36 @@
 ---
 title: Skipping framework tests
-description: How to skip individual PSModule framework tests on a per-file basis, the available test IDs, and the broader configuration alternatives.
+description: Skip an individual framework test for one file and record the reason for the exception.
 ---
 
 # Skipping individual framework tests
 
-The PSModule framework tests run automatically as part of the `Test-Module` and `Test-SourceCode` jobs. While you can skip entire test categories using the configuration settings (e.g., `Test.PSModule.Skip`), you can also skip individual framework tests on a per-file basis when needed.
+The PSModule framework runs tests in the `Test-Module` and `Test-SourceCode` jobs. Configuration settings, such as `Test.PSModule.Skip`, skip entire test categories. A skip comment exempts an individual test for one file.
 
-## How to Skip Tests
+## How to skip tests
 
-To skip an individual framework test for a specific file, add a special comment at the top of that file:
+To skip an individual framework test, add this comment at the top of the file:
 
 ```powershell
 #SkipTest:<TestID>:<Reason>
 ```
 
-- `<TestID>`: The unique identifier of the test to skip (see list below)
-- `<Reason>`: A brief explanation of why the test is being skipped
+- `<TestID>`: The unique identifier of the test to skip
+- `<Reason>`: A brief explanation of why the file needs the exception
 
-The skip comment will cause the framework to skip that specific test for that file only, and will log a warning in the build output with the reason provided.
+The framework skips only the identified test for that file. It writes the supplied reason as a warning in the build output.
 
 ## Available framework tests
 
-Every source-code test ID, its meaning, and an example skip comment are listed in
-[Framework test IDs](../reference/framework-test-ids.md#source-code-tests).
+The [Framework test IDs](../reference/framework-test-ids.md#source-code-tests) reference lists every source-code test ID,
+its meaning, and an example skip comment.
 
 [Module tests](../reference/framework-test-ids.md#module-tests) run against the compiled module in the
-`.PSModule/module` directory and typically don't need to be skipped, as they validate the final built module.
+`.PSModule/module` directory. These tests validate the final built module.
 
-## Example Usage
+## Example usage
 
-Here's an example of a function file that skips the `FunctionCount` test because it includes helper functions:
+This function file skips `FunctionCount` because it contains helper functions:
 
 ```powershell
 #SkipTest:FunctionCount:This file contains helper functions for the main function
@@ -163,24 +163,24 @@ function Format-ComplexData {
 }
 ```
 
-Replace `<DocumentationHost>` with the HTTPS host that publishes the module documentation and `<ModuleName>` with the module's published name. If the public function belongs to a group, insert `<Group>/` between `Functions/` and `Get-ComplexData`.
+Replace `<DocumentationHost>` with the HTTPS host that publishes the module documentation. Replace `<ModuleName>` with the module's published name. If the public function belongs to a group, insert `<Group>/` between `Functions/` and `Get-ComplexData`.
 
-The skip exempts only `FunctionCount`. Every function in the file must still follow the [PowerShell function standard](https://msx.no/docs/Coding-Standards/PowerShell/Functions/), including complete comment-based help, matching `[OutputType()]` and `.OUTPUTS` metadata, typed parameters, and implicit output.
+The skip exempts only `FunctionCount`. Every function in the file must follow the [PowerShell function standard](https://msx.no/docs/Coding-Standards/PowerShell/Functions/). This includes complete comment-based help, matching `[OutputType()]` and `.OUTPUTS` metadata, typed parameters, and implicit output.
 
-## Best Practices
+## Best practices
 
-- **Use skip comments sparingly**: Framework tests exist to maintain code quality and consistency. Only skip tests when absolutely necessary.
-- **Provide clear reasons**: Always include a meaningful explanation in the skip comment to help reviewers understand why the test is being skipped.
-- **Consider alternatives**: Before skipping a test, consider whether refactoring the code to comply with the test would be better for long-term maintainability.
-- **Document exceptions**: If you skip a test, document the reason in your PR description or code comments.
+- **Use skip comments sparingly**: Use a skip comment only when a necessary exception prevents compliance with the test.
+- **Provide clear reasons**: Include a reason that identifies the exception and explains why the file needs it.
+- **Consider alternatives**: Before you skip a test, consider whether code refactoring improves long-term maintainability and satisfies the test.
+- **Document exceptions**: Record the reason in the PR description or code comments.
 
-## Related Configuration
+## Related configuration
 
 For broader test control, use the configuration file settings:
 
 - Skip all framework tests: `Test.PSModule.Skip: true`
 - Skip only source code tests: `Test.SourceCode.Skip: true`
-- Skip framework tests on specific OS: `Test.PSModule.Windows.Skip: true`
+- Skip framework tests on Windows: `Test.PSModule.Windows.Skip: true`
 
 See [Settings](../reference/settings.md) for the full list and
 [Configuring the pipeline](configuring-the-pipeline.md) for worked examples.
