@@ -2,11 +2,11 @@
 
 <#
     .SYNOPSIS
-    Structures generated documentation content and writes a resolved site config.
+    Structure the generated documentation and write the resolved site configuration.
 
     .DESCRIPTION
-    Copies generated docs, README, and assets into .PSModule/site and resolves zensical.toml
-    placeholders and site_dir for build execution.
+    The script copies generated documentation, README, and assets into .PSModule/site.
+    It resolves zensical.toml placeholders and sets site_dir for the build.
 
     .EXAMPLE
     ./main.ps1 -WorkingDirectory '.' -Name 'MyModule'

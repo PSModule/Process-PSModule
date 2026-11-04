@@ -37,7 +37,7 @@ LogGroup 'Expected test suites' {
     # Build an array of expected test suite objects
     $expectedTestSuites = @()
 
-    # SourceCodeTestSuites: expected file names start with "SourceCode-"
+    # SourceCodeTestSuites: expect PSModuleTest-SourceCode and PSModuleLint-SourceCode reports.
     foreach ($suite in $sourceCodeTestSuites) {
         $expectedTestSuites += [pscustomobject]@{
             Name     = "PSModuleTest-SourceCode-$($suite.OSName)-TestResult-Report"
@@ -53,7 +53,7 @@ LogGroup 'Expected test suites' {
         }
     }
 
-    # PSModuleTestSuites: expected file names start with "Module-"
+    # PSModuleTestSuites: expect PSModuleTest-Module and PSModuleLint-Module reports.
     foreach ($suite in $psModuleTestSuites) {
         $expectedTestSuites += [pscustomobject]@{
             Name     = "PSModuleTest-Module-$($suite.OSName)-TestResult-Report"
@@ -119,7 +119,7 @@ foreach ($expected in $expectedTestSuites) {
         }
     }
 
-    # Determine if there’s any failure for this single test file
+    # Detect a failure in this test result file.
     $hasTestsValue = $null -ne $result.Tests
     $hasPassedValue = $null -ne $result.Passed
     $hasFailedValue = $null -ne $result.Failed

@@ -7,11 +7,11 @@ inputs:
     description: Name of the module to process.
     required: false
   ShowSummaryOnSuccess:
-    description: Show GitHub Step Summary even when all commands succeed.
+    description: Show the GitHub step summary even when all commands succeed.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: '.'
 
