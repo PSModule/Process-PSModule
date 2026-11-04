@@ -1,7 +1,7 @@
 ﻿function Split-CommaSeparatedList {
     <#
         .SYNOPSIS
-        Splits a comma-separated string into a trimmed, non-empty array.
+        Split a comma-separated string into a trimmed, non-empty array.
 
         .EXAMPLE
         Split-CommaSeparatedList -Value 'Major, Minor, Patch'
@@ -22,14 +22,16 @@
 function Read-ActionInput {
     <#
         .SYNOPSIS
-        Reads and validates action inputs from environment variables.
+        Read and validate action inputs from environment variables.
 
         .DESCRIPTION
-        Reads the module name and settings JSON from GitHub Actions environment variables.
-        Falls back to the repository name when the module name input is not provided.
+        The function reads the module name and settings JSON from GitHub Actions environment variables.
+        If the module name input is not provided, it uses the repository name.
 
         .OUTPUTS
-        PSCustomObject with Name and SettingsJson properties.
+        System.Management.Automation.PSCustomObject
+
+        An object with Name and SettingsJson properties.
 
         .EXAMPLE
         $actionInput = Read-ActionInput
@@ -63,14 +65,16 @@ function Read-ActionInput {
 function Get-PublishConfiguration {
     <#
         .SYNOPSIS
-        Parses the settings JSON into a publish configuration object.
+        Parse the settings JSON into a publish configuration object.
 
         .DESCRIPTION
-        Extracts publish module settings including auto-patching flags, version prefix,
+        The function extracts module publish settings: auto-patching flags, version prefix,
         release type, and label classification arrays.
 
         .OUTPUTS
-        PSCustomObject with publish configuration properties.
+        System.Management.Automation.PSCustomObject
+
+        An object with publish configuration properties.
 
         .EXAMPLE
         $config = Get-PublishConfiguration -SettingsJson $actionInput.SettingsJson
@@ -123,17 +127,17 @@ function Get-PublishConfiguration {
 function Get-GitHubPullRequest {
     <#
         .SYNOPSIS
-        Reads normalized pull-request context from settings, with event-payload fallback.
+        Read normalized pull-request context from settings, with event-payload fallback.
 
         .DESCRIPTION
-        The settings action resolves the pull request associated with a default-branch push
-        before this action runs. When no pull request exists, a direct push or manual
-        dispatch on the default branch still receives release context so it resolves the
-        default patch bump.
+        The settings action resolves the pull request for a default-branch push before this action runs.
+        If no pull request exists, a direct push or manual dispatch on the default branch receives release context.
+        This context resolves the default patch bump.
 
         .OUTPUTS
-        PSCustomObject with pull-request metadata, or a default-branch direct-release
-        context with no pull-request number.
+        System.Management.Automation.PSCustomObject
+
+        An object with pull-request metadata, or a default-branch direct-release context with no pull-request number.
 
         .EXAMPLE
         $pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
@@ -207,14 +211,15 @@ function Get-GitHubPullRequest {
 function Resolve-ReleaseDecision {
     <#
         .SYNOPSIS
-        Determines whether to publish a release and what kind of version bump to apply.
+        Find whether to publish a release and which version bump to apply.
 
         .DESCRIPTION
-        Evaluates the PR labels against the configured label categories and release type
-        to produce a complete release decision.
+        The function evaluates the PR labels against the configured label categories and release type to produce a complete release decision.
 
         .OUTPUTS
-        PSCustomObject with ShouldPublish, CreateRelease, CreatePrerelease, MajorRelease,
+        System.Management.Automation.PSCustomObject
+
+        An object with ShouldPublish, CreateRelease, CreatePrerelease, MajorRelease,
         MinorRelease, PatchRelease, HasVersionBump, and PrereleaseName properties.
 
         .EXAMPLE
@@ -338,11 +343,11 @@ function Resolve-ReleaseDecision {
 function ConvertFrom-GitHubReleaseJson {
     <#
         .SYNOPSIS
-        Converts the JSON output of 'gh release list' into a flat array of release objects.
+        Convert the JSON output of 'gh release list' into a flat array of release objects.
 
         .DESCRIPTION
-        Normalizes the release listing so a repository with no releases, or a command that
-        produced no output at all, yields an empty array instead of $null.
+        The function normalizes the release list.
+        If the repository has no releases or the command produces no output, the result is an empty array instead of $null.
 
         .OUTPUTS
         Array of release objects. Empty when there are no releases.
@@ -370,11 +375,11 @@ function ConvertFrom-GitHubReleaseJson {
 function Get-GitHubRelease {
     <#
         .SYNOPSIS
-        Retrieves all releases from the current GitHub repository.
+        Get all releases from the current GitHub repository.
 
         .DESCRIPTION
-        Lists the releases of the current repository. A repository that has no releases yet
-        produces no output, so callers normalize the result with @() before using it.
+        The function lists releases from the current repository. If the repository has no releases, it produces no output.
+        Callers use @() to normalize the result.
 
         .OUTPUTS
         Array of release objects. Nothing when the repository has no releases.
@@ -407,12 +412,12 @@ function Get-GitHubRelease {
 function Get-LatestGitHubVersion {
     <#
         .SYNOPSIS
-        Extracts the latest stable version from a GitHub releases list.
+        Get the latest stable version from a GitHub releases list.
 
         .DESCRIPTION
-        Returns the version of the release marked as latest. A repository that has no releases
-        yet - or that has releases but none marked as latest - resolves to '0.0.0' so a brand-new
-        module can still be versioned before its first release exists.
+        The function returns the version of the release marked as latest.
+        If the repository has no releases or no release has the latest marker, the function returns '0.0.0'.
+        This baseline lets the workflow set a module version before the first release.
 
         .OUTPUTS
         PSSemVer representing the latest GitHub release version.
@@ -451,11 +456,11 @@ function Get-LatestGitHubVersion {
 function Get-LatestPSGalleryVersion {
     <#
         .SYNOPSIS
-        Finds the latest stable version of a module in the PowerShell Gallery.
+        Find the latest stable version of a module in the PowerShell Gallery.
 
         .DESCRIPTION
-        Queries the PowerShell Gallery for the latest published version of the module.
-        Retries up to five times with a ten-second delay between attempts.
+        The function queries the PowerShell Gallery for the latest published version of the module.
+        It retries up to five times, with a ten-second delay between attempts.
 
         .OUTPUTS
         PSSemVer representing the latest PSGallery version.
@@ -509,12 +514,12 @@ function Get-LatestPSGalleryVersion {
 function Get-LatestPublishedVersion {
     <#
         .SYNOPSIS
-        Returns the highest version between GitHub and the PowerShell Gallery.
+        Return the highest version between GitHub and the PowerShell Gallery.
 
         .DESCRIPTION
-        Compares the two known published versions and returns the highest one. A missing
-        (null) version is treated as '0.0.0', so a module that has never been released to
-        GitHub or published to the PowerShell Gallery resolves to a '0.0.0' baseline.
+        The function compares the two known published versions and returns the highest one.
+        If a version is missing (null), the function treats it as '0.0.0'.
+        A module with no GitHub release or PowerShell Gallery publication has a '0.0.0' baseline.
 
         .OUTPUTS
         PSSemVer representing the highest known published version.
@@ -556,15 +561,16 @@ function Get-LatestPublishedVersion {
 function Get-NextPrereleaseNumber {
     <#
         .SYNOPSIS
-        Calculates the next incremental prerelease number across GitHub and PSGallery.
+        Calculate the next incremental prerelease number across GitHub and PSGallery.
 
         .DESCRIPTION
-        Queries both GitHub releases and the PowerShell Gallery for existing prereleases
-        matching the base version and prerelease name, then returns the next number
-        zero-padded to three digits.
+        The function queries GitHub releases and the PowerShell Gallery for prereleases that match the base version and prerelease name.
+        It returns the next number, zero-padded to three digits.
 
         .OUTPUTS
-        String. A zero-padded three-digit number (e.g. '001').
+        System.String
+
+        A zero-padded three-digit number (e.g. '001').
 
         .EXAMPLE
         $number = Get-NextPrereleaseNumber -ModuleName 'MyModule' -BaseVersion '1.2.3' -PrereleaseName 'mybranch' -Releases $releases
@@ -631,11 +637,11 @@ function Get-NextPrereleaseNumber {
 function Get-NextModuleVersion {
     <#
         .SYNOPSIS
-        Calculates the next module version based on the release decision.
+        Calculate the next module version from the release decision.
 
         .DESCRIPTION
-        Increments the current version according to the version bump type (major, minor, or patch),
-        then optionally appends a prerelease suffix with support for date-based and incremental numbering.
+        The function increments the current version for the major, minor, or patch version bump.
+        It can append a prerelease suffix with date-based and incremental numbering.
 
         .OUTPUTS
         PSSemVer representing the resolved next version.
@@ -727,14 +733,13 @@ function Get-NextModuleVersion {
 function Get-ResolvedModuleVersion {
     <#
         .SYNOPSIS
-        Resolves the next module version and resumes an incomplete stable release when possible.
+        Resolve the next module version and resume an incomplete stable release when possible.
 
         .DESCRIPTION
-        Normally the highest version from GitHub Releases and the PowerShell Gallery is the
-        version baseline. If Gallery contains exactly the stable version implied by the latest
-        GitHub release and this run's version bump, Gallery publication succeeded but GitHub
-        release creation did not. In that case, return the Gallery version rather than bumping
-        again so the workflow can resume the missing GitHub release.
+        The highest version from GitHub Releases and the PowerShell Gallery is normally the version baseline.
+        If Gallery contains exactly the stable version implied by the latest GitHub release and this run's version bump,
+        Gallery publication succeeded. GitHub release creation did not succeed in this case.
+        The function returns the Gallery version instead of another version bump so the workflow can resume the missing GitHub release.
 
         .OUTPUTS
         PSSemVer representing the resolved module version.
@@ -807,7 +812,7 @@ function Get-ResolvedModuleVersion {
 function Write-ActionOutput {
     <#
         .SYNOPSIS
-        Emits the resolved version and release type as GitHub Actions step outputs.
+        Write the resolved version and release type as GitHub Actions step outputs.
 
         .EXAMPLE
         Write-ActionOutput -Decision $decision -NewVersion $newVersion
