@@ -1,10 +1,10 @@
 ﻿function Get-PSModuleAliasesToExport {
     <#
         .SYNOPSIS
-        Gets the aliases to export from the module manifest.
+        Get the aliases to export from the module manifest.
 
         .DESCRIPTION
-        This function will get the aliases to export from the module manifest.
+        Get-PSModuleAliasesToExport reads AliasesToExport from the module manifest.
 
         .EXAMPLE
         Get-PSModuleAliasesToExport -SourceFolderPath 'C:\MyModule\src\MyModule'
@@ -13,7 +13,7 @@
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Scope = 'Function', Justification = 'Want to just write to the console, not the pipeline.')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidLongLines', '', Scope = 'Function', Justification = 'Contains long links.')]
     param(
-        # Path to the folder where the module source code is located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [string] $SourceFolderPath
     )

@@ -1,10 +1,10 @@
 ﻿function Get-PSModuleFunctionsToExport {
     <#
         .SYNOPSIS
-        Gets the functions to export from the module manifest.
+        Get the functions and filters to export from the module source code.
 
         .DESCRIPTION
-        This function will get the functions to export from the module manifest.
+        Get-PSModuleFunctionsToExport reads public source files to identify the functions and filters to export.
 
         .EXAMPLE
         Get-PSModuleFunctionsToExport -SourceFolderPath 'C:\MyModule\src\MyModule'
@@ -14,7 +14,7 @@
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidLongLines', '', Scope = 'Function', Justification = 'Contains long links.')]
     [OutputType([array])]
     param(
-        # Path to the folder where the module source code is located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [string] $SourceFolderPath
     )

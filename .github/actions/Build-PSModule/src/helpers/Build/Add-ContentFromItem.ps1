@@ -4,7 +4,7 @@ function Add-ContentFromItem {
         Add the content of a folder or file to the root module file.
 
         .DESCRIPTION
-        This function will add the content of a folder or file to the root module file.
+        Add-ContentFromItem adds the content of a folder or file to the root module file.
 
         .EXAMPLE
         Add-ContentFromItem -Path 'C:\MyModule\src\MyModule' -RootModuleFilePath 'C:\MyModule\src\MyModule.psm1' -RootPath 'C:\MyModule\src'

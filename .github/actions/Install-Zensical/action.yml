@@ -1,5 +1,5 @@
 name: Install-Zensical
-description: Install Zensical CLI used for documentation site generation.
+description: Install the Zensical CLI for documentation site builds.
 
 runs:
   using: composite

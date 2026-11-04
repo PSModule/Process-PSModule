@@ -1,10 +1,10 @@
 ﻿function Build-PSModule {
     <#
         .SYNOPSIS
-        Builds a module.
+        Build a PowerShell module from source files.
 
         .DESCRIPTION
-        Builds a module.
+        Build-PSModule copies the source files, creates the manifest, and combines the scripts into the root module.
     #>
     [OutputType([void])]
     [CmdletBinding()]
@@ -21,11 +21,11 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Path to the folder where the modules are located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [string] $ModuleSourceFolderPath,
 
-        # Path to the folder where the built modules are outputted.
+        # Path to the folder for the built module.
         [Parameter(Mandatory)]
         [string] $ModuleOutputFolderPath,
 
@@ -33,7 +33,7 @@
         [Parameter(Mandatory)]
         [string] $ModuleVersion,
 
-        # Prerelease tag to stamp into the manifest. When empty, no prerelease tag is written.
+        # Prerelease tag for the manifest. An empty value omits the prerelease tag.
         [Parameter()]
         [string] $ModulePrerelease
     )

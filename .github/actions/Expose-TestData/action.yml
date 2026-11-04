@@ -1,5 +1,5 @@
 name: Expose-TestData
-description: Exposes caller-provided Process-PSModule TestData as environment variables.
+description: Expose caller-provided Process-PSModule TestData as environment variables.
 author: PSModule
 branding:
   icon: unlock
@@ -8,8 +8,8 @@ branding:
 inputs:
   TestData:
     description: |
-      Optional single-line JSON object with 'secrets' and 'variables' maps. Entries are validated by
-      Import-TestData and exported to GITHUB_ENV for later steps in the same job.
+      Optional single-line JSON object with 'secrets' and 'variables' maps.
+      Import-TestData validates the entries and writes them to GITHUB_ENV for later steps in the same job.
     required: false
     default: ''
 
