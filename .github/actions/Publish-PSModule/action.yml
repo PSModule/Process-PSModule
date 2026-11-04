@@ -18,7 +18,7 @@ inputs:
     required: false
     default: ''
   WhatIf:
-    description: If specified, the action logs only the changes it would make, but does not publish the module.
+    description: If specified, the action only logs the changes it would make, but does not publish the module.
     required: false
     default: 'false'
   WorkingDirectory:

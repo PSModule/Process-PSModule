@@ -15,7 +15,7 @@ inputs:
     required: false
     default: module
   WhatIf:
-    description: If specified, the action logs only the changes it would make, but does not create the release or upload artifacts.
+    description: If specified, the action only logs the changes it would make, but does not create the release or upload artifacts.
     required: false
     default: 'false'
   WorkingDirectory:

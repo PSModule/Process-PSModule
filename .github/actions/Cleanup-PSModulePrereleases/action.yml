@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ''
   WhatIf:
-    description: If specified, the action logs only the changes it would make.
+    description: If specified, the action only logs the changes it would make.
     required: false
     default: 'false'
   WorkingDirectory:
