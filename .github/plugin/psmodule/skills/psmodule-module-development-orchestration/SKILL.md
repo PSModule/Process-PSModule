@@ -40,31 +40,31 @@ Each child must:
 1. Inspect local guidance, the module layout, and the assigned surface before
    editing.
 2. Stay within the handoff; make adjacent work a new child task.
-3. Open a draft PR early, push small commits, and include the required Copilot
+3. Open a draft PR early. Push small commits. Include the required Copilot
    co-author trailer in each commit.
-4. Run the validation named in the handoff and record commands and outcomes.
-5. Report the draft PR URL and target, changed and excluded files, validation,
-   decisions or risks, blockers, and follow-up work before requesting
-   integration.
+4. Run the validation named in the handoff. Record commands and outcomes.
+5. Before requesting integration, report the draft PR URL and target, changed and
+   excluded files, validation, decisions or risks, blockers, and follow-up work.
 
-The parent reviews each child diff and acceptance criterion, integrates through
-the normal PR flow, and reruns affected checks after each dependent merge. Do
-not bypass review with a direct default-branch push or modify another session's
-PR or issue without explicit ownership.
+The parent reviews each child diff and acceptance criterion. The parent
+integrates through the normal PR flow and reruns affected checks after each
+dependent merge. Do not bypass review with a direct default-branch push or
+modify another session's PR or issue without explicit ownership.
 
 Use the PSModule
 [validation before review](../../../../../docs/content/guides/validating-before-review.md)
 guidance and [versioning and releases](../../../../../docs/content/guides/versioning-and-releases.md)
-for the common validation and release-readiness gates. Keep the coordinated PR
-in draft when the integrated result is not ready.
+for the common validation and release-readiness gates. When the integrated
+result is not ready, keep the coordinated PR in draft.
 
 ## Stop conditions
 
-Stop and report to the parent instead of guessing when scope, ownership,
-acceptance evidence, branch target, release intent, or a required dependency is
-ambiguous; when validation fails without a known owner; or when integration
-would modify unrelated work. Do not silently expand scope, merge unreviewed
-changes, or claim release readiness.
+If scope, ownership, acceptance evidence, or the branch target is ambiguous,
+stop and report to the parent. If release intent or a required dependency is
+ambiguous, stop and report to the parent. If validation fails without a known
+owner, stop and report to the parent. If integration would modify unrelated
+work, stop and report to the parent. Do not guess, silently expand scope, merge
+unreviewed changes, or claim release readiness.
 
 ## References
 
