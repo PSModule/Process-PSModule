@@ -7,26 +7,26 @@ inputs:
     description: Name of the module to publish.
     required: false
   ModulePath:
-    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
+    description: Path to the folder with the <Name>/ module subdirectory from Build-PSModule.
     required: false
     default: .PSModule/module
   PSGALLERY_API_KEY:
-    description: PowerShell Gallery API Key.
+    description: PowerShell Gallery API key.
     required: true
   PullRequest:
     description: Normalized pull request context JSON from Get-PSModuleSettings.
     required: false
     default: ''
   WhatIf:
-    description: If specified, the action will only log the changes it would make, but will not publish the module.
+    description: If specified, the action logs only the changes it would make, but does not publish the module.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: '.'
   ArtifactName:
-    description: Name of the uploaded artifact to download. Must match the name used in the upstream upload-artifact step.
+    description: Name of the uploaded artifact to download. It must match the name used in the upstream upload-artifact step.
     required: false
     default: module
 

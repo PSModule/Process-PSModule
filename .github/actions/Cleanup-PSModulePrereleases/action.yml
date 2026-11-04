@@ -1,5 +1,5 @@
 name: Cleanup-PSModulePrereleases
-description: Cleanup prerelease GitHub releases associated with the current pull request branch.
+description: Delete prerelease GitHub releases associated with the current pull request branch.
 author: PSModule
 
 inputs:
@@ -16,11 +16,11 @@ inputs:
     required: false
     default: ''
   WhatIf:
-    description: If specified, the action will only log the changes it would make.
+    description: If specified, the action logs only the changes it would make.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: '.'
 
