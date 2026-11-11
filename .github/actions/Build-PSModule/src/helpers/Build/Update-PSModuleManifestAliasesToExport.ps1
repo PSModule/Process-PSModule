@@ -1,7 +1,7 @@
 ﻿function Update-PSModuleManifestAliasesToExport {
     <#
     .SYNOPSIS
-    Updates the aliases to export in the module manifest.
+    Update the aliases to export in the module manifest.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
         'PSUseShouldProcessForStateChangingFunctions', '', Scope = 'Function',
@@ -21,11 +21,11 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Path to the folder where the module source code is located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleSourceFolder,
 
-        # Path to the folder where the built modules are outputted.
+        # Path to the folder for the built module.
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleOutputFolder
     )
@@ -40,7 +40,7 @@
             return
         }
 
-        # Get all child items in the module source folder of a powershell file type
+        # Find PowerShell files in the public functions folder.
         $files = Get-ChildItem -Path $publicFunctionsPath -Recurse -File -Include '*.ps1', '*.psm1' | Select-Object -ExpandProperty FullName
 
         # Initialize an array to store all found aliases

@@ -2,10 +2,10 @@
 
 <#
     .SYNOPSIS
-    Installs the Zensical CLI used by site build workflows.
+    Install the Zensical CLI for site build workflows.
 
     .DESCRIPTION
-    Installs the zensical Python package in the current runner environment.
+    The script installs the zensical Python package in the runner environment.
 
     .EXAMPLE
     ./main.ps1

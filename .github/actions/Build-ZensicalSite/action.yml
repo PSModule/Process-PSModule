@@ -1,5 +1,5 @@
 name: Build-ZensicalSite
-description: Build Zensical site output and normalize output folder.
+description: Build a Zensical site in the framework artifact directory.
 
 inputs:
   WorkingDirectory:

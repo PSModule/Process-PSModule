@@ -5,9 +5,11 @@ description: Reference PowerShell scripts that demonstrate implementation patter
 
 # PowerShell guidance scripts
 
-The [guidance directory](https://github.com/PSModule/Process-PSModule/tree/main/guidance) contains runnable reference scripts for common PowerShell implementation patterns. They are framework learning assets, not Process-PSModule module source, so they are intentionally kept outside `src/` and are not included in a module manifest.
+The [guidance directory](https://github.com/PSModule/Process-PSModule/tree/main/guidance) contains runnable reference scripts for common PowerShell implementation patterns.
+These scripts are not Process-PSModule module source. The `guidance/` directory is outside `src/`. Module manifests do not include these scripts.
 
-Run an individual script only when its scenario is suitable for the local environment. Several scripts create temporary files, make web requests, or measure execution time.
+Before you run a script, make sure that its scenario is suitable for the local environment.
+Several scripts create temporary files, make web requests, or measure execution time.
 
 | Script | Focus |
 | --- | --- |
@@ -28,4 +30,6 @@ Run an individual script only when its scenario is suitable for the local enviro
 
 ## Maintenance
 
-The files are maintained in the [`guidance` directory](https://github.com/PSModule/Process-PSModule/tree/main/guidance). When that published set changes, import the complete current file from its Git blob into this directory and preserve its contents. Keep this index synchronized with the directory so users can discover every available script.
+Maintain the reference scripts in the [`guidance` directory](https://github.com/PSModule/Process-PSModule/tree/main/guidance).
+When the published script set changes, import the complete file from its Git blob into `guidance/`.
+Preserve the file contents. Keep this index synchronized with the directory so it lists every available script.

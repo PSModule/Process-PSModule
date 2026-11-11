@@ -5,4 +5,4 @@ abbreviations: []
 
 # Azure Functions
 
-A serverless compute service that lets you run event-triggered code without having to explicitly provision or manage infrastructure.
+Azure Functions runs code in response to events. Serverless hosting options manage the infrastructure that runs the code.

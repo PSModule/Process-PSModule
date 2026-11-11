@@ -5,6 +5,6 @@ abbreviations: []
 
 # Workflow
 
-A series of automated steps or processes that execute in response to specific events or triggers.
+A workflow is an automated process that runs in response to an event or trigger.
 
-**Example**: A [GitHub Actions](github-actions.md) workflow that runs tests every time code is pushed to a [repository](repository.md).
+**Example**: A [GitHub Actions](github-actions.md) workflow runs tests each time a contributor pushes code to a [repository](repository.md).

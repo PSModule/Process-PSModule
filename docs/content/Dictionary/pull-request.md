@@ -5,4 +5,4 @@ abbreviations: []
 
 # Pull Request
 
-Pull Request (PR) - A method of submitting contributions to a software project where changes are proposed and reviewed before being merged into the main codebase.
+A Pull Request (PR) proposes changes to a software project for review before a merge into the codebase.
