@@ -50,6 +50,8 @@ jobs:
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
           ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
           FILTER_REGEX_INCLUDE: '.*(docs/.*|\.github/actions/update-index/.*|\.github/workflows/Docs\.yml)$'
+          # Vendored/minified third-party assets are not repository-authored code.
+          FILTER_REGEX_EXCLUDE: '.*\.min\.(js|css)$'
           LINTER_RULES_PATH: .github/linters
           SAVE_SUPER_LINTER_SUMMARY: true
           VALIDATE_BIOME_LINT: false

@@ -12,5 +12,23 @@ document$.subscribe(function () {
       }
     }
     new Tablesort(table);
+
+    // Tablesort binds clicks to sortable headers. Make those cells focusable
+    // before adding Enter/Space activation. A synthesized thead may contain td.
+    table.querySelectorAll("thead th, thead td").forEach(function (header) {
+      if (
+        header.getAttribute("role") !== "columnheader" ||
+        header.getAttribute("data-sort-method") === "none"
+      ) {
+        return;
+      }
+      header.tabIndex = 0;
+      header.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          header.click();
+        }
+      });
+    });
   });
 });

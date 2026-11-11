@@ -29,51 +29,15 @@ If you plan to create many modules, use a glob pattern for the API key permissio
 
 ## 3. Add the caller workflow
 
-Create `.github/workflows/Process-PSModule.yml` in the module repository:
+Keep the
+[canonical caller workflow](https://github.com/PSModule/Template-PSModule/blob/main/.github/workflows/Process-PSModule.yml)
+from `Template-PSModule`. Do not reconstruct it from a documentation example.
+The template owns its triggers, concurrency, permissions, secrets, and
+Process-PSModule major-version reference.
 
-```yaml
-name: Process-PSModule
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
-      - opened
-      - reopened
-      - synchronize
-      - labeled
-      - unlabeled
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-jobs:
-  Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v8
-    secrets:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      GitHubAppClientId: ${{ secrets.SHELLY_CLIENT_ID }}
-      GitHubAppPrivateKey: ${{ secrets.SHELLY_PRIVATE_KEY }}
-```
-
-Every permission in that block is required. GitHub App installation tokens perform repository writes. A push to `main` publishes a stable release after the full pipeline passes;
-the pull-request trigger handles CI, prereleases, and prerelease cleanup. See
-[Workflow inputs](../reference/workflow-inputs.md) for what each permission is used for, and
-[Calling the workflow](../guides/calling-the-workflow.md) for passing test secrets and variables.
+See [Workflow inputs](../reference/workflow-inputs.md) for the reusable
+workflow contract and [Calling the workflow](../guides/calling-the-workflow.md)
+for supported `TestData` customization.
 
 ## 4. Add the settings file
 
@@ -88,8 +52,11 @@ See [Settings](../reference/settings.md) for the full contract and
 
 ## 5. Configure the documentation site
 
-Process-PSModule builds documentation with [Zensical](https://zensical.org/) from `.github/zensical.toml`. The template
-ships a working file; update the site name and repository links to match the module.
+Process-PSModule builds documentation with [Zensical](https://zensical.org/)
+from `.github/zensical.toml`. Keep the file from `Template-PSModule`;
+Process-PSModule resolves its repository placeholders while staging the site.
+The standard configuration omits `nav`, so Zensical follows the generated
+folder structure and sorts pages alphabetically.
 
 ## Next
 
