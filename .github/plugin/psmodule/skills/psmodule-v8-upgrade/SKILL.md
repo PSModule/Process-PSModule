@@ -70,7 +70,7 @@ the obsolete configuration only after the generated site validates.
 Use [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule)
 and the [PSModule Repository Standard](https://github.com/PSModule/Process-PSModule/blob/main/docs/content/reference/repository-standard.md)
 as the structural baseline for module repositories. Compare the consumer with
-the template's default files at one resolved commit before adding, removing, or
+the template's default files at one recorded immutable commit before adding, removing, or
 relocating anything. Do not duplicate the template tree or file contents in
 this skill; the template default branch is the executable source.
 
@@ -139,8 +139,10 @@ uses.
 
 For a standard module repository,
 `Template-PSModule/.github/zensical.toml` is authoritative. Keep that path
-because Process-PSModule resolves it before `docs/zensical.toml` and root
-`zensical.toml`. Do not leave multiple active configurations.
+unless the requested documentation migration explicitly requires a different
+layout. Process-PSModule resolves `.github/zensical.toml` before
+`docs/zensical.toml` and root `zensical.toml`. Do not leave multiple active
+configurations.
 
 The standard module profile omits `nav`. Zensical derives navigation from the
 staged folder structure, places index pages first, and sorts remaining pages
@@ -149,6 +151,10 @@ not retain a manual navigation array merely because the legacy site had one.
 
 Invoke `psmodule-zensical-migration` when the repository has MkDocs, multiple
 documentation configurations, or a layout that must be migrated.
+When a `docs/` layout is explicitly in scope, preserve settings and supported
+assets and remove the old active configuration only after the requested
+staging and build path passes. Otherwise, preserve the working configuration
+and report layout differences.
 
 ## Pester v6 migration
 

@@ -69,6 +69,13 @@ For a standard PowerShell module built by Process-PSModule:
 - Do not create `docs/content/` merely to imitate a documentation repository.
   Process-PSModule stages the README and generated command help.
 
+If the recorded immutable `Template-PSModule` revision provides
+`.github/zensical.toml`, it may not contain a `docs/` tree. Only move that
+working layout to `docs/` when the requested migration explicitly includes
+that contract. Preserve settings and supported assets; a separate
+`docs/assets/` directory is optional. Remove the old active configuration only
+after the requested staging and build path passes.
+
 ### Documentation repository
 
 For a repository whose published product is its documentation:
