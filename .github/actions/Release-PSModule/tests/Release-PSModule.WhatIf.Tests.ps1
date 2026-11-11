@@ -35,15 +35,13 @@ AfterAll {
     foreach ($name in $script:environmentVariableNames) {
         [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
     }
-    # Set-Item accepts 'function:global:X' and creates a function named 'X' in the global scope, but
-    # Remove-Item and Get-Item do not resolve that same path back to it, and fail silently rather than
-    # erroring. Removing by name is what actually deletes the shims; leaving them behind would shadow the
-    # real commands for every test file that runs later in the session.
-    Remove-Item -Path 'Function:\gh' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\git' -ErrorAction SilentlyContinue
 }
 
 Describe 'Release-PSModule WhatIf' {
+    AfterEach {
+        Remove-Item -Path 'Function:\gh' -ErrorAction SilentlyContinue
+    }
+
     BeforeEach {
         $script:moduleName = 'TestModule'
         $script:workspacePath = Join-Path -Path $TestDrive -ChildPath 'workspace'
@@ -97,6 +95,10 @@ Describe 'Release-PSModule WhatIf' {
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.3-preview.1'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest = ''
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = ''
+
+        Set-Item -Path function:global:gh -Value {
+            throw 'GitHub calls are not permitted in WhatIf tests.'
+        }
     }
 
     It 'creates a prefixed prerelease tag without GitHub side effects' {
@@ -146,19 +148,81 @@ Describe 'Release-PSModule WhatIf' {
         $releaseOutput | Should -Match '--target pushed-commit-sha'
     }
 
-    It 'uses the checked-out commit message for a manual dispatch' {
+    It 'passes the dispatched commit message as release notes' {
         $manifest = Get-Content -Path $manifestPath -Raw
         $manifest -replace "Prerelease = 'preview.1'", "Prerelease = ''" | Set-Content -Path $manifestPath
         @{} | ConvertTo-Json | Set-Content -Path $eventPath
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_WhatIf = 'false'
         $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag = 'v1.2.3'
-        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = 'dispatched-commit-sha'
-        Set-Item -Path function:global:git -Value {
+        $calls = @{ ReleaseArguments = @(); Notes = $null }
+        git -C $script:workspacePath init --quiet
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not create the release test repository.'
+        }
+        $gitArguments = @(
+            '-C', $script:workspacePath
+            '-c', 'user.name=PSModule Test'
+            '-c', 'user.email=test@example.invalid'
+            '-c', 'commit.gpgsign=false'
+            '-c', "core.hooksPath=$TestDrive"
+            'commit', '--allow-empty', '--quiet', '-m', 'Publish manual dispatch release'
+        )
+        git @gitArguments
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not create the release test commit.'
+        }
+        $commitSha = git -C $script:workspacePath rev-parse HEAD
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not read the release test commit.'
+        }
+        $gitArguments[-1] = 'Do not use the latest commit for this release'
+        git @gitArguments
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not create the newer unrelated test commit.'
+        }
+        $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha = $commitSha
+
+        # Intercept unsafe GitHub writes. This proves script inputs, not the live API contract.
+        Set-Item -Path function:global:gh -Value {
+            [CmdletBinding()]
+            param(
+                [Parameter(ValueFromRemainingArguments)]
+                [string[]] $Arguments
+            )
+
             $global:LASTEXITCODE = 0
-            'Publish manual dispatch release'
+            if ($Arguments[0] -eq 'api') {
+                $global:LASTEXITCODE = 1
+                return 'HTTP 404'
+            }
+
+            switch ($Arguments[0..1] -join ' ') {
+                'release create' {
+                    $notesIndex = [array]::IndexOf($Arguments, '--notes-file')
+                    if ($notesIndex -lt 0) {
+                        throw 'The release command did not supply a notes file.'
+                    }
+                    $calls.ReleaseArguments = $Arguments
+                    $calls.Notes = Get-Content -LiteralPath $Arguments[$notesIndex + 1] -Raw
+                    return 'https://github.com/PSModule/TestModule/releases/tag/v1.2.3'
+                }
+                'release upload' {}
+                default {
+                    throw "Unexpected GitHub command: $($Arguments -join ' ')"
+                }
+            }
+        }.GetNewClosure()
+
+        Push-Location -LiteralPath $script:workspacePath
+        try {
+            & $script:releaseScriptPath
+        } finally {
+            Pop-Location
         }
 
-        $releaseOutput = & $script:releaseScriptPath 6>&1 | Out-String
-
-        $releaseOutput | Should -Match 'Using the pushed commit message as release notes'
+        $calls.Notes.TrimEnd([char[]] "`r`n") | Should -Be 'Publish manual dispatch release'
+        $targetIndex = [array]::IndexOf($calls.ReleaseArguments, '--target')
+        $targetIndex | Should -BeGreaterOrEqual 0
+        $calls.ReleaseArguments[$targetIndex + 1] | Should -Be $commitSha
     }
 }

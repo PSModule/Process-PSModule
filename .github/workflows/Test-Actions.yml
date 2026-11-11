@@ -44,22 +44,9 @@ jobs:
           $configuration = New-PesterConfiguration
           $configuration.Run.Shuffle = $true
           $configuration.Run.ShuffleSeed = 42
-          $configuration.Run.Parallel = $true
-          $configuration.Run.ParallelThrottleLimit = 2
+          # These suites share process-wide environment variables.
+          $configuration.Run.Parallel = $false
           $configuration.Debug.ShowStartMarkers = $true
-
-          $expectedOptions = @{
-              'Run.Shuffle' = $configuration.Run.Shuffle.Value
-              'Run.ShuffleSeed' = $configuration.Run.ShuffleSeed.Value -eq 42
-              'Run.Parallel' = $configuration.Run.Parallel.Value
-              'Run.ParallelThrottleLimit' = $configuration.Run.ParallelThrottleLimit.Value -eq 2
-              'Debug.ShowStartMarkers' = $configuration.Debug.ShowStartMarkers.Value
-          }
-          foreach ($option in $expectedOptions.GetEnumerator()) {
-              if (-not $option.Value) {
-                  throw "Pester 6.1 configuration option [$($option.Key)] was not applied."
-              }
-          }
 
           $testPaths = Get-ChildItem -Path '.github/actions' -Directory |
               ForEach-Object { Join-Path -Path $_.FullName -ChildPath 'tests' } |
@@ -68,7 +55,6 @@ jobs:
               throw 'No action test folders were found under .github/actions.'
           }
 
-          $configuration = New-PesterConfiguration
           $configuration.Run.Path = $testPaths
           $configuration.Run.Throw = $true
           $configuration.Output.Verbosity = 'Detailed'
