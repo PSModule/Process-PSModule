@@ -6,7 +6,7 @@ description: The requirements and architecture behind Process-PSModule, for thos
 # Specification
 
 These pages describe **why** Process-PSModule exists, **what** it must guarantee, and **how** those guarantees are
-delivered. They are aimed at people maintaining Process-PSModule itself. Module authors normally only need the
+delivered. They are for maintainers of Process-PSModule. Module authors normally need only the
 [guides](../guides/calling-the-workflow.md) and [reference](../reference/settings.md).
 
 | Page | Description |

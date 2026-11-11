@@ -48,7 +48,7 @@ A **major version bump** signifies a breaking change in the module’s public in
 
 ## Minor Version (Y) – Backward-Compatible Additions
 
-A **minor version bump** is used for new features and additions that are backward compatible with the existing public API. These changes enhance the module’s functionality without breaking any existing usage. In other words, existing scripts will continue to work as before, and new capabilities are introduced. Changes that trigger a MINOR version increase include:
+A **minor version bump** applies to new features and additions that are backward compatible with the existing public API. Existing scripts continue to work. Changes that trigger a MINOR version increase include:
 
 - **Adding New Exported Functions/Cmdlets**: Introducing a new function or cmdlet to the module is a backward-compatible addition. Since it does not remove or change existing functions, nothing breaks; users simply have an additional function available. *Example:* Adding a new cmdlet `New-Report` to the module (where it didn’t exist before) would be a new feature. This warrants a minor version bump because it’s an additive, non-breaking change.
 
@@ -70,11 +70,11 @@ A **minor version bump** is used for new features and additions that are backwar
 
 - **Non-Breaking Changes to Existing Features**: In some cases, a change might alter behavior but still be backward compatible. For instance, making an existing parameter accept a new type of input in addition to existing types (broadening what is accepted) could be considered a new capability that doesn’t break old usage. Such changes can fall under minor version if they extend functionality without removal or contradiction of the old behavior. *(However, caution is advised: changing behavior can sometimes surprise users. If in doubt, treat as major if it might disrupt assumptions.)*
 
-In summary, **any new functionality that does not force existing users to change their usage is a candidate for a minor version increment** ([Semantic Versioning 2.0.0 | Semantic Versioning](https://semver.org/#:~:text=Given%20a%20version%20number%20MAJOR,increment%20the)). Minor releases accumulate enhancements and new features, signalling to users that new capabilities are available, but all existing scripts should continue to work as they did in the previous version. Users can upgrade to the new minor version and gain new functions or options without needing to modify their existing code. This aligns with the SemVer guideline that *“MINOR version [increments] when you add functionality in a backward compatible manner”* ([Semantic Versioning 2.0.0 | Semantic Versioning](https://semver.org/#:~:text=Given%20a%20version%20number%20MAJOR,increment%20the)).
+In summary, **any new functionality that does not force existing users to change their usage is a candidate for a minor version increment** ([Semantic Versioning 2.0.0 | Semantic Versioning](https://semver.org/#:~:text=Given%20a%20version%20number%20MAJOR,increment%20the)). Minor releases add enhancements and new features. All existing scripts should continue to work as they did in the previous version. Users can upgrade to the new minor version and use added functions or options without changes to their existing code. This follows the SemVer guideline that *“MINOR version [increments] when you add functionality in a backward compatible manner”* ([Semantic Versioning 2.0.0 | Semantic Versioning](https://semver.org/#:~:text=Given%20a%20version%20number%20MAJOR,increment%20the)).
 
 ## Patch Version (Z) – Bugfixes and Improvements
 
-A **patch version bump** is used for changes that do not affect the module's public API or add new features, but rather fix issues or improve internal implementation. Patch updates are meant to be safe, drop-in updates for users, with no risk of breaking functionality or changing how features are used. Scenarios for a PATCH version increment include:
+A **patch version bump** fixes issues or improves the internal implementation without changing the module's public API or adding features. Patch updates are intended to preserve compatibility without changing how features are used. Scenarios for a PATCH version increment include:
 
 - **Bugfixes**: Correcting any bugs in existing functions or features, provided the fix does not alter the function's signature or expected input/output in a way that would break compatibility. The behavior might change (from incorrect to correct), but since the original behavior was unintended (a bug), this is considered a backward-compatible fix. For example:
   - Fixing a logic error in a function so that it now produces the correct result.
@@ -156,7 +156,7 @@ If we only fixed a bug inside `Get-Data` but made no changes to its parameters o
 
 ## Conclusion
 
-This specification provides a clear framework for versioning a PowerShell module in accordance with Semantic Versioning principles, tailored to the specific elements of a PowerShell module’s public interface. By classifying changes into major, minor, or patch categories, we ensure that the module’s version number accurately communicates the impact of changes:
+This specification classifies changes to a PowerShell module's public interface by their Semantic Versioning impact:
 
 - **Major** versions for breaking changes (removals, renames, incompatible alterations).
 - **Minor** versions for new features and additions that are backward compatible.
@@ -164,4 +164,4 @@ This specification provides a clear framework for versioning a PowerShell module
 
 Developers maintaining the module can use these guidelines to decide the appropriate version number for each release. Automated scripts will assist in detecting the scope of changes, but sound judgment will be applied in edge cases. Users of the module can rely on the version number to understand the significance of an update. Ultimately, this practice enables a predictable upgrade path where users only need to be concerned about potential breaking changes when the major version increases, and are otherwise free to take minor and patch updates confidently.
 
-By adhering to this specification, we uphold a contract of compatibility and improvement with our users, making module releases transparent and manageable in the long run.
+This specification defines a contract of compatibility and improvement between module maintainers and users. The version categories make releases easier to understand and manage.
