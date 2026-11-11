@@ -16,8 +16,8 @@ consumer repositories while developing or validating this skill.
    workflow, documentation configuration and content, tests, settings,
    dependencies, and existing validation commands.
 2. Invoke
-   [`psmodule-repository-audit`](../psmodule-repository-audit/SKILL.md) in Audit
-   mode and record the resolved `Template-PSModule` commit.
+   [`psmodule-repository-audit`](../psmodule-repository-audit/SKILL.md) for a read-only
+   audit and record the resolved `Template-PSModule` commit.
 3. Invoke
    [`psmodule-pester-migration`](../psmodule-pester-migration/SKILL.md) to
    inventory and validate every test set, then migrate every test set that does
