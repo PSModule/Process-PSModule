@@ -6,5 +6,6 @@ abbreviations:
 
 # Long-Term Servicing
 
-Long-Term Servicing (LTS).
-For more info visit: [PowerShell Support Lifecycle](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle?view=powershell-7.5)
+PowerShell Long-Term Servicing (LTS) releases use .NET LTS releases.
+
+See [PowerShell Support Lifecycle](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle?view=powershell-7.5) for support policies and end-of-support dates.
