@@ -49,33 +49,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Commit all changes
-        uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
-        with:
-          Debug: ${{ fromJson(inputs.Settings).Debug }}
-          Prerelease: ${{ fromJson(inputs.Settings).Prerelease }}
-          Verbose: ${{ fromJson(inputs.Settings).Verbose }}
-          Version: ${{ fromJson(inputs.Settings).Version }}
-          WorkingDirectory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
-          Script: |
-            # Rename the gitignore file to .gitignore.bak
-            if (Test-Path -Path .gitignore) {
-                Rename-Item -Path '.gitignore' -NewName '.gitignore.bak' -Force
-            }
-
-            try {
-                # Add all changes to the repository
-                git add .
-                git commit -m 'Update documentation'
-            } catch {
-                Write-Host "No changes to commit"
-            }
-
-            # Restore the gitignore file
-            if (Test-Path -Path .gitignore.bak) {
-                Rename-Item -Path '.gitignore.bak' -NewName '.gitignore' -Force
-            }
-
       - name: Lint documentation
         id: super-linter
         uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
