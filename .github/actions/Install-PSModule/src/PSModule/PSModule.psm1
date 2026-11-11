@@ -8,18 +8,17 @@ param()
 function Convert-VersionSpec {
     <#
             .SYNOPSIS
-            Converts legacy version parameters into a NuGet version range string.
+            Convert legacy version parameters to a NuGet version range string.
 
             .DESCRIPTION
-            This function takes minimum, maximum, or required version parameters
-            and constructs a NuGet-compatible version range string.
+            Convert-VersionSpec converts minimum, maximum, or required version parameters
+            to a NuGet version range string.
 
-            - If `RequiredVersion` is specified, the output is an exact match range.
-            - If both `MinimumVersion` and `MaximumVersion` are provided,
-              an inclusive range is returned.
-            - If only `MinimumVersion` is provided, it returns a minimum-inclusive range.
-            - If only `MaximumVersion` is provided, it returns an upper-bound range.
-            - If no parameters are provided, `$null` is returned.
+            - With `RequiredVersion`, the function returns an exact-match range.
+            - With `MinimumVersion` and an explicit `MaximumVersion`, the function returns an inclusive range.
+            - With only `MinimumVersion`, the function returns a minimum-inclusive range.
+            - With only `MaximumVersion`, the function returns an upper-bound range.
+            - With no version parameters, the function returns `$null`.
 
             .EXAMPLE
             Convert-VersionSpec -MinimumVersion "1.0.0" -MaximumVersion "2.0.0"
@@ -65,8 +64,7 @@ function Convert-VersionSpec {
             string
 
             .NOTES
-            The NuGet version range string based on the provided parameters.
-            The returned string follows NuGet versioning syntax.
+            The result uses NuGet version range syntax.
 
             .LINK
             https://psmodule.io/Convert/Functions/Convert-VersionSpec
@@ -74,15 +72,15 @@ function Convert-VersionSpec {
     [OutputType([string])]
     [CmdletBinding()]
     param(
-        # The minimum version for the range. If specified alone, the range is open-ended upwards.
+        # Minimum version for the range. Without a maximum, the range has no upper bound.
         [Parameter()]
         [string] $MinimumVersion,
 
-        # The maximum version for the range. If specified alone, the range is open-ended downwards.
+        # Maximum version for the range. Without a minimum, the range has no lower bound.
         [Parameter()]
         [string] $MaximumVersion,
 
-        # Specifies an exact required version. If set, an exact version range is returned.
+        # Required version. This value selects an exact-match range.
         [Parameter()]
         [string] $RequiredVersion
     )
@@ -118,7 +116,7 @@ function Convert-VersionSpec {
         # Only a minimum is provided. Use a minimum-inclusive range.
         return "[$MinimumVersion, ]"
     } elseif ($MaximumVersion) {
-        # Only a maximum is provided; lower bound open. Wildcards are exclusive upper bounds.
+        # With only a maximum, the lower bound is open. Wildcards select exclusive upper bounds.
         $upperBound = $maximumVersionIsWildcard ? ')' : ']'
         return "(, $MaximumVersion$upperBound"
     } else {
@@ -129,10 +127,10 @@ function Convert-VersionSpec {
 function Import-PSModule {
     <#
     .SYNOPSIS
-    Imports a build PS module.
+    Import a built PowerShell module.
 
     .DESCRIPTION
-    Imports a build PS module.
+    Import-PSModule resolves the module dependencies and imports the module from Path.
 
     .EXAMPLE
     Import-PSModule -SourceFolderPath $ModuleFolderPath -ModuleName $moduleName
@@ -141,7 +139,7 @@ function Import-PSModule {
     #>
     [CmdletBinding()]
     param(
-        # Path to the folder where the module source code is located.
+        # Path to the built module folder.
         [Parameter(Mandatory)]
         [string] $Path
     )
@@ -173,22 +171,21 @@ function Import-PSModule {
 function Resolve-PSModuleDependency {
     <#
         .SYNOPSIS
-        Resolves module dependencies from a manifest file using Install-PSResource.
+        Resolve module dependencies from a manifest with Install-PSResource.
 
         .DESCRIPTION
-        Reads a module manifest (PSD1) and for each required module converts the old
-        Install-Module parameters (MinimumVersion, MaximumVersion, RequiredVersion)
-        into a single NuGet version range string for Install-PSResource's –Version parameter.
-        (Note: If RequiredVersion is set, that value takes precedence.)
+        Resolve-PSModuleDependency reads the required modules from a manifest file (PSD1).
+        It converts the Install-Module parameters MinimumVersion, MaximumVersion, and RequiredVersion
+        to a NuGet version range for Install-PSResource's -Version parameter.
+        RequiredVersion takes precedence.
 
         .EXAMPLE
         Resolve-PSModuleDependency -ManifestFilePath 'C:\MyModule\MyModule.psd1'
         Installs all modules defined in the manifest file, following PSModuleInfo structure.
 
         .NOTES
-        Should later be adapted to support both pre-reqs, and dependencies.
-        Should later be adapted to take 4 parameters sets: specific version ("requiredVersion" | "GUID"), latest version ModuleVersion,
-        and latest version within a range MinimumVersion - MaximumVersion.
+        The function uses the manifest's RequiredModules entries.
+        It does not expose separate parameters for prerequisite modules, GUID selection, or version selection.
     #>
     [CmdletBinding()]
     param(
@@ -275,10 +272,10 @@ function Resolve-PSModuleDependency {
 function Show-FileContent {
     <#
         .SYNOPSIS
-        Prints the content of a file with line numbers in front of each line.
+        Show file content with a line number before each line.
 
         .DESCRIPTION
-        Prints the content of a file with line numbers in front of each line.
+        Show-FileContent writes each line to the host with a padded line number.
 
         .EXAMPLE
         $Path = 'C:\Utilities\Show-FileContent.ps1'
@@ -288,7 +285,7 @@ function Show-FileContent {
     #>
     [CmdletBinding()]
     param (
-        # The path to the file to show the content of.
+        # Path to the file to display.
         [Parameter(Mandatory)]
         [string] $Path
     )
@@ -296,8 +293,7 @@ function Show-FileContent {
     $content = Get-Content -Path $Path
     $lineNumber = 1
     $columnSize = $content.Count.ToString().Length
-    # Foreach line print the line number in front of the line with [    ] around it.
-    # The linenumber should dynamically adjust to the number of digits with the length of the file.
+    # Pad line numbers to the width of the file's line count.
     foreach ($line in $content) {
         $lineNumberFormatted = $lineNumber.ToString().PadLeft($columnSize)
         Write-Host "[$lineNumberFormatted] $line"
@@ -308,10 +304,10 @@ function Show-FileContent {
 function Install-PSModule {
     <#
         .SYNOPSIS
-        Installs a build PS module.
+        Install a built PowerShell module.
 
         .DESCRIPTION
-        Installs a build PS module.
+        Install-PSModule resolves dependencies, copies the module to PSModulePath, and imports the installed manifest.
 
         .EXAMPLE
         Install-PSModule -SourceFolderPath $ModuleFolderPath -ModuleName $moduleName
@@ -320,11 +316,11 @@ function Install-PSModule {
     #>
     [CmdletBinding()]
     param(
-        # Path to the folder where the module source code is located.
+        # Path to the built module folder.
         [Parameter(Mandatory)]
         [string] $Path,
 
-        # Return the path of the installed module
+        # Return the path of the installed module.
         [Parameter()]
         [switch] $PassThru
     )
@@ -335,11 +331,9 @@ function Install-PSModule {
     Write-Host '::group::Resolving dependencies'
     Resolve-PSModuleDependency -ManifestFilePath $manifestFilePath
     Write-Host '::endgroup::'
-    # Install into a version folder that matches the manifest's ModuleVersion so PowerShell
-    # accepts the module. Fall back to the 999.0.0 placeholder only when the manifest is
-    # unstamped (e.g. a build that opted out of version resolution). Validate the version as a
-    # real [version] so a malformed manifest cannot inject path separators/traversal into the
-    # install path.
+    # The installation folder uses ModuleVersion so PowerShell accepts the module.
+    # If the manifest has no version, use 999.0.0.
+    # Validate [version] before path construction to prevent path traversal.
     $manifestVersion = (Import-PowerShellDataFile -Path $manifestFilePath).ModuleVersion
     if ([string]::IsNullOrWhiteSpace($manifestVersion)) {
         $moduleVersion = '999.0.0'
@@ -357,9 +351,7 @@ function Install-PSModule {
         Select-Object -ExpandProperty FullName
     Copy-Item -Path "$Path/*" -Destination $codePath -Recurse -Force
     Write-Host '::group::Importing module'
-    # Import the freshly-installed copy explicitly by its manifest path (with -Force) so it is
-    # not shadowed by another version of the same module that may already be loaded or present
-    # on $env:PSModulePath.
+    # Import the installed manifest with -Force so PowerShell loads this copy, not another version on $env:PSModulePath.
     $installedManifestPath = Join-Path -Path $codePath -ChildPath "$moduleName.psd1"
     Import-Module -Name $installedManifestPath -Force -Global -Verbose
     Write-Host '::endgroup::'
@@ -374,7 +366,7 @@ function Get-ModuleManifest {
         Get the module manifest.
 
         .DESCRIPTION
-        Get the module manifest as a path, file info, content, or hashtable.
+        Get-ModuleManifest returns file information, file content, or an ordered dictionary.
 
         .EXAMPLE
         Get-PSModuleManifest -Path 'src/PSModule/PSModule.psd1' -As Hashtable
@@ -493,11 +485,11 @@ function Get-ModuleManifest {
 filter Set-ModuleManifest {
     <#
         .SYNOPSIS
-        Sets the values of a module manifest file.
+        Set values in a module manifest file.
 
         .DESCRIPTION
-        This function sets the values of a module manifest file.
-        Very much like the Update-ModuleManifest function, but allows values to be missing.
+        Set-ModuleManifest updates the manifest with the supplied values.
+        Unlike Update-ModuleManifest, it permits missing values.
 
         .EXAMPLE
         Set-ModuleManifest -Path 'C:\MyModule\MyModule.psd1' -ModuleVersion '1.0.0'
@@ -618,14 +610,14 @@ filter Set-ModuleManifest {
         [AllowNull()]
         [Object[]] $NestedModules,
 
-        # Functions to export from this module, for best performance, do not use wildcards and do not
-        # delete the entry, use an empty array if there are no functions to export.
+        # Functions to export from this module. For best performance, do not use wildcards.
+        # Keep this entry. If the module exports no functions, use an empty array.
         [Parameter()]
         [AllowNull()]
         [string[]] $FunctionsToExport,
 
-        # Cmdlets to export from this module, for best performance, do not use wildcards and do not
-        # delete the entry, use an empty array if there are no cmdlets to export.
+        # Cmdlets to export from this module. For best performance, do not use wildcards.
+        # Keep this entry. If the module exports no cmdlets, use an empty array.
         [Parameter()]
         [AllowNull()]
         [string[]] $CmdletsToExport,
@@ -635,8 +627,8 @@ filter Set-ModuleManifest {
         [AllowNull()]
         [string[]] $VariablesToExport,
 
-        # Aliases to export from this module, for best performance, do not use wildcards and do not
-        # delete the entry, use an empty array if there are no aliases to export.
+        # Aliases to export from this module. For best performance, do not use wildcards.
+        # Keep this entry. If the module exports no aliases, use an empty array.
         [Parameter()]
         [AllowNull()]
         [string[]] $AliasesToExport,
@@ -912,7 +904,8 @@ function Export-PowerShellDataFile {
         Export a hashtable to a .psd1 file.
 
         .DESCRIPTION
-        This function exports a hashtable to a .psd1 file. It also formats the .psd1 file using the Format-ModuleManifest cmdlet.
+        Export-PowerShellDataFile writes a hashtable to a .psd1 file.
+        Format-ModuleManifest formats the file.
 
         .EXAMPLE
         Export-PowerShellDataFile -Hashtable @{ Name = 'MyModule'; ModuleVersion = '1.0.0' } -Path 'MyModule.psd1'
@@ -940,11 +933,11 @@ function Export-PowerShellDataFile {
 function Format-ModuleManifest {
     <#
         .SYNOPSIS
-        Formats a module manifest file.
+        Format a module manifest file.
 
         .DESCRIPTION
-        This function formats a module manifest file, by removing comments and empty lines,
-        and then formatting the file using the `Invoke-Formatter` function.
+        Format-ModuleManifest removes comments and empty lines from the manifest.
+        The `Invoke-Formatter` function formats the remaining content.
 
         .EXAMPLE
         Format-ModuleManifest -Path 'C:\MyModule\MyModule.psd1'
@@ -967,7 +960,7 @@ function Format-ModuleManifest {
 
     $content = Invoke-Formatter -ScriptDefinition $manifestContent
 
-    # Ensure exactly one empty line at the end
+    # End the file with one newline.
     $content = $content.TrimEnd([System.Environment]::NewLine) + [System.Environment]::NewLine
 
     [System.IO.File]::WriteAllText($Path, $content, $Utf8BomEncoding)
@@ -976,12 +969,11 @@ function Format-ModuleManifest {
 filter Format-Hashtable {
     <#
         .SYNOPSIS
-        Converts a hashtable to its PowerShell code representation.
+        Convert a hashtable to PowerShell code.
 
         .DESCRIPTION
-        Recursively converts a hashtable to its PowerShell code representation.
-        This function is useful for exporting hashtables to `.psd1` files,
-        making it easier to store and retrieve structured data.
+        Format-Hashtable converts a hashtable and its nested values to PowerShell code.
+        The result supports storage in `.psd1` files.
 
         .EXAMPLE
         $hashtable = @{
@@ -1016,8 +1008,7 @@ filter Format-Hashtable {
         string
 
         .NOTES
-        A string representation of the given hashtable.
-        Useful for serialization and exporting hashtables to files.
+        The function returns a string for serialization or export to a file.
 
         .LINK
         https://psmodule.io/Hashtable/Functions/Format-Hashtable
@@ -1126,11 +1117,11 @@ filter Format-Hashtable {
 function Add-PSModulePath {
     <#
         .SYNOPSIS
-        Adds a path to the PSModulePath environment variable.
+        Add a path to the PSModulePath environment variable.
 
         .DESCRIPTION
-        Adds a path to the PSModulePath environment variable.
-        For Linux and macOS, the path delimiter is ':' and for Windows it is ';'.
+        Add-PSModulePath appends a folder to the PSModulePath environment variable.
+        The path delimiter is ':' on Linux and macOS, and ';' on Windows.
 
         .EXAMPLE
         Add-PSModulePath -Path 'C:\Users\user\Documents\WindowsPowerShell\Modules'
@@ -1156,11 +1147,11 @@ function Add-PSModulePath {
 function Set-GitHubLogGroup {
     <#
         .SYNOPSIS
-        Encapsulates commands with a log group in GitHub Actions
+        Run commands in a GitHub Actions log group.
 
         .DESCRIPTION
-        DSL approach for GitHub Action commands.
-        Allows for collapsing of code in IDE for code that belong together.
+        Set-GitHubLogGroup surrounds the script block output with GitHub Actions log group markers.
+        The script block keeps related commands together in the editor.
 
         .EXAMPLE
         Set-GitHubLogGroup -Name 'MyGroup' -ScriptBlock {
@@ -1193,11 +1184,11 @@ function Set-GitHubLogGroup {
     )]
     [CmdletBinding()]
     param(
-        # The name of the log group
+        # The name of the log group.
         [Parameter(Mandatory)]
         [string] $Name,
 
-        # The script block to execute
+        # The script block to execute.
         [Parameter(Mandatory)]
         [scriptblock] $ScriptBlock
     )
@@ -1210,14 +1201,17 @@ function Set-GitHubLogGroup {
 function Import-TestData {
     <#
         .SYNOPSIS
-        Exposes caller-provided TestData as environment variables for later steps in the job.
+        Expose caller-provided TestData as environment variables for later steps in the job.
 
         .DESCRIPTION
-        Reads the `PSMODULE_TEST_DATA` environment variable, which is expected to contain a single-line
-        JSON object with optional `secrets` and `variables` maps. Each entry is validated and written to
-        the file referenced by `GITHUB_ENV` so it becomes available as `$env:<name>` in subsequent steps
-        of the same job. Values under `secrets` are masked in the logs via `::add-mask::`; values under
-        `variables` are not. When no test data is provided the function is a no-op.
+        Import-TestData reads a single-line JSON object from the `PSMODULE_TEST_DATA` environment variable.
+        The object can contain `secrets` and `variables` maps.
+        The function validates each entry and writes it to `GITHUB_ENV` for later steps in the same job.
+        Those steps read each value as `$env:<name>`.
+
+        The function masks `secrets` values in logs with `::add-mask::`.
+        It does not mask `variables` values.
+        With no test data, the function makes no changes.
 
         .EXAMPLE
         Import-TestData
@@ -1254,7 +1248,7 @@ function Import-TestData {
     function Assert-EnvironmentName {
         <#
             .SYNOPSIS
-            Validates that a TestData key can safely be written to GITHUB_ENV.
+            Validate a TestData key for use in GITHUB_ENV.
         #>
         param([string] $Name)
         if ($Name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
@@ -1273,7 +1267,7 @@ function Import-TestData {
     function Assert-Map {
         <#
             .SYNOPSIS
-            Validates that a TestData section is a JSON object map.
+            Validate a TestData section as a JSON object map.
         #>
         param(
             [object] $Map,
@@ -1287,7 +1281,7 @@ function Import-TestData {
     function Get-EnvironmentValue {
         <#
             .SYNOPSIS
-            Converts a scalar TestData value to an environment variable value.
+            Convert a scalar TestData value to an environment variable value.
         #>
         param(
             [object] $Value,
@@ -1305,7 +1299,7 @@ function Import-TestData {
     function Add-EnvFromMap {
         <#
             .SYNOPSIS
-            Writes validated TestData entries to GITHUB_ENV.
+            Write validated TestData entries to GITHUB_ENV.
         #>
         param(
             [object] $Map,

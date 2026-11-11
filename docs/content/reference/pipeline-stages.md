@@ -5,19 +5,16 @@ description: The job-by-job breakdown of the Process-PSModule workflow, from Pla
 
 # Pipeline stages
 
-The Process-PSModule workflow composes its work from a set of reusable jobs. Each
-one is described below, in the order it runs, with a link to the workflow that
-implements it.
+The Process-PSModule workflow uses reusable jobs. The sections below describe the jobs in the order they run and link to their workflows.
 
-For which of these jobs run in a given trigger scenario, see the [scenario matrix](scenario-matrix.md).
+The [scenario matrix](scenario-matrix.md) defines which jobs run for each trigger scenario.
 
 ## Plan
 
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Plan.yml)
 
-The Plan job is the single decision point of the workflow. It reads the settings file (`.github/PSModule.yml`),
-collects event context from GitHub, and decides what should happen in the rest of the process. Using that
-situational awareness, it calculates the next module version.
+The Plan job is the workflow's single decision point. It reads the settings file (`.github/PSModule.yml`),
+collects GitHub event context, and decides what should happen in the rest of the process. It uses this context to calculate the next module version.
 
 The user-facing settings file stays in `.github/PSModule.yml`. The workflow enriches that input into an internal runtime
 `Settings` object passed between jobs. In this runtime contract, execution decisions are phase-owned (`*.Enabled`), test
@@ -65,7 +62,7 @@ suite matrices are computed under each owning test phase, and resolved version m
 
 - Tests the source code in parallel (matrix) using:
   - [PSModule framework settings for style and standards for source code](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Test-PSModule/src/tests/SourceCode)
-- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+- Produces a JSON-based report that [Get-PesterTestResults](#get-test-results) uses to evaluate the test results.
 
 For the coding practices this step enforces, see [framework test IDs](framework-test-ids.md#source-code-tests).
 
@@ -75,7 +72,7 @@ For the coding practices this step enforces, see [framework test IDs](framework-
 
 - Lints the source code in parallel (matrix) using:
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
-- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the linter.
+- Produces a JSON-based report that [Get-PesterTestResults](#get-test-results) uses to evaluate the linter results.
 
 ## Framework test
 
@@ -84,7 +81,7 @@ For the coding practices this step enforces, see [framework test IDs](framework-
 - Tests and lints the module in parallel (matrix) using:
   - [PSModule framework settings for style and standards for modules](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Test-PSModule/src/tests/Module)
   - [PSScriptAnalyzer rules](https://github.com/PSModule/Invoke-ScriptAnalyzer)
-- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) evaluate the results of the tests.
+- Produces a JSON-based report that [Get-PesterTestResults](#get-test-results) uses to evaluate the test results.
 - **Code coverage for framework-generated code**: This step collects code coverage for framework-generated
   boilerplate. During the [build step](#build-module), [Build-PSModule](https://github.com/PSModule/Build-PSModule)
   injects boilerplate code into the compiled `.psm1` file — including type accelerator registration for public classes
@@ -106,7 +103,7 @@ For the checks this step enforces on the built module, see [framework test IDs](
   - `tests/BeforeAll.ps1`: Runs once before all module-local test matrix jobs to set up the test environment.
   - `tests/AfterAll.ps1`: Runs once after all module-local test matrix jobs complete to clean up the test environment.
 - The workflow checks only those exact repository-root paths; phase detection is non-recursive.
-- This produces a JSON-based report that is used by [Get-PesterTestResults](#get-test-results) to evaluate the results of the tests.
+- Produces a JSON-based report that [Get-PesterTestResults](#get-test-results) uses to evaluate the test results.
 
 How to write these tests, including the Pester version requirement and shared-infrastructure patterns, is covered in
 [Writing module tests](../guides/writing-module-tests.md).
@@ -116,7 +113,7 @@ How to write these tests, including the Pester version requirement and shared-in
 [workflow](https://github.com/PSModule/Process-PSModule/blob/main/.github/workflows/Get-TestResults.yml)
 
 - Gathers the test results from the previous steps and creates a summary of the results.
-- If any tests have failed, the workflow will fail here.
+- If any tests fail, the workflow fails here.
 
 ## Get code coverage
 
@@ -126,7 +123,7 @@ How to write these tests, including the Pester version requirement and shared-in
 - Aggregates coverage from the [Framework test](#framework-test) step (framework-generated boilerplate) and the
   [Test module](#test-module) step (module author code). A command executed in either step counts as covered, so
   framework-generated lines do not count against the module author's coverage target.
-- If the code coverage is below the target, the workflow will fail here.
+- If the code coverage is below the target, the workflow fails here.
 
 ## Publish module
 

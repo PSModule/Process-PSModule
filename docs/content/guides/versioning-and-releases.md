@@ -19,7 +19,7 @@ the configured default branch.
 
 Test and lint stages run before the publish gates, and publish is blocked when required checks fail.
 
-An open labelled pull request can publish a prerelease. A closed pull request only cleans up its prereleases. When a
+An open labeled pull request can publish a prerelease. A closed pull request only cleans up its prereleases. When a
 pull request merges, the resulting push to the default branch resolves that pull request's labels and creates the
 stable release from the exact pushed commit.
 
@@ -55,7 +55,7 @@ short-lived pull requests targeting `main`.
 
 ## Prereleases
 
-A pull request labelled `Prerelease` publishes a prerelease version (for example `v1.2.3-pr.1.5`) that is installable
+A pull request labeled `Prerelease` publishes a prerelease version (for example `v1.2.3-pr.1.5`) that is installable
 but not promoted as latest. When that pull request is merged with a version label, the stable version is computed from
 the label and the current version on `main`.
 

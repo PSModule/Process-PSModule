@@ -7,31 +7,31 @@ inputs:
     description: Name of the module to release.
     required: false
   ModulePath:
-    description: Path to the folder containing the <Name>/ module subdirectory from Build-PSModule.
+    description: Path to the folder with the <Name>/ module subdirectory from Build-PSModule.
     required: false
     default: .PSModule/module
   ArtifactName:
-    description: Name of the uploaded artifact to download. Must match the name used in the upstream upload-artifact step.
+    description: Name of the uploaded artifact to download. It must match the name used in the upstream upload-artifact step.
     required: false
     default: module
   WhatIf:
-    description: If specified, the action will only log the changes it would make, but will not actually create the release or upload artifacts.
+    description: If specified, the action only logs the changes it would make, but does not create the release or upload artifacts.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: '.'
   UsePRTitleAsReleaseName:
-    description: When enabled, uses the pull request title as the name for the GitHub release. If not set, the version string is used.
+    description: When enabled, the action uses the pull request title as the GitHub release name. If not set, it uses the version string.
     required: false
     default: 'false'
   UsePRBodyAsReleaseNotes:
-    description: When enabled, uses the pull request body as the release notes for the GitHub release. If not set, the release notes are auto-generated.
+    description: When enabled, the action uses the pull request body as the GitHub release notes. If not set, it auto-generates the release notes.
     required: false
     default: 'true'
   UsePRTitleAsNotesHeading:
-    description: When enabled along with UsePRBodyAsReleaseNotes, the release notes will begin with the pull request title as a H1 heading followed by the pull request body. The title will reference the pull request number.
+    description: When enabled with UsePRBodyAsReleaseNotes, the release notes start with the pull request title as an H1 heading. The pull request body follows the heading. The title references the pull request number.
     required: false
     default: 'true'
   ReleaseTag:

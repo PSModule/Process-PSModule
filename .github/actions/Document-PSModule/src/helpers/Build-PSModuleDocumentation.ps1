@@ -1,10 +1,10 @@
 ﻿function Build-PSModuleDocumentation {
     <#
         .SYNOPSIS
-        Builds a module.
+        Build documentation for a PowerShell module.
 
         .DESCRIPTION
-        Builds a module.
+        Build-PSModuleDocumentation creates Markdown help for exported commands and arranges the pages to match the public source folders.
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
@@ -16,19 +16,19 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Path to the folder where the modules are located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [string] $ModuleSourceFolderPath,
 
-        # Path to the folder where the built modules are outputted.
+        # Path to the folder for the built modules.
         [Parameter(Mandatory)]
         [string] $ModulesOutputFolderPath,
 
-        # Path to the folder where the documentation is outputted.
+        # Path to the documentation output folder.
         [Parameter(Mandatory)]
         [string] $DocsOutputFolderPath,
 
-        # Show GitHub Step Summary even when all commands succeed.
+        # Show the GitHub step summary even when all commands succeed.
         [Parameter()]
         [bool] $ShowSummaryOnSuccess = $false
     )
@@ -95,7 +95,7 @@
     $hasFailures = $failedCommands.Count -gt 0
     $shouldShowSummary = $hasFailures -or $ShowSummaryOnSuccess
 
-    # Generate summary if ShowSummaryOnSuccess is enabled
+    # Show the summary on failure or when ShowSummaryOnSuccess is enabled.
     if ($shouldShowSummary) {
         $statusIcon = $hasFailures ? '❌' : '✅'
         $statusText = $hasFailures ? 'Failed' : 'Succeeded'
@@ -151,7 +151,7 @@ $(($successfulCommands | ForEach-Object { "- ``$($_.CommandName)`` `n" }) -join 
         Write-Host '::endgroup::'
     }
 
-    # Fail the task if there were any failures (independent of summary display)
+    # Fail the task on any command failure, independent of the summary display.
     if ($hasFailures) {
         Write-Error "Documentation generation failed for $($failedCommands.Count) command(s). See above for details."
         exit 1
@@ -205,7 +205,7 @@ $(($successfulCommands | ForEach-Object { "- ``$($_.CommandName)`` `n" }) -join 
         Write-Host " - $relPath"
         Write-Host "   Path:     $file"
 
-        # find the source code file that matches the markdown file
+        # Find the source file that matches the Markdown file.
         $scriptPath = Get-ChildItem -Path $PublicFunctionsFolder -Recurse -Force | Where-Object { $_.Name -eq ($file.BaseName + '.ps1') }
         Write-Host "   PS1 path: $scriptPath"
         $docsFilePath = ($scriptPath.FullName).Replace($PublicFunctionsFolder.FullName, $docsOutputFolder).Replace('.ps1', '.md')
@@ -227,9 +227,8 @@ $(($successfulCommands | ForEach-Object { "- ``$($_.CommandName)`` `n" }) -join 
     # Enumerate the public markdown once and reuse it (no second tree walk).
     $publicMarkdownFiles = @(Get-ChildItem -Path $PublicFunctionsFolder -Recurse -Force -File -Include '*.md')
 
-    # Folders that provide an explicit index page. Detected case-insensitively because the runner
-    # filesystem is case-sensitive. Two index pages that differ only by case (index.md and
-    # Index.md) are ambiguous, so fail fast instead of silently overwriting one.
+    # Compare index names without case sensitivity because the runner filesystem is case-sensitive.
+    # Reject index.md and Index.md in the same folder to prevent an ambiguous section index.
     $explicitIndexFolders = [System.Collections.Generic.HashSet[string]]::new()
     $indexGroups = $publicMarkdownFiles | Where-Object { $_.Name -ieq 'index.md' } | Group-Object { $_.Directory.FullName }
     foreach ($group in $indexGroups) {
@@ -247,14 +246,12 @@ $(($successfulCommands | ForEach-Object { "- ``$($_.CommandName)`` `n" }) -join 
 
         $docsFilePath = ($file.FullName).Replace($PublicFunctionsFolder.FullName, $docsOutputFolder)
 
-        # A group's overview page becomes the section landing page (index.md) so the navigation
-        # shows it when the group is selected, instead of a page nested under the group. Authors
-        # can either name it after the folder (e.g. Auth/Auth.md) or provide Auth/index.md directly.
+        # A group's overview becomes index.md so the navigation opens it as the section landing page.
+        # Authors can use the folder name (Auth/Auth.md) or provide Auth/index.md.
         $parentFolder = Split-Path -Path $file.FullName -Parent
         $parentFolderName = Split-Path -Path $parentFolder -Leaf
         if ($file.Name -ieq 'index.md') {
-            # Normalize any casing (Index.md/INDEX.md) to index.md so it is treated as the
-            # section index on case-sensitive filesystems.
+            # Normalize Index.md/INDEX.md to index.md for section indexes on case-sensitive filesystems.
             $docsFilePath = Join-Path -Path (Split-Path -Path $docsFilePath -Parent) -ChildPath 'index.md'
             Write-Host '   Section index page detected - publishing as index.md'
         } elseif ($file.BaseName -eq $parentFolderName) {

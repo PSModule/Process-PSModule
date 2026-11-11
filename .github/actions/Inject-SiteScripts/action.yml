@@ -6,7 +6,7 @@ inputs:
     description: Path to the generated site output directory.
     required: true
   WorkflowPath:
-    description: Path to the checked out workflow repository root.
+    description: Path to the checked-out workflow repository root.
     required: false
     default: _wf
 

@@ -1,88 +1,91 @@
 ---
 title: Validating before review
-description: PSModule-specific validation checks that extend the shared MSXOrg Build/Implement workflow step before a draft pull request is marked ready.
+description: Validate a module change against design, documentation, and PowerShell requirements before independent review.
 ---
 
 # Validating before review
 
-Use this page after scaffolding a module change or implementing a function and before you finish self-review or mark a draft pull request ready. It extends the shared MSXOrg [Workflow Build step](https://msx.no/docs/Ways-of-Working/Workflow/#build) and [Implement guidance](https://msx.no/docs/Ways-of-Working/Workflow-Stages/Implement/) with the PSModule-specific validation checks that module repositories must pass.
+Use this sequence after you scaffold a module change or implement a function. Run it before you complete self-review or mark a draft pull request ready. It extends the shared MSXOrg [Workflow Build step](https://msx.no/docs/Ways-of-Working/Workflow/#build) and [Implement guidance](https://msx.no/docs/Ways-of-Working/Workflow-Stages/Implement/). Module repositories must satisfy these PSModule-specific validation requirements.
 
-Do not repeat the shared workflow here. Follow the shared branch → draft PR → implement → test → self-review loop first, then run this PSModule pass to confirm the change still fits the module's design, documentation, and PowerShell standards.
+Follow the shared branch → draft PR → implement → test → self-review loop first. Then run this author-side validation sequence for module design, documentation, and PowerShell standards.
 
 ## Validation sequence
 
 1. **Module design alignment**
 
-   Confirm that the change fits the module's archetype and the module-specific design rules before reviewing individual files.
+   Before you review individual files, make sure that the change fits the module's archetype and design rules.
 
-   Check:
+   Make sure that:
 
-   - the module still follows the right archetype from [Module types](../reference/module-types.md)
-   - the change respects the layout, private-helper boundaries, context rules, and SOLID guidance in [PowerShell module standard](../reference/powershell-module-standard.md)
+   - the module follows the applicable archetype from [Module types](../reference/module-types.md)
+   - the change follows the layout, private-helper boundaries, context rules, and SOLID guidance in [PowerShell module standard](../reference/powershell-module-standard.md)
    - the function belongs in this module instead of a different module, a shared helper, or a follow-up issue
 
-   A human contributor or agent should be able to explain why this change belongs in this module, in this shape, without inventing new local rules.
+   A contributor or agent should be able to explain why this change and its design belong in this module. The explanation should not introduce local rules.
 
 2. **Module documentation**
 
-   Confirm that the repository-level and group-level documentation still matches the delivered behavior.
+   Make sure that the repository-level and group-level documentation describes the delivered behavior.
 
-   Check:
+   Make sure that:
 
-   - `README.md` still answers the start-page questions and reflects any user-visible behavior, prerequisites, or setup changes from [Repository Standard](../reference/repository-standard.md#readme-default)
-   - the relevant public command-group overview page (`src/functions/public/<Group>/<Group>.md`) exists or is updated when the change affects that group's purpose or usage, per [PowerShell module standard](../reference/powershell-module-standard.md#repository-layout)
-   - any module-level documentation under `docs/` or other published surfaces is updated when the change adds or changes guidance that should not live only in comment-based help
+   - `README.md` answers the start-page questions and reflects user-visible behavior, prerequisites, or setup changes from [Repository Standard](../reference/repository-standard.md#readme-default)
+   - the relevant public command-group overview page (`src/functions/public/<Group>/<Group>.md`) exists or reflects changes to that group's purpose or usage, as required by [PowerShell module standard](../reference/powershell-module-standard.md#repository-layout)
+   - module-level documentation under `docs/` or other published surfaces includes guidance that should not appear only in comment-based help
 
-   If the change teaches the user something new, confirm that the user can discover it from the published documentation surfaces, not only from the diff.
+   If the change affects user guidance, make sure that users can find it in published documentation, not only the diff.
 
 3. **Function structure**
 
-   Confirm that each changed function still follows the expected repository anatomy.
+   Make sure that each changed function follows the repository layout.
 
-   Check:
+   Make sure that:
 
    - public functions live under `src/functions/public/<Group>/` and private helpers live under `src/functions/private/<Group>/`
    - file placement, grouping, and exported surface match [Structuring your module](structuring-your-module.md) and the layout rules in [PowerShell module standard](../reference/powershell-module-standard.md#repository-layout)
    - there are no nested helper functions, multi-function files, or naming shortcuts that break the "one declaration per file" rule
 
-   This step is about shape, not behavior: the goal is that a reader or tool can find the module surface and its helpers exactly where PSModule expects them.
+   This step concerns file layout, not function behavior. The layout lets readers and tools locate the module's public functions and private helpers.
 
 4. **Function documentation**
 
-   Confirm that every changed function carries complete comment-based help and that the help matches the implementation contract.
+   Make sure that every changed function has complete comment-based help that matches the implementation contract.
 
-   Check:
+   Make sure that:
 
    - comment-based help is present for every changed function, including private helpers
    - help sections, examples, `.INPUTS`, `.OUTPUTS`, and parameter documentation match the function contract from [MSX PowerShell Functions](https://msx.no/docs/Coding-Standards/PowerShell/Functions/)
    - every public function has a first `.LINK` entry using an absolute HTTPS URL whose path matches the generated command documentation path
-   - public-function links and usage examples are current enough that generated documentation will stay accurate
+   - links to new, moved, or unpublished public-function pages match targets in the generated documentation
+   - links to already-published public-function pages resolve on the published site
+   - usage examples match the implemented parameters and outputs
 
-   Do not treat help as optional cleanup. In PSModule repositories, the function help is part of the delivered behavior.
+   Function help is part of the delivered behavior in PSModule repositories. Do not defer help as optional cleanup.
 
 5. **PowerShell best practices**
 
-   Confirm that the implementation still reads like idiomatic PowerShell after the mechanical checks pass.
+   After the mechanical checks pass, review the implementation against the PowerShell standards.
 
-   Check:
+   Make sure that:
 
    - advanced-function structure, parameter typing and validation, `ShouldProcess`, output behavior, and error handling align with [MSX PowerShell](https://msx.no/docs/Coding-Standards/PowerShell/) and [MSX PowerShell Functions](https://msx.no/docs/Coding-Standards/PowerShell/Functions/)
-   - the code also satisfies the PSModule-specific conventions in [PowerShell module standard](../reference/powershell-module-standard.md), especially around private helpers, context handling, and repository layout
-   - PSScriptAnalyzer warnings are addressed or intentionally justified, but review does not stop there; also look for awkward parameter design, leaky transport details, non-idiomatic output, or code that technically passes lint but is not good PowerShell
+   - the code satisfies the PSModule-specific conventions in [PowerShell module standard](../reference/powershell-module-standard.md), including private helpers, context handling, and repository layout
+   - PSScriptAnalyzer warnings have fixes or intentional justifications
 
-   PSScriptAnalyzer is part of the validation loop, not the whole loop.
+   Do not limit the review to PSScriptAnalyzer. Also examine parameter design, exposed transport details, output behavior, and deviations from PowerShell conventions, even when lint passes.
 
 6. **Coding standards alignment**
 
-   Run one final cross-check against the shared MSX coding standards before leaving self-review.
+   Before you complete self-review, compare the change with the shared MSX coding standards.
 
-   Check:
+   Make sure that:
 
    - naming, documentation, error handling, testing expectations, and security posture align with the relevant pages under [MSX Coding Standards](https://msx.no/docs/Coding-Standards/)
-   - the change follows the shared "written once, referenced everywhere" rule by linking canonical guidance instead of copying it into local docs or code comments, as described in [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
-   - the draft PR description, issue progress, and any follow-up issues reflect what actually shipped and what still belongs out of scope
+   - the change follows the shared "written once, referenced everywhere" rule from [Agentic Development](https://msx.no/docs/Capabilities/agentic-development/)
+   - local documentation and code comments link to canonical guidance instead of copying it
+   - the draft PR description, issue progress, and follow-up issues describe the delivered change and its exclusions
 
-   This is the last author-side gate before a PSModule draft PR is ready for independent review.
+   This completes the author-side validation before independent review of a PSModule draft PR.
 
 ## Where this connects
 

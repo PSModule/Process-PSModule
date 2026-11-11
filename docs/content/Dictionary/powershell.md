@@ -5,4 +5,4 @@ abbreviations: []
 
 # PowerShell
 
-A task automation and configuration management framework from Microsoft, consisting of a command-line shell and the associated scripting language.
+PowerShell is a task automation and configuration management framework from Microsoft. It includes a command-line shell and a scripting language.
