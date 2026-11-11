@@ -279,11 +279,37 @@ drift. A future runtime must consume `Template-PSModule` rather than maintain a
 second copy of standard files. Process-PSModule maintainers own detecting when
 repository audits or distribution stop operating.
 
+### Generated module documentation
+
+Generated module sites use
+[`Template-PSModule/.github/zensical.toml`](https://github.com/PSModule/Template-PSModule/blob/main/.github/zensical.toml)
+at the recorded template commit. Preserve repository placeholders that the
+framework resolves during site staging.
+
+- Omit `nav`. Zensical derives navigation from the staged folder structure,
+  places index pages first, and sorts the remaining pages alphabetically.
+- The template does not define `[project.extra.consent]`. Cookie consent is
+  not a generated-module default. Add it only in a documented
+  repository-specific configuration that requires it.
+- Keep the template's theme, palette, typography, icons, plugins, Markdown
+  extensions, and supported assets together as one baseline.
+- Do not copy path-specific settings from `MSXOrg/docs` or
+  `Process-PSModule/docs` directly into a generated module site. Shared
+  behavior must first be represented in `Template-PSModule` in a form the
+  Process-PSModule site staging pipeline supports.
+- Preserve repository-specific documentation content. Document deliberate
+  visual or functional exceptions and report them as accepted differences.
+
 ## Supply-chain defaults
 
 Every module repository must include `.github/dependabot.yml`. Dependabot is part of the repository supply-chain control, not an optional convenience.
 
-Configure the `github-actions` ecosystem. It keeps the pinned actions current, including the pinned `PSModule/Process-PSModule` reference in the [caller workflow](#caller-workflow-and-reusable-workflow). This is what [`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule) ships, and it is the default for new repositories:
+Configure the `github-actions` ecosystem. It keeps action and reusable-workflow
+references current. The [caller workflow](#caller-workflow-and-reusable-workflow)
+uses the controlled `PSModule/Process-PSModule` `@v8` major reference; other
+actions remain pinned under the MSX GitHub Actions standard. This is what
+[`PSModule/Template-PSModule`](https://github.com/PSModule/Template-PSModule)
+ships, and it is the default for new repositories:
 
 ```yaml
 version: 2

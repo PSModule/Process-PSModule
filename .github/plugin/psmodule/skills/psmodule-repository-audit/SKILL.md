@@ -12,23 +12,17 @@ Use the same procedure for one repository or as the repository-level audit
 inside a fleet campaign. Report changes for a separate migration or delivery
 task; do not edit either repository while running this audit.
 
+Read the [PSModule Repository Standard](https://psmodule.io/Process-PSModule/reference/repository-standard/)
+and its [source ownership and file classes](https://psmodule.io/Process-PSModule/reference/repository-standard/#managed-file-distribution)
+before comparing. Those pages own shared policy; this skill defines the audit
+sequence, handoffs, report, and stop conditions.
+
 This skill does not maintain or reconcile `Template-PSModule`. Changes to
 Process-PSModule include an impact evaluation that determines whether the
 template also needs a coordinated update. Template changes are made and
 validated in the template repository before consumer alignment begins.
 
-## Authority and precedence
-
-Use these sources together:
-
-1. The [MSX Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/)
-   owns inherited enterprise policy.
-2. The [PSModule Repository Standard](https://psmodule.io/Process-PSModule/reference/repository-standard/)
-   owns PSModule additions and explicit initiative overrides.
-3. The default branch of `PSModule/Template-PSModule` owns the executable
-   implementation of those requirements.
-4. The target repository owns its module code, tests, documentation content,
-   settings, secrets, and justified additions.
+## Source and stop conditions
 
 Resolve and record the template default-branch commit before comparing files.
 Use that one commit throughout the run. Do not embed a snapshot of template
@@ -38,9 +32,8 @@ When either governing standard and the template disagree, do not propagate the
 discrepancy and do not repair the template from this skill. Report the upstream
 gap and block consumer alignment until the policy owner and template agree.
 When prose and template implementation express the same requirement
-differently, use the template as the byte-level source. For shared Zensical
-presentation settings, the MSXOrg documentation design takes precedence over
-the Process-PSModule documentation-site implementation.
+differently, apply the linked source-ownership rules. Do not resolve policy
+differences independently in a consumer.
 
 ## Audit boundary
 
@@ -66,33 +59,14 @@ Before comparing:
 
 ## Classify before comparing
 
-Classify every template path. Never infer that every template file can safely
-overwrite an established repository.
+Classify every template path with the shared file classes. Never infer that
+every template file can safely overwrite an established repository. Preserve
+repository-owned source, tests, examples, content, and assets.
 
-| Class | Treatment |
-| --- | --- |
-| Template-owned standard | Compare with the template and report drift unless a documented target exception applies. |
-| Parameterized standard | Compare after applying only the substitutions declared by the template or framework. |
-| Configurable standard | Keep supported repository-specific values; compare the remaining structure and defaults. |
-| Creation scaffold | Use for new repositories. Do not overwrite established module source, tests, examples, or content. |
-| Repository-owned addition | Preserve it unless it violates a governing standard or breaks the framework contract. |
-
-Treat `.github/CONTRIBUTING.md`, governance files, caller workflows, linter
-settings, dependency configuration, agent entry points, and documentation-site
-defaults as template-owned or parameterized unless the template or PSModule
-standard says otherwise. Treat `src/`, established `tests/`, `examples/`,
-documentation content, and module-specific assets as repository-owned after
-creation.
-
-Do not require `.github/CODE_OF_CONDUCT.md`, `.github/SECURITY.md`, or
-`.github/SUPPORT.md`. These policies are centrally provided by
-`PSModule/.github`; a target may carry a repository-local copy only as a
-documented policy override. Do not require `.github/release.yml`: current
-Process-PSModule releases do not use GitHub's built-in release configuration.
-Report an undocumented local release configuration as stale drift.
-
-Report a root-level duplicate of a community file as drift. GitHub recognizes
-these files under `.github/`, which is their canonical PSModule location.
+Compare community and automation paths against the
+[required common files](https://psmodule.io/Process-PSModule/reference/repository-standard/#required-common-files).
+Record documented exceptions as accepted differences and stale local
+configurations or root duplicates as drift.
 
 Configuration is not automatically consumer-owned. For example,
 `.github/PSModule.yml` may contain valid module-specific overrides while its
@@ -101,8 +75,10 @@ not only whole-file hashes, when the standard permits overrides.
 
 ## Pull request authoring
 
-Follow the [canonical MSX PR Format](https://msx.no/docs/Ways-of-Working/PR-Format/)
-for authoring guidance, not a repository or organization PR-template file.
+Apply the [no-file authoring rule](https://psmodule.io/Process-PSModule/reference/repository-standard/#pull-request-authoring)
+when classifying PR-template paths. Use the
+[canonical MSX PR Format](https://msx.no/docs/Ways-of-Working/PR-Format/) for the
+actual record, not a repository or organization PR-template file.
 
 Do not classify PR-template files as template-owned standards or creation
 scaffolds. Their absence is intentional, not missing baseline drift. Report
@@ -115,26 +91,9 @@ policy gap and block consumer alignment rather than propagating it.
 
 ## Zensical contract
 
-For module repositories, `.github/zensical.toml` comes from the matching path
-in `Template-PSModule`.
-
-- Preserve the template's repository placeholders when the framework resolves
-  them during site staging.
-- Do not add a `nav` setting. Zensical generates navigation from the staged
-  folder structure, places index pages first, and sorts the remaining pages
-  alphabetically.
-- Confirm the template does not define `[project.extra.consent]`. Cookie
-  consent is not a generated-module default and belongs only in a documented
-  repository-specific configuration that actually requires it.
-- Keep the template's theme, palette, typography, icons, plugins, Markdown
-  extensions, and supported assets together as one baseline.
-- Do not copy path-specific settings from `MSXOrg/docs` or
-  `Process-PSModule/docs` directly into a generated module site. Their shared
-  behavior must first be represented in `Template-PSModule` in a form the
-  Process-PSModule site staging pipeline supports.
-- Preserve repository-specific documentation content. A deliberate visual or
-  functional exception must be documented in the target and reported as an
-  accepted difference.
+Compare the recorded template profile against the shared
+[generated-module documentation contract](https://psmodule.io/Process-PSModule/reference/repository-standard/#generated-module-documentation).
+Record documented visual or functional exceptions as accepted differences.
 
 When the target still uses MkDocs or requires a documentation layout
 migration, report
@@ -169,18 +128,9 @@ incomplete, or validation did not execute.
 
 ## Fleet operation
 
-Follow the MSX Fleet Orchestration standard:
-
-1. Discover repositories from authoritative organization metadata, such as the
-   `Type: Module` custom property.
-2. Use one Task or Bug, branch, draft pull request, and review loop per
-   repository.
-3. Put the campaign slug in every delivery issue and pull request title.
-4. Adopt an existing matching pull request instead of opening a duplicate.
-5. Store campaign state on GitHub. Local JSON or dashboards are disposable
-   projections, not sources of truth.
-6. Record the template commit in every report and pull request so a later run
-   can distinguish new template changes from unfinished work.
+Follow the [MSX Fleet Orchestration standard](https://msx.no/docs/Ways-of-Working/Fleet-Orchestration/).
+Run this audit once per target. Record the template commit in every report so
+a later run can distinguish new template changes from unfinished work.
 
 ## Validation
 
