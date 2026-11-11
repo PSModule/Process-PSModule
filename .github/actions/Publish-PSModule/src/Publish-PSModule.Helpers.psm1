@@ -518,7 +518,7 @@ function Get-PSModulePublicationState {
         if ($release.draft -isnot [bool] -or $release.draft -ne $false) {
             throw 'The existing release has no verified boolean draft:false status. Refusing publication or an incomplete release.'
         }
-        if ($release.tag_name -cne $expected.ReleaseTag -or
+        if ($release.tag_name -isnot [string] -or $release.tag_name -cne $expected.ReleaseTag -or
             [string]::IsNullOrWhiteSpace($release.html_url) -or
             $release.prerelease -isnot [bool] -or
             $release.prerelease -ne ($expected.ReleaseType -ceq 'Prerelease') -or
