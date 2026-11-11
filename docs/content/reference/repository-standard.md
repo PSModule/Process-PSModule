@@ -183,7 +183,7 @@ above unless the repository is explicitly outside the module standard.
 
 Keep any repository-local community health overrides together under `.github/`.
 The organization-managed Code of Conduct, security policy, and support
-guidance do not need local copies. A local `CONTRIBUTING.md` remains part of the
+guidance do not need local copies. A local `.github/CONTRIBUTING.md` remains part of the
 module baseline, and root-level duplicates of community files are not part of
 the PSModule layout. `README.md`, `LICENSE`, and `AGENTS.md` remain at the
 repository root because they are repository entry points rather than community
