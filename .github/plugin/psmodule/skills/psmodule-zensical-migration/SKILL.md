@@ -13,7 +13,7 @@ documentation build requires a directly related fix.
 ## Current Process-PSModule boundary
 
 The module site pipeline stages generated function documentation, `README.md`,
-the module icon, and `.github/zensical.toml` into `outputs/site`. It does not
+the module icon, and `.github/zensical.toml` into `.PSModule/site`. It does not
 stage consumer-authored `docs/content/`, `docs/overrides/`, or their assets.
 Consequently, a consumer configuration that sets `docs_dir = "content"` or
 `custom_dir = "overrides"` cannot be published through the current framework.
@@ -35,12 +35,13 @@ Do not move a module consumer from `.github/zensical.toml` to
 
 ## Supported consumer configuration
 
-For a Process-PSModule consumer, retain the template's
-`.github/zensical.toml` configuration and the generated site layout. Do not
-add a second active site configuration.
+If the selected immutable `PSModule/Template-PSModule` revision contains
+`.github/zensical.toml`, retain that configuration and the generated site
+layout for a Process-PSModule consumer. Do not add a second active site
+configuration.
 
 When a requested migration needs authored Markdown content or a custom theme,
-record that the framework must first stage those assets into `outputs/site`.
+record that the framework must first stage those assets into `.PSModule/site`.
 Do not claim the migration is complete until the producer supports the target
 layout and a consumer build publishes it successfully.
 

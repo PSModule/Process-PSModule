@@ -47,7 +47,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: module
-          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/outputs/module
+          path: ${{ fromJson(inputs.Settings).WorkingDirectory }}/.PSModule/module
 
       - name: Install-PSModule
         uses: ./_wf/.github/actions/Install-PSModule
@@ -62,14 +62,14 @@ jobs:
         shell: pwsh
         working-directory: ${{ fromJson(inputs.Settings).WorkingDirectory }}
         run: |
-          $name = Get-ChildItem "outputs/module" | Select-Object -ExpandProperty Name
-          $path = Install-PSModule -Path "outputs/module/$name" -PassThru
+          $name = Get-ChildItem ".PSModule/module" | Select-Object -ExpandProperty Name
+          $path = Install-PSModule -Path ".PSModule/module/$name" -PassThru
           Write-Warning $path
           "name=$name" >> $env:GITHUB_OUTPUT
           "path=$path" >> $env:GITHUB_OUTPUT
 
       - name: Test-ModuleLocal
-        uses: PSModule/Invoke-Pester@4ff33199141fdf22568990b6107fe3148ae93a1c # v5.1.0
+        uses: PSModule/Invoke-Pester@c5494aba3c07d7bfd81bdbbc9f301e8fa4a729fb # v5.1.1
         with:
           Debug: ${{ fromJson(inputs.Settings).Debug }}
           Verbose: ${{ fromJson(inputs.Settings).Verbose }}
@@ -78,9 +78,11 @@ jobs:
           GitHubPrerelease: ${{ fromJson(inputs.Settings).Prerelease }}
           TestResult_TestSuiteName: ${{ matrix.TestName }}-${{ matrix.OSName }}
           TestResult_Enabled: true
+          TestResult_OutputPath: .PSModule/TestResult/${{ matrix.TestName }}-${{ matrix.OSName }}-TestResult-Report.xml
           CodeCoverage_Enabled: true
           Output_Verbosity: Detailed
           CodeCoverage_OutputFormat: JaCoCo
+          CodeCoverage_OutputPath: .PSModule/CodeCoverage/${{ matrix.TestName }}-${{ matrix.OSName }}-CodeCoverage-Report.xml
           CodeCoverage_CoveragePercentTarget: 0
           Filter_ExcludeTag: Flaky
           Path: ${{ matrix.TestPath }}

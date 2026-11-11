@@ -2,25 +2,25 @@
 
 ## Overview
 
-This document defines the structure and guidelines for writing Pester tests for PowerShell functions. The goal is to ensure consistency and comprehensive test coverage while maintaining clarity.
+This specification defines the Pester test hierarchy, input guidance, and coverage requirements for PowerShell functions.
 
 ## Test Structure
 
-Each function is tested within a structured Pester `Describe` block that follows this hierarchy:
+Organize each function's Pester tests in the following hierarchy:
 
 ### 1. Module-Level `Describe`
 
 - The outermost `Describe` block corresponds to the module.
-- The module name is derived from the prefix of the function name's noun part.
+- Use the prefix of the function name's noun part as the module name.
 
 ### 2. Function-Level `Describe`
 
-- Each function within the module gets its own `Describe` block.
-- Named using the full function name.
+- Give each function in the module its own `Describe` block.
+- Use the full function name as the block name.
 
 ### 3. Use Case `Context`
 
-- Each use case is grouped within a `Context` block.
+- Group each use case in a `Context` block.
 - The context name starts with the function name followed by a descriptive test case identifier.
   - Example: `Get-Uri - simple usage`
   - Example: `Get-Uri - Pipeline usage`
@@ -28,7 +28,7 @@ Each function is tested within a structured Pester `Describe` block that follows
 
 ### 4. Functional `It` Statements
 
-- Each `It` block tests a specific aspect of the function's behavior.
+- Each `It` block tests one aspect of the function's behavior.
 - The name follows the format: `FunctionName - <expected behavior>`
   - Example: `Get-Uri - gets the URI object when provided a string`
   - Example: `Get-Uri - returns $null when input is empty`
@@ -36,9 +36,9 @@ Each function is tested within a structured Pester `Describe` block that follows
 
 ### 5. Test Guidelines
 
-- **No Mocks**: We do not use mocks in tests.
+- **No Mocks**: Do not use mocks in tests.
 - **Real Inputs**: Tests should use actual inputs and expected outputs.
-- **Comprehensive Coverage**: All function functionality, including edge cases, must be tested.
+- **Comprehensive Coverage**: Tests must cover all function behavior, including edge cases.
 
 ## Example Test Structure
 
@@ -62,4 +62,4 @@ Describe 'Uri' {
 }
 ```
 
-This ensures our tests are structured, maintainable, and adhere to best practices.
+The example groups `Get-Uri` tests under the `Uri` module and uses separate contexts for direct and pipeline input.

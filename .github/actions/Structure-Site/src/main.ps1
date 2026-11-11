@@ -2,11 +2,11 @@
 
 <#
     .SYNOPSIS
-    Structures generated documentation content and writes a resolved site config.
+    Structure the generated documentation and write the resolved site configuration.
 
     .DESCRIPTION
-    Copies generated docs, README, and assets into outputs/site and resolves zensical.toml
-    placeholders and site_dir for build execution.
+    The script copies generated documentation, README, and assets into .PSModule/site.
+    It resolves zensical.toml placeholders and sets site_dir for the build.
 
     .EXAMPLE
     ./main.ps1 -WorkingDirectory '.' -Name 'MyModule'
@@ -19,7 +19,7 @@
 #>
 [CmdletBinding()]
 param(
-    # Build working directory where src/, README.md, and outputs/ exist.
+    # Build working directory where src/, README.md, and .PSModule/ exist.
     [Parameter(Mandatory)]
     [string]$WorkingDirectory,
 
@@ -31,8 +31,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $resolvedWorkingDirectory = Resolve-Path -Path $WorkingDirectory | Select-Object -ExpandProperty Path
-$siteOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'outputs/site'
-$docsOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'outputs/docs'
+$siteOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath '.PSModule/site'
+$docsOutputPath = Join-Path -Path $resolvedWorkingDirectory -ChildPath '.PSModule/docs'
 $moduleSourcePath = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'src'
 $moduleName = if ([string]::IsNullOrEmpty($Name)) { $env:GITHUB_REPOSITORY_NAME } else { $Name }
 

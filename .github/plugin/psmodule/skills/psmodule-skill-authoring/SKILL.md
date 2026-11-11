@@ -7,8 +7,8 @@ description: Author and maintain thin PSModule plugin skills that keep shared pr
 
 Use this skill when creating or updating a skill in the PSModule plugin. First
 read the shared
-[writing plugin skills guide](../../../../../docs/content/guides/writing-plugin-skills.md);
-it is the source of common authoring, structure, validation, and maintenance
+[writing plugin skills guide](../../../../../docs/content/guides/writing-plugin-skills.md).
+The guide is the source of common authoring, structure, validation, and maintenance
 guidance.
 
 ## Agent-specific contract
@@ -19,7 +19,7 @@ guidance.
   only the skill's trigger, agent operating sequence, handoff/report contract,
   and stop conditions in `SKILL.md`.
 - Preserve the plugin's scope and make adjacent work a separate change.
-- Open a draft PR early, use small commits, and report the PR URL, files,
+- Open a draft PR early. Use small commits. Report the PR URL, files,
   validation, decisions, and blockers to the owning session.
-- Stop and report instead of guessing when the skill boundary, source-of-truth
-  document, plugin ownership, or validation requirement is unclear.
+- If the skill boundary, source-of-truth document, plugin ownership, or
+  validation requirement is unclear, stop and report. Do not guess.

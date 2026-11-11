@@ -7,4 +7,4 @@ abbreviations:
 
 # GitHub
 
-A web-based platform for version control and collaboration that lets you and others work together on projects from anywhere.
+GitHub is a web-based platform for version control and collaboration.

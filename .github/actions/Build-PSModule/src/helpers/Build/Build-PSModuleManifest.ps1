@@ -1,11 +1,10 @@
 ﻿function Build-PSModuleManifest {
     <#
     .SYNOPSIS
-    Compiles the module manifest.
+    Build the module manifest.
 
     .DESCRIPTION
-    This function will compile the module manifest.
-    It will generate the module manifest file and copy it to the output folder.
+    Build-PSModuleManifest creates the module manifest in the output folder.
 
     .EXAMPLE
     Build-PSModuleManifest -SourceFolderPath 'C:\MyModule\src\MyModule' -OutputFolderPath 'C:\MyModule\build\MyModule'
@@ -28,7 +27,7 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Folder where the built modules are outputted. 'outputs/modules/MyModule'
+        # Folder for the built module files. '.PSModule/module/MyModule'
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleOutputFolder,
 

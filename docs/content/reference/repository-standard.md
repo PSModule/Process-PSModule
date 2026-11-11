@@ -1,10 +1,10 @@
 # Repository Standard
 
-This is the PSModule organization's Repository Standard. It applies to the PSModule organization and is the standard for PowerShell module repositories. It describes what a newly created or maintained module repository should look like before module-specific code, tests, documentation, and managed repository files are considered.
+This standard defines repository requirements for PowerShell modules in the PSModule organization. It describes how a newly created or maintained module repository should look. It defines the baseline before module-specific code, tests, documentation, and managed repository files are considered.
 
-This standard operates at the same altitude as the [MSX Enterprise Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/): MSX sets the enterprise-wide default, and this standard adds to and adjusts that default for PowerShell module repositories. Rules this standard does not change are inherited from the MSX default; where this standard adds or overrides a rule, it governs PowerShell module repositories.
+This standard complements the [MSX Enterprise Repository Standard](https://msx.no/docs/Ways-of-Working/Repository-Standard/). MSX defines the enterprise-wide default. This standard adds requirements and overrides for PowerShell module repositories. Unchanged MSX rules still apply. Additions and overrides on this page govern PowerShell module repositories.
 
-The implementation standard still lives in [PowerShell module standard](powershell-module-standard.md). Type-specific conventions for integration (API) and data modules live in [Module types](module-types.md). This page covers the repository standard for module repositories: files, metadata, README shape, release integration, placeholder handling, shared community files, and managed-file distribution.
+The implementation standard is in [PowerShell module standard](powershell-module-standard.md). Type-specific conventions for integration (API) and data modules are in [Module types](module-types.md). This page covers the repository standard for module repositories: files, metadata, README shape, release integration, placeholder handling, shared community files, and managed-file distribution.
 
 ## Scope
 
@@ -17,7 +17,9 @@ It does not apply directly to:
 - Template repositories other than `Template-PSModule`.
 - Test, archive, service, or infrastructure repositories that are not published as module artifacts.
 
-Two baseline expectations still apply to every PSModule repository, including the types listed above. Each repository stands on its own: it carries its own governance and community files instead of relying on the organization `.github` fallback, and each repository ships the [agent onboarding files](#agent-onboarding-files) so an agent can work in it without prior context. What differs by type is the concrete file set and layout: the required files, README shape, and framework wiring on the rest of this page are the module standard, and non-module repositories keep only the equivalent baseline appropriate to their own type. This documentation project, maintained in `PSModule/Process-PSModule`, follows those two baseline expectations itself.
+Two baseline expectations apply to every PSModule repository, including the types above. Each repository carries its own governance and community files instead of relying on the organization `.github` fallback. Each repository also ships the [agent onboarding files](#agent-onboarding-files) so an agent can work without prior context.
+
+The required file set, README shape, and framework wiring on this page apply to module repositories. Non-module repositories keep the equivalent baseline for their type. This documentation project, maintained in `PSModule/Process-PSModule`, also follows the two baseline expectations.
 
 Each initiative should keep its own repository standards in its central documentation repository. For the PSModule organization, this repository is the source of truth.
 
@@ -84,7 +86,7 @@ Module repositories use the PSModule framework layout:
 | `SECURITY.md` | Security support policy and private vulnerability reporting instructions. |
 | `SUPPORT.md` | Support expectations and where users ask for help. |
 | `CODE_OF_CONDUCT.md` | Community conduct expectations. |
-| `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/docs/`. |
+| `AGENTS.md` | Agent onboarding entry point. Points agents to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
 | `CLAUDE.md` | Claude Code entry point. Imports `AGENTS.md` so Claude reads the same instructions. |
 | `.github/PSModule.yml` | Module workflow configuration overrides. |
 | `.github/zensical.toml` | Documentation site configuration consumed by the Process-PSModule site build. |
@@ -155,7 +157,7 @@ Required baseline files for module repositories:
 | `SECURITY.md` | Private vulnerability reporting and latest-version support policy. |
 | `SUPPORT.md` | Support channel and issue-routing expectations. |
 | `CODE_OF_CONDUCT.md` | Community participation rules. |
-| `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/docs/`. |
+| `AGENTS.md` | Cross-tool agent instructions pointing to the canonical guidance at `https://psmodule.io/Process-PSModule/`. |
 | `CLAUDE.md` | Claude Code entry point that imports `AGENTS.md`. |
 | `.github/dependabot.yml` | Configures ecosystem-appropriate dependency-update pull requests. For PowerShell module repositories the `github-actions` ecosystem is expected; add any other ecosystems the module actually develops in. |
 | `.github/CODEOWNERS` | Review routing for source, docs, and GitHub workflow files. |
@@ -173,7 +175,7 @@ Each repository must stand on its own. It carries its own copy of every file abo
 
 Every repository must be usable by an agent that has never seen it before, without special configuration. Each repository carries its own agent entry points that point to the authoritative documentation instead of restating it:
 
-- `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/docs](https://psmodule.io/docs/).
+- `AGENTS.md`: the cross-tool entry point, read by the GitHub Copilot coding agent, VS Code, and other AGENTS.md-aware tools. It names what the repository is in a line or two and points to the canonical agent guidance at [psmodule.io/Process-PSModule](https://psmodule.io/Process-PSModule/).
 - `CLAUDE.md`: a thin file that imports `AGENTS.md` with `@AGENTS.md` so Claude Code reads the same instructions. Claude-specific notes, if any, go below the import.
 
 See [PSModule/Template-PSModule](https://github.com/PSModule/Template-PSModule) for a concrete implementation example of `AGENTS.md` and `CLAUDE.md`.
@@ -315,7 +317,7 @@ Keep, trim, or relocate content — do not delete it:
 - **Trim:** exhaustive command inventories, parameter tables, and repetitive examples that differ only by a parameter. These come from comment-based help — point to `Get-Help` and the documentation site instead of restating them.
 - **Keep content in a published home — never drop it:** long-form guides and unique conceptual content (authentication and setup walkthroughs, deep operational detail, end-to-end scenarios) belong in a surface that is actually published: a command group's overview page under `src/functions/public/<Group>/<Group>.md`, comment-based help, or published documentation in `docs/` or `examples/`. When no published home exists, keep the full content in the README to ensure it reaches users. A longer landing page is acceptable and expected for feature-rich modules; do not shorten by deleting.
 
-Retain upstream attribution and licensing context. Credit, acknowledgements, donation notes, and third-party license notices for wrapped or bundled work must stay in the README or appear in a clearly linked location. The rule below about community and policy sections does not apply to attribution the project is expected to carry.
+Retain upstream attribution and licensing context. Credit, acknowledgments, donation notes, and third-party license notices for wrapped or bundled work must stay in the README or appear in a clearly linked location. The rule below about community and policy sections does not apply to attribution the project is expected to carry.
 
 README pages should not duplicate generated command documentation. Do not add full command inventories, parameter tables, or long reference sections when those details are already produced from comment-based help.
 
@@ -366,7 +368,7 @@ For an implemented module, also confirm the README keeps a capabilities or usage
 
 ## Documentation ownership
 
-Command details belong in comment-based help and generated documentation. The README can showcase capability, then points to those sources for reference detail.
+Command details belong in comment-based help and generated documentation. The README can showcase capability, then point to those sources for reference detail.
 
 Use these defaults:
 

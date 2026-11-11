@@ -1,5 +1,5 @@
 name: Update index
-description: Run repository index update script via GitHub-Script.
+description: Update the repository index through GitHub-Script.
 inputs:
   ClientID:
     description: GitHub App client ID used by GitHub-Script.

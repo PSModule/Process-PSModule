@@ -1,10 +1,10 @@
 ﻿function Get-PSModuleClassesToExport {
     <#
         .SYNOPSIS
-        Gets the classes to export from the module source code.
+        Get the classes and enums to export from the module source code.
 
         .DESCRIPTION
-        This function will get the classes to export from the module source code.
+        Get-PSModuleClassesToExport finds class and enum declarations in source files.
 
         .EXAMPLE
         Get-PSModuleClassesToExport -SourceFolderPath 'C:\MyModule\src\MyModule'

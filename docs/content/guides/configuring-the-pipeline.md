@@ -14,7 +14,7 @@ This page shows the common changes. For the complete list of settings and their 
 
 ## Example 1 - Defaults with Code Coverage target
 
-This example runs all steps and will require that code coverage is 80% before passing.
+This example runs all steps and requires at least 80% code coverage to pass.
 
 ```yaml
 Test:

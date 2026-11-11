@@ -15,7 +15,7 @@ default-branch push is the sole authority for a stable release. When that push i
 request, its labels and release notes supply the release metadata. See the
 [scenario matrix](reference/scenario-matrix.md) for the resulting job execution.
 
-Everything is packaged into a single reusable workflow so that a module repository only needs a small caller workflow and one settings file. A user configures the behaviour by editing `.github/PSModule.yml`.
+Everything is packaged into a single reusable workflow so that a module repository only needs a small caller workflow and one settings file. A user configures the behavior by editing `.github/PSModule.yml`.
 
 ![Process diagram](media/Process-PSModule.png)
 
@@ -77,16 +77,16 @@ The requirements and architecture behind the pipeline. Primarily for those maint
 
 ## A GitHub & PowerShell development framework
 
-PSModule **infuses GitHub with PowerShell** and brings more to the PowerShell ecosystem by using the GitHub platform to its fullest extent.
-The framework is two things in one: a collection of reusable PowerShell modules, and a set of GitHub Actions workflows that automate the full PowerShell module (software) delivery lifecycle — the DevOps functionality that the ecosystem is missing.
+The PSModule framework has reusable PowerShell modules and GitHub Actions workflows.
+The workflows automate the PowerShell module delivery lifecycle.
 
-We empower PowerShell-savvy developers to effortlessly transform their ideas into impactful solutions, automating the repetitive tasks so developers — whether consumers or contributors — can concentrate on coding without distractions.
+The framework automates repeated tasks so developers can write code for their PowerShell solutions. This applies to both consumers and contributors.
 
-Where we are headed is tracked as [objectives and initiatives](https://msx.no/docs/Ways-of-Working/Goal-Setting/).
+See [objectives and initiatives](https://msx.no/docs/Ways-of-Working/Goal-Setting/) for the goal-setting model.
 
 ## Cross-org guidance
 
-Cross-org standards and reusable solution documentation are now canonical in [MSXOrg/docs](https://msx.no/docs/):
+Cross-org standards and reusable solution documentation are canonical in [MSXOrg/docs](https://msx.no/docs/):
 
 - [Coding Standards](https://msx.no/docs/Coding-Standards/)
 - [Capabilities](https://msx.no/docs/Capabilities/)

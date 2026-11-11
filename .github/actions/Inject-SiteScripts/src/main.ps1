@@ -2,14 +2,14 @@
 
 <#
     .SYNOPSIS
-    Injects shared JavaScript snippets into generated site HTML files.
+    Inject shared JavaScript snippets into generated site HTML files.
 
     .DESCRIPTION
-    Reads scripts from .github/scripts/site-injectors in the checked out workflow
-    repository and injects each script into every HTML file under SitePath, once per file.
+    The script reads .github/scripts/site-injectors in the checked-out workflow repository.
+    It injects each script into every HTML file under SitePath, once per file.
 
     .EXAMPLE
-    ./main.ps1 -SitePath './_site' -WorkflowPath '_wf'
+    ./main.ps1 -SitePath './.PSModule/site/_site' -WorkflowPath '_wf'
 
     .INPUTS
     None.
@@ -19,11 +19,11 @@
 #>
 [CmdletBinding()]
 param(
-    # Path to generated site output directory containing HTML files.
+    # Path to the generated site output directory with HTML files.
     [Parameter(Mandatory)]
     [string]$SitePath,
 
-    # Relative path to the checked out workflow repository root.
+    # Relative path to the checked-out workflow repository root.
     [Parameter(Mandatory)]
     [string]$WorkflowPath
 )

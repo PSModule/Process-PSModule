@@ -34,7 +34,8 @@ Required compatibility work:
   blocks in the same scope.
 - Replace removed `Assert-MockCalled` and `Assert-VerifiableMock`.
 - Add a default mock when a parameter-filtered mock must handle other calls.
-- Review `<...>` name templates because their contents are now expressions.
+- Review `<...>` name templates because Pester v6 evaluates their contents as
+  PowerShell expressions.
 - Replace `Set-ItResult -Pending` with `-Inconclusive`, `-Skipped`, or
   `It -Skip`.
 - Review coverage tracer and output format settings.
@@ -42,7 +43,7 @@ Required compatibility work:
   `New-PesterConfiguration`.
 - Rename a real `None` tag; in v6 it is reserved for untagged tests.
 
-Optional v6 adoption after compatibility is green:
+Optional v6 adoption after the required compatibility checks pass:
 
 - Convert classic `Should -Be` assertions to `Should-Be` commands
   incrementally. Classic syntax remains supported.
@@ -84,7 +85,7 @@ For each test set, add an inventory row to the migration report:
 | Baseline | Run command, result counts, known failures |
 
 Use the inventory to find test sets that are not reachable from the default
-workflow. A green workflow is not evidence that every test set was migrated.
+workflow. A workflow that passes is not evidence that every test set was migrated.
 
 ## Test-state and data contract
 
@@ -146,7 +147,7 @@ Record fixture ownership and availability in the inventory:
 | Shared service | `tests/BeforeAll.ps1` | Before module-local matrix | Deterministic run-scoped name |
 | Cleanup state | `tests/AfterAll.ps1` | Always-run teardown | Same `TestData` and run identity |
 
-Fail loudly when required data or state is absent. Do not use a broad
+If required data or state is absent, fail the test. Do not use a broad
 `try/catch`, an empty default, or an implicit import to turn a missing fixture
 into a passing or skipped test.
 
@@ -157,7 +158,7 @@ For every consumer repository, trace and record these surfaces before editing:
 | Surface | Framework contract to verify | Migration check |
 | --- | --- | --- |
 | `PSModule/Invoke-Pester` | Installs/runs Pester and emits per-suite JSON results and coverage artifacts | Pin/verify Pester 6.1.0, map all inputs to v6 configuration, preserve suite names |
-| `Test-PSModule` action | Selects `tests/Module` or `tests/SourceCode`, resolves `outputs/module` or `src`, and passes paths to `Invoke-Pester` | Confirm path selection, exclusions, module state, and test extension |
+| `Test-PSModule` action | Selects `tests/Module` or `tests/SourceCode`, resolves `.PSModule/module` or `src`, and passes paths to `Invoke-Pester` | Confirm path selection, exclusions, module state, and test extension |
 | Module-local workflow | Downloads the built module, exposes `TestData`, imports the module, then runs module tests | Tests consume the prepared module; no hidden fallback import |
 | Source-code workflow | Runs source tests against the checked-out `src` path | Record how source functions/classes are loaded and which fixtures are explicit |
 | `BeforeAll-ModuleLocal` | Runs exact root `tests/BeforeAll.ps1` once before module-local jobs | Put shared services/data here only when every matrix job needs them |
@@ -168,16 +169,15 @@ For every consumer repository, trace and record these surfaces before editing:
 | `Invoke-ScriptAnalyzer` integration | Publishes `PSModuleLint-*` results alongside test results | Treat lint suites as required result artifacts, not Pester test files |
 | Repository linter | Checks repository/workflow/Markdown files independently of Pester | Include skill and documentation paths in the repository lint inventory |
 
-The current Process-PSModule flow specifically downloads the built module and
-imports it before module-local tests, while `Test-PSModule` resolves source or
-module paths for framework suites. The framework's own importability and
-manifest tests may import/remove the module because import is their subject;
-ordinary consumer tests must not copy that pattern as setup.
+Process-PSModule downloads the built module and imports it before module-local
+tests. `Test-PSModule` resolves source or module paths for framework suites. The
+framework's own importability and manifest tests may import or remove the module
+because import is their subject. Ordinary consumer tests must not copy that
+pattern as setup.
 
 Record the `PSModule/Invoke-Pester` action revision separately from the Pester
-module version. The current Process-PSModule workflows reference that action at
-`v5.1.0`; its revision and its Pester installation policy must both be checked
-when adopting Pester 6.1.0. Updating one does not prove that the other changed.
+module version. When adopting Pester 6.1.0, check both the action revision and its
+Pester installation policy. Updating one does not prove that the other changed.
 
 Use this per-repository checklist:
 
@@ -322,8 +322,8 @@ Should -Invoke Get-Thing -Times 1 -Exactly
 Should -InvokeVerifiable
 ```
 
-In v6, a call that matches no `-ParameterFilter` no longer falls through to
-the real command. Add an unfiltered default mock when other calls are valid:
+In v6, a call that matches no `-ParameterFilter` does not run the real command.
+Add an unfiltered default mock when other calls are valid:
 
 ```powershell
 Mock Get-Thing { 'default' }
@@ -348,8 +348,8 @@ should be reported for follow-up.
 
 ### Name templates
 
-In v6, every `<...>` token in a `Describe`, `Context`, or `It` name is
-evaluated as a PowerShell expression in the test scope. Review arithmetic,
+In v6, Pester evaluates every `<...>` token in a `Describe`, `Context`, or `It`
+name as a PowerShell expression in the test scope. Review arithmetic,
 method calls, and expressions that were literal in v5. Escape a leading `<`
 when literal text is intended:
 
@@ -368,15 +368,15 @@ filters and reports.
 ### Coverage
 
 Pester 6 uses the Profiler tracer by default and `CodeCoverage.UseBreakpoints`
-defaults to `$false`. Keep the new default unless compatibility with historical
-coverage numbers requires:
+defaults to `$false`. Keep this default. If compatibility with earlier coverage
+numbers requires breakpoints, use:
 
 ```powershell
 $config.CodeCoverage.UseBreakpoints = $true
 ```
 
 `CoverageGutters` is removed. Use `JaCoCo` or `Cobertura`; coverage paths are
-already relative to `Run.RepoRoot`.
+relative to `Run.RepoRoot`.
 
 ## Step 5: Standardize Invoke-Pester configuration
 
@@ -403,7 +403,7 @@ Invoke-Pester -Configuration $config
 
 Set `Run.ExcludePath` for intentional exclusions, and keep paths relative to
 the repository root where CI and local runs share the same layout. Do not
-disable failures globally to make a migration green.
+disable failures globally to make migration checks pass.
 
 ## Step 6: Optional v6 features
 
@@ -430,7 +430,7 @@ $value | Should -Be 1       # compatible and may remain
 $value | Should-Be 1        # optional v6 style
 ```
 
-If converting, review behavior rather than applying a blind rename:
+If converting, review each assertion's behavior before changing its name:
 
 - `Should -Not -Be` becomes `Should-NotBe`.
 - Truthy/falsy expectations may need `Should-BeTruthy` or `Should-BeFalsy`;

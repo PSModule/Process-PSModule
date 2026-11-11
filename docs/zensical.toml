@@ -3,7 +3,7 @@
 
 [project]
 site_name = "PSModule / Docs"
-site_url = "https://psmodule.io/docs/"
+site_url = "https://psmodule.io/Process-PSModule/"
 docs_dir = "content"
 repo_name = "PSModule/Process-PSModule"
 repo_url = "https://github.com/PSModule/Process-PSModule"

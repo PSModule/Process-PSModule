@@ -10,11 +10,10 @@ param()
 function Connect-GitHubAppDefaultContext {
     <#
         .SYNOPSIS
-        Ensures a default GitHub App context is active.
+        Select a default GitHub App context.
 
         .DESCRIPTION
-        Uses Connect-GitHubApp with -Default so subsequent GitHub module calls
-        use an authenticated default context instead of anonymous access.
+        Connect-GitHubAppDefaultContext reuses the owner's default GitHub App context or connects with Connect-GitHubApp -Default.
     #>
     [CmdletBinding()]
     param(
@@ -39,11 +38,11 @@ function Connect-GitHubAppDefaultContext {
 function Show-RepoList {
     <#
         .SYNOPSIS
-        Displays a formatted list of repositories for a GitHub organization.
+        Show the repositories for a GitHub organization.
 
         .DESCRIPTION
-        Connects to the specified GitHub organization, retrieves all repositories with their
-        descriptions and custom Type property, then outputs a sorted table grouped by type and name.
+        Show-RepoList gets repositories with their descriptions and custom Type property.
+        It sorts them by type and name, displays a table, and returns the repository objects.
 
         .EXAMPLE
         Show-RepoList
@@ -101,12 +100,12 @@ function Show-RepoList {
 function Update-MDSection {
     <#
         .SYNOPSIS
-        Updates a specific section within a markdown file.
+        Update a named section in a Markdown file.
 
         .DESCRIPTION
-        This function searches for a named section within a markdown file, identified by special comment markers.
-        It replaces the content between the markers with the provided new content. If the markers are not found,
-        an error is thrown. The function supports `-WhatIf` and `-Confirm` parameters for safety.
+        Update-MDSection replaces the content between the named comment markers.
+        If a marker is missing, the function throws an error.
+        It supports the `-WhatIf` and `-Confirm` parameters.
 
         .EXAMPLE
         Update-MDSection -Path '.\profile\README.md' -Name 'MODULE_LIST' -Content 'New module list'
@@ -121,15 +120,15 @@ function Update-MDSection {
     [outputType([void])]
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        # Path to the markdown file where the section should be updated.
+        # Path to the Markdown file to update.
         [Parameter()]
         [string] $Path = 'src\docs\index.md',
 
-        # Name of the section to be updated, used in comment markers.
+        # Section name in the comment markers.
         [Parameter()]
         [string] $Name = 'MODULE_LIST',
 
-        # The new content to insert between the section markers.
+        # Content to insert between the section markers.
         [Parameter()]
         [string] $Content
     )
@@ -163,10 +162,10 @@ function Update-MDSection {
 function Get-TemplateContent {
     <#
         .SYNOPSIS
-        Reads a template file as raw text.
+        Read a template file as text.
 
         .DESCRIPTION
-        Loads a UTF-8 template file from disk and returns the complete content as a string.
+        Get-TemplateContent reads a UTF-8 template file and returns its full content as a string.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -181,11 +180,12 @@ function Get-TemplateContent {
 function Get-PropertyValue {
     <#
         .SYNOPSIS
-        Gets the first non-empty property value from an object.
+        Get the first property value that is not empty.
 
         .DESCRIPTION
-        Evaluates the provided property names in order and returns the first property
-        value that exists and is not null/whitespace. Returns the default value otherwise.
+        Get-PropertyValue reads the named properties in order.
+        It returns the first value that is not null or whitespace.
+        If no value qualifies, it returns the default value.
     #>
     [OutputType([object])]
     [CmdletBinding()]
@@ -221,12 +221,12 @@ function Get-PropertyValue {
 function Invoke-GitHubApi {
     <#
         .SYNOPSIS
-        Invokes a GitHub REST API GET request.
+        Send a GET request to the GitHub REST API.
 
         .DESCRIPTION
-        Calls the GitHub module API wrapper, ensures a default GitHub App context
-        for authenticated requests (unless -Anonymous is used), normalizes wrapped
-        responses, and treats HTTP 404 as missing data.
+        Invoke-GitHubApi calls the GitHub module API wrapper and unwraps its response.
+        HTTP 404 returns no data.
+        With -Anonymous, the request uses anonymous access.
     #>
     [OutputType([object])]
     [CmdletBinding()]
@@ -308,11 +308,10 @@ function Invoke-GitHubApi {
 function Get-RepositoryReadmeContent {
     <#
         .SYNOPSIS
-        Gets a repository README as plain text.
+        Get a repository README as text.
 
         .DESCRIPTION
-        Downloads the repository README from GitHub and decodes the returned
-        Base64 content to UTF-8 text.
+        Get-RepositoryReadmeContent downloads the repository README from GitHub and decodes the Base64 content to UTF-8 text.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -341,11 +340,10 @@ function Get-RepositoryReadmeContent {
 function Get-MarkdownSummary {
     <#
         .SYNOPSIS
-        Extracts a short summary from markdown content.
+        Get a short summary from Markdown content.
 
         .DESCRIPTION
-        Removes common markdown formatting and returns the first non-empty paragraph,
-        suitable for compact previews.
+        Get-MarkdownSummary removes common Markdown formatting and returns the first paragraph that is not empty.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -380,11 +378,11 @@ function Get-MarkdownSummary {
 function ConvertTo-HtmlAttributeValue {
     <#
         .SYNOPSIS
-        Converts text to a safe HTML attribute preview value.
+        Convert text to an HTML attribute value.
 
         .DESCRIPTION
-        Normalizes whitespace, truncates to a max length, and escapes special HTML
-        characters for use in attributes such as title.
+        ConvertTo-HtmlAttributeValue normalizes whitespace and limits the text length.
+        It escapes special HTML characters for attributes such as title.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -414,11 +412,11 @@ function ConvertTo-HtmlAttributeValue {
 function Get-OpenItemCount {
     <#
         .SYNOPSIS
-        Gets the open issue or pull request count for a repository.
+        Get the number of open issues or pull requests in a repository.
 
         .DESCRIPTION
-        Uses GitHub search API with a repository/type/state query and returns
-        the total count.
+        Get-OpenItemCount queries the GitHub search API by repository, type, and state.
+        It returns the total count.
     #>
     [OutputType([int])]
     [CmdletBinding()]
@@ -445,11 +443,11 @@ function Get-OpenItemCount {
 function Get-RepositoryVersion {
     <#
         .SYNOPSIS
-        Gets a repository's latest version identifier.
+        Get a repository's latest version identifier.
 
         .DESCRIPTION
-        Returns the latest release tag/name when available, otherwise falls back
-        to the most recent tag, or N/A.
+        Get-RepositoryVersion returns the latest release tag or name.
+        If no release is available, it returns the first repository tag, or N/A if no tag exists.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -481,11 +479,11 @@ function Get-RepositoryVersion {
 function Get-WorkflowReference {
     <#
         .SYNOPSIS
-        Gets the Process-PSModule workflow reference used by a repository.
+        Get a repository's Process-PSModule workflow reference.
 
         .DESCRIPTION
-        Scans common workflow entry files on the default branch and extracts the
-        `@ref` from `uses: PSModule/Process-PSModule/...@ref` if present.
+        Get-WorkflowReference reads workflow files on the default branch.
+        It extracts `@ref` from `uses: PSModule/Process-PSModule/...@ref` when present.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -649,11 +647,10 @@ function Get-WorkflowReference {
 function Get-ProcessReferenceStatus {
     <#
         .SYNOPSIS
-        Computes status of a Process-PSModule workflow reference.
+        Determine the status of a Process-PSModule workflow reference.
 
         .DESCRIPTION
-        Classifies a workflow reference value relative to the latest available
-        Process-PSModule version.
+        Get-ProcessReferenceStatus compares the reference with the latest available Process-PSModule version.
     #>
     [OutputType([string])]
     [CmdletBinding()]
@@ -699,11 +696,10 @@ function Get-ProcessReferenceStatus {
 function New-ModuleCatalogPage {
     <#
         .SYNOPSIS
-        Creates or updates a generated module catalog page.
+        Create or update a generated module catalog page.
 
         .DESCRIPTION
-        Builds markdown content from module metadata and writes it to the
-        target page path.
+        New-ModuleCatalogPage builds Markdown content from module metadata and writes it to the target page.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -743,11 +739,11 @@ $($ModuleData.About)
 function Update-ActionList {
     <#
         .SYNOPSIS
-        Updates the GitHub Actions list section in the documentation.
+        Update the GitHub Actions list in the documentation.
 
         .DESCRIPTION
-        Generates an HTML table of all GitHub Actions repositories from the module's repo list
-        and updates the ACTION_LIST section in the GitHub Actions index markdown file.
+        Update-ActionList builds an HTML table from GitHub Actions repositories in the repository list.
+        It updates the ACTION_LIST section in the GitHub Actions index Markdown file.
 
         .EXAMPLE
         Update-ActionList
@@ -802,11 +798,11 @@ $actionTableRows</table>
 function Update-ModuleList {
     <#
         .SYNOPSIS
-        Updates the PowerShell modules list section in the documentation.
+        Update the PowerShell module catalog in the documentation.
 
         .DESCRIPTION
-        Generates an enriched HTML table for PSModule module repositories and writes
-        repository-specific catalog pages that summarize README and module metadata.
+        Update-ModuleList builds an HTML table for PSModule module repositories.
+        It writes a catalog page for each repository with a README summary and module metadata.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -929,11 +925,11 @@ function Update-ModuleList {
 function Update-FunctionAppList {
     <#
         .SYNOPSIS
-        Updates the Azure Function Apps list section in the documentation.
+        Update the Azure Function Apps list in the documentation.
 
         .DESCRIPTION
-        Generates an HTML table of all Azure Function App repositories from the module's repo list
-        and updates the FUNCTIONAPP_LIST section in the PowerShell FunctionApps index markdown file.
+        Update-FunctionAppList builds an HTML table from Azure Function App repositories in the repository list.
+        It updates the FUNCTIONAPP_LIST section in the PowerShell FunctionApps index Markdown file.
 
         .EXAMPLE
         Update-FunctionAppList

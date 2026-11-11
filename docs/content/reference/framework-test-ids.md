@@ -5,14 +5,15 @@ description: The PSModule framework tests enforced on module source code and on 
 
 # Framework test IDs
 
-The PSModule framework runs a fixed set of tests on every module, separate from the module's own Pester tests. Each
-source-code test has an ID that can be used to
-[skip it for a single file](../guides/skipping-framework-tests.md).
+The PSModule framework runs a fixed set of tests on every module. These tests are separate from the module's own Pester tests.
+Each source-code test has an ID. Use the ID to
+[skip the test for a single file](../guides/skipping-framework-tests.md).
 
 ## Source-code tests
 
-Run by the [Test source code](pipeline-stages.md#test-source-code) job against files in `src/`. Implemented in
-[PSModule - SourceCode tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/SourceCode/PSModule/PSModule.Tests.ps1).
+The [Test source code](pipeline-stages.md#test-source-code) job runs these tests against files in `src/`.
+The [PSModule - SourceCode tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/SourceCode/PSModule/PSModule.Tests.ps1)
+file defines them.
 
 | ID | Category | Description | Example skip comment |
 | ---- | ---------- | ------------- | ---------------------- |
@@ -30,17 +31,18 @@ Run by the [Test source code](pipeline-stages.md#test-source-code) job against f
 
 ## Module tests
 
-Run by the [Framework test](pipeline-stages.md#framework-test) job against the compiled module in
-`outputs/module`. Implemented in
-[PSModule - Module tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/Module/PSModule/PSModule.Tests.ps1).
+The [Framework test](pipeline-stages.md#framework-test) job runs these tests against the compiled module in
+`.PSModule/module`. The
+[PSModule - Module tests](https://github.com/PSModule/Process-PSModule/blob/main/.github/actions/Test-PSModule/src/tests/Module/PSModule/PSModule.Tests.ps1)
+file defines them.
 
 | Name | Description |
 | ---- | ----------- |
 | Module Manifest exists | Verifies that a module manifest file is present. |
 | Module Manifest is valid | Verifies that the module manifest file is valid. |
-| Module import validation | Verifies that the built module imports cleanly. |
+| Module import validation | Verifies that an import of the built module does not throw an error. |
 
-Module tests typically don't need to be skipped, as they validate the final built module.
+In most cases, keep module tests enabled to validate the final built module.
 
 ## Related
 

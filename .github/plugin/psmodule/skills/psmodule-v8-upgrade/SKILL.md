@@ -53,7 +53,8 @@ the template's default files before adding, removing, or relocating anything.
 The template is a starting point, not a reason to overwrite module-specific
 content.
 
-The current template's default repository anatomy is:
+If the selected immutable template revision has this layout, its default
+repository anatomy is:
 
 ```text
 <ModuleName>/
@@ -124,10 +125,12 @@ Treat files and directories as follows:
   Preserve the consumer's local onboarding contract while updating stale links.
 
 If the template revision and the consumer's existing layout disagree, record
-the difference and migrate only the requested integration surface. The
-template's `.github/zensical.toml` is the supported Process-PSModule consumer
-configuration. Do not move its site configuration, content, or theme assets
-into `docs/` as part of a v8 upgrade.
+the difference and migrate only the requested integration surface.
+
+If the selected immutable template revision uses `.github/zensical.toml`,
+retain that configuration for the supported Process-PSModule site build.
+Do not move its site configuration, content, or theme assets into `docs/`
+as part of a v8 upgrade.
 
 ## Caller workflow contract
 
