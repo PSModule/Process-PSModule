@@ -5,4 +5,4 @@ abbreviations: []
 
 # Template
 
-A pre-designed format or structure that can be used as a starting point for creating new files, projects, or configurations.
+A template gives a format or structure for new files, projects, or configurations.

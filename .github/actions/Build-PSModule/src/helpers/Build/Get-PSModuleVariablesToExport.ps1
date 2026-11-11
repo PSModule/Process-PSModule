@@ -1,10 +1,10 @@
 ﻿function Get-PSModuleVariablesToExport {
     <#
         .SYNOPSIS
-        Gets the variables to export from the module manifest.
+        Get the variables to export from the module source code.
 
         .DESCRIPTION
-        This function will get the variables to export from the module manifest.
+        Get-PSModuleVariablesToExport reads root-level assignments in public variable files.
 
         .EXAMPLE
         Get-PSModuleVariablesToExport -SourceFolderPath 'C:\MyModule\src\MyModule'
@@ -17,7 +17,7 @@
     [OutputType([Collections.Generic.List[string]])]
     [CmdletBinding()]
     param(
-        # Path to the folder where the module source code is located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [string] $SourceFolderPath
     )

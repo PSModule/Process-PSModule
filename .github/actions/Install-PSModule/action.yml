@@ -1,5 +1,5 @@
 name: Install-PSModule
-description: Installs PSModule.
+description: Install the framework's bundled PSModule helper module.
 
 runs:
   using: composite

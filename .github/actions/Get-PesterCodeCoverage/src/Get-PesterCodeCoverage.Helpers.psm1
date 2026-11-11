@@ -1,18 +1,20 @@
 ﻿function Normalize-IndentationExceptFirst {
     <#
     .SYNOPSIS
-    Normalizes the indentation of a multi-line string, except for the first line.
+    Normalize multiline string indentation except on the first line.
 
     .DESCRIPTION
-    This function takes a multi-line string and normalizes the indentation of all lines except the first one.
-    It removes the minimum leading whitespace from all subsequent lines.
+    Normalize-IndentationExceptFirst leaves the first line unchanged.
+    It removes the minimum leading whitespace from each remaining line.
 
     .PARAMETER Code
-    The multi-line string to normalize.
+    The multiline string to normalize.
 
     .OUTPUTS
-    Returns the normalized multi-line string.
-    s#>
+    System.String
+
+    The multiline string with adjusted indentation.
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Scope = 'Function', Justification = 'Function isn''t exported.')]
     [OutputType([string])]
     [CmdletBinding()]
@@ -24,12 +26,12 @@
     # Split the code into lines
     $lines = $Code -split "`r?`n"
 
-    # If there's 0 or 1 line, there's nothing special to do
+    # A single-line string needs no indentation adjustment.
     if ($lines.Count -le 1) {
         return $Code
     }
 
-    # The first line stays as-is; we skip it for indentation measurement
+    # Exclude the first line from the indentation measurement.
     $firstLine = $lines[0]
     $subsequentLines = $lines[1..($lines.Count - 1)]
 
@@ -47,13 +49,13 @@
     for ($i = 0; $i -lt $subsequentLines.Count; $i++) {
         $line = $subsequentLines[$i]
 
-        # Only attempt to remove indentation if we actually have some whitespace
+        # Remove indentation only when the line starts with whitespace.
         if ($line -match '^(\s+)(.*)$') {
             # $matches[1] = leading whitespace; $matches[2] = the rest
             $leading = $matches[1]
             $rest = $matches[2]
 
-            # If we have enough whitespace to remove $minIndent worth, do it
+            # Remove the minimum indentation when the prefix is long enough.
             if ($leading.Length -ge $minIndent) {
                 $leading = $leading.Substring($minIndent)
             }

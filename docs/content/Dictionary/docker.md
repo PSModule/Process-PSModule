@@ -5,4 +5,4 @@ abbreviations: []
 
 # Docker
 
-A platform for developing, shipping, and running applications using containerization technology.
+Docker is a platform with tools to develop, distribute, and run applications in containers.
