@@ -67,7 +67,6 @@ The current template's default repository anatomy is:
 │   │   ├── .powershell-psscriptanalyzer.psd1
 │   │   └── .textlintrc
 │   ├── PSModule.yml
-│   ├── pull_request_template.md
 │   ├── release.yml
 │   ├── workflows/
 │       └── Process-PSModule.yml
@@ -107,7 +106,7 @@ Treat files and directories as follows:
   Preserve its intent and only migrate paths when the framework contract
   requires it.
 - `.github/PSModule.yml`, linters, Dependabot, CODEOWNERS, release metadata,
-  pull-request templates, and repository guidance are configuration surfaces.
+  and repository guidance are configuration surfaces.
   Inspect and preserve them independently of the caller workflow.
 - `tests/BeforeAll.ps1` and `tests/AfterAll.ps1` are optional root-level
   module-local phases, not recursively discovered test files.
