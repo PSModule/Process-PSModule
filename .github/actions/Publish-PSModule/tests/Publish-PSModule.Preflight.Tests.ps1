@@ -244,6 +244,27 @@ Describe 'Publish-PSModule source-bound preflight' {
         $response.Value.Count | Should -Be 0
     }
 
+    It 'rejects an array-valued release tag before <Controller> writes' -ForEach @(
+        @{ Controller = 'publisher' }
+        @{ Controller = 'release' }
+    ) {
+        Set-PSModuleFixtureClaim -State $script:state -Claim $script:state.ExpectedClaim
+        $script:state.Release = [pscustomobject]@{
+            id = 10; tag_name = @('v1.2.4'); html_url = 'https://github.com/PSModule/TestModule/releases/tag/v1.2.4'
+            prerelease = $false; draft = $false; body = 'Direct release notes.'; assets = @()
+        }
+        $controllerPath = $script:publishScriptPath
+        if ($Controller -ceq 'release') { $controllerPath = $script:releaseScriptPath }
+        $failure = $null
+
+        try { & $controllerPath 1>$null 6>$null } catch { $failure = $_ }
+
+        $script:state.GalleryWrites | Should -Be 0
+        $script:state.GitHubWrites | Should -Be 0
+        $failure | Should -Not -BeNullOrEmpty
+        $failure.Exception.Message | Should -Match 'existing release context'
+    }
+
     It 'rejects a Gallery-only package with no source and artifact proof' {
         $script:state.Package = [pscustomobject]@{ Name = 'TestModule'; Version = '1.2.4' }
 
