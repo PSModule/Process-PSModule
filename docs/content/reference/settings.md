@@ -27,11 +27,20 @@ while retaining every default they still need.
 
 For worked examples, see [Configuring the pipeline](../guides/configuring-the-pipeline.md).
 
+`Publish.Module.DefaultBump` accepts exactly `patch`, `minor`, or `major`; one configured bump label overrides it.
+The file selected by the supported `SettingsPath` input supplies repository publication settings. An omitted bump
+inherits the shared patch default. Unknown publication keys and null, empty, or invalid bump values are rejected.
+No scalar `DefaultBump` workflow input is declared.
+
+The internal runtime `Publish.Module.DefaultBumpSource` records `SharedDefault` or `Publish.Module.DefaultBump`.
+It is derived provenance, not an authorable setting. A configured skip label stops new-version resolution and
+publication; skip cannot be combined with configured bump or prerelease intent.
+
 ## Available settings
 
 | Name                                      | Type      | Description                                                                                                                                                          | Default             |
 | ----------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| `Name`                                    | `String`  | Name of the module to publish. Defaults to the repository name.                                                                                                      | `null`              |
+| `Name`                                    | `String`  | Name of the module to publish. Omit the key to use the repository name.                                                                                              | Repository name     |
 | `ImportantFilePatterns`                   | `Array`   | Regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. When set, fully replaces the defaults. | `['^src/', '^README\.md$']` |
 | `Test.Skip`                               | `Boolean` | Skip all tests                                                                                                                                                       | `false`             |
 | `Test.Linux.Skip`                         | `Boolean` | Skip tests on Linux                                                                                                                                                  | `false`             |
@@ -61,14 +70,15 @@ For worked examples, see [Configuring the pipeline](../guides/configuring-the-pi
 | `Publish.Site.Skip`                       | `Boolean` | Skip deployment of the generated documentation site while retaining the site build and artifact                                                                      | `false`             |
 | `Publish.Module.Skip`                     | `Boolean` | Skip module publishing                                                                                                                                               | `false`             |
 | `Publish.Module.AutoCleanup`              | `Boolean` | Automatically clean up old prerelease tags after a stable default-branch release or when a PR is abandoned                                                           | `true`              |
-| `Publish.Module.AutoPatching`             | `Boolean` | Default an unlabeled pull-request release to `Patch`; direct default-branch releases are always `Patch`                                                            | `true`              |
+| `Publish.Module.DefaultBump`              | `String`  | Bump used when no configured bump label is present; accepts exactly `patch`, `minor`, or `major`                                                                      | `'patch'`           |
 | `Publish.Module.IncrementalPrerelease`    | `Boolean` | Use incremental prerelease versioning                                                                                                                                | `true`              |
 | `Publish.Module.DatePrereleaseFormat`     | `String`  | Format for date-based prerelease (uses [.NET DateTime format strings](https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings)) | `''`                |
 | `Publish.Module.VersionPrefix`            | `String`  | Prefix for version tags                                                                                                                                              | `'v'`               |
-| `Publish.Module.MajorLabels`              | `String`  | Labels indicating a major version bump                                                                                                                               | `'major, breaking'` |
-| `Publish.Module.MinorLabels`              | `String`  | Labels indicating a minor version bump                                                                                                                               | `'minor, feature'`  |
-| `Publish.Module.PatchLabels`              | `String`  | Labels indicating a patch version bump                                                                                                                               | `'patch, fix'`      |
-| `Publish.Module.IgnoreLabels`             | `String`  | Labels indicating no release                                                                                                                                         | `'NoRelease'`       |
+| `Publish.Module.MajorLabels`              | `String`  | Labels indicating a major version bump                                                                                                                               | `'release:major'`   |
+| `Publish.Module.MinorLabels`              | `String`  | Labels indicating a minor version bump                                                                                                                               | `'release:minor'`   |
+| `Publish.Module.PatchLabels`              | `String`  | Labels indicating a patch version bump                                                                                                                               | `'release:patch'`   |
+| `Publish.Module.IgnoreLabels`             | `String`  | Labels indicating no release                                                                                                                                         | `'release:skip'`    |
+| `Publish.Module.PrereleaseLabels`         | `String`  | Labels indicating prerelease mode using the explicit or default bump                                                                                                | `'release:prerelease'` |
 | `Publish.Module.UsePRTitleAsReleaseName`  | `Boolean` | Use the PR title as the GitHub release name instead of version string                                                                                                | `false`             |
 | `Publish.Module.UsePRBodyAsReleaseNotes`  | `Boolean` | Use the PR body as the release notes content                                                                                                                         | `true`              |
 | `Publish.Module.UsePRTitleAsNotesHeading` | `Boolean` | Prepend PR title as H1 heading with PR number link before the body                                                                                                   | `true`              |
@@ -82,7 +92,7 @@ For worked examples, see [Configuring the pipeline](../guides/configuring-the-pi
 <summary>`PSModule.yml` with all defaults</summary>
 
 ```yaml
-Name: null
+# Omit Name to use the repository name.
 
 ImportantFilePatterns:
   - '^src/'
@@ -143,14 +153,15 @@ Publish:
   Module:
     Skip: false
     AutoCleanup: true
-    AutoPatching: true
+    DefaultBump: patch
     IncrementalPrerelease: true
     DatePrereleaseFormat: ''
     VersionPrefix: 'v'
-    MajorLabels: 'major, breaking'
-    MinorLabels: 'minor, feature'
-    PatchLabels: 'patch, fix'
-    IgnoreLabels: 'NoRelease'
+    MajorLabels: 'release:major'
+    MinorLabels: 'release:minor'
+    PatchLabels: 'release:patch'
+    IgnoreLabels: 'release:skip'
+    PrereleaseLabels: 'release:prerelease'
     UsePRTitleAsReleaseName: false
     UsePRBodyAsReleaseNotes: true
     UsePRTitleAsNotesHeading: true

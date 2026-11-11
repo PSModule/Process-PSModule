@@ -129,6 +129,12 @@
         "Module": {
           "type": "object",
           "description": "Module publish configuration",
+          "additionalProperties": false,
+          "not": {
+            "required": [
+              "AutoPatching"
+            ]
+          },
           "properties": {
             "Skip": {
               "type": "boolean",
@@ -138,9 +144,15 @@
               "type": "boolean",
               "description": "When enabled (default: true), automatically cleans up old prerelease tags when merging to main or when a PR is abandoned"
             },
-            "AutoPatching": {
-              "type": "boolean",
-              "description": "Automatically apply patches"
+            "DefaultBump": {
+              "type": "string",
+              "enum": [
+                "patch",
+                "minor",
+                "major"
+              ],
+              "description": "Version bump used when no configured bump label is present",
+              "default": "patch"
             },
             "IncrementalPrerelease": {
               "type": "boolean",
@@ -156,23 +168,28 @@
             },
             "MajorLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger a major version bump"
+              "description": "Comma-separated labels that trigger a major version bump",
+              "default": "release:major"
             },
             "MinorLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger a minor version bump"
+              "description": "Comma-separated labels that trigger a minor version bump",
+              "default": "release:minor"
             },
             "PatchLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger a patch version bump"
+              "description": "Comma-separated labels that trigger a patch version bump",
+              "default": "release:patch"
             },
             "IgnoreLabels": {
               "type": "string",
-              "description": "Comma-separated labels that prevent a release"
+              "description": "Comma-separated labels that prevent a release",
+              "default": "release:skip"
             },
             "PrereleaseLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger a prerelease"
+              "description": "Comma-separated labels that trigger a prerelease",
+              "default": "release:prerelease"
             },
             "UsePRTitleAsReleaseName": {
               "type": "boolean",
@@ -194,6 +211,49 @@
                 "None"
               ],
               "description": "The type of release to create: Release (stable), Prerelease, or None."
+            },
+            "DefaultBumpSource": {
+              "type": "string",
+              "enum": [
+                "SharedDefault",
+                "Publish.Module.DefaultBump"
+              ],
+              "description": "Derived runtime provenance; not an authorable setting."
+            },
+            "Desired": {
+              "type": "boolean",
+              "description": "Derived runtime publication intent."
+            },
+            "Enabled": {
+              "type": "boolean",
+              "description": "Derived runtime publication execution state."
+            },
+            "Resolution": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Derived version-resolution output, not authorable settings.",
+              "properties": {
+                "Version": {
+                  "type": "string"
+                },
+                "Prerelease": {
+                  "type": "string"
+                },
+                "FullVersion": {
+                  "type": "string"
+                },
+                "ReleaseType": {
+                  "type": "string",
+                  "enum": [
+                    "Release",
+                    "Prerelease",
+                    "None"
+                  ]
+                },
+                "CreateRelease": {
+                  "type": "boolean"
+                }
+              }
             }
           }
         },

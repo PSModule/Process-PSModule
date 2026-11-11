@@ -1,13 +1,13 @@
 ---
 title: Versioning and releases
-description: How Process-PSModule resolves a version from pull-request labels, publishes stable releases from default-branch pushes, and cleans up prereleases.
+description: How Process-PSModule resolves configured defaults and labels, publishes default-branch releases, and safely recovers publication.
 ---
 
 # Versioning and releases
 
 Process-PSModule orchestrates the module lifecycle through GitHub Actions. Version progression is label-driven in pull
-requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs only from a push to
-the configured default branch.
+requests and resolved once, in the Plan stage, before anything is built. Stable publication occurs from a push or a
+supported recovery dispatch on the configured default branch.
 
 ## Flow
 
@@ -25,22 +25,27 @@ stable release from the exact pushed commit.
 
 ## Version labels
 
-The bump comes from the pull-request label; the next version is computed as `current version + bump`.
+An explicit configured bump label overrides `Publish.Module.DefaultBump`. Without a bump label, that setting supplies
+`patch`, `minor`, or `major`, with `patch` as the default. The next version is computed as `current version + bump`.
 
 | Label | Effect |
 | --- | --- |
-| `major` / `breaking` | Breaking change; bump `MAJOR`. |
-| `minor` / `feature` | New feature; bump `MINOR`. |
-| `patch` / `fix` | Bugfix; bump `PATCH`. |
-| `Prerelease` | Publish as a prerelease; not promoted to latest. |
-| `NoRelease` | Run the pipeline, skip publication. |
+| `release:major` | Breaking change; bump `MAJOR`. |
+| `release:minor` | New feature; bump `MINOR`. |
+| `release:patch` | Bugfix; bump `PATCH`. |
+| `release:prerelease` | Publish the resolved bump as a prerelease; not promoted to latest. |
+| `release:skip` | Run the pipeline, skip publication. |
 
-Multiple or conflicting version labels (for example `major` together with `NoRelease`) are rejected and block the merge.
-With `AutoPatching: true`, an unlabeled pull request defaults to `Patch`; otherwise it needs an explicit version label.
-Direct pushes and manual dispatches on the default branch always use `Patch`, regardless of `AutoPatching`.
+Multiple configured bump labels, or skip combined with bump or prerelease intent, fail Plan even for an open PR that
+does not publish. A valid skip stops new-version resolution and publication. Closed-PR cleanup ignores release-label
+conflicts because it cannot publish. Invalid publication settings fail independently of labels.
+Direct releases without an associated merged pull request also use `Publish.Module.DefaultBump`. A default-branch
+manual dispatch at a merge commit resolves the same pull request and label as the equivalent push; an ambiguous
+merged association fails rather than discarding release intent.
+A documentation-only push that cannot publish is not rejected for an unrelated merged association.
 
-The label names are configurable through `Publish.Module.MajorLabels`, `MinorLabels`, `PatchLabels`, and
-`IgnoreLabels` — see [Settings](../reference/settings.md).
+These are default names. They remain configurable through `Publish.Module.MajorLabels`, `MinorLabels`, `PatchLabels`,
+`PrereleaseLabels`, and `IgnoreLabels` — see [Settings](../reference/settings.md).
 
 ## Branch types
 
@@ -53,11 +58,40 @@ unambiguous latest version. Use a
 when changes genuinely depend on each other; independent changes remain separate
 short-lived pull requests targeting `main`.
 
+## Recovering a failed release
+
+Before retrying, identify the original Plan output's version/tag and source SHA. Retry only when the tag is unclaimed
+or its actual immutable commit belongs to that original source. Resolve annotated tags when checking; a release's
+`target_commitish` hint is not source proof. If a newer run claimed the same version for different source or contents,
+stop and reconcile the conflict instead of retagging or overwriting the published artifact.
+
+Rerun the failed jobs in the original workflow run to preserve its source SHA, resolved version, and any successful
+build artifacts. A manual dispatch on the default branch uses that branch's current tip, not an arbitrary historical
+SHA. It can recover the intended merge only while that merge remains the tip. If the branch has advanced, rerun the
+original workflow rather than dispatching the newer tip or selecting an old tag; a tag dispatch is not a
+default-branch recovery.
+
+A new dispatch is rejected when that commit already has a published GitHub release. It must not compute a second
+bump after release creation succeeded but asset upload failed. Use the original failed publication job with its
+already-resolved version instead. The publisher verifies tag/source ownership, resumes a missing ZIP, retains an
+identical existing asset, and rejects different or unverifiable contents without `--clobber`.
+
+An ambiguous merged-PR association stops a release-capable run instead of falling back to patch. Prerelease cleanup
+uses exact PR and source provenance for source-bound prereleases. The producer appends a controller-owned footer
+after the complete notes and tags the original build commit, so a prerelease retry verifies the same source used at
+creation. Legacy branch-targeted records are retained because short refs do not identify their producing PR or
+repository. Stable releases, another PR's records, and the current published tag are retained.
+
 ## Prereleases
 
-A pull request labeled `Prerelease` publishes a prerelease version (for example `v1.2.3-pr.1.5`) that is installable
-but not promoted as latest. When that pull request is merged with a version label, the stable version is computed from
-the label and the current version on `main`.
+A pull request labeled with the configured prerelease label (`release:prerelease` by default) publishes an installable
+prerelease using its explicit bump or `Publish.Module.DefaultBump`. Prerelease mode does not select a level by itself
+and does not promote the version as latest. When the pull request merges, the stable version uses the resolved bump
+and the current version on `main`.
+
+The caller's `pull_request` trigger includes `unlabeled` so removing a bump label recomputes a prerelease from the
+effective default. Removing the prerelease label stops publication but retains normal validation. A non-publishing
+open PR still validates its bump/default and builds a preview; it is not treated as closed-PR cleanup.
 
 When a pull request closes, the prerelease versions and tags created for it are removed, so abandoned or promoted work
 leaves no orphaned prereleases. This is controlled by `Publish.Module.AutoCleanup`.

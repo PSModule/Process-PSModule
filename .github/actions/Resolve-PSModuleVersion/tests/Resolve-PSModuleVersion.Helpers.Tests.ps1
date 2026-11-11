@@ -1,4 +1,4 @@
-﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', '',
     Justification = 'Variables are assigned in BeforeAll and used inside It blocks.'
 )]
@@ -7,6 +7,7 @@ param()
 
 BeforeAll {
     Import-Module -Name 'PSModule' -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../../Get-PSModuleSettings/src/Get-PSModuleSettings.Helpers.psm1') -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '../src/Resolve-PSModuleVersion.Helpers.psm1') -Force
 
     function Get-TestConfiguration {
@@ -17,9 +18,9 @@ BeforeAll {
         [CmdletBinding()]
         [OutputType([PSCustomObject])]
         param(
-            # Whether an unlabeled pull request is treated as a patch.
+            # The bump used when no configured bump label is present.
             [Parameter()]
-            [bool] $AutoPatching = $true,
+            [string] $DefaultBump = 'patch',
 
             # Whether prereleases get an incrementing number suffix.
             [Parameter()]
@@ -35,19 +36,50 @@ BeforeAll {
 
             # The release type resolved from the pull request labels.
             [Parameter()]
-            [string] $ReleaseType = 'Release'
+            [string] $ReleaseType = 'Release',
+
+            # Whether the normalized event is closed-PR cleanup.
+            [Parameter()]
+            [switch] $CleanupOnly,
+
+            # Whether module publication is disabled by repository settings.
+            [Parameter()]
+            [switch] $Skip,
+
+            # Labels indicating no release.
+            [Parameter()]
+            [string[]] $IgnoreLabels = @('release:skip'),
+
+            # Labels indicating a major release.
+            [Parameter()]
+            [string[]] $MajorLabels = @('release:major'),
+
+            # Labels indicating a minor release.
+            [Parameter()]
+            [string[]] $MinorLabels = @('release:minor'),
+
+            # Labels indicating a patch release.
+            [Parameter()]
+            [string[]] $PatchLabels = @('release:patch'),
+
+            # Labels indicating prerelease mode.
+            [Parameter()]
+            [string[]] $PrereleaseLabels = @('release:prerelease')
         )
 
         [PSCustomObject]@{
-            AutoPatching          = $AutoPatching
+            DefaultBump           = $DefaultBump
             IncrementalPrerelease = $IncrementalPrerelease
             DatePrereleaseFormat  = $DatePrereleaseFormat
             VersionPrefix         = $VersionPrefix
             ReleaseType           = $ReleaseType
-            IgnoreLabels          = @('NoRelease')
-            MajorLabels           = @('major')
-            MinorLabels           = @('minor')
-            PatchLabels           = @('patch')
+            IsCleanupOnly         = $CleanupOnly.IsPresent
+            Skip                  = $Skip.IsPresent
+            IgnoreLabels          = $IgnoreLabels
+            MajorLabels           = $MajorLabels
+            MinorLabels           = $MinorLabels
+            PatchLabels           = $PatchLabels
+            PrereleaseLabels      = $PrereleaseLabels
         }
     }
 
@@ -91,8 +123,68 @@ BeforeAll {
 }
 
 Describe 'Resolve-PSModuleVersion' {
+    Describe 'Get-PublishConfiguration' {
+        It 'distinguishes cleanup from an open preview or recovered stable release' -ForEach @(
+            @{ EventName = 'pull_request'; EventAction = 'labeled'; Closed = $false; Cleanup = $false }
+            @{ EventName = 'pull_request'; EventAction = 'closed'; Closed = $true; Cleanup = $true }
+            @{ EventName = 'workflow_dispatch'; EventAction = ''; Closed = $true; Cleanup = $false }
+        ) {
+            $publishModule = Resolve-PSModulePublishSetting -PublishModule $null
+            $publishModule | Add-Member -NotePropertyName ReleaseType -NotePropertyValue 'None'
+            $json = @{
+                Publish = @{ Module = $publishModule }
+                Context = @{
+                    EventName = $EventName; EventAction = $EventAction; PullRequest = @{ Closed = $Closed }
+                }
+            } | ConvertTo-Json -Depth 6
+
+            $configuration = Get-PublishConfiguration -SettingsJson $json
+
+            $configuration.IsCleanupOnly | Should -Be $Cleanup
+            $configuration.PrereleaseLabels | Should -Be @('release:prerelease')
+        }
+
+        It 'rejects legacy AutoPatching even when a valid DefaultBump is also present' {
+            $json = @{
+                Publish = @{ Module = @{ DefaultBump = 'patch'; AutoPatching = $true; ReleaseType = 'Release' } }
+            } | ConvertTo-Json -Depth 5
+
+            { Get-PublishConfiguration -SettingsJson $json } | Should -Throw '*AutoPatching*DefaultBump*'
+        }
+
+        It 'maps DefaultBump and configured labels from settings JSON' {
+            $settings = @{
+                Publish = @{
+                    Module = @{
+                        DefaultBump           = 'major'
+                        IncrementalPrerelease = $true
+                        DatePrereleaseFormat  = ''
+                        VersionPrefix         = 'v'
+                        ReleaseType           = 'Release'
+                        IgnoreLabels          = 'custom:skip'
+                        MajorLabels           = 'custom:major'
+                        MinorLabels           = 'custom:minor'
+                        PatchLabels           = 'custom:patch'
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $configuration = Get-PublishConfiguration -SettingsJson $settings
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @('custom:minor')
+            }
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $configuration.DefaultBump | Should -BeExactly 'major'
+            $configuration.MinorLabels | Should -Be @('custom:minor')
+            $result.MinorRelease | Should -BeTrue
+            $result.MajorRelease | Should -BeFalse
+        }
+    }
+
     Describe 'ConvertFrom-GitHubReleaseJson' {
-        Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
+        Pester\Context 'ConvertFrom-GitHubReleaseJson - repository without releases' {
             It 'ConvertFrom-GitHubReleaseJson - returns an empty array for an empty JSON array' {
                 $result = ConvertFrom-GitHubReleaseJson -Json '[]'
                 @($result).Count | Should -Be 0
@@ -109,7 +201,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'ConvertFrom-GitHubReleaseJson - releases present' {
+        Pester\Context 'ConvertFrom-GitHubReleaseJson - releases present' {
             It 'ConvertFrom-GitHubReleaseJson - returns a flat array of release objects' {
                 $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
                 $result = @(ConvertFrom-GitHubReleaseJson -Json $json)
@@ -132,14 +224,14 @@ Describe 'Resolve-PSModuleVersion' {
 
             It 'ConvertFrom-GitHubReleaseJson - survives the log group wrapper without nesting' {
                 $json = '[{"tagName":"v1.2.3","isLatest":true},{"tagName":"v1.2.2","isLatest":false}]'
-                $releases = @(LogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
+                $releases = @(Set-GitHubLogGroup 'Get releases - GitHub' { ConvertFrom-GitHubReleaseJson -Json $json })
                 $releases.Count | Should -Be 2
                 $releases[0].tagName | Should -Be 'v1.2.3'
             }
         }
 
         Describe 'Get-ResolvedModuleVersion' {
-            Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
+            Pester\Context 'Get-ResolvedModuleVersion - Gallery-only stable publication' {
                 It 'Get-ResolvedModuleVersion - reuses the Gallery version that is the next GitHub patch release' {
                     $params = @{
                         GitHubVersion    = New-PSSemVer -Version '1.2.3'
@@ -174,7 +266,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-LatestGitHubVersion' {
-        Context 'Get-LatestGitHubVersion - repository without releases' {
+        Pester\Context 'Get-LatestGitHubVersion - repository without releases' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when the releases list is null' {
                 $result = Get-LatestGitHubVersion -Releases $null
                 $result.ToString() | Should -Be '0.0.0'
@@ -195,7 +287,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestGitHubVersion - releases present but none marked as latest' {
+        Pester\Context 'Get-LatestGitHubVersion - releases present but none marked as latest' {
             It 'Get-LatestGitHubVersion - returns 0.0.0 when no release is marked as latest' {
                 $releases = @(
                     [PSCustomObject]@{ tagName = 'v1.2.3'; isLatest = $false; isPrerelease = $false }
@@ -214,7 +306,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestGitHubVersion - releases present' {
+        Pester\Context 'Get-LatestGitHubVersion - releases present' {
             It 'Get-LatestGitHubVersion - returns the version of the release marked as latest' {
                 $releases = @(
                     [PSCustomObject]@{ tagName = 'v1.2.2'; isLatest = $false; isPrerelease = $false }
@@ -238,7 +330,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-LatestPublishedVersion' {
-        Context 'Get-LatestPublishedVersion - brand-new module' {
+        Pester\Context 'Get-LatestPublishedVersion - brand-new module' {
             It 'Get-LatestPublishedVersion - returns 0.0.0 when neither source has a version' {
                 $result = Get-LatestPublishedVersion -GitHubVersion $null -PSGalleryVersion $null
                 $result.ToString() | Should -Be '0.0.0'
@@ -259,7 +351,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestPublishedVersion - one source has a version' {
+        Pester\Context 'Get-LatestPublishedVersion - one source has a version' {
             It 'Get-LatestPublishedVersion - returns the GitHub version when the gallery has none' {
                 $result = Get-LatestPublishedVersion -GitHubVersion (New-PSSemVer -Version '1.2.3') -PSGalleryVersion $null
                 $result.ToString() | Should -Be '1.2.3'
@@ -271,7 +363,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-LatestPublishedVersion - both sources have a version' {
+        Pester\Context 'Get-LatestPublishedVersion - both sources have a version' {
             It 'Get-LatestPublishedVersion - returns the highest of the two versions' {
                 $params = @{
                     GitHubVersion    = New-PSSemVer -Version '1.4.2'
@@ -284,7 +376,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-NextPrereleaseNumber' {
-        Context 'Get-NextPrereleaseNumber - repository without releases' {
+        Pester\Context 'Get-NextPrereleaseNumber - repository without releases' {
             It 'Get-NextPrereleaseNumber - returns 001 when the releases list is null' {
                 $params = @{
                     ModuleName     = 'PSModuleNonExistentModuleForTesting'
@@ -315,7 +407,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-NextPrereleaseNumber - matching prereleases exist on GitHub' {
+        Pester\Context 'Get-NextPrereleaseNumber - matching prereleases exist on GitHub' {
             It 'Get-NextPrereleaseNumber - returns the number after the highest matching GitHub prerelease' {
                 $params = @{
                     ModuleName     = 'PSModuleNonExistentModuleForTesting'
@@ -332,7 +424,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Get-NextModuleVersion' {
-        Context 'Get-NextModuleVersion - brand-new module without releases' {
+        Pester\Context 'Get-NextModuleVersion - brand-new module without releases' {
             It 'Get-NextModuleVersion - resolves the first patch release to 0.0.1' {
                 $params = @{
                     LatestVersion = New-PSSemVer -Version '0.0.0'
@@ -417,7 +509,7 @@ Describe 'Resolve-PSModuleVersion' {
             }
         }
 
-        Context 'Get-NextModuleVersion - existing module with releases' {
+        Pester\Context 'Get-NextModuleVersion - existing module with releases' {
             It 'Get-NextModuleVersion - bumps the patch version of the latest release' {
                 $params = @{
                     LatestVersion = New-PSSemVer -Version '1.2.3'
@@ -435,7 +527,7 @@ Describe 'Resolve-PSModuleVersion' {
     }
 
     Describe 'Resolve-PSModuleVersion' {
-        Context 'Resolve-PSModuleVersion - brand-new module with no GitHub release and no gallery version' {
+        Pester\Context 'Resolve-PSModuleVersion - brand-new module with no GitHub release and no gallery version' {
             It 'Resolve-PSModuleVersion - resolves the full chain to the first patch version' {
                 $githubVersion = Get-LatestGitHubVersion -Releases @()
                 $latestVersion = Get-LatestPublishedVersion -GitHubVersion $githubVersion -PSGalleryVersion $null
@@ -495,7 +587,7 @@ Describe 'Resolve-PSModuleVersion' {
                     PullRequest           = @{
                         Number  = 390
                         HeadRef = 'feature/push-release'
-                        Labels  = @('minor')
+                        Labels  = @('release:minor')
                     }
                 }
             } | ConvertTo-Json -Depth 5
@@ -504,10 +596,10 @@ Describe 'Resolve-PSModuleVersion' {
 
             $result.Number | Should -Be 390
             $result.HeadRef | Should -Be 'feature/push-release'
-            $result.Labels | Should -Be @('minor')
+            $result.Labels | Should -Be @('release:minor')
         }
 
-        It 'creates default patch context for a direct default-branch push' {
+        It 'creates direct-release context for a default-branch push' {
             $settings = @{
                 Context = @{
                     IsPushToDefaultBranch = $true
@@ -523,28 +615,151 @@ Describe 'Resolve-PSModuleVersion' {
             $result.Labels | Should -BeNullOrEmpty
             $result.IsDirectRelease | Should -BeTrue
         }
+
+        It 'honors the version label from a pull request resolved by a default-branch dispatch' {
+            # Regression guard for issue #530. Before the fix, a manual dispatch resolved no pull
+            # request, so Context.PullRequest was null and the direct-release branch applied a patch
+            # bump. With the pull request resolved, the minor label must be carried through.
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = @{
+                        Number  = 64
+                        HeadRef = 'feature/recovered-release'
+                        Labels  = @('release:minor')
+                    }
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -Be 64
+            $result.Labels | Should -Be @('release:minor')
+            $result.IsDirectRelease | Should -BeNullOrEmpty
+        }
+
+        It 'creates direct-release context for a default-branch dispatch' {
+            $settings = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $false
+                    IsManualDispatchToDefaultBranch = $true
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $null
+                }
+            } | ConvertTo-Json -Depth 5
+
+            $result = Get-GitHubPullRequest -SettingsJson $settings
+
+            $result.Number | Should -BeNullOrEmpty
+            $result.IsDirectRelease | Should -BeTrue
+        }
     }
 
     Describe 'Resolve-ReleaseDecision' {
-        It 'uses the default patch bump for a direct stable release' {
-            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -AutoPatching $false) `
+        It 'uses the configured <DefaultBump> bump for a direct stable release' -ForEach @(
+            @{ DefaultBump = 'patch'; Flag = 'PatchRelease' }
+            @{ DefaultBump = 'minor'; Flag = 'MinorRelease' }
+            @{ DefaultBump = 'major'; Flag = 'MajorRelease' }
+        ) {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -DefaultBump $DefaultBump) `
                 -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @(); IsDirectRelease = $true })
 
             $result.ShouldPublish | Should -BeTrue
-            $result.PatchRelease | Should -BeTrue
+            $result.$Flag | Should -BeTrue
         }
 
-        It 'does not publish an unlabeled prerelease when AutoPatching is disabled' {
-            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -AutoPatching $false -ReleaseType Prerelease) `
+        It 'resolves <ExpectedVersion> for a <EventName> with <Label> release intent' -ForEach @(
+            @{ EventName = 'workflow_dispatch'; Label = 'release:major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'release:minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'workflow_dispatch'; Label = 'release:patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'workflow_dispatch'; Label = 'release:skip'; ExpectedVersion = 'no publication' }
+            @{ EventName = 'push'; Label = 'release:major'; ExpectedVersion = 'v1.0.0' }
+            @{ EventName = 'push'; Label = 'release:minor'; ExpectedVersion = 'v0.5.0' }
+            @{ EventName = 'push'; Label = 'release:patch'; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = ''; ExpectedVersion = 'v0.4.14' }
+            @{ EventName = 'push'; Label = 'release:skip'; ExpectedVersion = 'no publication' }
+        ) {
+            $associatedPullRequests = if ($Label) {
+                @([pscustomobject]@{
+                        Number           = 64
+                        Base             = [pscustomobject]@{ Ref = 'main' }
+                        Head             = [pscustomobject]@{ Ref = 'feature/recovered-release' }
+                        merged_at        = '2026-09-02T09:02:24Z'
+                        merge_commit_sha = 'released-sha'
+                        Labels           = @([pscustomobject]@{ Name = $Label })
+                    })
+            } else {
+                @()
+            }
+            $parameters = @{
+                EventName                       = $EventName
+                CommitSha                       = 'released-sha'
+                DefaultBranch                   = 'main'
+                IsPushToDefaultBranch           = $EventName -eq 'push'
+                IsManualDispatchToDefaultBranch = $EventName -eq 'workflow_dispatch'
+                GetAssociatedPullRequest        = { $associatedPullRequests }.GetNewClosure()
+            }
+            $resolution = Resolve-ReleasePullRequest @parameters
+            $resolvedPullRequest = $resolution.PullRequest
+            $normalizedPullRequest = if ($resolvedPullRequest) {
+                @{
+                    Number  = $resolvedPullRequest.Number
+                    HeadRef = $resolvedPullRequest.Head.Ref
+                    Labels  = @($resolvedPullRequest.Labels.Name)
+                }
+            } else {
+                $null
+            }
+            $settingsJson = @{
+                Context = @{
+                    IsPushToDefaultBranch           = $parameters.IsPushToDefaultBranch
+                    IsManualDispatchToDefaultBranch = $parameters.IsManualDispatchToDefaultBranch
+                    DefaultBranch                   = 'main'
+                    PullRequest                     = $normalizedPullRequest
+                }
+            } | ConvertTo-Json -Depth 5
+            $configuration = Get-TestConfiguration
+            $pullRequest = Get-GitHubPullRequest -SettingsJson $settingsJson
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+            $resolution.Resolved | Should -BeTrue
+            if ($Label -eq 'release:skip') {
+                $pullRequest.Number | Should -Be 64
+                $decision.ShouldPublish | Should -BeFalse
+                $decision.CreateRelease | Should -BeFalse
+                return
+            }
+            $versionParameters = @{
+                GitHubVersion    = New-PSSemVer -Version '0.4.13'
+                PSGalleryVersion = New-PSSemVer -Version '0.4.13'
+                Decision         = $decision
+                Configuration    = $configuration
+                ModuleName       = 'DispatchTestModule'
+            }
+            $resolvedVersion = Get-ResolvedModuleVersion @versionParameters
+
+            $decision.ShouldPublish | Should -BeTrue
+            $resolvedVersion.ToString() | Should -Be $ExpectedVersion
+            if ($Label) {
+                $pullRequest.Number | Should -Be 64
+            } else {
+                $pullRequest.IsDirectRelease | Should -BeTrue
+            }
+        }
+
+        It 'uses the configured default bump for a prerelease mode label' {
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -DefaultBump 'major' -ReleaseType Prerelease) `
                 -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @() })
 
-            $result.ShouldPublish | Should -BeFalse
-            $result.PatchRelease | Should -BeTrue
+            $result.ShouldPublish | Should -BeTrue
+            $result.MajorRelease | Should -BeTrue
         }
 
         It 'does not validate cleanup-only pull request labels' {
-            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -ReleaseType None) `
-                -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @('NoRelease', 'patch') })
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration -ReleaseType None -CleanupOnly) `
+                -PullRequest ([pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip', 'release:patch') })
 
             $result.ShouldPublish | Should -BeFalse
             $result.HasVersionBump | Should -BeFalse
@@ -553,15 +768,154 @@ Describe 'Resolve-PSModuleVersion' {
         It 'rejects multiple version labels' {
             {
                 Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) `
-                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('major', 'patch') })
+                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('release:major', 'release:patch') })
             } | Should -Throw '*Conflicting version labels*'
         }
 
-        It 'rejects a NoRelease label combined with a version label' {
+        It 'rejects release:skip combined with a version label' {
             {
                 Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) `
-                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('NoRelease', 'patch') })
+                    -PullRequest ([pscustomobject]@{ HeadRef = 'main'; Labels = @('release:skip', 'release:patch') })
             } | Should -Throw '*ignore label cannot be combined*'
+        }
+
+        It 'honors the canonical <Bump> label' -ForEach @(
+            @{ Bump = 'Major'; Label = 'release:major'; Flag = 'MajorRelease' }
+            @{ Bump = 'Minor'; Label = 'release:minor'; Flag = 'MinorRelease' }
+            @{ Bump = 'Patch'; Label = 'release:patch'; Flag = 'PatchRelease' }
+        ) {
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @($Label)
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration (Get-TestConfiguration) -PullRequest $pullRequest
+
+            $result.$Flag | Should -BeTrue
+            $result.ShouldPublish | Should -BeTrue
+        }
+
+        It 'honors the configured <Bump> label mapping' -ForEach @(
+            @{ Bump = 'Major'; Setting = 'MajorLabels'; Label = 'custom:major'; Flag = 'MajorRelease' }
+            @{ Bump = 'Minor'; Setting = 'MinorLabels'; Label = 'custom:minor'; Flag = 'MinorRelease' }
+            @{ Bump = 'Patch'; Setting = 'PatchLabels'; Label = 'custom:patch'; Flag = 'PatchRelease' }
+        ) {
+            $configuration = Get-TestConfiguration
+            $configuration.$Setting = @($Label)
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @($Label)
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $result.$Flag | Should -BeTrue
+            $result.ShouldPublish | Should -BeTrue
+        }
+
+        It 'gives an explicit bump label precedence over DefaultBump' {
+            $configuration = Get-TestConfiguration -DefaultBump 'major'
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @('release:minor')
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $result.MinorRelease | Should -BeTrue
+            $result.MajorRelease | Should -BeFalse
+        }
+
+        It 'honors a configured ignore label' {
+            $configuration = Get-TestConfiguration -DefaultBump 'major' -IgnoreLabels @('custom:skip')
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @('custom:skip')
+            }
+
+            $result = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $result.ShouldPublish | Should -BeFalse
+            $result.CreateRelease | Should -BeFalse
+        }
+
+        It 'rejects an invalid DefaultBump with valid values' {
+            $configuration = Get-TestConfiguration -DefaultBump 'none'
+            $pullRequest = [pscustomobject]@{
+                HeadRef = 'main'
+                Labels  = @()
+            }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*Valid values are: patch, minor, major*'
+        }
+
+        It 'resolves the <DefaultBump> default for an open non-publishing preview' -ForEach @(
+            @{ DefaultBump = 'patch'; Flag = 'PatchRelease' }
+            @{ DefaultBump = 'minor'; Flag = 'MinorRelease' }
+            @{ DefaultBump = 'major'; Flag = 'MajorRelease' }
+        ) {
+            $configuration = Get-TestConfiguration -DefaultBump $DefaultBump -ReleaseType None
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @() }
+
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $decision.$Flag | Should -BeTrue
+            $decision.HasVersionBump | Should -BeTrue
+            $decision.ShouldPublish | Should -BeFalse
+            $decision.BumpSource | Should -BeExactly 'Publish.Module.DefaultBump'
+        }
+
+        It 'validates conflicting bump labels even when an open PR does not publish' {
+            $configuration = Get-TestConfiguration -ReleaseType None
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:major', 'release:minor') }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*Conflicting version labels*'
+        }
+
+        It 'stops bump resolution for a valid skip rather than producing a preview version' {
+            $configuration = Get-TestConfiguration -DefaultBump major
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip') }
+
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $decision.ShouldPublish | Should -BeFalse
+            $decision.HasVersionBump | Should -BeFalse
+            $decision.CreateRelease | Should -BeFalse
+            $decision.CreatePrerelease | Should -BeFalse
+            $decision.BumpSource | Should -BeExactly 'Label:release:skip'
+        }
+
+        It 'rejects skip combined with prerelease intent in <ReleaseType> mode' -ForEach @(
+            @{ ReleaseType = 'Release' }
+            @{ ReleaseType = 'Prerelease' }
+            @{ ReleaseType = 'None' }
+        ) {
+            $configuration = Get-TestConfiguration -ReleaseType $ReleaseType
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('release:skip', 'release:prerelease') }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*ignore*prerelease*'
+        }
+
+        It 'uses custom prerelease and skip mappings for the same conflict validation' {
+            $configuration = Get-TestConfiguration -IgnoreLabels @('custom:skip') -PrereleaseLabels @('custom:preview')
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @('custom:skip', 'custom:preview') }
+
+            { Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest } |
+                Should -Throw '*ignore*prerelease*'
+        }
+
+        It 'keeps a configured preview bump without publishing when module Skip is enabled' {
+            $configuration = Get-TestConfiguration -DefaultBump minor -Skip
+            $pullRequest = [pscustomobject]@{ HeadRef = 'feature'; Labels = @() }
+
+            $decision = Resolve-ReleaseDecision -Configuration $configuration -PullRequest $pullRequest
+
+            $decision.MinorRelease | Should -BeTrue
+            $decision.ShouldPublish | Should -BeFalse
+            $decision.CreateRelease | Should -BeFalse
         }
     }
 }

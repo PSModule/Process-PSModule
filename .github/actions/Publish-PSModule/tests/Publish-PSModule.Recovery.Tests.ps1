@@ -1,4 +1,4 @@
-﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', '',
     Justification = 'Variables are assigned in BeforeAll and used inside It blocks.'
 )]
@@ -6,6 +6,10 @@
 param()
 
 BeforeAll {
+    $script:environmentMutex = [Threading.Mutex]::new($false, "PSModule-ActionTests-Environment-$PID")
+    if (-not $script:environmentMutex.WaitOne([TimeSpan]::FromMinutes(5))) {
+        throw 'Cannot acquire the process environment lock for action tests.'
+    }
     Import-Module -Name 'PSModule' -Force
 
     $script:publishScriptPath = Join-Path -Path $PSScriptRoot -ChildPath '../src/publish.ps1'
@@ -26,16 +30,17 @@ BeforeAll {
 }
 
 AfterAll {
-    foreach ($name in $script:environmentVariableNames) {
-        [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+    try {
+        foreach ($name in $script:environmentVariableNames) {
+            [System.Environment]::SetEnvironmentVariable($name, $script:originalEnvironment[$name])
+        }
+        Remove-Item -Path 'Function:\Find-PSResource' -ErrorAction SilentlyContinue
+        Remove-Item -Path 'Function:\Publish-PSResource' -ErrorAction SilentlyContinue
+        Remove-Item -Path 'Function:\Resolve-PSModuleDependency' -ErrorAction SilentlyContinue
+    } finally {
+        $script:environmentMutex.ReleaseMutex()
+        $script:environmentMutex.Dispose()
     }
-    # Set-Item accepts 'function:global:X' and creates a function named 'X' in the global scope, but
-    # Remove-Item and Get-Item do not resolve that same path back to it, and fail silently rather than
-    # erroring. Removing by name is what actually deletes the shims; leaving them behind would shadow the
-    # real cmdlets for every test file that runs later in the session.
-    Remove-Item -Path 'Function:\Find-PSResource' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Publish-PSResource' -ErrorAction SilentlyContinue
-    Remove-Item -Path 'Function:\Resolve-PSModuleDependency' -ErrorAction SilentlyContinue
 }
 
 Describe 'Publish-PSModule recovery' {

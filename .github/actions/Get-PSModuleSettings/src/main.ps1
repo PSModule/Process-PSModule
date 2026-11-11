@@ -1,4 +1,9 @@
-﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
+﻿[CmdletBinding()]
+param()
+
+$ErrorActionPreference = 'Stop'
+
+'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
 Import-Module -Name "$PSScriptRoot/Get-PSModuleSettings.Helpers.psm1" -Force
 
 $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
@@ -10,7 +15,7 @@ $prerelease = $env:PSMODULE_GET_SETTINGS_INPUT_Prerelease
 $workingDirectory = $env:PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory
 $importantFilePatternsInput = $env:PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns
 
-LogGroup 'Inputs' {
+Set-GitHubLogGroup 'Inputs' {
     [pscustomobject]@{
         PWD          = (Get-Location).Path
         Name         = $name
@@ -19,7 +24,7 @@ LogGroup 'Inputs' {
 }
 
 if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)) {
-    LogGroup 'Import settings' {
+    Set-GitHubLogGroup 'Import settings' {
         $settingsFile = Get-Item -Path $settingsPath
         $relativeSettingsPath = $settingsFile | Resolve-Path -Relative
         Write-Host "Importing settings from [$relativeSettingsPath]"
@@ -43,7 +48,11 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
         }
     }
 
-    LogGroup 'Validate settings against schema' {
+    Set-GitHubLogGroup 'Validate settings against schema' {
+        # Validate release settings first so removed or invalid values get a
+        # migration-focused error instead of only a generic schema failure.
+        $null = Resolve-PSModulePublishSetting -PublishModule $settings.Publish.Module
+
         $schemaPath = Join-Path $PSScriptRoot 'Settings.schema.json'
         if (Test-Path -Path $schemaPath) {
             Write-Host 'Validating settings against schema...'
@@ -73,7 +82,7 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
     $settings = @{}
 }
 
-LogGroup 'Name' {
+Set-GitHubLogGroup 'Name' {
     [pscustomobject]@{
         InputName      = $name
         SettingsName   = $settings.Name
@@ -91,7 +100,7 @@ LogGroup 'Name' {
     }
 }
 
-LogGroup 'ImportantFilePatterns' {
+Set-GitHubLogGroup 'ImportantFilePatterns' {
     $defaultImportantFilePatterns = @('^src/', '^README\.md$')
     if ($null -ne $settings.ImportantFilePatterns) {
         $importantFilePatterns = @($settings.ImportantFilePatterns)
@@ -187,22 +196,7 @@ $settings = [pscustomobject]@{
         }
     }
     Publish               = [pscustomobject]@{
-        Module = [pscustomobject]@{
-            Skip                     = $settings.Publish.Module.Skip ?? $false
-            AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
-            AutoPatching             = $settings.Publish.Module.AutoPatching ?? $true
-            IncrementalPrerelease    = $settings.Publish.Module.IncrementalPrerelease ?? $true
-            DatePrereleaseFormat     = $settings.Publish.Module.DatePrereleaseFormat ?? ''
-            VersionPrefix            = $settings.Publish.Module.VersionPrefix ?? 'v'
-            MajorLabels              = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
-            MinorLabels              = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
-            PatchLabels              = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
-            IgnoreLabels             = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
-            PrereleaseLabels         = $settings.Publish.Module.PrereleaseLabels ?? 'prerelease'
-            UsePRTitleAsReleaseName  = $settings.Publish.Module.UsePRTitleAsReleaseName ?? $false
-            UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
-            UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
-        }
+        Module = Resolve-PSModulePublishSetting -PublishModule $settings.Publish.Module
         Site   = [pscustomobject]@{
             Skip = $settings.Publish.Site.Skip ?? $false
         }
@@ -223,10 +217,10 @@ $settings | Add-Member -MemberType NoteProperty -Name Prerelease -Value $prerele
 $settings | Add-Member -MemberType NoteProperty -Name WorkingDirectory -Value $workingDirectory
 
 # Calculate job run conditions
-LogGroup 'Calculate Job Run Conditions:' {
+Set-GitHubLogGroup 'Calculate Job Run Conditions:' {
     $eventData = Get-GitHubEventData -ErrorAction Stop
 
-    LogGroup 'GitHub Event Data' {
+    Set-GitHubLogGroup 'GitHub Event Data' {
         $eventData | ConvertTo-Json -Depth 10 | Out-String
     }
 
@@ -238,100 +232,25 @@ LogGroup 'Calculate Job Run Conditions:' {
     $commitSha = if ($isPush) { $eventData.After ?? $env:GITHUB_SHA } else { $env:GITHUB_SHA }
     $pushBranch = if ($isPush) { $eventData.Ref -replace '^refs/heads/', '' } else { '' }
     $workflowRef = if ($isPush) { $pushBranch } else { $env:GITHUB_REF_NAME }
-    $isPushToDefaultBranch = $isPush -and $pushBranch -eq $defaultBranch
-    $isManualDispatchToDefaultBranch = $isManualDispatch -and $workflowRef -eq $defaultBranch
+    $defaultBranchRef = "refs/heads/$defaultBranch"
+    $isPushToDefaultBranch = $isPush -and $eventData.Ref -ceq $defaultBranchRef
+    $isManualDispatchToDefaultBranch = $isManualDispatch -and $env:GITHUB_REF -ceq $defaultBranchRef
     $pullRequest = $eventData.PullRequest
 
-    if ($isPush -and $commitSha) {
-        LogGroup "Resolve pull request for commit [$commitSha]" {
-            $owner = $env:GITHUB_REPOSITORY_OWNER
-            $repo = $env:GITHUB_REPOSITORY_NAME
-            $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$commitSha/pulls" -Method GET
-            $associatedPullRequests = @($response.Response)
-            $pullRequest = Select-PullRequestForPush -PullRequest $associatedPullRequests `
-                -DefaultBranch $defaultBranch `
-                -CommitSha $commitSha
-
-            if ($pullRequest) {
-                Write-Host "Resolved pull request #$($pullRequest.Number) from commit [$commitSha]."
-            } else {
-                Write-Host "::notice::No pull request is associated with commit [$commitSha]."
-            }
-        }
-    }
-
-    $pullRequestIsMerged = if ($null -eq $pullRequest) {
-        $false
-    } elseif ($null -ne $pullRequest.Merged) {
-        [bool]$pullRequest.Merged
-    } else {
-        -not [string]::IsNullOrWhiteSpace($pullRequest.merged_at)
-    }
     $pullRequestIsClosed = $null -ne $pullRequest -and $pullRequest.State -eq 'closed'
     $isOpenOrUpdatedPR = (
         $eventName -eq 'pull_request' -and
         -not $pullRequestIsClosed -and
         $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
     )
-    $targetBranch = if ($pullRequest) { $pullRequest.Base.Ref } elseif ($isPush) { $pushBranch } else { $workflowRef }
-    $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
-    $pullRequestContext = if ($pullRequest) {
-        [pscustomobject]@{
-            Number         = $pullRequest.Number
-            Title          = $pullRequest.Title
-            Body           = $pullRequest.Body
-            HeadRef        = $pullRequest.Head.Ref
-            BaseRef        = $pullRequest.Base.Ref
-            Labels         = @($pullRequest.Labels.Name)
-            Merged         = $pullRequestIsMerged
-            Closed         = $pullRequestIsClosed
-            MergeCommitSha = $pullRequest.merge_commit_sha
-            HtmlUrl        = $pullRequest.html_url
-        }
-    } else {
-        $null
-    }
-
-    $settings | Add-Member -MemberType NoteProperty -Name Context -Value ([pscustomobject]@{
-            EventName                       = $eventName
-            EventAction                     = $pullRequestAction
-            CommitSha                       = $commitSha
-            Ref                             = if ($isPush) { $eventData.Ref } else { $env:GITHUB_REF }
-            DefaultBranch                   = $defaultBranch
-            IsPushToDefaultBranch           = $isPushToDefaultBranch
-            IsManualDispatchToDefaultBranch = $isManualDispatchToDefaultBranch
-            PullRequest                     = $pullRequestContext
-        }) -Force
-
-    Write-Host 'GitHub event inputs:'
-    [pscustomobject]@{
-        GITHUB_EVENT_NAME                = $eventName
-        GITHUB_EVENT_ACTION              = $pullRequestAction
-        GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
-        GITHUB_EVENT_PULL_REQUEST_CLOSED = $pullRequestIsClosed
-        CommitSha                        = $commitSha
-        PushBranch                       = $pushBranch
-        TargetBranch                     = $targetBranch
-        DefaultBranch                    = $defaultBranch
-        IsTargetDefaultBranch            = $isTargetDefaultBranch
-        IsPushToDefaultBranch            = $isPushToDefaultBranch
-        IsManualDispatchToDefaultBranch  = $isManualDispatchToDefaultBranch
-        AssociatedPullRequest            = $pullRequestContext.Number
-    } | Format-List | Out-String
-
-    # Check if a prerelease label exists on the PR
-    $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
-    $prLabels = @($pullRequestContext.Labels)
-    $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
-
     # Check if important files have changed in the PR
     # Important files are determined by the configured ImportantFilePatterns setting
     $hasImportantChanges = $false
-    if ($eventName -eq 'pull_request' -and $pullRequestContext.Number) {
-        LogGroup 'Check for Important File Changes' {
+    if ($eventName -eq 'pull_request' -and $pullRequest.Number) {
+        Set-GitHubLogGroup 'Check for Important File Changes' {
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
-            $prNumber = $pullRequestContext.Number
+            $prNumber = $pullRequest.Number
 
             Write-Host "Fetching changed files for PR #$prNumber..."
             $changedFiles = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/pulls/$prNumber/files" -Method GET |
@@ -402,7 +321,7 @@ If you believe this is incorrect, please verify that your changes are in the cor
             }
         }
     } elseif ($isPushToDefaultBranch) {
-        LogGroup 'Check for Important File Changes' {
+        Set-GitHubLogGroup 'Check for Important File Changes' {
             $beforeCommitSha = $eventData.Before
             $owner = $env:GITHUB_REPOSITORY_OWNER
             $repo = $env:GITHUB_REPOSITORY_NAME
@@ -441,6 +360,106 @@ If you believe this is incorrect, please verify that your changes are in the cor
         $hasImportantChanges = $true
         Write-Host 'Non-PR event - treating as having important changes'
     }
+
+    # Dispatch resolves the current default-branch tip. Rerun the original workflow for an older merge.
+    $resolveParams = @{
+        EventName                       = $eventName
+        CommitSha                       = $commitSha
+        DefaultBranch                   = $defaultBranch
+        IsPushToDefaultBranch           = $isPushToDefaultBranch
+        IsManualDispatchToDefaultBranch = $isManualDispatchToDefaultBranch
+        HasImportantChanges             = $hasImportantChanges
+        GetAssociatedPullRequest        = {
+            param($Sha)
+            $owner = $env:GITHUB_REPOSITORY_OWNER
+            $repo = $env:GITHUB_REPOSITORY_NAME
+            $response = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/commits/$Sha/pulls" -Method GET
+            $response.Response
+        }
+        GetPublishedReleaseForCommit    = {
+            param($Sha)
+            $owner = $env:GITHUB_REPOSITORY_OWNER
+            $repo = $env:GITHUB_REPOSITORY_NAME
+            $releases = (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/releases?per_page=100" -Method GET -ErrorAction Stop).Response
+            $parameters = @{
+                CommitSha       = $Sha
+                Release         = @($releases)
+                GetTagReference = {
+                    param($Tag)
+                    $encodedTag = [Uri]::EscapeDataString($Tag)
+                    (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/git/ref/tags/$encodedTag" -Method GET -ErrorAction Stop).Response.object
+                }.GetNewClosure()
+                GetTagObject    = {
+                    param($TagSha)
+                    (Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/git/tags/$TagSha" -Method GET -ErrorAction Stop).Response.object
+                }.GetNewClosure()
+            }
+            Get-PSModuleReleaseForCommit @parameters
+        }
+    }
+    $resolution = Resolve-ReleasePullRequest @resolveParams
+    if ($resolution.Resolved) {
+        $pullRequest = $resolution.PullRequest
+    }
+
+    $pullRequestIsMerged = if ($null -eq $pullRequest) {
+        $false
+    } elseif ($null -ne $pullRequest.Merged) {
+        [bool]$pullRequest.Merged
+    } else {
+        -not [string]::IsNullOrWhiteSpace($pullRequest.merged_at)
+    }
+    $pullRequestIsClosed = $null -ne $pullRequest -and $pullRequest.State -eq 'closed'
+    $targetBranch = if ($pullRequest) { $pullRequest.Base.Ref } elseif ($isPush) { $pushBranch } else { $workflowRef }
+    $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
+    $pullRequestContext = if ($pullRequest) {
+        [pscustomobject]@{
+            Number         = $pullRequest.Number
+            Title          = $pullRequest.Title
+            Body           = $pullRequest.Body
+            HeadRef        = $pullRequest.Head.Ref
+            HeadRepository = $pullRequest.Head.Repo.full_name
+            BaseRef        = $pullRequest.Base.Ref
+            Labels         = @($pullRequest.Labels.Name)
+            Merged         = $pullRequestIsMerged
+            Closed         = $pullRequestIsClosed
+            MergeCommitSha = $pullRequest.merge_commit_sha
+            HtmlUrl        = $pullRequest.html_url
+        }
+    } else {
+        $null
+    }
+
+    $settings | Add-Member -MemberType NoteProperty -Name Context -Value ([pscustomobject]@{
+            EventName                       = $eventName
+            EventAction                     = $pullRequestAction
+            CommitSha                       = $commitSha
+            Ref                             = if ($isPush) { $eventData.Ref } else { $env:GITHUB_REF }
+            DefaultBranch                   = $defaultBranch
+            IsPushToDefaultBranch           = $isPushToDefaultBranch
+            IsManualDispatchToDefaultBranch = $isManualDispatchToDefaultBranch
+            PullRequest                     = $pullRequestContext
+        }) -Force
+
+    Write-Host 'GitHub event inputs:'
+    [pscustomobject]@{
+        GITHUB_EVENT_NAME                = $eventName
+        GITHUB_EVENT_ACTION              = $pullRequestAction
+        GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
+        GITHUB_EVENT_PULL_REQUEST_CLOSED = $pullRequestIsClosed
+        CommitSha                        = $commitSha
+        PushBranch                       = $pushBranch
+        TargetBranch                     = $targetBranch
+        DefaultBranch                    = $defaultBranch
+        IsTargetDefaultBranch            = $isTargetDefaultBranch
+        IsPushToDefaultBranch            = $isPushToDefaultBranch
+        IsManualDispatchToDefaultBranch  = $isManualDispatchToDefaultBranch
+        AssociatedPullRequest            = $pullRequestContext.Number
+    } | Format-List | Out-String
+
+    $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
+    $prLabels = @($pullRequestContext.Labels)
+    $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
 
     $routing = Resolve-WorkflowEventRouting -EventName $eventName `
         -EventAction $pullRequestAction `
@@ -484,7 +503,7 @@ if ($settings.Test.Skip) {
     $macOS = [PSCustomObject]@{ RunsOn = 'macos-latest'; OSName = 'macOS' }
     $windows = [PSCustomObject]@{ RunsOn = 'windows-latest'; OSName = 'Windows' }
 
-    LogGroup 'Source Code Test Suites:' {
+    Set-GitHubLogGroup 'Source Code Test Suites:' {
         $sourceCodeTestSuites = if ($settings.Test.SourceCode.Skip) {
             Write-Host 'Skipping all source code tests.'
             $null
@@ -498,7 +517,7 @@ if ($settings.Test.Skip) {
         $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
     }
 
-    LogGroup 'PSModule Test Suites:' {
+    Set-GitHubLogGroup 'PSModule Test Suites:' {
         $psModuleTestSuites = if ($settings.Test.PSModule.Skip) {
             Write-Host 'Skipping all PSModule tests.'
             $null
@@ -512,7 +531,7 @@ if ($settings.Test.Skip) {
         $psModuleTestSuites | Format-Table -AutoSize | Out-String
     }
 
-    LogGroup 'Module Local Test Suites:' {
+    Set-GitHubLogGroup 'Module Local Test Suites:' {
         $moduleTestSuites = if ($settings.Test.Module.Skip) {
             Write-Host 'Skipping all module tests.'
             $null
@@ -634,7 +653,7 @@ $settings.Test.PSModule | Add-Member -MemberType NoteProperty -Name Suites -Valu
 $settings.Test.Module | Add-Member -MemberType NoteProperty -Name Suites -Value $moduleTestSuites -Force
 
 # Calculate job-specific conditions and add to settings
-LogGroup 'Calculate Job Run Conditions:' {
+Set-GitHubLogGroup 'Calculate Job Run Conditions:' {
     $shouldAutoCleanup = $routing.ShouldRunCleanup -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
@@ -698,8 +717,9 @@ LogGroup 'Calculate Job Run Conditions:' {
         )
     ) -Force
 
-    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
-    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value (($releaseType -ne 'None') -or $shouldAutoCleanup) -Force
+    $modulePublicationEnabled = -not $settings.Publish.Module.Skip -and (($releaseType -ne 'None') -or $shouldAutoCleanup)
+    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Desired -Value $modulePublicationEnabled -Force
+    $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name Enabled -Value $modulePublicationEnabled -Force
     $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Desired -Value ($releaseType -eq 'Release') -Force
     $settings.Publish.Site | Add-Member -MemberType NoteProperty -Name Enabled -Value (
         $releaseType -eq 'Release' -and -not $settings.Publish.Site.Skip
@@ -726,7 +746,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     } | Format-List | Out-String
 }
 
-LogGroup 'Final settings' {
+Set-GitHubLogGroup 'Final settings' {
     switch -Regex ($settingsFile.Extension) {
         '.yaml|.yml' {
             Write-Host ($settings | ConvertTo-Yaml | Out-String)
@@ -741,7 +761,7 @@ LogGroup 'Final settings' {
     Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
 }
 
-LogGroup 'Validate output settings against schema' {
+Set-GitHubLogGroup 'Validate output settings against schema' {
     $schemaPath = Join-Path $PSScriptRoot 'Settings.schema.json'
     if (Test-Path -Path $schemaPath) {
         Write-Host 'Validating output settings against schema...'

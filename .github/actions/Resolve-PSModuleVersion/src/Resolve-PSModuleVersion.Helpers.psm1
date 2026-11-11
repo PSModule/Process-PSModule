@@ -1,4 +1,4 @@
-﻿function Split-CommaSeparatedList {
+function Split-CommaSeparatedList {
     <#
         .SYNOPSIS
         Split a comma-separated string into a trimmed, non-empty array.
@@ -17,6 +17,50 @@
     )
 
     ($Value -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+}
+
+function Resolve-DefaultBump {
+    <#
+        .SYNOPSIS
+        Validates and returns the configured default version bump.
+
+        .DESCRIPTION
+        Rejects missing, invalid, and noncanonical values rather than using a
+        fallback to recover from invalid configuration.
+
+        .EXAMPLE
+        Resolve-DefaultBump -DefaultBump 'patch'
+
+        Returns the validated patch level.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Resolve-DefaultBump.
+
+        .OUTPUTS
+        System.String
+
+        The validated lowercase version-bump level.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        # The default bump name.
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string] $DefaultBump
+    )
+
+    $validDefaultBumps = @('patch', 'minor', 'major')
+    if ($validDefaultBumps -cnotcontains $DefaultBump) {
+        throw (
+            "Invalid Publish.Module.DefaultBump: [$DefaultBump]. " +
+            "Valid values are: $($validDefaultBumps -join ', ')."
+        )
+    }
+
+    $DefaultBump
 }
 
 function Read-ActionInput {
@@ -40,7 +84,7 @@ function Read-ActionInput {
     [OutputType([PSCustomObject])]
     param()
 
-    LogGroup 'Load inputs' {
+    Set-GitHubLogGroup 'Load inputs' {
         $env:GITHUB_REPOSITORY_NAME = $env:GITHUB_REPOSITORY -replace '.+/'
 
         $name = if ([string]::IsNullOrEmpty($env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_Name)) {
@@ -68,8 +112,8 @@ function Get-PublishConfiguration {
         Parse the settings JSON into a publish configuration object.
 
         .DESCRIPTION
-        The function extracts module publish settings: auto-patching flags, version prefix,
-        release type, and label classification arrays.
+        The function extracts module publish settings: default bump, version prefix,
+        release type, cleanup-only event state, and all five label mappings.
 
         .OUTPUTS
         System.Management.Automation.PSCustomObject
@@ -90,33 +134,49 @@ function Get-PublishConfiguration {
         [string] $SettingsJson
     )
 
-    LogGroup 'Resolve configuration' {
+    Set-GitHubLogGroup 'Resolve configuration' {
         $settings = $SettingsJson | ConvertFrom-Json
         $publishModule = $settings.Publish.Module
+        if ($publishModule.PSObject.Properties.Name -contains 'AutoPatching') {
+            throw 'Publish.Module.AutoPatching was removed. Replace it with Publish.Module.DefaultBump.'
+        }
+        $defaultBump = Resolve-DefaultBump -DefaultBump ([string]$publishModule.DefaultBump)
+        $context = $settings.Context
+        $isCleanupOnly = $context.EventName -eq 'pull_request' -and (
+            $context.EventAction -eq 'closed' -or $context.PullRequest.Closed
+        )
 
         $config = [PSCustomObject]@{
-            AutoPatching          = [bool]$publishModule.AutoPatching
+            Skip                  = [bool]$publishModule.Skip
+            DefaultBump           = $defaultBump
+            DefaultBumpSource     = [string]($publishModule.DefaultBumpSource ?? 'Publish.Module.DefaultBump')
             IncrementalPrerelease = [bool]$publishModule.IncrementalPrerelease
             DatePrereleaseFormat  = [string]$publishModule.DatePrereleaseFormat
             VersionPrefix         = [string]$publishModule.VersionPrefix
             ReleaseType           = [string]$publishModule.ReleaseType
+            IsCleanupOnly         = $isCleanupOnly
             IgnoreLabels          = Split-CommaSeparatedList ([string]$publishModule.IgnoreLabels)
             MajorLabels           = Split-CommaSeparatedList ([string]$publishModule.MajorLabels)
             MinorLabels           = Split-CommaSeparatedList ([string]$publishModule.MinorLabels)
             PatchLabels           = Split-CommaSeparatedList ([string]$publishModule.PatchLabels)
+            PrereleaseLabels      = Split-CommaSeparatedList -Value ([string]$publishModule.PrereleaseLabels)
         }
 
         Write-Host '-------------------------------------------------'
         Write-Host ([PSCustomObject]@{
-                AutoPatching          = $config.AutoPatching
+                Skip                  = $config.Skip
+                DefaultBump           = $config.DefaultBump
+                DefaultBumpSource     = $config.DefaultBumpSource
                 IncrementalPrerelease = $config.IncrementalPrerelease
                 DatePrereleaseFormat  = $config.DatePrereleaseFormat
                 VersionPrefix         = $config.VersionPrefix
                 ReleaseType           = $config.ReleaseType
+                IsCleanupOnly         = $config.IsCleanupOnly
                 IgnoreLabels          = $config.IgnoreLabels -join ', '
                 MajorLabels           = $config.MajorLabels -join ', '
                 MinorLabels           = $config.MinorLabels -join ', '
                 PatchLabels           = $config.PatchLabels -join ', '
+                PrereleaseLabels      = $config.PrereleaseLabels -join ', '
             } | Format-List | Out-String)
         Write-Host '-------------------------------------------------'
 
@@ -132,7 +192,7 @@ function Get-GitHubPullRequest {
         .DESCRIPTION
         The settings action resolves the pull request for a default-branch push before this action runs.
         If no pull request exists, a direct push or manual dispatch on the default branch receives release context.
-        This context resolves the default patch bump.
+        This context resolves the configured default bump.
 
         .OUTPUTS
         System.Management.Automation.PSCustomObject
@@ -153,7 +213,7 @@ function Get-GitHubPullRequest {
         [string] $SettingsJson
     )
 
-    LogGroup 'Event information' {
+    Set-GitHubLogGroup 'Event information' {
         $settings = $SettingsJson | ConvertFrom-Json
         $context = $settings.Context
         if ($context) {
@@ -168,7 +228,7 @@ function Get-GitHubPullRequest {
             }
 
             if ($context.IsPushToDefaultBranch -or $context.IsManualDispatchToDefaultBranch) {
-                Write-Host 'Using direct default-branch release context with the default patch bump.'
+                Write-Host 'Using direct default-branch release context with the configured default bump.'
                 return [PSCustomObject]@{
                     Number          = $null
                     HeadRef         = $context.DefaultBranch
@@ -214,13 +274,15 @@ function Resolve-ReleaseDecision {
         Find whether to publish a release and which version bump to apply.
 
         .DESCRIPTION
-        The function evaluates the PR labels against the configured label categories and release type to produce a complete release decision.
+        The function evaluates the PR labels against the configured label categories and release type
+        to produce a complete release decision. Open non-publishing previews validate the same intent;
+        closed-PR cleanup does not resolve a version.
 
         .OUTPUTS
         System.Management.Automation.PSCustomObject
 
         An object with ShouldPublish, CreateRelease, CreatePrerelease, MajorRelease,
-        MinorRelease, PatchRelease, HasVersionBump, and PrereleaseName properties.
+        MinorRelease, PatchRelease, HasVersionBump, PrereleaseName, and BumpSource properties.
 
         .EXAMPLE
         $decision = Resolve-ReleaseDecision -Configuration $config -PullRequest $pullRequest
@@ -239,10 +301,11 @@ function Resolve-ReleaseDecision {
         [PSCustomObject] $PullRequest
     )
 
-    LogGroup 'Determine release configuration' {
+    Set-GitHubLogGroup 'Determine release configuration' {
         $prereleaseName = $PullRequest.HeadRef -replace '[^a-zA-Z0-9]'
         $labels = $PullRequest.Labels
         $releaseType = $Configuration.ReleaseType
+        $defaultBump = Resolve-DefaultBump -DefaultBump ([string]$Configuration.DefaultBump)
 
         $validReleaseTypes = @('Release', 'Prerelease', 'None')
         if ([string]::IsNullOrWhiteSpace($releaseType)) {
@@ -254,8 +317,11 @@ function Resolve-ReleaseDecision {
 
         $createRelease = $releaseType -eq 'Release'
         $createPrerelease = $releaseType -eq 'Prerelease'
-        $shouldPublish = $createRelease -or $createPrerelease
-        $isCleanupOnly = $releaseType -eq 'None'
+        $shouldPublish = ($createRelease -or $createPrerelease) -and $Configuration.Skip -ne $true
+        if ($Configuration.Skip -eq $true) {
+            $createRelease = $false
+        }
+        $isCleanupOnly = $Configuration.IsCleanupOnly -eq $true
 
         if ($isCleanupOnly) {
             return [PSCustomObject]@{
@@ -267,14 +333,12 @@ function Resolve-ReleaseDecision {
                 PatchRelease     = $false
                 HasVersionBump   = $false
                 PrereleaseName   = $prereleaseName
+                BumpSource       = 'ClosedPullRequest'
             }
         }
 
         $ignoreRelease = ($labels | Where-Object { $Configuration.IgnoreLabels -contains $_ }).Count -gt 0
-        if ($ignoreRelease -and $shouldPublish) {
-            Write-Host 'Ignoring release creation due to ignore label.'
-            $shouldPublish = $false
-        }
+        $prereleaseLabels = @($labels | Where-Object { $Configuration.PrereleaseLabels -contains $_ })
 
         $majorLabels = @($labels | Where-Object { $Configuration.MajorLabels -contains $_ })
         $minorLabels = @($labels | Where-Object { $Configuration.MinorLabels -contains $_ })
@@ -287,28 +351,41 @@ function Resolve-ReleaseDecision {
         if ($ignoreRelease -and $versionLabels.Count -gt 0) {
             throw "The ignore label cannot be combined with a version label: [$($versionLabels -join ', ')]."
         }
+        if ($ignoreRelease -and $prereleaseLabels.Count -gt 0) {
+            throw 'The ignore label cannot be combined with prerelease intent.'
+        }
+        if ($ignoreRelease) {
+            $skipLabel = @($labels | Where-Object { $Configuration.IgnoreLabels -contains $_ })[0]
+            Write-Host "No release or new version is resolved: [$skipLabel]."
+            return [PSCustomObject]@{
+                ShouldPublish    = $false
+                CreateRelease    = $false
+                CreatePrerelease = $false
+                MajorRelease     = $false
+                MinorRelease     = $false
+                PatchRelease     = $false
+                HasVersionBump   = $false
+                PrereleaseName   = ''
+                BumpSource       = "Label:$skipLabel"
+            }
+        }
 
         $majorRelease = $majorLabels.Count -eq 1
         $minorRelease = $minorLabels.Count -eq 1
-        $isDirectStableRelease = $createRelease -and $PullRequest.IsDirectRelease
-        $patchRelease = $patchLabels.Count -eq 1 -or (
-            -not $majorRelease -and
-            -not $minorRelease -and
-            ($Configuration.AutoPatching -or $isDirectStableRelease)
-        )
-        $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
+        $patchRelease = $patchLabels.Count -eq 1
 
-        if (-not $hasVersionBump) {
-            Write-Host 'No version bump label and AutoPatching disabled; previewing a patch version without publishing.'
-            $patchRelease = $true
-            $hasVersionBump = $true
-            $shouldPublish = $false
+        if (-not $majorRelease -and -not $minorRelease -and -not $patchRelease) {
+            switch -CaseSensitive ($defaultBump) {
+                'major' { $majorRelease = $true }
+                'minor' { $minorRelease = $true }
+                'patch' { $patchRelease = $true }
+            }
         }
-
-        if ($ignoreRelease) {
-            $createRelease = $false
-            $createPrerelease = $false
-            $shouldPublish = $false
+        $hasVersionBump = $majorRelease -or $minorRelease -or $patchRelease
+        $bumpSource = if ($versionLabels.Count -eq 1) {
+            "Label:$($versionLabels[0])"
+        } else {
+            [string]($Configuration.DefaultBumpSource ?? 'Publish.Module.DefaultBump')
         }
 
         if (-not $shouldPublish) {
@@ -321,6 +398,8 @@ function Resolve-ReleaseDecision {
                 ShouldPublish    = $shouldPublish
                 CreateRelease    = $createRelease
                 CreatePrerelease = $createPrerelease
+                DefaultBump      = $defaultBump
+                BumpSource       = $bumpSource
                 Major            = $majorRelease
                 Minor            = $minorRelease
                 Patch            = $patchRelease
@@ -336,6 +415,7 @@ function Resolve-ReleaseDecision {
             PatchRelease     = $patchRelease
             HasVersionBump   = $hasVersionBump
             PrereleaseName   = $prereleaseName
+            BumpSource       = $bumpSource
         }
     }
 }
@@ -391,7 +471,7 @@ function Get-GitHubRelease {
     [OutputType([array])]
     param()
 
-    LogGroup 'Get releases - GitHub' {
+    Set-GitHubLogGroup 'Get releases - GitHub' {
         $releasesJson = gh release list --json 'createdAt,isDraft,isLatest,isPrerelease,name,publishedAt,tagName'
         if ($LASTEXITCODE -ne 0) {
             Write-Error 'Failed to list releases for the repo.'
@@ -437,7 +517,7 @@ function Get-LatestGitHubVersion {
         [array] $Releases = @()
     )
 
-    LogGroup 'Get latest version - GitHub' {
+    Set-GitHubLogGroup 'Get latest version - GitHub' {
         $latestRelease = $Releases | Where-Object { $_.isLatest -eq $true }
         $tagName = [string]$latestRelease.tagName
 
@@ -479,7 +559,7 @@ function Get-LatestPSGalleryVersion {
         [string] $ModuleName
     )
 
-    LogGroup 'Get latest version - PSGallery' {
+    Set-GitHubLogGroup 'Get latest version - PSGallery' {
         $retryCount = 5
         $retryDelaySeconds = 10
         $latest = $null
@@ -543,7 +623,7 @@ function Get-LatestPublishedVersion {
         [object] $PSGalleryVersion
     )
 
-    LogGroup 'Latest version' {
+    Set-GitHubLogGroup 'Latest version' {
         $candidates = @($PSGalleryVersion, $GitHubVersion) |
             Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace([string]$_) }
 
@@ -681,7 +761,7 @@ function Get-NextModuleVersion {
         [array] $Releases = @()
     )
 
-    LogGroup 'Calculate new version' {
+    Set-GitHubLogGroup 'Calculate new version' {
         $baseVersion = if ($null -eq $LatestVersion -or [string]::IsNullOrWhiteSpace([string]$LatestVersion)) {
             Write-Warning "No latest version was resolved. Using '0.0.0' as the baseline."
             '0.0.0'
@@ -777,7 +857,7 @@ function Get-ResolvedModuleVersion {
         [array] $Releases = @()
     )
 
-    LogGroup 'Resolve module version' {
+    Set-GitHubLogGroup 'Resolve module version' {
         $latestVersion = Get-LatestPublishedVersion -GitHubVersion $GitHubVersion -PSGalleryVersion $PSGalleryVersion
         $params = @{
             LatestVersion = $latestVersion
@@ -830,7 +910,7 @@ function Write-ActionOutput {
         [object] $NewVersion
     )
 
-    LogGroup 'Emit outputs' {
+    Set-GitHubLogGroup 'Emit outputs' {
         $versionString = "$($NewVersion.Major).$($NewVersion.Minor).$($NewVersion.Patch)"
         $prereleaseString = [string]$NewVersion.Prerelease
         $fullVersionString = $NewVersion.ToString()
