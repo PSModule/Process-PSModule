@@ -1,4 +1,6 @@
-﻿function Split-CommaSeparatedList {
+﻿$ErrorActionPreference = 'Stop'
+
+function Split-CommaSeparatedList {
     <#
         .SYNOPSIS
         Split a comma-separated string into a trimmed, non-empty array.
@@ -460,7 +462,8 @@ function Get-LatestPSGalleryVersion {
 
         .DESCRIPTION
         The function queries the PowerShell Gallery for the latest published version of the module.
-        It retries up to five times, with a ten-second delay between attempts.
+        Only verified PackageNotFound absence provides a first-release baseline.
+        Authentication, API, and incomplete-metadata errors stop version resolution.
 
         .OUTPUTS
         PSSemVer representing the latest PSGallery version.
@@ -480,32 +483,22 @@ function Get-LatestPSGalleryVersion {
     )
 
     LogGroup 'Get latest version - PSGallery' {
-        $retryCount = 5
-        $retryDelaySeconds = 10
-        $latest = $null
-
-        for ($i = 1; $i -le $retryCount; $i++) {
-            try {
-                Write-Host "Finding module [$ModuleName] in the PowerShell Gallery."
-                $latest = Find-PSResource -Name $ModuleName -Repository PSGallery -Verbose:$false
-                Write-Host ($latest | Format-Table | Out-String)
-                break
-            } catch {
-                if ($i -eq $retryCount) {
-                    Write-Warning "Failed to find the module [$ModuleName] in the PowerShell Gallery."
-                    Write-Warning $_.Exception.Message
-                }
-                Start-Sleep -Seconds $retryDelaySeconds
+        Write-Host "Finding module [$ModuleName] in the PowerShell Gallery."
+        try {
+            $packages = @(Find-PSResource -Name $ModuleName -Repository PSGallery -ErrorAction Stop)
+        } catch {
+            $failure = $_
+            if ($failure.FullyQualifiedErrorId -notlike 'PackageNotFound,*') {
+                throw
             }
+            Write-Host "The module [$ModuleName] is absent from the Gallery; using the first-release baseline [0.0.0]."
+            return (New-PSSemVer -Version '0.0.0')
         }
-
-        $version = if ($latest.Version) {
-            New-PSSemVer -Version ($latest.Version).ToString()
-        } else {
-            Write-Warning "Could not find module online. Using '0.0.0'."
-            New-PSSemVer -Version '0.0.0'
+        if ($packages.Count -ne 1 -or $packages[0].Name -ine $ModuleName -or
+            [string]::IsNullOrWhiteSpace([string]$packages[0].Version)) {
+            throw "Cannot verify the latest Gallery version metadata for [$ModuleName]."
         }
-
+        $version = New-PSSemVer -Version ([string]$packages[0].Version)
         Write-Host "PSGallery version: [$($version.ToString())]"
         $version
     }
@@ -606,9 +599,30 @@ function Get-NextPrereleaseNumber {
         Prerelease  = $true
         Repository  = 'PSGallery'
         Verbose     = $false
-        ErrorAction = 'SilentlyContinue'
+        ErrorAction = 'Stop'
     }
-    $matchingPSGalleryPrereleases = Find-PSResource @params |
+    try {
+        $galleryVersions = @(Find-PSResource @params)
+        if ($galleryVersions.Count -eq 0) {
+            throw 'The successful prerelease enumeration returned no verifiable package metadata.'
+        }
+        $galleryVersions = @($galleryVersions | ForEach-Object {
+                if ($_.Name -ine $ModuleName -or [string]$_.Version -notmatch '^\d+\.\d+\.\d+$') {
+                    throw "The Gallery prerelease enumeration returned unverifiable version metadata for [$ModuleName]."
+                }
+                [pscustomobject]@{
+                    Version    = [version]([string]$_.Version)
+                    Prerelease = $_.Prerelease
+                }
+            })
+    } catch {
+        $failure = $_
+        if ($failure.FullyQualifiedErrorId -notlike 'PackageNotFound,*') {
+            throw
+        }
+        $galleryVersions = @()
+    }
+    $matchingPSGalleryPrereleases = $galleryVersions |
         Where-Object { "$($_.Version.Major).$($_.Version.Minor).$($_.Version.Build)" -eq $BaseVersion } |
         Where-Object { $_.Prerelease -like "$PrereleaseName*" }
 
