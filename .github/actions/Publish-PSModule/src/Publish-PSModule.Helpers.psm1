@@ -1,16 +1,18 @@
 ﻿function Get-ModuleVersionString {
     <#
         .SYNOPSIS
-        Builds the SemVer version string that identifies the module itself.
+        Build the SemVer version string that identifies the module.
 
         .DESCRIPTION
-        Composes the module version and, when there is one, the prerelease label. This is the string the
-        PowerShell Gallery and the module manifest understand: `Major.Minor.Patch` optionally followed by
-        `-<prerelease>`. It never carries the repository's version prefix, because neither the manifest's
-        `ModuleVersion` nor a Gallery package version accepts one.
+        If a prerelease label is present, the function puts the module version and the label together.
+        The PowerShell Gallery and the module manifest use this string: `Major.Minor.Patch` optionally followed by `-<prerelease>`.
+        The string never includes the repository's version prefix.
+        Neither the manifest's `ModuleVersion` nor a Gallery package version accepts a prefix.
 
         .OUTPUTS
-        String with the module version.
+        System.String
+
+        The module version.
 
         .EXAMPLE
         Get-ModuleVersionString -ModuleVersion '1.1.10'

@@ -1,5 +1,5 @@
 name: Get-PSModuleSettings
-description: Get settings for a PowerShell module workflow
+description: Get settings for a PowerShell module workflow.
 author: PSModule
 branding:
   icon: settings
@@ -10,7 +10,7 @@ inputs:
     description: Name of the module.
     required: false
   SettingsPath:
-    description: Path to the settings file (json, yaml/yml, or psd1)
+    description: Path to the settings file (json, yaml/yml, or psd1).
     required: false
   Debug:
     description: Enable debug output.
@@ -21,21 +21,23 @@ inputs:
     required: false
     default: 'false'
   Version:
-    description: Specifies the version of the GitHub module to be installed. Accepts an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
+    description: Version of the GitHub module to install. The action accepts an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
     required: false
   Prerelease:
     description: Allow prerelease versions if available.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: ${{ github.workspace }}
   ImportantFilePatterns:
     description: |
-      Newline-separated list of regex patterns that identify important files.
-      Changes matching these patterns trigger build, test, and publish stages.
-      When set, fully replaces the defaults.
+      Newline-separated list of regular expression patterns that identify
+      important files.
+      Changes that match these patterns trigger build, test, and publish
+      stages.
+      When set, the list fully replaces the defaults.
     required: false
     default: |
       ^src/
@@ -43,7 +45,7 @@ inputs:
 
 outputs:
   Settings:
-    description: The complete settings object as JSON, including test suites
+    description: The complete settings object as JSON, including test suites.
     value: ${{ fromJson(steps.Get-PSModuleSettings.outputs.result).Settings }}
 
 runs:

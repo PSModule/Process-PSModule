@@ -44,7 +44,7 @@ The framework treats `src/` as the source for the compiled module. Place code in
 Layout rules:
 
 - **One declaration per file.** Filename matches the declared symbol exactly, including casing.
-- **Group by domain.** Use resource or behaviour groups — not verb folders, not endpoint paths.
+- **Group by domain.** Use resource or behavior groups — not verb folders, not endpoint paths.
 - **Mirror public and private domains.** Public command under `src/functions/public/Projects/` has related private helpers under `src/functions/private/Projects/`.
 - **No nested functions.** Do not define helper functions inside other functions. Extract helper logic to a separate function file and decide whether it belongs in `src/functions/private/<Group>/` (internal-only) or `src/functions/public/<Group>/` (part of the module API).
 - **Declare dependencies where they are used.** Use `#Requires -Modules <Name>` at the top of each function file that needs an external module. Do not add `RequiredModules` to `src/manifest.psd1` — the build collects all `#Requires` declarations automatically and writes them into the compiled manifest. Entries in `src/manifest.psd1` are silently ignored for this purpose.
@@ -65,7 +65,7 @@ Layout rules:
 
 ## SOLID applied
 
-- **Single Responsibility.** One file, one function. One function, one user-visible behaviour. If the synopsis needs "and", split it.
+- **Single Responsibility.** One file, one function. One function, one user-visible behavior. If the synopsis needs "and", split it.
 - **Open/Closed.** Extend via parameter sets, private helpers, or new files — not boolean switches that fork large blocks.
 - **Liskov.** A derived class must work wherever the base is expected.
 - **Interface Segregation.** Narrow, intent-named parameter sets.
@@ -79,9 +79,9 @@ Every parameter that has a natural default should declare one. The most common u
 
 - Prefer `= 'main'` over making `-Branch` mandatory in commands that act on branches.
 - Prefer sensible page sizes, counts, or ranges over requiring callers to specify them.
-- Prefer `= $false` for switches rather than leaving the behaviour implicit.
+- Prefer `= $false` for switches rather than leaving the behavior implicit.
 
-This is a usability expression of the **Open/Closed** principle: the common path is open by default; callers that need different behaviour extend it by supplying alternatives — they are never forced to know the default just to get started.
+Parameter defaults apply the **Open/Closed** principle. The common path is open by default. Callers that need different behavior extend it with alternative inputs. They are never forced to know the default to get started.
 
 ### Object-first parameters
 
@@ -91,7 +91,7 @@ Parameters represent attributes of a real-world entity. Design them to reflect t
 - **Group flat parameters by their conceptual object.** When a typed object is not available, prefix each parameter with the name of the entity it belongs to: `$ServerHost`, `$ServerPort`, `$ServerTls` rather than `$Host`, `$Port`, `$Tls`. The prefix makes the grouping explicit, prevents collisions with unrelated parameters, and avoids shadowing PowerShell built-in variables (`$Host`).
 - **Offer both modes when callers need both.** A parameter set that accepts an object and a parallel parameter set that accepts its individual attributes are equally valid; use both when that genuinely serves users.
 
-This mirrors **Interface Segregation**: each parameter set represents one coherent input contract — not a flat list of loosely related knobs — so callers only touch what they need.
+This applies **Interface Segregation**: each parameter set represents one coherent input contract, not a flat list of loosely related inputs. Callers supply only the inputs they need.
 
 > Note: the rule "avoid repeating the noun" (e.g. `-ID` not `-ProjectID` in `Get-ContosoProject`) applies to a command's *own* noun. The object-prefix convention above applies when a single command spans *multiple* conceptual objects (`$ServerHost` vs `$ClientID`) — the prefix is the object name, not the command noun, so there is no conflict.
 

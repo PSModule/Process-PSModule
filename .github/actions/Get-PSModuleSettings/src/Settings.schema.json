@@ -11,7 +11,7 @@
     },
     "ImportantFilePatterns": {
       "type": "array",
-      "description": "Regex patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. Defaults to ['^src/', '^README\\.md$'] when not configured.",
+      "description": "Regular expression patterns that identify important files. Changes that match these patterns trigger build, test, and publish stages. When not configured, the defaults are ['^src/', '^README\\.md$'].",
       "items": {
         "type": "string",
         "minLength": 1
@@ -19,7 +19,7 @@
     },
     "Test": {
       "type": "object",
-      "description": "Test configuration settings",
+      "description": "Test configuration",
       "properties": {
         "Skip": {
           "type": "boolean",
@@ -54,7 +54,7 @@
           "properties": {
             "Skip": {
               "type": "boolean",
-              "description": "Skip test results collection"
+              "description": "Skip collection of test results"
             }
           }
         },
@@ -64,7 +64,7 @@
           "properties": {
             "Skip": {
               "type": "boolean",
-              "description": "Skip code coverage collection"
+              "description": "Skip collection of code coverage"
             },
             "PercentTarget": {
               "type": "number",
@@ -74,7 +74,7 @@
             },
             "StepSummaryMode": {
               "type": "string",
-              "description": "Mode for displaying step summary"
+              "description": "Display mode for the step summary"
             }
           }
         }
@@ -82,7 +82,7 @@
     },
     "Build": {
       "type": "object",
-      "description": "Build configuration settings",
+      "description": "Build configuration",
       "properties": {
         "Skip": {
           "type": "boolean",
@@ -124,7 +124,7 @@
     },
     "Publish": {
       "type": "object",
-      "description": "Publish configuration settings",
+      "description": "Publish configuration",
       "properties": {
         "Module": {
           "type": "object",
@@ -168,22 +168,22 @@
             },
             "MajorLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger major version bump",
+              "description": "Comma-separated labels that trigger a major version bump",
               "default": "release:major"
             },
             "MinorLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger minor version bump",
+              "description": "Comma-separated labels that trigger a minor version bump",
               "default": "release:minor"
             },
             "PatchLabels": {
               "type": "string",
-              "description": "Comma-separated labels that trigger patch version bump",
+              "description": "Comma-separated labels that trigger a patch version bump",
               "default": "release:patch"
             },
             "IgnoreLabels": {
               "type": "string",
-              "description": "Comma-separated labels that prevent release",
+              "description": "Comma-separated labels that prevent a release",
               "default": "release:skip"
             },
             "PrereleaseLabels": {
@@ -193,15 +193,15 @@
             },
             "UsePRTitleAsReleaseName": {
               "type": "boolean",
-              "description": "Use pull request title as the GitHub release name"
+              "description": "Use the pull request title as the GitHub release name"
             },
             "UsePRBodyAsReleaseNotes": {
               "type": "boolean",
-              "description": "Use pull request body as the release notes content"
+              "description": "Use the pull request body as the release notes content"
             },
             "UsePRTitleAsNotesHeading": {
               "type": "boolean",
-              "description": "Add pull request title as H1 heading in release notes"
+              "description": "Add the pull request title as an H1 heading in release notes"
             },
             "ReleaseType": {
               "type": "string",
@@ -263,7 +263,7 @@
           "properties": {
             "Skip": {
               "type": "boolean",
-              "description": "Skip publishing the generated documentation site"
+              "description": "Skip publication of the generated documentation site"
             }
           }
         }
@@ -271,7 +271,7 @@
     },
     "Linter": {
       "type": "object",
-      "description": "Linter configuration settings",
+      "description": "Linter configuration",
       "properties": {
         "Skip": {
           "type": "boolean",
@@ -332,7 +332,7 @@
     },
     "Run": {
       "type": "null",
-      "description": "Deprecated. Runtime execution flags are now stored on each phase object."
+      "description": "Deprecated. Runtime execution flags are stored on each phase object."
     }
   },
   "definitions": {

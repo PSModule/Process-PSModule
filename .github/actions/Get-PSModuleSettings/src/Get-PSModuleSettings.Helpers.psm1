@@ -5,7 +5,7 @@ Import-Module -Name (
 function Resolve-WorkflowEventRouting {
     <#
         .SYNOPSIS
-        Resolves release and execution routing from normalized GitHub event state.
+        Resolve release and execution routing from normalized GitHub event state.
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -167,7 +167,7 @@ function Resolve-PSModulePublishSetting {
 function Select-PullRequestForPush {
     <#
         .SYNOPSIS
-        Selects the merged default-branch pull request associated with a pushed commit.
+        Select the merged default-branch pull request associated with a pushed commit.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '',
         Justification = 'Parameter is used inside a Sort-Object script block.')]
@@ -446,7 +446,7 @@ function Get-PSModuleReleaseForCommit {
 function Get-FilesFromGitTree {
     <#
         .SYNOPSIS
-        Returns the files contained in a complete Git tree response.
+        Return the files from a complete Git tree response.
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -467,7 +467,7 @@ function Get-FilesFromGitTree {
 function Get-FilesFromGitHubComparison {
     <#
         .SYNOPSIS
-        Returns files from a complete GitHub compare response.
+        Return files from a complete GitHub compare response.
     #>
     [CmdletBinding()]
     [OutputType([string])]
