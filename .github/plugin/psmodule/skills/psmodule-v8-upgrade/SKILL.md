@@ -54,7 +54,8 @@ the template's default files before adding, removing, or relocating anything.
 The template is a starting point, not a reason to overwrite module-specific
 content.
 
-The current template's default repository anatomy is:
+If the selected immutable template revision has this layout, its default
+repository anatomy is:
 
 ```text
 <ModuleName>/
@@ -125,11 +126,13 @@ Treat files and directories as follows:
   Preserve the consumer's local onboarding contract while updating stale links.
 
 If the template revision and the consumer's existing layout disagree, record
-the difference and migrate only the requested integration surface. In
-particular, the current template uses `.github/zensical.toml`, while this v8
-upgrade request uses `docs/zensical.toml`, `docs/content/`, and
-`docs/overrides/` (including `docs/overrides/assets/`) as its documentation
-contract; a separate `docs/assets/` directory is optional. When that requested
+the difference and migrate only the requested integration surface.
+
+If the selected immutable template revision uses `.github/zensical.toml`,
+that file contains the template's Zensical settings. If the requested v8
+upgrade uses `docs/zensical.toml`, `docs/content/`, and `docs/overrides/`
+(including `docs/overrides/assets/`) as its documentation contract, a separate
+`docs/assets/` directory is optional. When that requested
 documentation migration is in scope, move the template's Zensical settings
 and custom assets into the `docs/` contract rather than maintaining both
 configurations. When it is not in scope, preserve the consumer's existing
