@@ -5,9 +5,10 @@ on:
     secrets:
       TestData:
         description: |
-          Optional single-line JSON object with 'secrets' and 'variables' maps. Each entry is exposed
-          as an environment variable the module's Pester tests read via $env:<name>; 'secrets' values
-          are masked in the logs, 'variables' values are not.
+          Optional single-line JSON object with 'secrets' and 'variables' maps.
+          The workflow exposes each entry as an environment variable that the
+          module's Pester tests read via $env:<name>. It masks 'secrets' values
+          in the logs but does not mask 'variables' values.
         required: false
     inputs:
       Settings:

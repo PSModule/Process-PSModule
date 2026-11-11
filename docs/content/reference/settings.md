@@ -5,8 +5,8 @@ description: The Process-PSModule settings file — every available setting in .
 
 # Settings
 
-The workflow is configured using a settings file in the module repository.
-The file can be a `JSON`, `YAML`, or `PSD1` file. By default, it will look for `.github/PSModule.yml`.
+The workflow uses a settings file in the module repository.
+The file can use `JSON`, `YAML`, or `PSD1`. The default path is `.github/PSModule.yml`.
 
 The settings listed on this page are the user-facing configuration contract in `.github/PSModule.yml`. During the
 Plan phase, Process-PSModule enriches this input into an internal runtime `Settings` object that downstream workflows

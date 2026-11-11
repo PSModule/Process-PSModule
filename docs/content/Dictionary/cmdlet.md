@@ -5,6 +5,6 @@ abbreviations: []
 
 # Cmdlet
 
-A lightweight [PowerShell](powershell.md) command that follows the verb-noun naming convention and is designed to perform a specific function.
+A cmdlet is a lightweight [PowerShell](powershell.md) command that performs a specific task and follows the verb-noun naming convention.
 
 **Example**: `Get-Process`, `Set-Location`, `New-Item`

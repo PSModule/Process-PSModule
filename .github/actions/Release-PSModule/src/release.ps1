@@ -3,11 +3,11 @@
 
 <#
     .SYNOPSIS
-    Creates or resumes a GitHub release for a versioned PowerShell module artifact.
+    Create or resume a GitHub release for a versioned PowerShell module artifact.
 
     .DESCRIPTION
-    Validates the supplied module artifact, creates a GitHub release when its tag does not
-    already exist, uploads the artifact ZIP, and reports the result on the source pull request.
+    The script validates the supplied module artifact. If the release tag does not exist, the script creates a GitHub release.
+    It uploads the artifact ZIP and reports the result on the source pull request.
 
     .EXAMPLE
     ./release.ps1
@@ -15,10 +15,14 @@
     Creates or resumes the release using inputs supplied by the Release-PSModule action.
 
     .INPUTS
-    None. The Release-PSModule composite action supplies values through environment variables.
+    None
+
+    The Release-PSModule composite action supplies values through environment variables.
 
     .OUTPUTS
-    None. The script writes ReleaseTag and ReleaseUrl to the GitHub Actions output file.
+    None
+
+    The script writes ReleaseTag and ReleaseUrl to the GitHub Actions output file.
 #>
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', 'usePRBodyAsReleaseNotes',

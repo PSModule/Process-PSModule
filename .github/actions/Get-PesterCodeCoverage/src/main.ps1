@@ -38,7 +38,7 @@ LogGroup 'List files' {
     $files.Name | Out-String
 }
 
-# Accumulators for coverage items across all files
+# Coverage items from all report files.
 $allMissed = @()
 $allExecuted = @()
 $allFiles = @()
@@ -84,7 +84,7 @@ foreach ($file in $files) {
         }
         $jsonContent.FilesAnalyzed = $normalizedFiles
 
-        # Now accumulate coverage items
+        # Collect coverage items from this report.
         $allMissed += $jsonContent.CommandsMissed
         $allExecuted += $jsonContent.CommandsExecuted
         $allFiles += $jsonContent.FilesAnalyzed
@@ -98,7 +98,7 @@ $finalExecuted = $allExecuted |
 
 $finalFiles = $allFiles | Sort-Object -Unique
 
-# -- Remove from missed any command that shows up in executed --
+# Exclude missed commands that an execution report includes.
 $executedKeys = $finalExecuted | ForEach-Object {
     '{0}|{1}|{2}|{3}|{4}|{5}|{6}' -f $_.File, $_.Line, $_.Command, $_.StartColumn, $_.EndColumn, $_.Class, $_.Function
 }
@@ -109,7 +109,7 @@ $finalMissed = $allMissed |
         $executedKeys -notcontains $key
     }
 
-# -- Compute the new coverage percentages --
+# Calculate combined code coverage.
 $missedCount = $finalMissed.Count
 $executedCount = $finalExecuted.Count
 $totalAnalyzed = $missedCount + $executedCount
@@ -313,7 +313,7 @@ LogGroup 'Step Summary - Set step summary' {
 
     Write-Verbose "Step Summary Mode: $stepSummaryMode"
 
-    # If mode is 'None', skip step summary generation completely
+    # If the mode is 'None', omit the step summary.
     if ($stepSummaryMode -eq 'None') {
         Write-Verbose 'Step summary is disabled'
         return
@@ -386,7 +386,7 @@ LogGroup 'Step Summary - Set step summary' {
 }
 
 
-# Throw an error if coverage is below target
+# Fail the action if coverage is below the target.
 if ($coveragePercent -lt $coveragePercentTarget) {
     Write-GitHubError "Coverage is below target! Found $coveragePercent%, target is $coveragePercentTarget%."
     exit 1

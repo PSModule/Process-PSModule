@@ -5,7 +5,7 @@ description: How Process-PSModule delivers the spec — a single reusable GitHub
 
 # Process-PSModule — Design
 
-The behaviour in the [spec](spec.md) is delivered by a **single reusable GitHub Actions workflow** at `PSModule/Process-PSModule/.github/workflows/workflow.yml`. A repository using the workflow provides a caller workflow and a minimal `.github/PSModule.yml` settings file; everything else uses sensible defaults.
+The **single reusable GitHub Actions workflow** at `PSModule/Process-PSModule/.github/workflows/workflow.yml` delivers the behavior in the [spec](spec.md). Repositories that use the workflow provide a caller workflow and a minimal `.github/PSModule.yml` settings file. Other settings use defaults.
 
 ## Workflow architecture
 
@@ -19,7 +19,7 @@ documented in [Workflow inputs](../reference/workflow-inputs.md).
 
 ### Composed reusable workflows
 
-The main workflow composes work across specialized reusable workflows, each owning a pipeline stage:
+The main workflow coordinates specialized reusable workflows. Each workflow owns a pipeline stage:
 
 - **Plan** — reads the settings file and event context, decides what runs, computes the next version
 - **Lint-Repository** — validates repository structure and configuration
@@ -32,7 +32,7 @@ The main workflow composes work across specialized reusable workflows, each owni
 - **Publish-Module** — publishes the module to the PowerShell Gallery
 - **Publish-Site** — generates and publishes documentation to GitHub Pages
 
-Each workflow is reusable so it can be tested and versioned independently, invoked by name in the main orchestration workflow.
+Each workflow is reusable so it can be tested and versioned independently. The main orchestration workflow calls each workflow by name.
 
 ## Settings file contract
 
@@ -40,7 +40,7 @@ The caller provides `.github/PSModule.yml`. Every key is optional and every sett
 start with an effectively empty file and opt out of individual phases as needed. The authorable contract is documented
 in [Settings](../reference/settings.md).
 
-The Plan job reads this settings file, enriches it with computed values (phase enables, test matrices, resolved version, release decision), and passes the enriched settings to downstream jobs as a JSON string in workflow outputs.
+The Plan job reads this settings file and adds phase enables, test matrices, the resolved version, and the release decision. It passes the enriched settings to downstream jobs as a JSON string in workflow outputs.
 
 That enriched object is an internal inter-workflow contract, not an authoring format. It is documented in
 [Pipeline stages](../reference/pipeline-stages.md#internal-runtime-settings-contract).
@@ -76,13 +76,13 @@ Each stage of the pipeline is a reusable workflow so it can be tested independen
 
 **Alternative: Single monolithic workflow**
 
-All logic in one workflow file. Pros: simpler to read end-to-end. Cons: harder to test, version, and reuse; changes in one stage risk all stages; every module repo copies the full logic.
+All logic is in one workflow file. Pros: simpler to read end-to-end. Cons: harder to test, version, and reuse; changes in one stage risk all stages; every module repo copies the full logic.
 
 ### Settings file format
 
 **Chosen: YAML with runtime enrichment**
 
-The caller provides a simple YAML file; the Plan job enriches it with computed values and passes the enriched settings to all downstream jobs. Pros: simple, readable, minimal to start. Cons: only the Plan job computes the settings; other jobs consume them.
+The caller provides a YAML file. The Plan job enriches it with computed values and passes the enriched settings to all downstream jobs. Pros: simple, readable, minimal to start. Cons: only the Plan job computes the settings; other jobs consume them.
 
 **Alternative: JSON in workflow outputs**
 

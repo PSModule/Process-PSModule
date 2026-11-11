@@ -1,5 +1,5 @@
 name: Get-PesterCodeCoverage
-description: A GitHub Action that is used to gather Code Coverage for the PSModule process.
+description: Collect code coverage results for the PSModule process.
 author: PSModule
 branding:
   icon: upload-cloud
@@ -15,24 +15,24 @@ inputs:
     required: false
     default: 'false'
   Version:
-    description: Specifies the version of the GitHub module to be installed. Accepts an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
+    description: GitHub module version to install. Use an exact version or a NuGet version range (for example '[1.2.0, 2.0.0)').
     required: false
   Prerelease:
     description: Allow prerelease versions if available.
     required: false
     default: 'false'
   WorkingDirectory:
-    description: The working directory where the script will run from.
+    description: Working directory for the script.
     required: false
     default: '.'
   StepSummary_Mode:
     description: |
-      Controls which sections to show in the GitHub step summary.
+      Select the sections to show in the GitHub step summary.
       Use 'Full' for all sections, 'None' to disable, or a comma-separated list of 'Missed, Executed, Files'.
     required: false
     default: Missed, Files
   CodeCoveragePercentTarget:
-    description: The target for code coverage.
+    description: Target code coverage percentage.
     required: false
 
 outputs:

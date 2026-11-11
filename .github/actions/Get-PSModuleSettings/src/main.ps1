@@ -528,19 +528,20 @@ if ($settings.Test.Skip) {
             function Get-TestItemsFromFolder {
                 <#
                     .SYNOPSIS
-                        Retrieves test items from a specified folder.
+                        Get test items from the specified folder.
 
                     .DESCRIPTION
-                        This function searches for test-related files in the specified folder.
-                        It looks for configuration files (*.Configuration.ps1), container files (*.Container.ps1),
-                        and test files (*.Tests.ps1) in that order of precedence.
+                        The function searches the specified folder for test-related files.
+                        It searches for configuration files (*.Configuration.ps1), container files (*.Container.ps1),
+                        and test files (*.Tests.ps1), in that order of precedence.
 
                     .PARAMETER FolderPath
-                        The path to the folder to search for test items.
+                        Path to the folder to search for test items.
 
                     .OUTPUTS
                         System.IO.FileInfo[]
-                        Returns an array of test-related files found in the folder.
+
+                        An array of test-related files from the folder.
                 #>
                 param ([string]$FolderPath)
 
@@ -563,18 +564,19 @@ if ($settings.Test.Skip) {
             function Find-TestDirectory {
                 <#
                     .SYNOPSIS
-                        Finds test directories recursively.
+                        Find test directories recursively.
 
                     .DESCRIPTION
-                        This function recursively searches for all directories starting from the specified path.
-                        It returns a flat array of all directory paths found.
+                        The function searches recursively for all directories from the specified path.
+                        It returns all directory paths in a flat array.
 
                     .PARAMETER Path
-                        The root path to start searching for directories.
+                        Root path for the directory search.
 
                     .OUTPUTS
                         System.String[]
-                        Returns an array of directory paths.
+
+                        An array of directory paths.
                 #>
                 param ([string]$Path)
 

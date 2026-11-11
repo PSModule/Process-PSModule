@@ -5,9 +5,10 @@ on:
     secrets:
       TestData:
         description: |
-          Optional single-line JSON object with 'secrets' and 'variables' maps. Each entry is exposed
-          as an environment variable available to the AfterAll teardown script; 'secrets' values are
-          masked in the logs, 'variables' values are not.
+          Optional single-line JSON object with 'secrets' and 'variables' maps.
+          The workflow exposes each entry as an environment variable for the
+          AfterAll teardown script. It masks 'secrets' values in the logs but
+          does not mask 'variables' values.
         required: false
     inputs:
       Settings:

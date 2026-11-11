@@ -5,4 +5,4 @@ abbreviations: []
 
 # Markdown
 
-A lightweight markup language with plain text formatting syntax, designed to be converted to HTML and many other formats.
+Markdown is a lightweight markup language that uses plain text syntax. Tools convert Markdown documents to HTML and other formats.

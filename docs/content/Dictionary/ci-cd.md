@@ -8,4 +8,8 @@ abbreviations:
 
 # Continuous Integration and Continuous Deployment
 
-Continuous Integration/Continuous Deployment (CI/CD) - A software development practice where developers regularly merge their code changes into a central repository, after which automated builds and tests are run.
+CI/CD combines Continuous Integration with Continuous Delivery or Continuous Deployment.
+
+Continuous Integration (CI) uses automated builds and tests when developers merge code changes into a shared repository.
+
+Continuous Delivery keeps tested changes ready for production deployment. Continuous Deployment automatically deploys each change that passes the pipeline to production.

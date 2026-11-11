@@ -76,8 +76,8 @@ Keep existing content under `docs/content/`, custom templates under
 `docs/assets/` directory is optional for static content assets. Do not create a
 parallel MkDocs theme or leave two active site configurations.
 
-The current `PSModule/Template-PSModule` repository historically stores a
-starter `.github/zensical.toml` and may not contain a `docs/` tree. When the
+If the selected immutable `PSModule/Template-PSModule` revision contains a
+starter `.github/zensical.toml`, it may not contain a `docs/` tree. When the
 consumer upgrade explicitly requires the Process-PSModule `docs/` contract,
 move the template settings and custom assets into `docs/` and remove the
 obsolete active configuration only after the site builds. When that contract
