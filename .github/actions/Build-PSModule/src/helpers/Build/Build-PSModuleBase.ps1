@@ -1,11 +1,11 @@
 ﻿function Build-PSModuleBase {
     <#
     .SYNOPSIS
-    Compiles the base module files.
+    Build the base module files.
 
     .DESCRIPTION
-    This function will compile the base module files.
-    It will copy the source files to the output folder and remove the files that are not needed.
+    Build-PSModuleBase copies source files to the output folder.
+    It creates an empty root module file.
 
     .EXAMPLE
     Build-PSModuleBase -SourceFolderPath 'C:\MyModule\src\MyModule' -OutputFolderPath 'C:\MyModule\build\MyModule'
@@ -24,11 +24,11 @@
         [Parameter(Mandatory)]
         [string] $ModuleName,
 
-        # Path to the folder where the module source code is located.
+        # Path to the module source folder.
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleSourceFolder,
 
-        # Path to the folder where the built modules are outputted.
+        # Path to the folder for the built module.
         [Parameter(Mandatory)]
         [System.IO.DirectoryInfo] $ModuleOutputFolder
     )

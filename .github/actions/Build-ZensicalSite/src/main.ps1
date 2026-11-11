@@ -2,11 +2,11 @@
 
 <#
     .SYNOPSIS
-    Builds the Zensical site under the framework artifact directory.
+    Build the Zensical site in the framework artifact directory.
 
     .DESCRIPTION
-    Runs zensical build from .PSModule/site. The generated site remains at
-    <WorkingDirectory>/.PSModule/site/_site for downstream workflow steps.
+    The script runs zensical build from .PSModule/site.
+    The site remains at <WorkingDirectory>/.PSModule/site/_site for later workflow steps.
 
     .EXAMPLE
     ./main.ps1 -WorkingDirectory '.'
