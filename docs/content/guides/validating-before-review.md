@@ -56,7 +56,9 @@ Follow the shared branch → draft PR → implement → test → self-review loo
    - comment-based help is present for every changed function, including private helpers
    - help sections, examples, `.INPUTS`, `.OUTPUTS`, and parameter documentation match the function contract from [MSX PowerShell Functions](https://msx.no/docs/Coding-Standards/PowerShell/Functions/)
    - every public function has a first `.LINK` entry using an absolute HTTPS URL whose path matches the generated command documentation path
-   - public-function links resolve and usage examples match the implemented parameters and outputs
+   - links to new, moved, or unpublished public-function pages match targets in the generated documentation
+   - links to already-published public-function pages resolve on the published site
+   - usage examples match the implemented parameters and outputs
 
    Function help is part of the delivered behavior in PSModule repositories. Do not defer help as optional cleanup.
 
