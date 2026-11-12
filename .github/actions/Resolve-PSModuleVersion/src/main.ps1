@@ -9,6 +9,16 @@ Import-Module -Name "$PSScriptRoot/Resolve-PSModuleVersion.Helpers.psm1" -Force
 $actionInput = Read-ActionInput
 $config = Get-PublishConfiguration -SettingsJson $actionInput.SettingsJson
 $pullRequest = Get-GitHubPullRequest -SettingsJson $actionInput.SettingsJson
+$settings = $actionInput.SettingsJson | ConvertFrom-Json -ErrorAction Stop
+$publicationContext = [pscustomobject]@{
+    Repository  = $env:GITHUB_REPOSITORY
+    PullRequest = if ($null -eq $pullRequest.Number) { 0 } else { $pullRequest.Number }
+    CommitSha   = if ([string]::IsNullOrWhiteSpace($settings.Context.CommitSha)) {
+        $env:GITHUB_SHA
+    } else {
+        [string]$settings.Context.CommitSha
+    }
+}
 
 $decision = if ($null -eq $pullRequest) {
     # Non-PR event (for example workflow_dispatch or schedule): there are no pull request
@@ -33,12 +43,13 @@ $ghVersion = Get-LatestGitHubVersion -Releases $releases
 $psGalleryVersion = Get-LatestPSGalleryVersion -ModuleName $actionInput.Name
 
 $params = @{
-    GitHubVersion    = $ghVersion
-    PSGalleryVersion = $psGalleryVersion
-    Decision         = $decision
-    Configuration    = $config
-    ModuleName       = $actionInput.Name
-    Releases         = $releases
+    GitHubVersion      = $ghVersion
+    PSGalleryVersion   = $psGalleryVersion
+    Decision           = $decision
+    Configuration      = $config
+    ModuleName         = $actionInput.Name
+    Releases           = $releases
+    PublicationContext = $publicationContext
 }
 $newVersion = Get-ResolvedModuleVersion @params
 

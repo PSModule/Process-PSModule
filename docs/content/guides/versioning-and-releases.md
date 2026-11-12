@@ -73,6 +73,99 @@ Each publication produces three linked, immutable artifacts:
 Release names and notes can be generated from the pull request — see
 [Configuring the pipeline](configuring-the-pipeline.md).
 
+## Publication ownership
+
+Before taking a Gallery version, the publisher verifies the immutable consumer source, the Plan job's exact
+resolved version/tag, the producing repository/PR or direct-release context, and the tested module bytes.
+The Gallery module/version is reserved at a prefix-independent `PSModule-Publication/<escaped-module>/<version>`
+coordinate, and the configured release tag references that same immutable annotated claim. It records the
+source/context, tested file-tree and release-ZIP SHA-256 digests. The resolver's existing prefix must bind
+the tag to the tested artifact version. Existing tags are not updated or deleted.
+
+The module coordinate is lowercase with dots encoded as `%2e`, preserving valid module names without Git-invalid
+`..` or `.lock` components. The original module name and consumer metadata are unchanged.
+
+Standalone tags, annotated tags, releases, provenance footers, module assets, and exact Gallery packages must
+agree with that claim. Raw nupkg files are read without importing package code. Verified absence is different
+from an authentication/API failure or unknown ownership proof; errors and unavailable proof stop publication.
+NuGet-reserved container paths are rejected in the tested candidate before claiming or uploading, rather
+than being discarded only when verifying a published package.
+
+The publisher rechecks the claim and tested files immediately before Gallery upload. GitHub release creation
+and upload repeat the ownership checks. Missing uploads may resume, identical published ZIP bytes are retained,
+and differing or unverifiable assets are never clobbered. Complete authored or generated notes for stable and
+prerelease PR releases remain before their final producing-repository/PR/source footer. Existing PR releases
+without that proof cannot resume; indented, inline, and unreadable terminal markers fail explicitly.
+
+A retry retains the original source, resolved coordinates, release context, and tested bytes. Legacy incomplete
+publications without proof require reviewed forward-only recovery, not a guessed version, retagging, asset
+replacement, or metadata edits. See the [publisher](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Publish-PSModule)
+and [release action](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Release-PSModule) contracts.
+
+Stable recovery resolves the original version in Plan, before Build, by finding the release-tag and shared
+module/version claims for that immutable source and producing context. Refs for the same immutable claim are
+deduplicated. An unpublished shared-only claim stops for original-job retry rather than selecting a new version
+after other releases advance. Its raw Gallery package must match the recorded tested file tree.
+Latest-version hints and numeric equality do not establish ownership. A changed source, foreign PR/context,
+ambiguous claim, unavailable legacy proof, or API failure stops resolution without inventing a fallback version.
+
+For a new source, baseline completeness uses its actual historical tag/release, even when the configured prefix
+changes. Recovery and new claims still bind the current prefix exactly; ambiguous completed baseline tags fail.
+
+## Retry eligibility and artifact retention
+
+Version recovery and tested-artifact reuse are separate checks. If Gallery publication succeeds but GitHub creation
+or upload fails, Plan can select the proven original version. Completion still requires the original tested file
+tree and matching release ZIP, with the same immutable source, producing context, prefix, and resolved coordinates.
+Only the proven duplicate Gallery upload is skipped; published bytes are not replaced. See the
+[resolver contract](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Resolve-PSModuleVersion)
+for version-selection failures.
+
+### Before retrying
+
+The original workflow/action revision must already contain the ownership checks. Retrying an older failed job
+does not install a later framework implementation: GitHub
+[reuses the first attempt's reusable-workflow commit for failed or specific job reruns](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#behavior-of-reusable-workflows-when-re-running-jobs).
+The original artifact and settings must remain available, and the caller or operator must be able to verify the
+required test, lint, and coverage results against that exact artifact. A matching version, artifact name, or
+successful-looking workflow conclusion alone is not completed-test evidence.
+
+The [Build action](https://github.com/PSModule/Process-PSModule/tree/main/.github/actions/Build-PSModule) retains its
+uploaded artifact for one day; the framework calls it `module`. The test, publish, and release wrappers download
+the named artifact from the current run. They do not expose an immutable original-run/attempt/artifact selector
+or a completed-test provenance contract for cross-run reuse. An artifact name, including a duplicate name from
+another attempt, is not proof that the selected bytes are the original tested artifact. Raw Gallery package
+verification establishes payload identity; it is not an original-artifact retrieval or promotion path.
+
+### Choose the retry path
+
+| Retry path | Supported behavior and limit |
+| --- | --- |
+| Only the original failed publishing job; no new Plan, Build, or test execution | Can reuse surviving original bytes and settings when the selected artifact, ownership, and required test evidence remain verifiable and the original runtime contains the safety checks. |
+| All jobs in the workflow | Enabled Build and test jobs run again, and downloads select that run's artifact. Resolving the original version does not guarantee the rebuilt artifact matches its original claim. |
+| A new full workflow run at the same source | Produces a new run/artifact rather than automatically selecting the original tested artifact. Whole-run or cross-run original-artifact recovery is not supplied by the wrappers. |
+| Missing or expired artifact, or unavailable/unverifiable source, context, or test evidence | Stop recovery. Do not infer success, invent a fallback version, or fabricate proof. Reviewed forward-only reconciliation is required when original proof cannot be retained. |
+
+A supported source manifest can omit `GUID`; Build then generates a GUID when creating the manifest. A clean
+rebuild can therefore change manifest, file-tree, and ZIP bytes even when the source and resolved version are
+unchanged. The publisher rechecks the resulting bytes against the original claim and fails on a mismatch.
+Do not insert or replace a consumer GUID or other metadata to force a same-source retry to match. A full rerun
+is not a substitute for retaining the original tested artifact.
+
+### Verify the retained evidence
+
+1. Confirm the selected artifact is the original available Build output and that its immutable source, original
+   settings, producing context, and resolved coordinates match the publication claim.
+2. Verify every required test, lint, and coverage result was completed for those exact bytes. The existing
+   [pipeline stages](../reference/pipeline-stages.md#framework-test) describe those checks; the publication claim's
+   byte digests do not replace their results.
+3. Retain the file-tree and exact ZIP proof. Publication rechecks must agree before another mutation; differing,
+   ambiguous, or unverifiable bytes fail rather than replacing a package, tag, or asset.
+
+Missing or expired artifacts fail the named download. Missing source/context/test evidence makes the retry
+ineligible even if some workflow jobs report success. Stop rather than relax ownership or byte checks,
+import package code as proof, edit metadata, or assume automatic selection of the original artifact.
+
 ## Linear versioning
 
 Only a single linear ancestry of versions is maintained. Old versions are not patched: if a security issue is found on

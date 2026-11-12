@@ -1,4 +1,13 @@
-﻿function Split-CommaSeparatedList {
+﻿$ErrorActionPreference = 'Stop'
+
+Import-Module -Name ([IO.Path]::Combine(
+        $PSScriptRoot, '..', '..', 'Publish-PSModule', 'src', 'Publish-PSModule.Helpers.psm1'
+    )) -Force
+Import-Module -Name ([IO.Path]::Combine(
+        $PSScriptRoot, '..', '..', 'Release-PSModule', 'src', 'Release-PSModule.Helpers.psm1'
+    )) -Force
+
+function Split-CommaSeparatedList {
     <#
         .SYNOPSIS
         Split a comma-separated string into a trimmed, non-empty array.
@@ -154,14 +163,18 @@ function Get-GitHubPullRequest {
     )
 
     LogGroup 'Event information' {
-        $settings = $SettingsJson | ConvertFrom-Json
+        $settings = ConvertFrom-Json -InputObject $SettingsJson -NoEnumerate -ErrorAction Stop
+        if ($settings -is [array] -or $settings -isnot [PSCustomObject]) {
+            throw 'Settings must contain one normalized release-context object.'
+        }
         $context = $settings.Context
         if ($context) {
             $contextPullRequest = $context.PullRequest
-            if ($contextPullRequest) {
-                Write-Host "Using normalized pull request context for #$($contextPullRequest.Number)."
+            if ($null -ne $contextPullRequest) {
+                $number = Get-PSModuleProducingPullRequestNumber -PullRequest $contextPullRequest
+                Write-Host "Using normalized pull request context for #$number."
                 return [PSCustomObject]@{
-                    Number  = $contextPullRequest.Number
+                    Number  = $number
                     HeadRef = $contextPullRequest.HeadRef
                     Labels  = @($contextPullRequest.Labels)
                 }
@@ -179,17 +192,22 @@ function Get-GitHubPullRequest {
         }
 
         $eventJsonInput = $env:PSMODULE_RESOLVE_PSMODULEVERSION_INPUT_EventJson
-        $githubEvent = if (-not [string]::IsNullOrWhiteSpace($eventJsonInput)) {
-            $eventJsonInput | ConvertFrom-Json
+        if (-not [string]::IsNullOrWhiteSpace($eventJsonInput)) {
+            $githubEvent = ConvertFrom-Json -InputObject $eventJsonInput -NoEnumerate -ErrorAction Stop
         } else {
-            Get-Content $env:GITHUB_EVENT_PATH | ConvertFrom-Json
+            $githubEvent = Get-Content -Raw -LiteralPath $env:GITHUB_EVENT_PATH |
+                ConvertFrom-Json -NoEnumerate -ErrorAction Stop
+        }
+        if ($githubEvent -is [array] -or $githubEvent -isnot [PSCustomObject]) {
+            throw 'The event must contain one producing-context object.'
         }
 
         $pr = $githubEvent.pull_request
-        if (-not $pr) {
+        if ($null -eq $pr) {
             Write-Host 'GitHub event does not contain pull_request data and no release context was normalized.'
             return $null
         }
+        $number = Get-PSModuleProducingPullRequestNumber -PullRequest $pr
 
         $labels = @()
         $labels += $pr.labels.name
@@ -202,6 +220,7 @@ function Get-GitHubPullRequest {
         Write-Host '-------------------------------------------------'
 
         [PSCustomObject]@{
+            Number  = $number
             HeadRef = $pr.head.ref
             Labels  = $labels
         }
@@ -460,7 +479,8 @@ function Get-LatestPSGalleryVersion {
 
         .DESCRIPTION
         The function queries the PowerShell Gallery for the latest published version of the module.
-        It retries up to five times, with a ten-second delay between attempts.
+        Only verified PackageNotFound absence provides a first-release baseline.
+        Authentication, API, and incomplete-metadata errors stop version resolution.
 
         .OUTPUTS
         PSSemVer representing the latest PSGallery version.
@@ -480,32 +500,22 @@ function Get-LatestPSGalleryVersion {
     )
 
     LogGroup 'Get latest version - PSGallery' {
-        $retryCount = 5
-        $retryDelaySeconds = 10
-        $latest = $null
-
-        for ($i = 1; $i -le $retryCount; $i++) {
-            try {
-                Write-Host "Finding module [$ModuleName] in the PowerShell Gallery."
-                $latest = Find-PSResource -Name $ModuleName -Repository PSGallery -Verbose:$false
-                Write-Host ($latest | Format-Table | Out-String)
-                break
-            } catch {
-                if ($i -eq $retryCount) {
-                    Write-Warning "Failed to find the module [$ModuleName] in the PowerShell Gallery."
-                    Write-Warning $_.Exception.Message
-                }
-                Start-Sleep -Seconds $retryDelaySeconds
+        Write-Host "Finding module [$ModuleName] in the PowerShell Gallery."
+        try {
+            $packages = @(Find-PSResource -Name $ModuleName -Repository PSGallery -ErrorAction Stop)
+        } catch {
+            $failure = $_
+            if ($failure.FullyQualifiedErrorId -notlike 'PackageNotFound,*') {
+                throw
             }
+            Write-Host "The module [$ModuleName] is absent from the Gallery; using the first-release baseline [0.0.0]."
+            return (New-PSSemVer -Version '0.0.0')
         }
-
-        $version = if ($latest.Version) {
-            New-PSSemVer -Version ($latest.Version).ToString()
-        } else {
-            Write-Warning "Could not find module online. Using '0.0.0'."
-            New-PSSemVer -Version '0.0.0'
+        if ($packages.Count -ne 1 -or $packages[0].Name -ine $ModuleName -or
+            [string]::IsNullOrWhiteSpace([string]$packages[0].Version)) {
+            throw "Cannot verify the latest Gallery version metadata for [$ModuleName]."
         }
-
+        $version = New-PSSemVer -Version ([string]$packages[0].Version)
         Write-Host "PSGallery version: [$($version.ToString())]"
         $version
     }
@@ -606,9 +616,30 @@ function Get-NextPrereleaseNumber {
         Prerelease  = $true
         Repository  = 'PSGallery'
         Verbose     = $false
-        ErrorAction = 'SilentlyContinue'
+        ErrorAction = 'Stop'
     }
-    $matchingPSGalleryPrereleases = Find-PSResource @params |
+    try {
+        $galleryVersions = @(Find-PSResource @params)
+        if ($galleryVersions.Count -eq 0) {
+            throw 'The successful prerelease enumeration returned no verifiable package metadata.'
+        }
+        $galleryVersions = @($galleryVersions | ForEach-Object {
+                if ($_.Name -ine $ModuleName -or [string]$_.Version -notmatch '^\d+\.\d+\.\d+$') {
+                    throw "The Gallery prerelease enumeration returned unverifiable version metadata for [$ModuleName]."
+                }
+                [pscustomobject]@{
+                    Version    = [version]([string]$_.Version)
+                    Prerelease = $_.Prerelease
+                }
+            })
+    } catch {
+        $failure = $_
+        if ($failure.FullyQualifiedErrorId -notlike 'PackageNotFound,*') {
+            throw
+        }
+        $galleryVersions = @()
+    }
+    $matchingPSGalleryPrereleases = $galleryVersions |
         Where-Object { "$($_.Version.Major).$($_.Version.Minor).$($_.Version.Build)" -eq $BaseVersion } |
         Where-Object { $_.Prerelease -like "$PrereleaseName*" }
 
@@ -730,16 +761,249 @@ function Get-NextModuleVersion {
     }
 }
 
+function Get-PSModuleGalleryRecoveryVersion {
+    <#
+        .SYNOPSIS
+        Recover a stable version only from exact source/context and raw package proof.
+
+        .DESCRIPTION
+        Searches actual release and shared-coordinate claims, not latest hints or numeric equality.
+        The canonical preflight validates the original package/release evidence before Build.
+        A claimed source without package proof, conflicting context, or multiple versions fails.
+
+        .EXAMPLE
+        Get-PSModuleGalleryRecoveryVersion -Context $context -Configuration $config -ModuleName $name `
+            -PSGalleryVersion $galleryVersion -Reader $reader
+
+        Return the original owned version or no recovery when the published baseline is complete.
+
+        .INPUTS
+        None
+
+        You can't pipe objects to Get-PSModuleGalleryRecoveryVersion.
+
+        .OUTPUTS
+        System.Object
+
+        The proven original PSSemVer version, when recoverable.
+    #>
+    [CmdletBinding()]
+    [OutputType([object])]
+    param(
+        # The immutable consumer repository, producing PR/direct context, and source.
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Context,
+
+        # The existing configured version prefix; no new decision policy is introduced.
+        [Parameter(Mandatory)]
+        [PSCustomObject] $Configuration,
+
+        # The module whose original package is being recovered.
+        [Parameter(Mandatory)]
+        [string] $ModuleName,
+
+        # The latest observed stable Gallery version, used only to reject incomplete baselines.
+        [Parameter(Mandatory)]
+        [object] $PSGalleryVersion,
+
+        # Read-only repository/tag/release/raw-package boundaries.
+        [Parameter(Mandatory)]
+        [hashtable] $Reader
+    )
+
+    $number = 0L
+    if ($Context.Repository -isnot [string] -or $Context.CommitSha -isnot [string] -or
+        $Context.PullRequest -is [array] -or $Context.Repository -notmatch '^[^/\s]+/[^/\s]+$' -or
+        $Context.CommitSha -notmatch '^[0-9a-f]{40}$' -or
+        -not [long]::TryParse([string]$Context.PullRequest, [ref]$number) -or $number -lt 0) {
+        throw 'Immutable repository/PR/source context is required for Gallery recovery proof.'
+    }
+    $readerNames = @(
+        'GetSource', 'GetTagList', 'GetTagReference', 'GetVersionReference',
+        'GetTagObject', 'GetRelease', 'GetPackage', 'GetPackageArtifactDigest'
+    )
+    foreach ($name in $readerNames) {
+        if ($Reader[$name] -isnot [scriptblock]) {
+            throw "The immutable publication reader [$name] is required for Gallery recovery proof."
+        }
+    }
+    $source = & $Reader.GetSource $Context.CommitSha
+    if ($source -cne $Context.CommitSha) {
+        throw 'The original consumer source could not be verified before Build.'
+    }
+    $owned = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
+    $baselineTags = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $baselineClaims = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
+    $references = @(& $Reader.GetTagList)
+    $prefix = [string]$Configuration.VersionPrefix
+    $coordinatePrefix = 'PSModule-Publication/'
+    $stablePattern = '^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$'
+    $versionPattern = '^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
+    $galleryVersion = $null
+    if ($PSGalleryVersion.ToString() -ne '0.0.0') {
+        $galleryVersion = "$($PSGalleryVersion.Major).$($PSGalleryVersion.Minor).$($PSGalleryVersion.Patch)"
+    }
+    foreach ($reference in $references) {
+        if ($reference.ref -isnot [string] -or -not $reference.ref.StartsWith('refs/tags/') -or
+            $null -eq $reference.object -or $reference.object -is [array] -or
+            $reference.object.sha -isnot [string] -or $reference.object.type -isnot [string] -or
+            $reference.object.sha -notmatch '^[0-9a-f]{40}$' -or
+            $reference.object.type -cnotin @('tag', 'commit')) {
+            throw 'The publication tag enumeration returned unverifiable reference metadata.'
+        }
+        $tag = $reference.ref.Substring('refs/tags/'.Length)
+        if ($null -ne $galleryVersion -and -not $tag.StartsWith('PSModule-Publication/', [StringComparison]::Ordinal) -and
+            $tag.EndsWith($galleryVersion, [StringComparison]::Ordinal)) {
+            $null = $baselineTags.Add($tag)
+        }
+        $isCoordinate = $tag.StartsWith($coordinatePrefix, [StringComparison]::Ordinal)
+        if ($isCoordinate) {
+            $coordinateParts = $tag.Substring($coordinatePrefix.Length).Split('/')
+            if ($coordinateParts.Count -ne 2) {
+                throw "The module/version coordinate [$tag] has unverifiable reference metadata."
+            }
+            $tagVersion = $coordinateParts[1]
+            if ($tagVersion -notmatch $versionPattern) {
+                throw "The module/version coordinate [$tag] has unverifiable version metadata."
+            }
+            $moduleCoordinate = Get-PSModulePublicationVersionTag -ModuleName $ModuleName -GalleryVersion $tagVersion
+            if ($tag -cne $moduleCoordinate) { continue }
+            if ($tagVersion.Contains('-')) { continue }
+        } else {
+            if (-not $tag.StartsWith($prefix, [StringComparison]::Ordinal) -or
+                $tag.Substring($prefix.Length) -notmatch $stablePattern) {
+                continue
+            }
+            $tagVersion = $tag.Substring($prefix.Length)
+        }
+        $evidence = @{ Annotation = $null; Reference = $null }
+        $parameters = @{
+            Tag             = $tag
+            GetTagReference = {
+                param($Tag)
+                if ($isCoordinate) {
+                    $evidence.Reference = & $Reader.GetVersionReference $ModuleName $tagVersion
+                } else {
+                    $evidence.Reference = & $Reader.GetTagReference $Tag
+                }
+                $evidence.Reference
+            }.GetNewClosure()
+            GetTagObject    = {
+                param($Sha)
+                $annotation = & $Reader.GetTagObject $Sha
+                if ($null -eq $evidence.Annotation) { $evidence.Annotation = $annotation }
+                $annotation.object
+            }.GetNewClosure()
+        }
+        $tagCommit = Resolve-PSModuleReleaseTagCommit @parameters
+        $claim = $null
+        if ($isCoordinate -or $tagCommit -ceq $Context.CommitSha) {
+            $claim = Get-PSModulePublicationClaim -Message $evidence.Annotation.message
+            if ($null -eq $claim) {
+                throw "Existing source-bound claim [$tag] has no verifiable artifact/release-context proof. Do not invent a fallback version."
+            }
+            if ($claim.CommitSha -cne $tagCommit -or $claim.Repository -ine $Context.Repository -or
+                $claim.ModuleName -cne $ModuleName -or $claim.GalleryVersion -cne $tagVersion -or
+                $claim.ReleaseType -cne 'Release') {
+                throw "The immutable claim [$tag] has conflicting source/module/version proof."
+            }
+            if ($isCoordinate) {
+                $expectedCoordinate = Get-PSModulePublicationVersionTag -ModuleName $claim.ModuleName -GalleryVersion $claim.GalleryVersion
+                if ($tag -cne $expectedCoordinate) {
+                    throw "The shared claim [$tag] does not bind its exact module/version coordinate."
+                }
+            } elseif ($claim.ReleaseTag -cne $tag) {
+                throw "The source-bound tag [$tag] has conflicting release coordinates."
+            }
+            if ($null -ne $galleryVersion -and $claim.GalleryVersion -ceq $galleryVersion) {
+                $null = $baselineTags.Add($claim.ReleaseTag)
+                $baselineClaims[$claim.ReleaseTag] = $claim
+            }
+        }
+        if ($tagCommit -cne $Context.CommitSha) {
+            continue
+        }
+        if ($claim.Repository -ine $Context.Repository -or $claim.PullRequest -ne $number -or
+            $claim.CommitSha -cne $Context.CommitSha -or $claim.ModuleName -cne $ModuleName -or
+            $claim.VersionPrefix -cne $prefix -or
+            $claim.ReleaseType -cne 'Release' -or "$prefix$($claim.GalleryVersion)" -cne $claim.ReleaseTag) {
+            throw "The source-bound tag [$tag] belongs to a different module or release context."
+        }
+        $state = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $Reader
+        $observedSha = $state.TagSha
+        if ($isCoordinate) { $observedSha = $state.VersionTagSha }
+        if ($observedSha -cne $evidence.Reference.sha -or $observedSha -cne $reference.object.sha) {
+            throw "Publication claim [$tag] changed while verifying recovery proof. Refusing version resolution."
+        }
+        if ($null -eq $state.Package) {
+            throw ("The original source claim [$tag] has no published raw package proof. " +
+                'Retain its resolved version/artifact and rerun the original job.')
+        }
+        $owned[$observedSha] = $claim
+    }
+    if ($owned.Count -gt 1) {
+        throw 'Multiple published versions claim this exact source and release context. Refusing ambiguous recovery.'
+    }
+    if ($owned.Count -eq 1) {
+        $original = @($owned.Values)[0]
+        $version = New-PSSemVer -Version $original.GalleryVersion
+        $version.Prefix = $prefix
+        Write-Verbose "Recovering proven original publication [$($version.ToString())] before Build."
+        return $version
+    }
+    if ($null -ne $galleryVersion) {
+        $completed = [Collections.Generic.List[string]]::new()
+        foreach ($tag in $baselineTags) {
+            $release = & $Reader.GetRelease $tag
+            $assets = @($release.assets | Where-Object {
+                    $_.name -ceq "$ModuleName-$galleryVersion.zip" -and $_.state -ceq 'uploaded'
+                })
+            if ($null -eq $release -or $release.tag_name -cne $tag -or $release.prerelease -isnot [bool] -or
+                $release.prerelease -ne $false -or $release.draft -isnot [bool] -or $release.draft -ne $false -or
+                $assets.Count -ne 1) {
+                continue
+            }
+            if ($baselineClaims.ContainsKey($tag)) {
+                $baselineClaim = $baselineClaims[$tag]
+                $baselineState = Get-PSModulePublicationState -ExpectedClaim $baselineClaim -Reader $Reader
+                if ($null -eq $baselineState.Package) {
+                    throw 'The historical Gallery baseline has no exact published-package proof.'
+                }
+                $baselineSource = $baselineClaim.CommitSha
+            } else {
+                $tagParameters = @{
+                    Tag             = $tag
+                    GetTagReference = $Reader.GetTagReference
+                    GetTagObject    = {
+                        param($Sha)
+                        (& $Reader.GetTagObject $Sha).object
+                    }.GetNewClosure()
+                }
+                $baselineSource = Resolve-PSModuleReleaseTagCommit @tagParameters
+            }
+            if ($baselineSource -ceq $Context.CommitSha) {
+                throw 'The original source already has publication records but recovery proof was not discovered. Do not invent a fallback version.'
+            }
+            $completed.Add($tag)
+        }
+        if ($completed.Count -gt 1) {
+            throw 'Multiple completed tags provide an ambiguous Gallery baseline. Refusing version resolution.'
+        }
+        if ($completed.Count -eq 0) {
+            throw "Gallery-only package [$galleryVersion] has no proven source/artifact recovery context. Do not invent a fallback version."
+        }
+    }
+}
+
 function Get-ResolvedModuleVersion {
     <#
         .SYNOPSIS
         Resolve the next module version and resume an incomplete stable release when possible.
 
         .DESCRIPTION
-        The highest version from GitHub Releases and the PowerShell Gallery is normally the version baseline.
-        If Gallery contains exactly the stable version implied by the latest GitHub release and this run's version bump,
-        Gallery publication succeeded. GitHub release creation did not succeed in this case.
-        The function returns the Gallery version instead of another version bump so the workflow can resume the missing GitHub release.
+        The function keeps the existing version decision for new releases and previews.
+        A stable retry verifies actual source-bound tag and raw package evidence before it selects the original version.
+        Numeric equality and latest hints do not prove ownership.
 
         .OUTPUTS
         PSSemVer representing the resolved module version.
@@ -774,10 +1038,42 @@ function Get-ResolvedModuleVersion {
         [Parameter()]
         [AllowNull()]
         [AllowEmptyCollection()]
-        [array] $Releases = @()
+        [array] $Releases = @(),
+
+        # Original consumer repository, producing PR/direct context, and immutable source.
+        [Parameter()]
+        [AllowNull()]
+        [PSCustomObject] $PublicationContext,
+
+        # Injectable read-only proof boundaries; defaults to the consumer repository API.
+        [Parameter()]
+        [AllowNull()]
+        [hashtable] $PublicationReader
     )
 
     LogGroup 'Resolve module version' {
+        if ($Decision.ShouldPublish -and $Decision.CreateRelease) {
+            if ($null -eq $PublicationContext) {
+                if ($PSGalleryVersion -gt $GitHubVersion) {
+                    throw 'Source/artifact ownership proof is required before resolving a Gallery-only retry.'
+                }
+            } else {
+                if ($null -eq $PublicationReader) {
+                    $PublicationReader = Get-PSModulePublicationReader -Repository $PublicationContext.Repository -ReadOnly
+                }
+                $recoveryParameters = @{
+                    Context          = $PublicationContext
+                    Configuration    = $Configuration
+                    ModuleName       = $ModuleName
+                    PSGalleryVersion = $PSGalleryVersion
+                    Reader           = $PublicationReader
+                }
+                $recovered = Get-PSModuleGalleryRecoveryVersion @recoveryParameters
+                if ($null -ne $recovered) {
+                    return $recovered
+                }
+            }
+        }
         $latestVersion = Get-LatestPublishedVersion -GitHubVersion $GitHubVersion -PSGalleryVersion $PSGalleryVersion
         $params = @{
             LatestVersion = $latestVersion
@@ -787,23 +1083,6 @@ function Get-ResolvedModuleVersion {
             Releases      = $Releases
         }
         $resolvedVersion = Get-NextModuleVersion @params
-
-        if ($Decision.CreateRelease) {
-            $githubParams = $params.Clone()
-            $githubParams.LatestVersion = $GitHubVersion
-            $githubCandidate = Get-NextModuleVersion @githubParams
-            $galleryVersionString = "$($PSGalleryVersion.Major).$($PSGalleryVersion.Minor).$($PSGalleryVersion.Patch)"
-            $githubCandidateString = "$($githubCandidate.Major).$($githubCandidate.Minor).$($githubCandidate.Patch)"
-
-            if ([string]::IsNullOrWhiteSpace($PSGalleryVersion.Prerelease) -and
-                $galleryVersionString -eq $githubCandidateString) {
-                Write-Host (
-                    "PowerShell Gallery contains [$galleryVersionString], the next stable version after " +
-                    "GitHub [$GitHubVersion]. Resuming the Gallery-only publication."
-                )
-                $resolvedVersion = $githubCandidate
-            }
-        }
 
         $resolvedVersion
     }

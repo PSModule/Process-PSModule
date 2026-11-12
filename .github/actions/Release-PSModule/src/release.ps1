@@ -55,6 +55,10 @@ $ErrorActionPreference = 'Stop'
 $PSStyle.OutputRendering = 'Ansi'
 
 Import-Module -Name 'PSModule' -Force
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Release-PSModule.Helpers.psm1') -Force
+Import-Module -Name ([IO.Path]::Combine(
+        $PSScriptRoot, '..', '..', 'Publish-PSModule', 'src', 'Publish-PSModule.Helpers.psm1'
+    )) -Force
 
 LogGroup 'Load inputs' {
     $env:GITHUB_REPOSITORY_NAME = $env:GITHUB_REPOSITORY -replace '.+/'
@@ -84,12 +88,14 @@ LogGroup 'Load inputs' {
     $usePRTitleAsReleaseName = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsReleaseName -eq 'true'
     $usePRTitleAsNotesHeading = $env:PSMODULE_RELEASE_PSMODULE_INPUT_UsePRTitleAsNotesHeading -eq 'true'
     $releaseTag = $env:PSMODULE_RELEASE_PSMODULE_INPUT_ReleaseTag
+    $versionPrefix = $env:PSMODULE_RELEASE_PSMODULE_INPUT_VersionPrefix
     $commitSha = $env:PSMODULE_RELEASE_PSMODULE_INPUT_CommitSha
     if ([string]::IsNullOrWhiteSpace($releaseTag)) {
         throw 'ReleaseTag is required. Ensure Publish.Module.Resolution.FullVersion is passed from the Plan job.'
     }
 
     Write-Host "Module name: [$name]"
+    Write-Host "Version prefix: [$versionPrefix]"
     Write-Host "Module path: [$modulePath]"
     Write-Host "Release tag: [$releaseTag]"
     Write-Host "WhatIf:      [$whatIf]"
@@ -97,19 +103,32 @@ LogGroup 'Load inputs' {
 
 LogGroup 'Load release context' {
     $githubEventJson = Get-Content -Raw $env:GITHUB_EVENT_PATH
-    $githubEvent = $githubEventJson | ConvertFrom-Json
+    $githubEvent = ConvertFrom-Json -InputObject $githubEventJson -NoEnumerate -ErrorAction Stop
+    if ($githubEvent -is [array] -or $githubEvent -isnot [PSCustomObject]) {
+        throw 'The original GitHub event context requires one event object.'
+    }
     $pullRequestJson = $env:PSMODULE_RELEASE_PSMODULE_INPUT_PullRequest
-    $pullRequest = if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
-        $pullRequestJson | ConvertFrom-Json
-    } elseif ($githubEvent.pull_request) {
-        [pscustomobject]@{
-            Number  = $githubEvent.pull_request.number
-            Title   = $githubEvent.pull_request.title
-            Body    = $githubEvent.pull_request.body
-            HeadRef = $githubEvent.pull_request.head.ref
+    $pullRequest = $null
+    if (-not [string]::IsNullOrWhiteSpace($pullRequestJson) -and $pullRequestJson -ne 'null') {
+        $pullRequest = ConvertFrom-Json -InputObject $pullRequestJson -NoEnumerate -ErrorAction Stop
+    } else {
+        $eventPullRequest = $githubEvent.pull_request
+        $null = Get-PSModuleProducingPullRequestNumber -PullRequest $eventPullRequest
+        if ($null -ne $eventPullRequest) {
+            $pullRequest = [pscustomobject]@{
+                Number  = $eventPullRequest.number
+                Title   = $eventPullRequest.title
+                Body    = $eventPullRequest.body
+                HeadRef = $eventPullRequest.head.ref
+            }
         }
     }
-    $prNumber = $pullRequest.Number
+    $prNumber = Get-PSModuleProducingPullRequestNumber -PullRequest $pullRequest
+    foreach ($field in @('Title', 'Body', 'HeadRef')) {
+        if ($null -ne $pullRequest.$field -and $pullRequest.$field -isnot [string]) {
+            throw "Supplied release context requires scalar string metadata for [$field]."
+        }
+    }
     $prHeadRef = $pullRequest.HeadRef
     $commitMessage = $githubEvent.head_commit.message
     if ([string]::IsNullOrWhiteSpace($commitMessage) -and -not [string]::IsNullOrWhiteSpace($commitSha)) {
@@ -185,98 +204,185 @@ LogGroup 'Resolve version from manifest' {
 
 # A zip of the built module is uploaded so the GitHub Release page exposes the exact bytes.
 LogGroup 'Create GitHub release' {
-    $releaseCreateCommand = @('release', 'create', $releaseTag)
+    $releaseCreateCommand = @('release', 'create', $releaseTag, '--repo', $env:GITHUB_REPOSITORY, '--verify-tag')
     $notesFilePath = $null
     $releaseExists = $false
-
-    if (-not $whatIf) {
-        $encodedReleaseTag = [System.Uri]::EscapeDataString($releaseTag)
-        $releaseLookupResult = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$encodedReleaseTag" --jq '.html_url' 2>&1
-        $releaseLookupExitCode = $LASTEXITCODE
-
-        if ($releaseLookupExitCode -eq 0) {
-            $releaseURL = ($releaseLookupResult | Out-String).Trim()
-            $releaseExists = $true
-            Write-Host "GitHub release [$releaseTag] already exists. Resuming its artifact upload."
-        } elseif (($releaseLookupResult | Out-String) -notmatch 'HTTP 404') {
-            throw "Unable to determine whether release [$releaseTag] exists: $($releaseLookupResult | Out-String)"
-        }
-    }
-
-    if (-not $releaseExists) {
-        if ($usePRTitleAsReleaseName -and $pullRequest.Title) {
-            $releaseCreateCommand += @('--title', $pullRequest.Title)
-            Write-Host "Using PR title as release name: [$($pullRequest.Title)]"
-        } else {
-            $releaseCreateCommand += @('--title', $releaseTag)
-        }
-
-        # Build release notes content. Uses a file to preserve special characters.
-        if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pullRequest.Title -and $pullRequest.Body) {
-            $notes = "# $($pullRequest.Title) (#$prNumber)`n`n$($pullRequest.Body)"
-            $notesFilePath = [System.IO.Path]::GetTempFileName()
-            Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
-            $releaseCreateCommand += @('--notes-file', $notesFilePath)
-            Write-Host 'Using PR title as H1 heading with link and body as release notes'
-        } elseif ($usePRBodyAsReleaseNotes -and $pullRequest.Body) {
-            $notesFilePath = [System.IO.Path]::GetTempFileName()
-            Set-Content -Path $notesFilePath -Value $pullRequest.Body -Encoding utf8
-            $releaseCreateCommand += @('--notes-file', $notesFilePath)
-            Write-Host 'Using PR body as release notes'
-        } elseif (-not [string]::IsNullOrWhiteSpace($commitMessage)) {
-            $notesFilePath = [System.IO.Path]::GetTempFileName()
-            Set-Content -Path $notesFilePath -Value $commitMessage -Encoding utf8
-            $releaseCreateCommand += @('--notes-file', $notesFilePath)
-            Write-Host 'Using the pushed commit message as release notes'
-        } else {
-            $releaseCreateCommand += @('--generate-notes')
+    $sourceCommit = if (-not [string]::IsNullOrWhiteSpace($commitSha)) { $commitSha } else { $env:GITHUB_SHA }
+    $zipFileName = "$name-$publishPSVersion.zip"
+    $zipDirectory = Join-Path -Path ([IO.Path]::GetTempPath()) -ChildPath "PSModuleRelease-$([guid]::NewGuid())"
+    $zipPath = Join-Path -Path $zipDirectory -ChildPath $zipFileName
+    try {
+        if (-not $whatIf) {
+            $null = New-Item -Path $zipDirectory -ItemType Directory
+            $null = New-PSModuleReleaseArchive -Path $modulePath -DestinationPath $zipPath
+            $claim = [pscustomobject]@{
+                Repository     = $env:GITHUB_REPOSITORY
+                PullRequest    = if ($null -eq $prNumber) { 0 } else { $prNumber }
+                CommitSha      = $sourceCommit
+                ModuleName     = $name
+                GalleryVersion = $publishPSVersion
+                VersionPrefix  = $versionPrefix
+                ReleaseTag     = $releaseTag
+                ReleaseType    = if ($createPrerelease) { 'Prerelease' } else { 'Release' }
+                ArtifactSha256 = Get-PSModuleArtifactDigest -Path $modulePath
+                AssetName      = $zipFileName
+                AssetSha256    = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256) {
+                throw 'The release archive does not match the tested file-tree and asset claim. Refusing publication.'
+            }
+            $publicationReader = Get-PSModulePublicationReader -Repository $env:GITHUB_REPOSITORY
+            $publicationState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
+                (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                throw 'The tested artifact or release archive changed before the immutable claim. Refusing publication.'
+            }
+            $publicationState = New-PSModulePublicationTag -Claim $claim -State $publicationState -Reader $publicationReader
+            $releaseExists = $null -ne $publicationState.Release
+            if ($releaseExists) {
+                $releaseURL = $publicationState.Release.html_url
+                Write-Host "GitHub release [$releaseTag] already belongs to this source and artifact. Resuming its upload."
+            }
         }
 
-        if ($createPrerelease) {
-            $releaseCreateCommand += @('--target', $prHeadRef, '--prerelease')
-        } elseif (-not [string]::IsNullOrWhiteSpace($commitSha)) {
-            $releaseCreateCommand += @('--target', $commitSha)
-        }
-
-        try {
-            if ($whatIf) {
-                Write-Host "WhatIf: gh $($releaseCreateCommand -join ' ')"
-                $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
+        if (-not $releaseExists) {
+            if ($usePRTitleAsReleaseName -and $pullRequest.Title) {
+                $releaseCreateCommand += @('--title', $pullRequest.Title)
+                Write-Host "Using PR title as release name: [$($pullRequest.Title)]"
             } else {
-                $releaseURL = gh @releaseCreateCommand
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Failed to create the release [$releaseTag]."
+                $releaseCreateCommand += @('--title', $releaseTag)
+            }
+
+            # Build release notes content. Uses a file to preserve special characters.
+            if ($usePRTitleAsNotesHeading -and $usePRBodyAsReleaseNotes -and $pullRequest.Title -and $pullRequest.Body) {
+                $notes = "# $($pullRequest.Title) (#$prNumber)`n`n$($pullRequest.Body)"
+                $notesFilePath = [System.IO.Path]::GetTempFileName()
+                Set-Content -Path $notesFilePath -Value $notes -Encoding utf8
+                $releaseCreateCommand += @('--notes-file', $notesFilePath)
+                Write-Host 'Using PR title as H1 heading with link and body as release notes'
+            } elseif ($usePRBodyAsReleaseNotes -and $pullRequest.Body) {
+                $notesFilePath = [System.IO.Path]::GetTempFileName()
+                Set-Content -Path $notesFilePath -Value $pullRequest.Body -Encoding utf8
+                $releaseCreateCommand += @('--notes-file', $notesFilePath)
+                Write-Host 'Using PR body as release notes'
+            } elseif (-not [string]::IsNullOrWhiteSpace($commitMessage)) {
+                $notesFilePath = [System.IO.Path]::GetTempFileName()
+                Set-Content -Path $notesFilePath -Value $commitMessage -Encoding utf8
+                $releaseCreateCommand += @('--notes-file', $notesFilePath)
+                Write-Host 'Using the pushed commit message as release notes'
+            } else {
+                $releaseCreateCommand += @('--generate-notes')
+            }
+
+            if ([string]::IsNullOrWhiteSpace($sourceCommit)) {
+                throw 'CommitSha or the original GITHUB_SHA is required to target the exact tested source.'
+            }
+            $releaseCreateCommand += @('--target', $sourceCommit)
+            if ($createPrerelease) {
+                $releaseCreateCommand += '--prerelease'
+            }
+            if ($prNumber) {
+                $ownership = [pscustomobject]@{
+                    Repository  = $env:GITHUB_REPOSITORY
+                    PullRequest = [long]$prNumber
+                    CommitSha   = $sourceCommit
+                } | ConvertTo-Json -Compress
+                $encodedOwnership = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ownership))
+                $ownershipFooter = "<!-- PSModule.PrereleaseOwner:v1:$encodedOwnership -->"
+                if ($null -eq $notesFilePath) {
+                    if ($whatIf) {
+                        Write-Host (
+                            "WhatIf: gh api repos/$env:GITHUB_REPOSITORY/releases/generate-notes --method POST " +
+                            "--field tag_name=$releaseTag --field target_commitish=$sourceCommit"
+                        )
+                        $generatedBody = ''
+                    } else {
+                        $generatedNotes = gh api "repos/$env:GITHUB_REPOSITORY/releases/generate-notes" --method POST `
+                            --field "tag_name=$releaseTag" --field "target_commitish=$sourceCommit"
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Cannot generate release notes (gh exited $LASTEXITCODE)."
+                        }
+                        $generated = ConvertFrom-Json -InputObject ($generatedNotes -join "`n") -NoEnumerate -ErrorAction Stop
+                        if ($generated -isnot [PSCustomObject] -or $generated -is [array] -or $generated.body -isnot [string]) {
+                            throw 'Generated release notes have no scalar body. Refusing incomplete notes.'
+                        }
+                        $generatedBody = $generated.body
+                    }
+                    $notesFilePath = [IO.Path]::GetTempFileName()
+                    Set-Content -LiteralPath $notesFilePath -Value $generatedBody -Encoding utf8
+                    $releaseCreateCommand = @($releaseCreateCommand | Where-Object { $_ -ne '--generate-notes' })
+                    $releaseCreateCommand += @('--notes-file', $notesFilePath)
+                }
+                Add-Content -LiteralPath $notesFilePath -Value "`n$ownershipFooter" -Encoding utf8
+            }
+
+            try {
+                if ($whatIf) {
+                    Write-Host "WhatIf: gh $($releaseCreateCommand -join ' ')"
+                    $releaseURL = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$releaseTag"
+                } else {
+                    $beforeCreate = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+                    $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+                    if ($beforeCreate.TagSha -cne $publicationState.TagSha -or
+                        $beforeCreate.VersionTagSha -cne $publicationState.VersionTagSha -or
+                        $archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                        $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
+                        (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                        throw 'The source claim or tested artifact changed before release creation. Refusing publication.'
+                    }
+                    if ($null -ne $beforeCreate.Release) {
+                        $releaseURL = $beforeCreate.Release.html_url
+                        Write-Host 'An identical owned release appeared during notes preparation; retaining it.'
+                    } else {
+                        $releaseURL = gh @releaseCreateCommand
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Failed to create the release [$releaseTag]."
+                        }
+                    }
+                }
+            } finally {
+                if ($notesFilePath -and (Test-Path -Path $notesFilePath)) {
+                    Remove-Item -Path $notesFilePath -Force
                 }
             }
-        } finally {
-            if ($notesFilePath -and (Test-Path -Path $notesFilePath)) {
-                Remove-Item -Path $notesFilePath -Force
+        }
+
+        if ($whatIf) {
+            Write-Host "WhatIf: New-PSModuleReleaseArchive -Path $modulePath -DestinationPath $zipPath"
+            Write-Host "WhatIf: gh release upload $releaseTag $zipPath --repo $env:GITHUB_REPOSITORY"
+        } else {
+            $currentState = Get-PSModulePublicationState -ExpectedClaim $claim -Reader $publicationReader
+            $archiveProof = Get-PSModuleReleaseArchiveProof -Path $zipPath -ModuleName $name
+            if ($currentState.TagSha -cne $publicationState.TagSha -or $null -eq $currentState.Release -or
+                $currentState.VersionTagSha -cne $publicationState.VersionTagSha -or
+                $archiveProof.ArtifactSha256 -cne $claim.ArtifactSha256 -or
+                $archiveProof.AssetSha256 -cne $claim.AssetSha256 -or
+                (Get-PSModuleArtifactDigest -Path $modulePath) -cne $claim.ArtifactSha256) {
+                throw 'The release tag, release context, or tested artifact changed before upload. Refusing publication.'
+            }
+            if (@($currentState.Release.assets).Count -eq 0) {
+                gh release upload $releaseTag $zipPath --repo $env:GITHUB_REPOSITORY
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Failed to upload module artifact to release [$releaseTag]."
+                }
+                Write-Host "::notice title=📦 Attached module artifact to release::$zipFileName"
+            } else {
+                Write-Host "Existing asset [$zipFileName] has identical contents; retaining its immutable bytes."
             }
         }
-    }
-
-    # Attach the built module as a release artifact so consumers can download the exact bytes.
-    $zipFileName = "$name-$publishPSVersion.zip"
-    $zipPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $zipFileName
-    if (Test-Path -Path $zipPath) {
-        Remove-Item -Path $zipPath -Force
-    }
-    if ($whatIf) {
-        Write-Host "WhatIf: Compress-Archive -Path $modulePath -DestinationPath $zipPath -Force"
-        Write-Host "WhatIf: gh release upload $releaseTag $zipPath --clobber"
-    } else {
-        Write-Host "Compressing module to [$zipPath]"
-        Compress-Archive -Path $modulePath -DestinationPath $zipPath -Force
-        try {
-            gh release upload $releaseTag $zipPath --clobber
-            if ($LASTEXITCODE -ne 0) {
-                throw "Failed to upload module artifact to release [$releaseTag]."
-            }
-            Write-Host "::notice title=📦 Attached module artifact to release::$zipFileName"
-        } finally {
-            if (Test-Path -Path $zipPath) {
-                Remove-Item -Path $zipPath -Force
-            }
+    } finally {
+        if ($notesFilePath -and (Test-Path -LiteralPath $notesFilePath)) {
+            Remove-Item -LiteralPath $notesFilePath -Force
+        }
+        if (Test-Path -LiteralPath $zipPath) {
+            Remove-Item -LiteralPath $zipPath -Force
+        }
+        if (Test-Path -LiteralPath $zipDirectory) {
+            Remove-Item -LiteralPath $zipDirectory -Force
         }
     }
 
